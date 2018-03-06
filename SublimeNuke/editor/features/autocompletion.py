@@ -12,8 +12,12 @@ except:
     sys.path.append('C:/Users/Max-Last/.nuke/python/external')
 from PySide import QtGui, QtCore
 
-from ..base import CodeEditor
-from linenumbers import CodeEditorWithLines as CodeEditor
+# from ..base import CodeEditor
+# from linenumbers import CodeEditorWithLines as CodeEditor
+import linenumbers
+# reload(linenumbers)
+
+CodeEditor = linenumbers.CodeEditorWithLines
 
 AUTO_COMPLETE = True
 
@@ -28,10 +32,8 @@ class Codepleter(QtGui.QCompleter):
         
 class CodeEditorAuto(CodeEditor):
     """docstring for CodeEditorAuto"""
-    def __init__(self, file, _globals={}, _locals={}):
-        super(CodeEditorAuto, self).__init__(file, _globals, _locals)
-        self._globals = _globals
-        self._locals = _locals
+    def __init__(self, file, output):
+        super(CodeEditorAuto, self).__init__(file, output)
 
         self.loadedModules = sys.modules.keys()
         self.completer = None
@@ -54,7 +56,10 @@ class CodeEditorAuto(CodeEditor):
         self.completer.setCompletionPrefix('')
         textCursor = self.textCursor()
         textCursor.select(QtGui.QTextCursor.LineUnderCursor)#BlockUnderCursor
+        # textCursor.select(QtGui.QTextCursor.WordUnderCursor)
         selectedText = textCursor.selectedText()
+        print selectedText
+        print 'RE:', re.findall('(\w+\.)+', selectedText),
         lastword = selectedText.split(' ')[-1]
 
         dotLastWord = '.'.join(lastword.split('.')[:-1])
@@ -66,10 +71,18 @@ class CodeEditorAuto(CodeEditor):
         _objects = self._globals.copy()
         _objects.update(self._locals.copy())
 
-        if dotLastWord not in _objects:
-            return
+        if dotLastWord in _objects:
+            _obj = _objects.get(dotLastWord)
+        else:
+            try:
+                exec('_obj = '+dotLastWord, self._globals, self._locals)
+                _obj = self._locals.get('_obj')
+            except Exception, e:
+                print 'FAIL!', e
+                return
 
-        attrs = dir(self._locals.get(dotLastWord))
+        print _obj
+        attrs = dir(_obj)
 
         methods = [a for a in attrs if a[0].islower()]
         therest = [a for a in attrs if not a[0].islower()]

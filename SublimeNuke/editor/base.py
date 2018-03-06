@@ -12,17 +12,20 @@ except:
 from PySide import QtGui, QtCore
 
 from features import syntaxhighlighter
-reload(syntaxhighlighter)
+# reload(syntaxhighlighter)
 
 LEVEL_THREE = True
 
 class CodeEditor(QtGui.QPlainTextEdit):
+    clearOutput = QtCore.Signal()
 
-    def __init__(self, file, _globals={}, _locals={}):
+    def __init__(self, file, output):
         super(CodeEditor, self).__init__()
+        self._globals = {}
+        self._locals = {}
         self._file = file
-        self._globals = _globals
-        self._locals = _locals
+        print 'le change'
+        self.clearOutput.connect(output.clear)
 
         syntaxhighlighter.Highlight(self.document())
 
@@ -37,6 +40,18 @@ class CodeEditor(QtGui.QPlainTextEdit):
             self.setTabStopWidth(4 * QtGui.QFontMetrics(self.font).width(' '))
 
         self.setTabStopWidth(4 * QtGui.QFontMetrics(self.font()).width(' '))
+
+    def showEvent(self, event):
+        self.setup_env()
+        super(CodeEditor, self).showEvent(event)
+
+    def setup_env(self):
+        nuke.tcl('python -exec "SublimeNuke.editor.base._globals = globals()"')
+        nuke.tcl('python -exec "SublimeNuke.editor.base._locals = locals()"')
+
+        self._globals = _globals
+        self._locals = _locals
+        self._locals.update({'__instance':self})#this will only refer to the latest instance; not sure how useful that is.
 
     def keyReleaseEvent(self, event):
         """
@@ -71,6 +86,11 @@ class CodeEditor(QtGui.QPlainTextEdit):
                 line = textCursor.block().text()
                 indentCount = len(line) - len(line.lstrip(' '))
                 textCursor.insertText('\n'+' '*indentCount)
+                return True
+
+        if event.key() in (QtCore.Qt.Key_Backspace,):
+            if event.modifiers() == QtCore.Qt.ControlModifier:
+                self.clearOutput.emit()
                 return True
 
         if event.key() == QtCore.Qt.Key_Tab:
@@ -146,7 +166,7 @@ class CodeEditor(QtGui.QPlainTextEdit):
     def node_context_exec(self, text):
         self.node_context = self.get_node_context()
         nuke.toNode(self.node_context).begin()
-        self.global_exec(self, text)
+        self.global_exec(text)
         nuke.toNode(self.node_context).end()
         
     def global_exec(self, text):
@@ -166,44 +186,20 @@ class CodeEditor(QtGui.QPlainTextEdit):
         print '# Result:'
         exec(text, self._globals, self._locals)
 
-    #right click menu items
-    # def childEvent(self, event):
-    #     print 'CHILD EVENT:', event
-    #     super(CodeEditor, self).childEvent(event)
-    #     # if isinstance(o, QtGui.QMenu):
-    #     #         self.condition = False
-    #     #         if e.type() == QtCore.QEvent.ChildAdded:
-    #     #             self.menu = o
-    #     #             self.menuSetup()
+    def contextMenuEvent(self, event):
+        menu = self.createStandardContextMenu()
 
-    # def contextMenuEvent(self, event):
-    #     print 'CONTEXT MENU EVENT:', event
-    #     # print dir(event)
-    #     super(CodeEditor, self).contextMenuEvent(event)
+        self.node_context = self.get_node_context()
+        with nuke.toNode(self.node_context):
+            pythonknobs = [k for k in nuke.selectedNode().allKnobs()
+                            if type(k) in (nuke.PyScript_Knob,
+                                          nuke.PythonKnob)]
+            for knob in pythonknobs:
+                menu.addAction('Load {}'.format(knob.name()), lambda k=knob: nuke.message(k.value()))
 
-        # if e.type() == QtCore.QEvent.ContextMenu:
-        #     parent = o.parent()
-        #     if bool(parent):
-        #         if parent.metaObject().className() == self.scriptInput:
-        #             self.condition = True
-            # return False
 
-    # def mousePressEvent(self, event):
-    #     if event.button() == QtCore.Qt.RightButton:
-    #         menu = QtGui.QMenu()
-    #         menu.move(QtGui.QCursor().pos())
-    #         sublimeNuke = self._globals.get('SublimeNuke')
-    #         # local = self._locals.copy()
-    #         # self.exec_text('SublimeNuke')
-    #         # exec('SublimeNuke', self._globals, new_locals)
-    #         # new_locals = {k : self._locals[k] for k in set(self._locals) - set(local)}
-    #         # print new_locals
-    #         # menu.addAction('Reload', partial(reload,  a))
-    #         menu.addAction('Reload', partial(self.reload,  sublimeNuke))
-    #         # menu.addAction('Reload', partial(reload,  exec('SublimeNuke', self._globals, self._locals)))
-    #         menu.exec_()
+        menu.exec_(QtGui.QCursor().pos())
 
-    
     # -------------------------------------------------------------------------------
     #shortcuts
     # -------------------------------------------------------------------------------

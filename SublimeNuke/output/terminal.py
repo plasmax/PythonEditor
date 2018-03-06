@@ -41,6 +41,7 @@ class Terminal(QtGui.QTextEdit):
     def __init__(self):
         super(Terminal, self).__init__()
         self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+        self.setReadOnly(True)
 
     def _setup(self):
         self.queue = Queue.Queue()
@@ -86,3 +87,7 @@ class Terminal(QtGui.QTextEdit):
         self.insertPlainText(text)
         if 'hiero' in globals(): #write back to hiero FnRedirect (to be polite)
             self.old_stdout.write(text)
+
+    @QtCore.Slot()
+    def clearInput(self):
+        self.clear()

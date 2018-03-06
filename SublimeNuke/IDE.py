@@ -12,45 +12,35 @@ except:
     sys.path.append('C:/Users/Max-Last/.nuke/python/external')
 from PySide import QtGui, QtCore
 
-
-if globals().has_key('init_modules'):
-    for m in [x for x in sy.modules.keys() if x not in init_modules]:
-        print(sys.modules[m] )
-        del sys.modules[m]
-else:
-    init_modules = sys.modules.keys()
-
 from browser import NukeMiniBrowser
-reload(NukeMiniBrowser)
+# reload(NukeMiniBrowser)
 
 from output import terminal
-reload(terminal)
+# reload(terminal)
 
 from editor import container
-reload(container)
+# reload(container)
 
 from editor import base
-reload(base)
+# reload(base)
 
 from editor.features import linenumbers
-reload(linenumbers)
+# reload(linenumbers)
 
 from editor.features import autocompletion
-reload(autocompletion)
+# reload(autocompletion)
 
 LEVEL_TWO = True
 
 class IDE(QtGui.QWidget):
     """docstring for IDE"""
-    def __init__(self, _globals={}, _locals={}):
+    def __init__(self):
         super(IDE, self).__init__()
-        self._globals = _globals
-        self._locals = _locals
         self.layout = QtGui.QVBoxLayout(self)
         # self.setStyleSheet('background:#282828;color:#fff;') # Main Colors
-        self._setup(_globals, _locals)
+        self._setup()
 
-    def _setup(self, _globals, _locals):
+    def _setup(self):
         self.splitter = QtGui.QSplitter(QtCore.Qt.Vertical)
         self.layout.setContentsMargins(0,0,0,0)
 
@@ -58,11 +48,10 @@ class IDE(QtGui.QWidget):
         # self.browser.resize(200, self.browser.height())
         # self.splitter.addWidget(self.browser)
 
-        file = 'C:/Users/tsalx/.nuke/sublimenuke/sublimenuke.txt'
-        self.input = container.Container(file, 
-                        self._globals, self._locals) #replace with tabwidget
-
+        file = 'C:/Users/{}/.nuke/sublimenuke/sublimenuke.txt'.format(os.environ.get('USERNAME'))
         self.output = terminal.Terminal()
+        self.input = container.Container(file, self.output)
+
         
         self.splitter.addWidget(self.output)
         self.splitter.addWidget(self.input)
@@ -71,12 +60,14 @@ class IDE(QtGui.QWidget):
         
     def showEvent(self, event):
 
-        if 'nuke' in globals():
+        try:
             parent = self.parentWidget().parentWidget()
             parent.layout().setContentsMargins(0,0,0,0)
 
             parent = self.parentWidget().parentWidget().parentWidget().parentWidget()
             parent.layout().setContentsMargins(0,0,0,0)
+        except:
+            pass
 
         self.output._setup()
 

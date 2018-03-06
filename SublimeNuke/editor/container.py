@@ -12,13 +12,13 @@ except:
 from PySide import QtGui, QtCore
 
 from features import autocompletion
+# reload(autocompletion)
 
 class Container(QtGui.QTabWidget):
 
-    def __init__(self, file, _globals={}, _locals={}):
+    def __init__(self, file, output):
         QtGui.QTabWidget.__init__(self)
-        self._globals = _globals
-        self._locals = _locals
+        self._output = output
         self.setTabsClosable(True)
         self.new_tab(file=file)
         self._build_tabs()
@@ -35,8 +35,8 @@ class Container(QtGui.QTabWidget):
 
     def new_tab(self, file=None):
         index = self.count() - 1
-        editContainer = InputContainer(file, 
-                        self._globals, self._locals)
+        editContainer = InputContainer(file, self._output)
+        # editContainer.clearInput.connect(self.relayClearInput)
         self.insertTab(index, 
             editContainer, 
             'New Tab' if file==None else os.path.basename(file))
@@ -48,10 +48,13 @@ class Container(QtGui.QTabWidget):
         index = self.count() - 1
         self.setCurrentIndex(_index-1)
 
+    @QtCore.Slot()
+    def relayClearInput(self):
+        print 'clear!'
 
 class InputContainer(QtGui.QWidget):
     """Contains a new code input widget"""
-    def __init__(self, file, _globals={}, _locals={}):
+    def __init__(self, file, output):
         super(InputContainer, self).__init__()
         
         if file == None:
@@ -68,7 +71,7 @@ class InputContainer(QtGui.QWidget):
 
             self.editLayout.addWidget(self.filePath)
 
-            self._codeEditor = autocompletion.CodeEditorAuto(file, _globals, _locals)
+            self._codeEditor = autocompletion.CodeEditorAuto(file, output)
             self.editLayout.addWidget(self._codeEditor)
 
             self.filePath.setText(file)

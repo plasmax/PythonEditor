@@ -28,11 +28,9 @@ class LineNumberArea(QtGui.QWidget):
 
 class CodeEditorWithLines(CodeEditor):
 
-    def __init__(self, file, glb={}, loc={}):
-        super(CodeEditorWithLines, self).__init__(file, glb, loc)
+    def __init__(self, file, output):
+        super(CodeEditorWithLines, self).__init__(file, output)
         self.setupLineNumbers()
-        # self.globals = globals().update(**glb)
-        # self.locals = locals().update(**loc)
 
     def setupLineNumbers(self):
         #setup line numbers
@@ -104,8 +102,10 @@ class CodeEditorWithLines(CodeEditor):
         if not self.isReadOnly():
             selection = QtGui.QTextEdit.ExtraSelection()
 
-            # lineColor = QtGui.QColor(QtCore.Qt.darkGray).darker(180)
-            lineColor = QtGui.QColor(QtCore.Qt.lightGray)
+            if 'nuke' in self._globals:
+                lineColor = QtGui.QColor(QtCore.Qt.darkGray).darker(180)
+            else:
+                lineColor = QtGui.QColor(QtCore.Qt.lightGray)
 
             selection.format.setBackground(lineColor)
             selection.format.setProperty(QtGui.QTextFormat.FullWidthSelection, True)
