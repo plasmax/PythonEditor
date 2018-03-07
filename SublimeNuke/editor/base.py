@@ -5,13 +5,15 @@ import time
 print 'importing', __name__, 'at', time.asctime()
 user = os.environ.get('USERNAME')
 
+print sys.version
+print sys.executable
+
 try:
-    from PySide import QtGui, QtCore
     import nuke
 except ImportError:
-    sys.path.append('C:/Users/{}/.nuke/python/external'.format(user))
-    from PySide import QtGui, QtCore
+    pass
     
+from qt import QtGui, QtCore
 
 from features import syntaxhighlighter
 
@@ -20,8 +22,8 @@ class CodeEditor(QtGui.QPlainTextEdit):
 
     def __init__(self, file, output):
         super(CodeEditor, self).__init__()
-        self._globals = {}
-        self._locals = {}
+        self._globals = dict()
+        self._locals = dict()
         self._file = file
 
         self.clearOutput.connect(output.clear)
@@ -72,6 +74,7 @@ class CodeEditor(QtGui.QPlainTextEdit):
         """
         if event.key() in (QtCore.Qt.Key_Return,
                            QtCore.Qt.Key_Enter):
+            print 'enter'
             if event.modifiers() == QtCore.Qt.ControlModifier:
                 self.begin_exec()
 
@@ -132,6 +135,7 @@ class CodeEditor(QtGui.QPlainTextEdit):
         if (event.key() == QtCore.Qt.Key_K
             and event.modifiers() == QtCore.Qt.ShiftModifier | QtCore.Qt.ControlModifier):
             raise NotImplementedError, 'add delete line'
+
         # keyDict = {value:key for key, value in QtCore.Qt.__dict__.iteritems()}
         # print keyDict.get(event.key()), event.text()
 
@@ -186,11 +190,17 @@ class CodeEditor(QtGui.QPlainTextEdit):
         if single:
             code = compile(text, '<i.d.e>', 'single')
         else:
-            code = text
+            code = compile(text, '<i.d.e>', 'exec')
+
         self.exec_text(code)
-        # self.exec_text(text)
-        new_locals = {k : self._locals[k] for k in set(self._locals) - set(local)}
-        if new_locals and 'import' in text: print new_locals # this should only happen in compile(text, '<string>', 'single') mode
+
+        # new_locals = {k:self._locals[k] for k in set(self._locals) - set(local)}
+        new_locals = dict()
+        for k in set(self._locals) - set(local):
+            new_locals[k] = self._locals[k]
+        
+        if new_locals and 'import' in text: 
+            print new_locals # this should only happen in compile(text, '<string>', 'single') mode
 
     def exec_text(self, text):
         print '# Result:'
@@ -205,7 +215,7 @@ class CodeEditor(QtGui.QPlainTextEdit):
                             if type(k) in (nuke.PyScript_Knob,
                                           nuke.PythonKnob)]
             for knob in pythonknobs:
-                menu.addAction('Load {}'.format(knob.name()), lambda k=knob: nuke.message(k.value()))
+                menu.addAction('Load {0}'.format(knob.name()), lambda k=knob: nuke.message(k.value()))
 
 
         menu.exec_(QtGui.QCursor().pos())
