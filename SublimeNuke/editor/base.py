@@ -42,7 +42,8 @@ class CodeEditor(QtGui.QPlainTextEdit):
         try:
             self.setup_env()
         except:
-            pass
+            self._globals = globals()
+            self._locals = locals()
         super(CodeEditor, self).showEvent(event)
 
     def setup_env(self):

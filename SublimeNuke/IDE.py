@@ -46,6 +46,7 @@ class IDE(QtGui.QWidget):
             self.toptab = QtGui.QTabWidget()
             self.toptab.addTab(self.output, 'Output')
             self.toptab.addTab(self.browser, 'Browser')
+            self.toptab.addTab(QtGui.QTreeWidget(), 'Object Inspector')
             self.splitter.addWidget(self.toptab)
 
         self.splitter.addWidget(self.input)
