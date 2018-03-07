@@ -6,13 +6,8 @@ import time
 print 'importing', __name__, 'at', time.asctime()
 user = os.environ.get('USERNAME')
 
+from qt import QtGui, QtCore
 
-try:
-    from PySide import QtGui, QtCore
-except ImportError:
-    sys.path.append('C:/Users/{}/.nuke/python/external'.format(user))
-    from PySide import QtGui, QtCore
-    
 # from ..base import CodeEditor
 import linenumbers
 CodeEditor = linenumbers.CodeEditorWithLines
