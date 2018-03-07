@@ -5,9 +5,11 @@ from functools import partial
 
 import time
 print('importing', __name__, 'at', time.asctime())
-user = os.environ.get('USERNAME')
+
+SIMULATION = 'global_test_confirmed'
 
 from qt import QtGui, QtCore
+from constants import NUKE_DIR
 
 from browser import NukeMiniBrowser
 from output import terminal
@@ -23,11 +25,10 @@ class IDE(QtGui.QWidget):
         self.splitter = QtGui.QSplitter(QtCore.Qt.Vertical)
         self.layout.setContentsMargins(0,0,0,0)
 
-        self.browser = NukeMiniBrowser.FileBrowser('/net/homes/{0}/.nuke/'.format(user))
+        self.browser = NukeMiniBrowser.FileBrowser(NUKE_DIR)
         self.browser.resize(200, self.browser.height())
 
-        # file = '/net/homes/{0}/.nuke/sublimenuke/sublimenuke.txt'.format(user)
-        file = '/net/homes/{0}/.nuke/ScriptEditorHistory.xml'.format(user)
+        file = NUKE_DIR + '/ScriptEditorHistory.xml'
         self.output = terminal.Terminal()
         self.input = container.Container(file, self.output)
         

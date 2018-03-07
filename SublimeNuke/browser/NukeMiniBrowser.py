@@ -2,6 +2,7 @@ import sys
 import os
 
 from qt import QtGui, QtCore
+from constants import NUKE_DIR
 
 class FileBrowser(QtGui.QDialog):
     pathSignal = QtCore.Signal(str)
@@ -49,17 +50,14 @@ def make_panel(directory_path):
     mini_browser = FileBrowser(directory_path)
     mini_browser.show()
     
-user = os.environ.get('USERNAME')
-print user
-directory_path = '/net/homes/{0}/.nuke'.format(user) # replace with any path
     
 if __name__ == '__main__':
     if not QtGui.QApplication.instance():
         app = QtGui.QApplication(sys.argv)
-        make_panel(directory_path)
+        make_panel(NUKE_DIR)
         sys.exit(app.exec_())
     else:
-        make_panel(directory_path)
+        make_panel(NUKE_DIR)
 
 
 

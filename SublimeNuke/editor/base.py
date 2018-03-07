@@ -46,7 +46,12 @@ class CodeEditor(QtGui.QPlainTextEdit):
         try:
             self.setup_env()
         except:
-            self._globals = globals()
+            import inspect
+            caller_globals = dict(inspect.getmembers(inspect.stack()[1][0]))['f_globals']
+            # self._globals = globals()
+            self._globals = caller_globals#globals()
+            if 'SIMULATION' in self._globals:
+                print self._globals['SIMULATION']
             self._locals = locals()
         super(CodeEditor, self).showEvent(event)
 

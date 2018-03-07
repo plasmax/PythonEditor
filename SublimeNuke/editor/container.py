@@ -5,9 +5,8 @@ from functools import partial
 import time
 print 'importing', __name__, 'at', time.asctime()
 
-user = os.environ.get('USERNAME')
-
 from qt import QtGui, QtCore
+from constants import NUKE_DIR
 
 from features import autocompletion
 
@@ -89,8 +88,7 @@ class InputContainer(QtGui.QWidget):
         super(InputContainer, self).__init__()
         
         if file == None:
-            user = os.environ.get('USERNAME')
-            file = '/net/homes/{0}/.nuke/sublimenuke.txt'.format(user)
+            file = NUKE_DIR + '/sublimenuke.txt'
             with open(file, 'a') as f:
                 f.write('')
                 f.close()

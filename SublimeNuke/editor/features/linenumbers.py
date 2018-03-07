@@ -2,7 +2,6 @@ import os
 import sys
 import time
 print 'importing', __name__, 'at', time.asctime()
-user = os.environ.get('USERNAME')
 
 from qt import QtGui, QtCore
 
