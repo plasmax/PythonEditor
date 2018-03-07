@@ -1,5 +1,6 @@
 import os
 import time
+import sys
 print 'importing', __name__, 'at', time.asctime()
 user = os.environ.get('USERNAME')
 
@@ -52,12 +53,12 @@ nukescripts.panels.__panels["i.d.e"]()
 """
 
 if __name__ != '__main__':
+
     registerWidgetAsPanel('__import__("SublimeNuke").IDE.IDE', "IDE", 'i.d.e')
 
-    nuke.menu('Nuke').addCommand('Sublime Nuke', reloadAllModules,
-        '\\', icon='C:/Users/{}/.nuke/icons/SublimeNuke.png'.format(user))
+    nuke.menu('Nuke').addCommand('.   Sublime Nuke   .', reloadAllModules,
+        '\\', icon='/net/homes/{0}/.nuke/icons/SublimeNuke.png'.format(user))
 
     nuke.menu('Nodes').addCommand('Sublime Nuke', 
         'nukescripts.panels.__panels["i.d.e"](toPane=False).show()', 
-        'Alt+z', icon='C:/Users/{}/.nuke/icons/SublimeNuke.png'.format(user))
-    
+        'Alt+z', icon='/net/homes/{0}/.nuke/icons/SublimeNuke.png'.format(user))
