@@ -1,10 +1,7 @@
 import sys
 import os
-try:
-    from PySide import QtGui, QtCore
-except ImportError:
-    sys.path.append('C:/Program Files/Nuke10.5v1/pythonextensions/site-packages')
-    from PySide import QtGui, QtCore
+
+from qt import QtGui, QtCore
 
 class FileBrowser(QtGui.QDialog):
     pathSignal = QtCore.Signal(str)
@@ -53,7 +50,8 @@ def make_panel(directory_path):
     mini_browser.show()
     
 user = os.environ.get('USERNAME')
-directory_path = 'C:/Users/{}/.nuke'.format(user) # replace with any path
+print user
+directory_path = '/net/homes/{0}/.nuke'.format(user) # replace with any path
     
 if __name__ == '__main__':
     if not QtGui.QApplication.instance():
