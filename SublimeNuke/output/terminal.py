@@ -3,12 +3,8 @@ import sys
 import Queue
 user = os.environ.get('USERNAME')
 
-try:
-    from PySide import QtGui, QtCore
-except ImportError:
-    sys.path.append('C:/Users/{}/.nuke/python/external'.format(user))
-    from PySide import QtGui, QtCore
-    
+from qt import QtGui, QtCore
+
 try:
     import hiero
 except ImportError:
