@@ -7,12 +7,7 @@ import time
 print('importing', __name__, 'at', time.asctime())
 user = os.environ.get('USERNAME')
 
-try:
-    from PySide import QtGui, QtCore
-except ImportError:
-    sys.path.append('C:/Users/{}/.nuke/python/external'.format(user))
-    from PySide import QtGui, QtCore
-    
+from qt import QtGui, QtCore
 
 from browser import NukeMiniBrowser
 from output import terminal
@@ -28,10 +23,11 @@ class IDE(QtGui.QWidget):
         self.splitter = QtGui.QSplitter(QtCore.Qt.Vertical)
         self.layout.setContentsMargins(0,0,0,0)
 
-        self.browser = NukeMiniBrowser.FileBrowser('C:/Users/{}/.nuke/'.format(user))
+        self.browser = NukeMiniBrowser.FileBrowser('/net/homes/{0}/.nuke/'.format(user))
         self.browser.resize(200, self.browser.height())
 
-        file = 'C:/Users/{}/.nuke/sublimenuke/sublimenuke.txt'.format(user)
+        # file = '/net/homes/{0}/.nuke/sublimenuke/sublimenuke.txt'.format(user)
+        file = '/net/homes/{0}/.nuke/ScriptEditorHistory.xml'.format(user)
         self.output = terminal.Terminal()
         self.input = container.Container(file, self.output)
         
@@ -80,8 +76,11 @@ if __name__ == '__main__':
     try:
         import qdarkstyle
         app.setStyleSheet(qdarkstyle.load_stylesheet_pyside())
-    except:
-        pass
+    except ImportError:
+        sys.path.append('/net/homes/mlast/.nuke/python/max/SublimeNuke/qdarkstyle')
+        import qdarkstyle
+        app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt())
+        print('QDarkStyle not found')
 
     ide.show()
     app.exec_()
