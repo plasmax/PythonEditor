@@ -12,9 +12,6 @@ except:
 from PySide import QtGui, QtCore
 
 from features import syntaxhighlighter
-# reload(syntaxhighlighter)
-
-LEVEL_THREE = True
 
 class CodeEditor(QtGui.QPlainTextEdit):
     clearOutput = QtCore.Signal()
@@ -24,7 +21,7 @@ class CodeEditor(QtGui.QPlainTextEdit):
         self._globals = {}
         self._locals = {}
         self._file = file
-        print 'le change'
+
         self.clearOutput.connect(output.clear)
 
         syntaxhighlighter.Highlight(self.document())
@@ -42,7 +39,10 @@ class CodeEditor(QtGui.QPlainTextEdit):
         self.setTabStopWidth(4 * QtGui.QFontMetrics(self.font()).width(' '))
 
     def showEvent(self, event):
-        self.setup_env()
+        try:
+            self.setup_env()
+        except:
+            pass
         super(CodeEditor, self).showEvent(event)
 
     def setup_env(self):
@@ -120,8 +120,15 @@ class CodeEditor(QtGui.QPlainTextEdit):
 
         if (event.key() == QtCore.Qt.Key_BracketRight
                 and event.modifiers() == QtCore.Qt.ControlModifier):
-            raise NotImplementedError, 'add indent right here'
+            raise NotImplementedError, 'add right indent here'
 
+        if (event.key() == QtCore.Qt.Key_BracketLeft
+                and event.modifiers() == QtCore.Qt.ControlModifier):
+            raise NotImplementedError, 'add left indent here'
+
+        if (event.key() == QtCore.Qt.Key_K
+            and event.modifiers() == QtCore.Qt.ShiftModifier | QtCore.Qt.ControlModifier):
+            raise NotImplementedError, 'add delete line'
         # keyDict = {value:key for key, value in QtCore.Qt.__dict__.iteritems()}
         # print keyDict.get(event.key()), event.text()
 

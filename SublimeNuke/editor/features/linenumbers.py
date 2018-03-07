@@ -102,10 +102,11 @@ class CodeEditorWithLines(CodeEditor):
         if not self.isReadOnly():
             selection = QtGui.QTextEdit.ExtraSelection()
 
-            if 'nuke' in self._globals:
-                lineColor = QtGui.QColor(QtCore.Qt.darkGray).darker(180)
-            else:
-                lineColor = QtGui.QColor(QtCore.Qt.lightGray)
+            lineColor = QtGui.QColor(QtCore.Qt.darkGray).darker(180)
+            # if 'nuke' in self._globals:
+                # lineColor = QtGui.QColor(QtCore.Qt.darkGray).darker(180)
+            # else:
+                # lineColor = QtGui.QColor(QtCore.Qt.lightGray)
 
             selection.format.setBackground(lineColor)
             selection.format.setProperty(QtGui.QTextFormat.FullWidthSelection, True)

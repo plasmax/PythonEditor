@@ -13,10 +13,7 @@ except:
 from PySide import QtGui, QtCore
 
 # from ..base import CodeEditor
-# from linenumbers import CodeEditorWithLines as CodeEditor
 import linenumbers
-# reload(linenumbers)
-
 CodeEditor = linenumbers.CodeEditorWithLines
 
 AUTO_COMPLETE = True

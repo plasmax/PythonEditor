@@ -25,14 +25,14 @@ class FileBrowser(QtGui.QDialog):
         self.fileTree.header().setResizeMode(QtGui.QHeaderView.ResizeToContents) 
         self.fileTree.setRootIndex(self.model.index(path))
         self.fileTree.setDragDropMode(QtGui.QAbstractItemView.DragDrop)
-        self._layout .addWidget(self.fileTree)
+        self._layout.addWidget(self.fileTree)
 
         # Signals
         # =======================================
         self.fileTree.clicked.connect(self.clickedAnItem)
 
     def clickedAnItem(self, item):
-        print item, dir(item)
+        # print item, dir(item)
         index_sel = self.fileTree.selectedIndexes()[0]
         item = self.model.filePath(index_sel)
         print item, type(item)
