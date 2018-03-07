@@ -14,7 +14,6 @@ from ..base import CodeEditor
 LINE_NUMBERS = True
 
 class LineNumberArea(QtGui.QWidget):
-    """docstring for LineNumberArea"""
     def __init__(self, editor):
         super(LineNumberArea, self).__init__(editor)
         self.editor = editor
@@ -87,7 +86,7 @@ class CodeEditorWithLines(CodeEditor):
         while block.isValid() and (top <= event.rect().bottom()):
             if block.isVisible() and (bottom >= event.rect().top()):
                 number = str(blockNumber + 1)
-                mypainter.setPen(QtCore.Qt.black)
+                mypainter.setPen(QtCore.Qt.darkGray)
                 mypainter.drawText(0, top, self.lineNumberArea.width(), height,
                  QtCore.Qt.AlignRight, number)
 
@@ -103,11 +102,6 @@ class CodeEditorWithLines(CodeEditor):
             selection = QtGui.QTextEdit.ExtraSelection()
 
             lineColor = QtGui.QColor(QtCore.Qt.darkGray).darker(180)
-            # if 'nuke' in self._globals:
-                # lineColor = QtGui.QColor(QtCore.Qt.darkGray).darker(180)
-            # else:
-                # lineColor = QtGui.QColor(QtCore.Qt.lightGray)
-
             selection.format.setBackground(lineColor)
             selection.format.setProperty(QtGui.QTextFormat.FullWidthSelection, True)
             selection.cursor = self.textCursor()

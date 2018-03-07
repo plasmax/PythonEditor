@@ -12,7 +12,6 @@ except:
 from PySide import QtGui, QtCore
 
 from features import autocompletion
-# reload(autocompletion)
 
 style = """
 QTabWidget::pane { /* The tab widget frame */
@@ -46,20 +45,6 @@ QTabBar::tab:first:selected { margin-left: 0; /* the first selected tab has noth
 QTabBar::tab:last:selected { margin-right: 0; /* the last selected tab has nothing to overlap with on the right */ } 
 QTabBar::tab:only-one { margin: 0; /* if there is only one tab, we don't want overlapping margins */ }
 """
-# style = """
-# QTabWidget::tab-bar {
-# left: 5px; /* move to the right by 5px */
-# /* Style the tab using the tab sub-control. Note that it reads QTabBar _not_ QTabWidget */
-# QTabBar::tab {
-# background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #E1E1E1, stop: 0.4 #DDDDDD, stop: 0.5 #D8D8D8, stop: 1.0 #D3D3D3);
-# border: 2px solid #C4C4C3;
-# border-bottom-color: #C2C7CB; /* same as the pane color */
-# border-top-left-radius: 4px;
-# border-top-right-radius: 4px;
-# min-width: 8ex;
-# padding: 2px;
-# }
-# """
 
 class Container(QtGui.QTabWidget):
 
@@ -73,7 +58,6 @@ class Container(QtGui.QTabWidget):
         # self.setStyleSheet(style)
 
     def _build_tabs(self):
-        # create the "new tab" tab with button
         self.insertTab(1, QtGui.QWidget(),'')
         nb = self.new_btn = QtGui.QToolButton()
         nb.setText('+') # you could set an icon instead of text
