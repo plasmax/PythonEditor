@@ -1,4 +1,5 @@
 import sys
+import os
 try:
     from PySide import QtGui, QtCore
 except ImportError:
@@ -51,7 +52,8 @@ def make_panel(directory_path):
     mini_browser = FileBrowser(directory_path)
     mini_browser.show()
     
-directory_path = 'C:/Users/Max-Last/.nuke' # replace with any path
+user = os.environ.get('USERNAME')
+directory_path = 'C:/Users/{}/.nuke'.format(user) # replace with any path
     
 if __name__ == '__main__':
     if not QtGui.QApplication.instance():

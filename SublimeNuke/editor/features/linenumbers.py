@@ -1,14 +1,15 @@
+import os
 import sys
 import time
 print 'importing', __name__, 'at', time.asctime()
+user = os.environ.get('USERNAME')
 
 try:
-    import PySide
-except:
-    import sys
-    sys.path.append('C:/Users/Max-Last/.nuke/python/external')
-from PySide import QtGui, QtCore
-
+    from PySide import QtGui, QtCore
+except ImportError:
+    sys.path.append('C:/Users/{}/.nuke/python/external'.format(user))
+    from PySide import QtGui, QtCore
+    
 from ..base import CodeEditor
 
 LINE_NUMBERS = True

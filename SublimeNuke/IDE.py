@@ -5,13 +5,14 @@ from functools import partial
 
 import time
 print('importing', __name__, 'at', time.asctime())
+user = os.environ.get('USERNAME')
 
 try:
     from PySide import QtGui, QtCore
 except ImportError:
-    sys.path.append('C:/Users/Max-Last/.nuke/python/external')
+    sys.path.append('C:/Users/{}/.nuke/python/external'.format(user))
+    from PySide import QtGui, QtCore
     
-from PySide import QtGui, QtCore
 
 from browser import NukeMiniBrowser
 from output import terminal
@@ -24,8 +25,6 @@ class IDE(QtGui.QWidget):
         self._setup()
 
     def _setup(self):
-        user = os.environ.get('USERNAME')
-
         self.splitter = QtGui.QSplitter(QtCore.Qt.Vertical)
         self.layout.setContentsMargins(0,0,0,0)
 
@@ -68,6 +67,11 @@ class IDE(QtGui.QWidget):
             pass
 
         self.output._setup()
+        super(IDE, self).showEvent(event)
+
+    def hideEvent(self, event):
+        self.output._uninstall()
+        super(IDE, self).hideEvent(event)
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)

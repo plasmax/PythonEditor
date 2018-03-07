@@ -1,15 +1,17 @@
+import os
 import sys
 import re
 import time
 print 'importing', __name__, 'at', time.asctime()
+user = os.environ.get('USERNAME')
 
 try:
-    import PySide
+    from PySide import QtGui, QtCore
     import nuke
-except:
-    sys.path.append('C:/Users/Max-Last/.nuke/python/external')
-
-from PySide import QtGui, QtCore
+except ImportError:
+    sys.path.append('C:/Users/{}/.nuke/python/external'.format(user))
+    from PySide import QtGui, QtCore
+    
 
 from features import syntaxhighlighter
 

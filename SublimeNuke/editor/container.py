@@ -5,12 +5,14 @@ from functools import partial
 import time
 print 'importing', __name__, 'at', time.asctime()
 
-try:
-    import PySide
-except:
-    sys.path.append('C:/Users/Max-Last/.nuke/python/external')
-from PySide import QtGui, QtCore
+user = os.environ.get('USERNAME')
 
+try:
+    from PySide import QtGui, QtCore
+except ImportError:
+    sys.path.append('C:/Users/{}/.nuke/python/external'.format(user))
+    from PySide import QtGui, QtCore
+    
 from features import autocompletion
 
 style = """

@@ -1,14 +1,17 @@
+import os
 import sys
 import Queue
-try:
-    import PySide
-except:
-    sys.path.append('C:/Users/Max-Last/.nuke/python/external')
+user = os.environ.get('USERNAME')
 
-from PySide import QtGui, QtCore
+try:
+    from PySide import QtGui, QtCore
+except ImportError:
+    sys.path.append('C:/Users/{}/.nuke/python/external'.format(user))
+    from PySide import QtGui, QtCore
+    
 try:
     import hiero
-except:
+except ImportError:
     pass
 
 class StreamOut(object):
@@ -25,7 +28,7 @@ class StreamErr(object):
     def write(self, text):
         self.queue.put(text)
   
-class Mexican(QtCore.QObject):
+class Worker(QtCore.QObject):
     emitter = QtCore.Signal(str)
     def __init__(self, queue, *args, **kwargs):
         QtCore.QObject.__init__(self, *args, **kwargs)
@@ -55,7 +58,7 @@ class Terminal(QtGui.QTextEdit):
         sys.stderr = StreamErr(self.queue)
 
         self.thread = QtCore.QThread(self)
-        self.worker = Mexican(self.queue)
+        self.worker = Worker(self.queue)
         self.worker.emitter.connect(self.receive)
         self.worker.moveToThread(self.thread)
         self.thread.started.connect(self.worker.run)
@@ -76,9 +79,6 @@ class Terminal(QtGui.QTextEdit):
             print 'hide!!'
             self.thread.terminate()
             self.worker.deleteLater()
-
-    def hideEvent(self, event):
-        self._uninstall()
 
     @QtCore.Slot(str)
     def receive(self, text):
