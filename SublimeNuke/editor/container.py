@@ -7,12 +7,8 @@ print 'importing', __name__, 'at', time.asctime()
 
 user = os.environ.get('USERNAME')
 
-try:
-    from PySide import QtGui, QtCore
-except ImportError:
-    sys.path.append('C:/Users/{}/.nuke/python/external'.format(user))
-    from PySide import QtGui, QtCore
-    
+from qt import QtGui, QtCore
+
 from features import autocompletion
 
 style = """
@@ -94,7 +90,7 @@ class InputContainer(QtGui.QWidget):
         
         if file == None:
             user = os.environ.get('USERNAME')
-            file = 'C:/Users/{}/.nuke/sublimenuke.txt'.format(user)
+            file = '/net/homes/{0}/.nuke/sublimenuke.txt'.format(user)
             with open(file, 'a') as f:
                 f.write('')
                 f.close()
