@@ -1,5 +1,7 @@
 import sys
 import os
+import time
+print 'importing', __name__, 'at', time.asctime()
 
 from qt import QtGui, QtCore
 from constants import NUKE_DIR
