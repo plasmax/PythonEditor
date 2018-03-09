@@ -1,7 +1,8 @@
 import os
 import sys
 import Queue
-user = os.environ.get('USERNAME')
+import time
+print('importing', __name__, 'at', time.asctime())
 
 from qt import QtGui, QtCore
 
@@ -72,7 +73,6 @@ class Terminal(QtGui.QTextEdit):
         if hasattr(self, 'old_stdout'):
             sys.stdout = self.old_stdout
             sys.stderr = self.old_stderr
-            print 'hide!!'
             self.thread.terminate()
             self.worker.deleteLater()
 
