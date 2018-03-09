@@ -56,9 +56,10 @@ if __name__ != '__main__':
 
     registerWidgetAsPanel('__import__("PythonEditor").IDE.IDE', "IDE", 'i.d.e')
 
-    nuke.menu('Nuke').addCommand('.   Sublime Nuke   .', reloadAllModules,
+    nuke.menu('Nuke').addCommand('.   Python Editor   .', reloadAllModules,
         '\\', icon='/net/homes/{0}/.nuke/icons/PythonEditor.png'.format(user))
 
-    nuke.menu('Nodes').addCommand('Sublime Nuke', 
+    nuke.menu('Nodes').addCommand('Python Editor', 
         'nukescripts.panels.__panels["i.d.e"](toPane=False).show()', 
         'Alt+z', icon='/net/homes/{0}/.nuke/icons/PythonEditor.png'.format(user))
+
