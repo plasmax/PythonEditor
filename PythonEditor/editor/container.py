@@ -67,9 +67,10 @@ class Container(QtGui.QTabWidget):
         index = self.count() - 1
         editContainer = InputContainer(file, self._output)
         # editContainer.clearInput.connect(self.relayClearInput)
+        print file, type(file)
         self.insertTab(index, 
             editContainer, 
-            'New Tab' if file==None else os.path.basename(file))
+            'New Tab' if file==None else os.path.basename(str(file)))
         self.setCurrentIndex(index)
 
     def closeTab(self, index):
@@ -88,10 +89,12 @@ class InputContainer(QtGui.QWidget):
         super(InputContainer, self).__init__()
         
         if file == None:
-            file = NUKE_DIR + '/sublimenuke.txt'
+            file = NUKE_DIR + '/py_editor_temp.txt'
             with open(file, 'a') as f:
                 f.write('')
                 f.close()
+        else:
+            file = str(file)
 
         if os.path.isfile(file):
             self.editLayout = QtGui.QVBoxLayout(self)
