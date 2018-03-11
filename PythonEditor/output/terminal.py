@@ -2,7 +2,7 @@ import os
 import sys
 import Queue
 import time
-print('importing', __name__, 'at', time.asctime())
+print 'importing', __name__, 'at', time.asctime()
 
 from qt import QtGui, QtCore
 
@@ -66,6 +66,7 @@ class Terminal(QtGui.QTextEdit):
         """
         """
         if 'hiero' in globals():
+            print 'hiero'
             sys.stdin  = hiero.FnRedirect.SESysStdIn(sys.__stdin__)
             sys.stdout = hiero.FnRedirect.SESysStdOut(sys.__stdout__)
             sys.stderr = hiero.FnRedirect.SESysStdErr(sys.__stderr__)
@@ -73,6 +74,9 @@ class Terminal(QtGui.QTextEdit):
         if hasattr(self, 'old_stdout'):
             sys.stdout = self.old_stdout
             sys.stderr = self.old_stderr
+            print 'reassign stdout and quit'
+            self.thread.quit()
+            self.thread.wait()
             self.thread.terminate()
             self.worker.deleteLater()
 

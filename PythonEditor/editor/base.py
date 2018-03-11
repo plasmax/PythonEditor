@@ -1,11 +1,11 @@
+__all__ = ['CodeEditor']
 import os
 import sys
 import re
+import inspect
 import time
+from pprint import pprint
 print 'importing', __name__, 'at', time.asctime()
-
-print sys.version
-print sys.executable
 
 try:
     import nuke
@@ -42,15 +42,12 @@ class CodeEditor(QtGui.QPlainTextEdit):
         self.setTabStopWidth(4 * QtGui.QFontMetrics(self.font()).width(' '))
 
     def showEvent(self, event):
-        try:
+        caller_globals = dict(inspect.getmembers(inspect.stack()[1][0]))['f_globals']
+        # pprint(inspect.getmembers(inspect.stack()[1][0]))
+        if 'nuke' in caller_globals:
             self.setup_env()
-        except NameError, e:
-            print e
-            import inspect
-            caller_globals = dict(inspect.getmembers(inspect.stack()[1][0]))['f_globals']
+        else:
             self._globals = caller_globals
-            if 'SIMULATION' in self._globals:
-                print self._globals['SIMULATION']
             self._locals = locals()
         super(CodeEditor, self).showEvent(event)
 

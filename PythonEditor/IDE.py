@@ -2,15 +2,12 @@ from __future__ import print_function
 import os
 import sys
 from functools import partial
+from pprint import pprint
 
-print(sys.version)
 import time
 print('importing', __name__, 'at', time.asctime())
 
-SIMULATION = 'global_test_confirmed'
-
 from qt import QtGui, QtCore
-
 from constants import NUKE_DIR
 
 from browser import NukeMiniBrowser
@@ -18,6 +15,9 @@ from output import terminal
 from editor import container
 
 class IDE(QtGui.QWidget):
+    """
+    Main window when running externally.
+    """
     def __init__(self):
         super(IDE, self).__init__()
         self.layout = QtGui.QVBoxLayout(self)
@@ -75,6 +75,7 @@ class IDE(QtGui.QWidget):
         self.output._uninstall()
         super(IDE, self).hideEvent(event)
 
+
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
     ide = IDE()
@@ -83,10 +84,12 @@ if __name__ == '__main__':
         import qdarkstyle
         app.setStyleSheet(qdarkstyle.load_stylesheet_pyside())
     except ImportError:
-        sys.path.append('/net/homes/mlast/.nuke/python/max/PythonEditor/qdarkstyle')
-        import qdarkstyle
-        app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt())
-        print('QDarkStyle not found')
+        qdarkstyledir = os.path.join(os.path.dirname(__file__), 'qdarkstyle')
+        if os.path.isdir(qdarkstyledir):
+            sys.path.append(qdarkstyledir)
+            import qdarkstyle
+            app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt())
+            print('QDarkStyle not found')
 
     ide.show()
     app.exec_()
