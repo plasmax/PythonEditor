@@ -151,10 +151,11 @@ class CodeEditor(QtGui.QPlainTextEdit):
                 self.clearOutput.emit()
                 return True
 
+        if event.key() == QtCore.Qt.Key_Backtab:
+            raise NotImplementedError, 'add unindent function'
+            return True
+            
         if event.key() == QtCore.Qt.Key_Tab:
-            if event.modifiers() == QtCore.Qt.ShiftModifier:
-                raise NotImplementedError, 'add unindent function'
-                return True
             textCursor = self.textCursor()
             if textCursor.hasSelection():
                 safe_string = textCursor.selectedText().replace(u'\u2029', '\n')
