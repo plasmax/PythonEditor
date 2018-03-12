@@ -66,7 +66,6 @@ class Container(QtGui.QTabWidget):
     def new_tab(self, file=None):
         index = self.count() - 1
         editContainer = InputContainer(file, self._output)
-        # editContainer.clearInput.connect(self.relayClearInput)
         print file, type(file)
         self.insertTab(index, 
             editContainer, 
@@ -107,7 +106,3 @@ class InputContainer(QtGui.QWidget):
             self.editLayout.addWidget(self._codeEditor)
 
             self.filePath.setText(file)
-
-            with open(file.replace('.pyc', '.py'), 'r') as f:
-                text = f.read()
-            self._codeEditor.setPlainText(text)

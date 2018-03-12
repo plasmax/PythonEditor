@@ -40,12 +40,12 @@ def registerWidgetAsPanel( widget, name, id, create = False ):
 
 LEVEL_ONE = True
 reloadcmd = "for m in sys.modules.keys():\n" \
-                "\tif 'Sublime' in m:\n"\
+                "\tif 'PythonEditor' in m:\n"\
                 "\t\tdel sys.modules[m]"
 
 reloadAllModules ="""
 for m in sys.modules.keys():
-    if 'Sublime' in m:
+    if 'PythonEditor' in m:
         del sys.modules[m]
 import PythonEditor
 reload(PythonEditor)
@@ -54,7 +54,7 @@ nukescripts.panels.__panels["i.d.e"]()
 
 if __name__ != '__main__':
 
-    registerWidgetAsPanel('__import__("PythonEditor").IDE.IDE', "IDE", 'i.d.e')
+    registerWidgetAsPanel('__import__("PythonEditor").IDE.IDE', "Python Editor", 'i.d.e')
 
     nuke.menu('Nuke').addCommand('.   Python Editor   .', reloadAllModules,
         '\\', icon='/net/homes/{0}/.nuke/icons/PythonEditor.png'.format(user))

@@ -7,7 +7,7 @@ print 'importing', __name__, 'at', time.asctime()
 
 from qt import QtGui, QtCore
 
-# from ..base import CodeEditor
+# from base import CodeEditor
 import linenumbers
 CodeEditor = linenumbers.CodeEditorWithLines
 
@@ -139,7 +139,8 @@ class CodeEditorAuto(CodeEditor):
 
         if event.key() == QtCore.Qt.Key_Tab:
             textCursor = self.textCursor()
-            if not textCursor.hasSelection():
+            if (not textCursor.hasSelection()
+                    and not event.modifiers() == QtCore.Qt.ShiftModifier):
                 textCursor.select(QtGui.QTextCursor.LineUnderCursor)
                 selectedText = textCursor.selectedText()
                 if selectedText.endswith('.'):
@@ -147,11 +148,7 @@ class CodeEditorAuto(CodeEditor):
                     self.completeObject()
                     return True
                 elif selectedText.endswith('('):
-                    # _obj = self.getObjectBeforeChar('(')
-                    # print '\tOBJECT!!!!!!!!'*10, _obj
                     ret = {}
-                    # cmd = 'import inspect\n'
-                    # cmd += '__ret = inspect.getargspec('+ selectedText[:-1] +')'
                     cmd = '__ret = '+ selectedText[:-1].split(' ')[-1]
                     print cmd
                     cmd = compile(cmd, '<Python Editor Tooltip>', 'exec')
@@ -178,7 +175,6 @@ class CodeEditorAuto(CodeEditor):
             if cp.popup():
                 cp.popup().hide()
             self.completeObject()
-            # self.getObjectBeforeChar('.')
             return True
 
         elif (cp and cp.popup() and cp.popup().isVisible()):

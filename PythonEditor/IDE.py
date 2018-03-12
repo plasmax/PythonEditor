@@ -4,14 +4,15 @@ import sys
 from functools import partial
 from pprint import pprint
 
+sys.path.append( os.path.dirname(__file__) ) #add package level path to avoid relative imports
 import time
 print('importing', __name__, 'at', time.asctime())
 
 from qt import QtGui, QtCore
-from constants import NUKE_DIR
+from constants import NUKE_DIR, AUTOSAVE_FILE
 
 from browser import NukeMiniBrowser
-from output import terminal
+from output import Redirector
 from editor import container
 
 class IDE(QtGui.QWidget):
@@ -20,6 +21,7 @@ class IDE(QtGui.QWidget):
     """
     def __init__(self):
         super(IDE, self).__init__()
+
         self.layout = QtGui.QVBoxLayout(self)
         self.setToolTip('Python Editor')
         self._setup()
@@ -31,8 +33,8 @@ class IDE(QtGui.QWidget):
         self.browser = NukeMiniBrowser.FileBrowser(NUKE_DIR)
         self.browser.resize(200, self.browser.height())
 
-        file = NUKE_DIR + '/ScriptEditorHistory.xml'
-        self.output = terminal.Terminal()
+        file = self.setupHistoryFile()
+        self.output = Redirector.Terminal()
         self.input = container.Container(file, self.output)
         
         use_splitter = False
@@ -56,9 +58,21 @@ class IDE(QtGui.QWidget):
 
         #signals
         self.browser.pathSignal.connect(self.input.new_tab)
-        
-    def showEvent(self, event):
+    
+    def setupHistoryFile(self):
+        file = AUTOSAVE_FILE
+        fileexists = os.path.isfile(file)
+        if fileexists:
+            return file
+        elif not fileexists:
+            print("FILE DOESN'T EXIST!")
+            if os.path.isdir(NUKE_DIR):
+                with open(file, 'w') as f:
+                    f.write('<?xml version="1.0" encoding="UTF-8"?><script></script>')
+                    f.close()
+                return file
 
+    def showEvent(self, event):
         try:
             parent = self.parentWidget().parentWidget()
             parent.layout().setContentsMargins(0,0,0,0)
@@ -68,13 +82,7 @@ class IDE(QtGui.QWidget):
         except:
             pass
 
-        self.output._setup()
         super(IDE, self).showEvent(event)
-
-    def hideEvent(self, event):
-        self.output._uninstall()
-        super(IDE, self).hideEvent(event)
-
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)

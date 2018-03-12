@@ -7,8 +7,6 @@ from qt import QtGui, QtCore
 
 from ..base import CodeEditor
 
-LINE_NUMBERS = True
-
 class LineNumberArea(QtGui.QWidget):
     def __init__(self, editor):
         super(LineNumberArea, self).__init__(editor)

@@ -4,6 +4,7 @@ import sys
 import re
 import inspect
 import time
+from xml.etree import ElementTree
 from pprint import pprint
 print 'importing', __name__, 'at', time.asctime()
 
@@ -13,10 +14,20 @@ except ImportError:
     pass
     
 from qt import QtGui, QtCore
+from constants import NUKE_DIR, AUTOSAVE_FILE
 
 from features import syntaxhighlighter
 
 class CodeEditor(QtGui.QPlainTextEdit):
+    """
+    Text Editor that allows python script execution using globals in nuke.
+    Currently handles file management including autosave, 
+    all shortcuts and keystroke combinations,
+    all conversion to code objects and execution.
+    Currently subclassed to provide autocompletion and linenumber functions.
+
+    TODO: Split features into separate modules.
+    """
     clearOutput = QtCore.Signal()
 
     def __init__(self, file, output):
@@ -24,31 +35,35 @@ class CodeEditor(QtGui.QPlainTextEdit):
         self._globals = dict()
         self._locals = dict()
         self._file = file
+        self.readautosave(file)
 
         self.clearOutput.connect(output.clear)
+        self.textChanged.connect(self.autosave)
 
         syntaxhighlighter.Highlight(self.document())
 
         if not True: #temp disable stylesheet for development
             self.setStyleSheet('background:#282828;color:#EEE;') # Main Colors
-            self.font = QtGui.QFont()
-            self.font.setFamily("Courier")
-            self.font.setStyleHint(QtGui.QFont.Monospace)
-            self.font.setFixedPitch(True)
-            self.font.setPointSize(8)
-            self.setFont(self.font)
-            self.setTabStopWidth(4 * QtGui.QFontMetrics(self.font).width(' '))
+            self._font = QtGui.QFont()
+            self._font.setFamily("Courier")
+            self._font.setStyleHint(QtGui.QFont.Monospace)
+            self._font.setFixedPitch(True)
+            self._font.setPointSize(8)
+            self.setFont(self._font)
+            self.setTabStopWidth(4 * QtGui.QFontMetrics(self._font).width(' '))
 
         self.setTabStopWidth(4 * QtGui.QFontMetrics(self.font()).width(' '))
 
     def showEvent(self, event):
-        caller_globals = dict(inspect.getmembers(inspect.stack()[1][0]))['f_globals']
-        # pprint(inspect.getmembers(inspect.stack()[1][0]))
-        if 'nuke' in caller_globals:
+        try:
             self.setup_env()
-        else:
+        except NameError:
+            caller_globals = dict(inspect.getmembers(inspect.stack()[1][0]))['f_globals']
             self._globals = caller_globals
             self._locals = locals()
+            
+        # pprint(inspect.getmembers(inspect.stack()))
+        self._locals.update({'__instance':self})#this will only refer to the latest instance; not sure how useful that is.
         super(CodeEditor, self).showEvent(event)
 
     def setup_env(self):
@@ -57,18 +72,54 @@ class CodeEditor(QtGui.QPlainTextEdit):
 
         self._globals = _globals
         self._locals = _locals
-        self._locals.update({'__instance':self})#this will only refer to the latest instance; not sure how useful that is.
 
-    def keyReleaseEvent(self, event):
-        """
-        File edit commits happen on keyRelease.
-        """
+    def readfile(self, file):
+        with open(file.replace('.pyc', '.py'), 'r') as f:
+            text = f.read()
+        self.setPlainText(text)
 
-        with open(self._file, 'w') as f:
-            f.write(self.toPlainText())
+    def readautosave(self, file):
+        px = ElementTree.parse(AUTOSAVE_FILE)
+        root = px.getroot()
+        ss = root.findall('subscript')
 
-        super(CodeEditor, self).keyReleaseEvent(event)
+        lzt = [s.attrib.get('path') == file for s in ss]
+        if not any(lzt):
+            self.readfile(file)
+            sub = ElementTree.Element('subscript')
+            sub.attrib['path'] = file
+            sub.attrib['date'] = time.asctime()
+            root.append(sub)
+            sub.text = self.toPlainText()
+
+            header = '<?xml version="1.0" encoding="UTF-8"?>'
+            data = ElementTree.tostring(root)
+            with open(AUTOSAVE_FILE, 'w') as f:
+                f.write(header+data)
+
+        else:
+            print 'OUT OF DATE CHECK NEEDED FOR ', self._file
+
+        for s in ss:
+            if s.attrib.get('path') == file:
+                self.setPlainText(s.text)        
+
+    def autosave(self):
         
+        px = ElementTree.parse(AUTOSAVE_FILE)
+        root = px.getroot()
+        ss = root.findall('subscript')
+
+        for s in ss:
+            if s.attrib.get('path') == self._file:
+                s.text = self.toPlainText()
+                s.attrib['date'] = time.asctime()
+
+        header = '<?xml version="1.0" encoding="UTF-8"?>'
+        data = ElementTree.tostring(root)
+        with open(AUTOSAVE_FILE, 'w') as f:
+            f.write(header+data)
+
     def keyPressEvent(self, event):
         """
         What happens when keys are pressed.
@@ -101,6 +152,9 @@ class CodeEditor(QtGui.QPlainTextEdit):
                 return True
 
         if event.key() == QtCore.Qt.Key_Tab:
+            if event.modifiers() == QtCore.Qt.ShiftModifier:
+                raise NotImplementedError, 'add unindent function'
+                return True
             textCursor = self.textCursor()
             if textCursor.hasSelection():
                 safe_string = textCursor.selectedText().replace(u'\u2029', '\n')
@@ -108,7 +162,6 @@ class CodeEditor(QtGui.QPlainTextEdit):
                 if newLines:
                     raise NotImplementedError, 'add indent multiple lines here'
                     return True
-            textCursor.insertText('    ')
    
         if (event.key() == QtCore.Qt.Key_Slash
                 and event.modifiers() == QtCore.Qt.ControlModifier):
@@ -173,6 +226,12 @@ class CodeEditor(QtGui.QPlainTextEdit):
                 text = textCursor.selection().toPlainText()
                 cmd = 'type(' + text + ')'
                 self.global_exec(cmd)
+
+        if (event.key() == QtCore.Qt.Key_X
+                and event.modifiers() == QtCore.Qt.ControlModifier):
+            textCursor = self.textCursor()
+            if textCursor.hasSelection():
+                raise NotImplementedError, 'add cut line function'
 
         if (event.key() == QtCore.Qt.Key_S
                 and event.modifiers() == QtCore.Qt.ControlModifier | QtCore.Qt.AltModifier):
@@ -245,7 +304,6 @@ class CodeEditor(QtGui.QPlainTextEdit):
 
         self.exec_text(code)
 
-        # new_locals = {k:self._locals[k] for k in set(self._locals) - set(local)}
         new_locals = dict()
         for k in set(self._locals) - set(local):
             new_locals[k] = self._locals[k]
@@ -258,6 +316,9 @@ class CodeEditor(QtGui.QPlainTextEdit):
         exec(text, self._globals, self._locals)
 
     def contextMenuEvent(self, event):
+        """
+        Nuke only. Temp example to show menu connecting to nodes.
+        """
         menu = self.createStandardContextMenu()
 
         self.node_context = self.get_node_context()
@@ -270,10 +331,6 @@ class CodeEditor(QtGui.QPlainTextEdit):
 
 
         menu.exec_(QtGui.QCursor().pos())
-
-    # -------------------------------------------------------------------------------
-    #shortcuts
-    # -------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
