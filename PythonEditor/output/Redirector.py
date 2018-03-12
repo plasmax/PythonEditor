@@ -9,7 +9,6 @@ class Terminal(QtGui.QTextEdit):
         self.setReadOnly(True)
         threadmanager.worker.emitter.connect(self.receive)
         self.destroyed.connect(threadmanager.thread.quit)
-        # worker.emitter.connect(self.receive)
 
     @QtCore.Slot()
     def receive(self, text):
