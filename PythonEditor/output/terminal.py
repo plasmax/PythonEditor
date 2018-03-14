@@ -6,103 +6,93 @@ from pprint import pprint
 import inspect
 print 'importing', __name__, 'at', time.asctime()
 
-from qt import QtGui, QtCore
+from ..qt import QtGui, QtCore
 
-try:
-    import hiero
-except ImportError:
-    print 'could not import hiero'
+class PySingleton(object):
+    def __new__(cls, *args, **kwargs):
+        if not '_the_instance' in cls.__dict__:
+            cls._the_instance = object.__new__(cls)
+        return cls._the_instance
 
-class FnPySingleton(object):
-    def __new__(type, *args, **kwargs):
-        if not '_the_instance' in type.__dict__:
-            type._the_instance = object.__new__(type)
-        else:
-            print type._the_instance, 'already exists'
-        return type._the_instance
+class SERedirector(object):
+    def __init__(self, stream, sig=None):
+        fileMethods = ('fileno', 'flush', 'isatty', 'read', 'readline', 'readlines',
+        'seek', 'tell', 'write', 'writelines', 'xreadlines', '__iter__')
 
-class StreamOut(FnPySingleton):
-    def __init__(self, queue):
-        self.queue = queue
+        for i in fileMethods:
+            if not hasattr(self, i) and hasattr(stream, i):
+                setattr(self, i, getattr(stream, i))
 
-    def write(self, text):
-        self.queue.put(text)
-  
-class StreamErr(FnPySingleton):
-    def __init__(self, queue):
-        self.queue = queue
+        self.savedStream = stream
+        self.sig = sig
 
     def write(self, text):
-        self.queue.put(text)
-  
-class Worker(QtCore.QObject, FnPySingleton):
+        if self.sig != None:
+            self.sig.emitter.emit(text)
+        self.savedStream.write(text)
+
+    def close(self):
+        self.flush()
+
+    def stream(self):
+        return self.savedStream
+
+    def reset(self):
+        pass
+
+    def __del__(self):
+        self.reset()
+
+class SESysStdOut(SERedirector, PySingleton):
+    def reset(self):
+        sys.stdout = self.savedStream
+        print 'reset stream out'
+        
+
+class SESysStdErr(SERedirector, PySingleton):
+    def reset(self):
+        sys.stderr = self.savedStream
+        print 'reset stream err'
+
+class Speaker(QtCore.QObject):
     emitter = QtCore.Signal(str)
-    def __init__(self, queue, *args, **kwargs):
-        QtCore.QObject.__init__(self, *args, **kwargs)
-        self.queue = queue
-
-    @QtCore.Slot()
-    def run(self):
-        while True:
-            text = self.queue.get()
-            self.emitter.emit(text)
 
 class Terminal(QtGui.QTextEdit):
     def __init__(self):
         super(Terminal, self).__init__()
         self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
         self.setReadOnly(True)
-
-    def _setup(self):
-        self.queue = Queue.Queue()
-        
-        self.old_stdout = sys.stdout
-        sys.stdout = sys.__stdout__
-        sys.stdout = StreamOut(self.queue)
-
-        self.old_stderr = sys.stderr
-        sys.stderr = sys.__stderr__
-        sys.stderr = StreamErr(self.queue)
-
-        self.thread = QtCore.QThread(self)
-        self.worker = Worker(self.queue)
-        self.worker.emitter.connect(self.receive)
-        self.worker.moveToThread(self.thread)
-        self.thread.started.connect(self.worker.run)
-        self.thread.start()
-        self.show()
-
-    def _uninstall(self):
-        """
-        """
-
-        # caller_globals = dict(inspect.getmembers(inspect.stack()[1][0]))['f_globals']
-        # pprint(caller_globals)
-        # pprint(inspect.stack())
-        if 'nuke' in caller_globals:
-            sys.stdin  = hiero.FnRedirect.SESysStdIn(sys.__stdin__)
-            sys.stdout = hiero.FnRedirect.SESysStdOut(sys.__stdout__)
-            sys.stderr = hiero.FnRedirect.SESysStdErr(sys.__stderr__)
-            print 'hiero'
-            nuke.tprint('hiero')
-
-        elif hasattr(self, 'old_stdout'):
-            sys.stdout = self.old_stdout
-            sys.stderr = self.old_stderr
-            print 'reassign stdout and quit'
-            self.thread.quit()
-            self.thread.terminate()
-            # if not 'nuke' in globals(): self.thread.wait()
-            self.worker.deleteLater()
+        self.setup()
+        self.destroyed.connect(self.stop)
 
     @QtCore.Slot(str)
     def receive(self, text):
-        sys.__stdout__.write(text)
-        self.moveCursor(QtGui.QTextCursor.End)
         self.insertPlainText(text)
-        if 'hiero' in globals(): #write back to hiero FnRedirect (to be polite)
-            self.old_stdout.write(text)
+        try:
+            if bool(self.textCursor()):
+                self.moveCursor(QtGui.QTextCursor.End)
+        except Exception, e:
+            pass
 
-    @QtCore.Slot()
-    def clearInput(self):
-        self.clear()
+    def stop(self):
+        sys.stdout.reset()
+        sys.stderr.reset()
+
+    def setup(self):
+        """
+        To stop:
+        runner.shouldRun = False
+
+        To connect:
+        speaker.emitter.connect(recv)
+
+        """
+
+        if hasattr(sys.stdout, 'sig'):
+            speaker = sys.stdout.sig
+        else:
+            speaker = Speaker()
+            sys.stdout = SESysStdOut(sys.stdout, speaker)
+            sys.stderr = SESysStdErr(sys.stderr, speaker)
+
+        speaker.emitter.connect(self.receive)

@@ -5,7 +5,7 @@ import re
 import time
 print 'importing', __name__, 'at', time.asctime()
 
-from qt import QtGui, QtCore
+from ...qt import QtGui, QtCore
 
 # from base import CodeEditor
 import linenumbers

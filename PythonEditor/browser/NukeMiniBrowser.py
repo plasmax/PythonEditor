@@ -3,10 +3,8 @@ import os
 import time
 print 'importing', __name__, 'at', time.asctime()
 
-from qt import QtGui, QtCore
-# from qt import QtGui, QtCore
-from constants import NUKE_DIR
-# from constants import NUKE_DIR
+from ..qt import QtGui, QtCore
+from ..constants import NUKE_DIR
 
 class FileBrowser(QtGui.QDialog):
     pathSignal = QtCore.Signal(str)

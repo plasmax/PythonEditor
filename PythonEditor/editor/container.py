@@ -5,8 +5,8 @@ from functools import partial
 import time
 print 'importing', __name__, 'at', time.asctime()
 
-from qt import QtGui, QtCore
-from constants import NUKE_DIR
+from ..qt import QtGui, QtCore
+from ..constants import NUKE_DIR
 
 from features import autocompletion
 

@@ -2,7 +2,6 @@ import sys, os
 from PySide import QtGui, QtCore
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
-
 class Nuke(QtGui.QMainWindow):
     """
     Natron Usage:
@@ -67,6 +66,7 @@ class Nuke(QtGui.QMainWindow):
 
     def load(self):
         import PythonEditor
+        PythonEditor.main()
 
 def main():
     app = QtGui.QApplication(sys.argv)

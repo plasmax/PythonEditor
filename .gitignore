@@ -1,3 +1,6 @@
 *.pyc
 TODO.txt
 _tests/
+_old
+*.nk
+icons/

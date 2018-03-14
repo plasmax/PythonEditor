@@ -4,7 +4,6 @@ import sys
 from functools import partial
 from pprint import pprint
 
-sys.path.append( os.path.dirname(__file__) ) #add package level path to avoid relative imports
 import time
 print('importing', __name__, 'at', time.asctime())
 
@@ -12,12 +11,12 @@ from qt import QtGui, QtCore
 from constants import NUKE_DIR, AUTOSAVE_FILE
 
 from browser import NukeMiniBrowser
-from output import Redirector
+from output import terminal
 from editor import container
 
 class IDE(QtGui.QWidget):
     """
-    Main window when running externally.
+    Main window.
     """
     def __init__(self):
         super(IDE, self).__init__()
@@ -34,7 +33,7 @@ class IDE(QtGui.QWidget):
         self.browser.resize(200, self.browser.height())
 
         file = self.setupHistoryFile()
-        self.output = Redirector.Terminal()
+        self.output = terminal.Terminal()
         self.input = container.Container(file, self.output)
         
         use_splitter = False
@@ -60,12 +59,15 @@ class IDE(QtGui.QWidget):
         self.browser.pathSignal.connect(self.input.new_tab)
     
     def setupHistoryFile(self):
+        """
+        Adds a history file similar to Nuke's Script Editor xml
+        Except that it stores multiple scripts at once.
+        """
         file = AUTOSAVE_FILE
         fileexists = os.path.isfile(file)
         if fileexists:
             return file
         elif not fileexists:
-            print("FILE DOESN'T EXIST!")
             if os.path.isdir(NUKE_DIR):
                 with open(file, 'w') as f:
                     f.write('<?xml version="1.0" encoding="UTF-8"?><script></script>')
@@ -73,6 +75,10 @@ class IDE(QtGui.QWidget):
                 return file
 
     def showEvent(self, event):
+        """
+        Hack to get rid of margins automatically put in
+        place by Nuke Dock Window.
+        """
         try:
             parent = self.parentWidget().parentWidget()
             parent.layout().setContentsMargins(0,0,0,0)

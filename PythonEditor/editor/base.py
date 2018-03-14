@@ -13,8 +13,8 @@ try:
 except ImportError:
     pass
     
-from qt import QtGui, QtCore
-from constants import NUKE_DIR, AUTOSAVE_FILE
+from ..qt import QtGui, QtCore
+from ..constants import NUKE_DIR, AUTOSAVE_FILE
 
 from features import syntaxhighlighter
 
@@ -36,6 +36,7 @@ class CodeEditor(QtGui.QPlainTextEdit):
         self._locals = dict()
         self._file = file
         self.readautosave(file)
+        self.output = output
 
         self.clearOutput.connect(output.clear)
         self.textChanged.connect(self.autosave)
@@ -55,11 +56,9 @@ class CodeEditor(QtGui.QPlainTextEdit):
         self.setTabStopWidth(4 * QtGui.QFontMetrics(self.font()).width(' '))
 
     def showEvent(self, event):
-        # if 'nuke' in sys.executable.lower():
-        try:
+        if 'Nuke' in sys.executable:
             self.setup_env()
-        except NameError, e:
-            print e
+        else:
             caller_globals = dict(inspect.getmembers(inspect.stack()[1][0]))['f_globals']
             self._globals = caller_globals
             self._locals = locals()
@@ -233,7 +232,7 @@ class CodeEditor(QtGui.QPlainTextEdit):
         if (event.key() == QtCore.Qt.Key_X
                 and event.modifiers() == QtCore.Qt.ControlModifier):
             textCursor = self.textCursor()
-            if textCursor.hasSelection():
+            if not textCursor.hasSelection():
                 raise NotImplementedError, 'add cut line function'
 
         if (event.key() == QtCore.Qt.Key_S
