@@ -4,21 +4,20 @@ import sys
 print 'importing', __name__, 'at', time.asctime()
 user = os.environ.get('USERNAME')
 
-import IDE
-# reload(IDE)
+# import IDE
 
-try:
-    import nuke
-    from nukescripts.panels import PythonPanel, registerPanel
-except ImportError:
-    pass
+import nuke
+from nukescripts.panels import PythonPanel, registerPanel
 
 def registerWidgetAsPanel( widget, name, id, create = False ):
     class Panel( PythonPanel ):
 
         def __init__(self, widget, name, id):
             PythonPanel.__init__(self, name, id )
-            self.customKnob = nuke.PyCustom_Knob( name, "", "__import__('nukescripts').panels.WidgetKnob(" + widget + ")" )
+            self.customKnob = nuke.PyCustom_Knob( 
+                name, 
+                "", 
+                "__import__('nukescripts').panels.WidgetKnob(" + widget + ")" )
             self.addKnob( self.customKnob  )
 
     def addPanel(toPane=True):
@@ -37,11 +36,6 @@ def registerWidgetAsPanel( widget, name, id, create = False ):
     else:
         return None
     registerWidgetAsPanel( widget, name, id, create = False )
-
-LEVEL_ONE = True
-reloadcmd = "for m in sys.modules.keys():\n" \
-                "\tif 'PythonEditor' in m:\n"\
-                "\t\tdel sys.modules[m]"
 
 reloadAllModules ="""
 for m in sys.modules.keys():

@@ -55,9 +55,11 @@ class CodeEditor(QtGui.QPlainTextEdit):
         self.setTabStopWidth(4 * QtGui.QFontMetrics(self.font()).width(' '))
 
     def showEvent(self, event):
+        # if 'nuke' in sys.executable.lower():
         try:
             self.setup_env()
-        except NameError:
+        except NameError, e:
+            print e
             caller_globals = dict(inspect.getmembers(inspect.stack()[1][0]))['f_globals']
             self._globals = caller_globals
             self._locals = locals()
