@@ -51,16 +51,16 @@ class Nuke(QtGui.QMainWindow):
 
         self.setMenuBar(self.menubar)
 
-        # create docks
-        dock1 = QtGui.QDockWidget()
-        dock1.setObjectName('Dock1')
-        self.addDockWidget(QtCore.Qt.RightDockWidgetArea, dock1)
+        # # create docks
+        # dock1 = QtGui.QDockWidget()
+        # dock1.setObjectName('Dock1')
+        # self.addDockWidget(QtCore.Qt.RightDockWidgetArea, dock1)
 
-        dock2 = QtGui.QDockWidget()
-        dock2.setObjectName('Dock2')
-        self.addDockWidget(QtCore.Qt.RightDockWidgetArea, dock2)
+        # dock2 = QtGui.QDockWidget()
+        # dock2.setObjectName('Dock2')
+        # self.addDockWidget(QtCore.Qt.RightDockWidgetArea, dock2)
 
-        self.tabifyDockWidget(dock1, dock2)
+        # self.tabifyDockWidget(dock1, dock2)
 
         self.load()
 
@@ -70,11 +70,15 @@ class Nuke(QtGui.QMainWindow):
 
 def main():
     app = QtGui.QApplication(sys.argv)
+    print QtGui.QStyleFactory.keys()
     nuke = Nuke()
     nuke.show()
 
     import qdarkstyle
     app.setStyleSheet(qdarkstyle.load_stylesheet_pyside())
+    # styles = [u'Windows', u'WindowsXP', u'WindowsVista', u'Motif', u'CDE', u'Plastique', u'Cleanlooks']
+    QtGui.QApplication.setStyle(QtGui.QStyleFactory.create('Cleanlooks'))
+    # QtGui.QApplication.setStyle(QtGui.QStyleFactory.create('Plastique'))
 
     app.exec_()
     

@@ -7,15 +7,10 @@ print 'importing', __name__, 'at', time.asctime()
 
 from ...qt import QtGui, QtCore
 
-# from base import CodeEditor
 import linenumbers
 CodeEditor = linenumbers.CodeEditorWithLines
 
-AUTO_COMPLETE = True
-
 class Codepleter(QtGui.QCompleter):
-    """docstring for Codepleter"""
-
     def __init__(self, stringlist):
         super(Codepleter, self).__init__(stringlist)
 
@@ -23,7 +18,6 @@ class Codepleter(QtGui.QCompleter):
         self.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
         
 class CodeEditorAuto(CodeEditor):
-    """docstring for CodeEditorAuto"""
     def __init__(self, file, output):
         super(CodeEditorAuto, self).__init__(file, output)
 
@@ -33,7 +27,7 @@ class CodeEditorAuto(CodeEditor):
     def focusInEvent(self, event):
         if self.completer == None:
             wordlist = list(set(re.findall('\w+', self.toPlainText())))
-            self.completer = Codepleter(wordlist)#, parent=self)
+            self.completer = Codepleter(wordlist)
             self.completer.setParent(self)
             self.completer.setWidget(self)
             self.completer.activated.connect(self.insertCompletion)
@@ -48,11 +42,20 @@ class CodeEditorAuto(CodeEditor):
         self.completer.setCompletionPrefix('')
         textCursor = self.textCursor()
 
-        textCursor.select(QtGui.QTextCursor.LineUnderCursor)
-        selectedText = textCursor.selectedText()
+        pos = self.textCursor().position()
+        bn = self.document().findBlock(pos).blockNumber()
 
-        lastword = selectedText.split(' ')[-1]
-        word_before_dot = '.'.join(lastword.split('.')[:-1])
+        bl = self.document().findBlockByNumber(bn)
+        bp = bl.position()
+        s = self.toPlainText()[bp:pos]
+
+        for c in s:
+            if (not c.isalnum() 
+                    and not c in ['.', '_']):
+                s = s.replace(c, ' ')
+
+        word_before_dot = s.split(' ')[-1]
+        word_before_dot = '.'.join(word_before_dot.split('.')[:-1])
 
         if (word_before_dot.strip() == '' 
                 or word_before_dot.endswith(_char)
@@ -69,14 +72,12 @@ class CodeEditorAuto(CodeEditor):
         else:
             try:
                 loc = {}
-                exec('_obj = '+word_before_dot, self._globals, loc)#self._locals)
+                exec('_obj = '+word_before_dot, self._globals, loc)
                 print loc
                 _obj = loc.get('_obj')
-            except NameError, e:
-                print e
+            except NameError, e: #we want to handle this silently
                 return
-
-        print _obj
+                
         return _obj
 
     def completeObject(self, _obj=None):
@@ -110,8 +111,6 @@ class CodeEditorAuto(CodeEditor):
         self.completer.complete(cursorRect)
 
     def insertCompletion(self, completion):
-        # print 'prefix:', self.completer.completionPrefix()
-        print completion
         textCursor = self.textCursor()
         extra = (len(completion) -
             len(self.completer.completionPrefix()))
@@ -144,18 +143,15 @@ class CodeEditorAuto(CodeEditor):
                 textCursor.select(QtGui.QTextCursor.LineUnderCursor)
                 selectedText = textCursor.selectedText()
                 if selectedText.endswith('.'):
-                    print selectedText
                     self.completeObject()
                     return True
                 elif selectedText.endswith('('):
                     ret = {}
                     cmd = '__ret = '+ selectedText[:-1].split(' ')[-1]
-                    print cmd
                     cmd = compile(cmd, '<Python Editor Tooltip>', 'exec')
                     exec(cmd, self._globals, ret)
                     _obj = ret.get('__ret')
                     if _obj:
-                        print 'returned object:', _obj
                         info = str('')
                         import inspect, types #move this to top
                         if (isinstance(_obj, types.BuiltinFunctionType)
@@ -184,7 +180,10 @@ class CodeEditorAuto(CodeEditor):
             cp.popup().setCurrentIndex(cp.completionModel().index(0,0))
 
         # else:
-            # self.completeVariables()
+        #     self.getObjectBeforeChar(event.text())
+        #     print 'word'
+        #     print self.wordUnderCursor()
+        #     # self.completeVariables()
 
 
             

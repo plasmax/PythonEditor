@@ -17,16 +17,20 @@ from ..qt import QtGui, QtCore
 from ..constants import NUKE_DIR, AUTOSAVE_FILE
 
 from features import syntaxhighlighter
+from features import shortcuts
 
 class CodeEditor(QtGui.QPlainTextEdit):
     """
     Text Editor that allows python script execution using globals in nuke.
     Currently handles file management including autosave, 
-    all shortcuts and keystroke combinations,
+    all shortcuts and keystroke combinations (now outsourced)
     all conversion to code objects and execution.
     Currently subclassed to provide autocompletion and linenumber functions.
 
-    TODO: Split features into separate modules.
+    TODO: Split features into separate modules:
+    file handling
+    remote code execution
+    autocompletion (through external functions)
     """
     clearOutput = QtCore.Signal()
 
@@ -56,7 +60,7 @@ class CodeEditor(QtGui.QPlainTextEdit):
         self.setTabStopWidth(4 * QtGui.QFontMetrics(self.font()).width(' '))
 
     def showEvent(self, event):
-        if 'Nuke' in sys.executable:
+        if 'nuke' in sys.executable.lower():
             self.setup_env()
         else:
             caller_globals = dict(inspect.getmembers(inspect.stack()[1][0]))['f_globals']
@@ -125,133 +129,7 @@ class CodeEditor(QtGui.QPlainTextEdit):
         """
         What happens when keys are pressed.
         """
-
-        if event.key() in (QtCore.Qt.Key_Return,
-                           QtCore.Qt.Key_Enter):
-            if event.modifiers() == QtCore.Qt.ControlModifier:
-                self.begin_exec()
-
-            elif event.modifiers() == QtCore.Qt.ShiftModifier | QtCore.Qt.ControlModifier:
-                textCursor = self.textCursor()
-                line = textCursor.block().text()
-                indentCount = len(line) - len(line.lstrip(' '))
-                textCursor.movePosition(textCursor.StartOfLine)
-                self.setTextCursor(textCursor)
-                textCursor.insertText(' '*indentCount+'\n')
-                self.moveCursor(textCursor.Left)
-                return True
-            else:
-                textCursor = self.textCursor()
-                line = textCursor.block().text()
-                indentCount = len(str(line)) - len(str(line).lstrip(' '))
-                textCursor.insertText('\n'+' '*indentCount)
-                return True
-
-        if event.key() in (QtCore.Qt.Key_Backspace,):
-            if event.modifiers() == QtCore.Qt.ControlModifier:
-                self.clearOutput.emit()
-                return True
-
-        if event.key() == QtCore.Qt.Key_Backtab:
-            raise NotImplementedError, 'add unindent function'
-            return True
-            
-        if event.key() == QtCore.Qt.Key_Tab:
-            textCursor = self.textCursor()
-            if textCursor.hasSelection():
-                safe_string = textCursor.selectedText().replace(u'\u2029', '\n')
-                newLines = (len(safe_string.split('\n')) > 1)
-                if newLines:
-                    raise NotImplementedError, 'add indent multiple lines here'
-                    return True
-   
-        if (event.key() == QtCore.Qt.Key_Slash
-                and event.modifiers() == QtCore.Qt.ControlModifier):
-            textCursor = self.textCursor()
-
-            #get line numbers
-            blockNumbers = set([
-                    self.document().findBlock(b).blockNumber()
-                    for b in range(textCursor.selectionStart(), textCursor.selectionEnd())
-                        ])
-            blockNumbers |= set([self.document().findBlock(textCursor.position()).blockNumber()])
-            blocks = [
-                    self.document().findBlockByNumber(b)
-                    for b in blockNumbers
-                    if self.document().findBlockByNumber(b).text() != ''
-                    ]
-            
-            #iterate through lines in doc commenting or uncommenting based on whether everything is commented or not
-            commentAllOut = any([not str(block.text()).lstrip().startswith('#') for block in blocks])
-            if commentAllOut:
-                for block in blocks:
-                    cursor = QtGui.QTextCursor(block)
-                    cursor.movePosition(textCursor.StartOfLine)
-                    cursor.insertText('#')
-            else:
-                for block in blocks:
-                    cursor = QtGui.QTextCursor(block)
-                    cursor.select(QtGui.QTextCursor.LineUnderCursor)
-                    selectedText = cursor.selectedText()
-                    newText = str(selectedText).replace('#', '', 1)
-                    cursor.insertText(newText)
-            return True
-
-        if (event.key() == QtCore.Qt.Key_BracketRight
-                and event.modifiers() == QtCore.Qt.ControlModifier):
-            raise NotImplementedError, 'add right indent here'
-
-        if (event.key() == QtCore.Qt.Key_BracketLeft
-                and event.modifiers() == QtCore.Qt.ControlModifier):
-            raise NotImplementedError, 'add left indent here'
-
-        if (event.key() == QtCore.Qt.Key_K
-                and event.modifiers() == QtCore.Qt.ShiftModifier | QtCore.Qt.ControlModifier):
-            raise NotImplementedError, 'add delete line'
-
-        if (event.key() == QtCore.Qt.Key_F
-                and event.modifiers() == QtCore.Qt.ControlModifier):
-            raise NotImplementedError, 'add search function'
-
-        if (event.key() == QtCore.Qt.Key_H
-                and event.modifiers() == QtCore.Qt.ControlModifier):
-            textCursor = self.textCursor()
-            if textCursor.hasSelection():
-                text = textCursor.selection().toPlainText()
-                cmd = 'help(' + text + ')'
-                self.global_exec(cmd)
-
-        if (event.key() == QtCore.Qt.Key_T
-                and event.modifiers() == QtCore.Qt.ControlModifier):
-            textCursor = self.textCursor()
-            if textCursor.hasSelection():
-                text = textCursor.selection().toPlainText()
-                cmd = 'type(' + text + ')'
-                self.global_exec(cmd)
-
-        if (event.key() == QtCore.Qt.Key_X
-                and event.modifiers() == QtCore.Qt.ControlModifier):
-            textCursor = self.textCursor()
-            if not textCursor.hasSelection():
-                raise NotImplementedError, 'add cut line function'
-
-        if (event.key() == QtCore.Qt.Key_S
-                and event.modifiers() == QtCore.Qt.ControlModifier | QtCore.Qt.AltModifier):
-            event.accept()
-            raise NotImplementedError, 'add save function'
-
-        if (event.key() == QtCore.Qt.Key_D
-                and event.modifiers() == QtCore.Qt.ControlModifier):
-            raise NotImplementedError, 'add select duplicate function'
-
-        if (event.key() == QtCore.Qt.Key_Home
-                and event.modifiers() == QtCore.Qt.ControlModifier | QtCore.Qt.AltModifier):
-            raise NotImplementedError, 'add move line to top function'
-
-        # keyDict = {value:key for key, value in QtCore.Qt.__dict__.iteritems()}
-        # print keyDict.get(event.key()), event.text()
-
-        super(CodeEditor, self).keyPressEvent(event)
+        return shortcuts.shortcut_handler(self, event, CodeEditor)
 
     #code execution
     def begin_exec(self):
