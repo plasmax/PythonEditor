@@ -46,11 +46,12 @@ def main():
     """
     For testing outside of nuke.
     """
-    from codeeditor.ui.Qt import QtWidgets 
+    from codeeditor.ui.Qt import QtWidgets, QtGui
     app = QtWidgets.QApplication(sys.argv)
     ide = codeeditor.ide.IDE()
     ide.show()
     ide.editor.setPlainText(TEST_CODE)
+    QtWidgets.QApplication.setStyle(QtWidgets.QStyleFactory.create('Plastique'))
     sys.exit(app.exec_())
 
 if __name__ == '__main__':

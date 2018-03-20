@@ -1,5 +1,21 @@
-import __main__
-TEST_VAR = 'variable'
-print globals() is __main__.__dict__
-print TEST_VAR
-TEST_VAR; squib
+import jedi
+source = '''
+import datetime
+datetime.da
+import os
+os.wa
+'''
+
+script = jedi.Script(source, 3, len('datetime.da'), 'example.py')
+print(script)
+
+completions = script.completions()
+print(completions)
+
+print(completions[0].complete)
+
+print(completions[0].name)
+
+script = jedi.Script(source, 5, len('os.wa'), 'example.py')
+
+print(len(source))

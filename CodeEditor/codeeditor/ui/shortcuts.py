@@ -12,6 +12,12 @@ def installShortcuts(widget):
                         partial(execSelectedText, widget),
                         context=QtCore.Qt.WidgetShortcut)
 
+    clearCmd = QtGui.QKeySequence("Ctrl+Backspace")
+    QtWidgets.QShortcut(clearCmd, 
+                        widget, 
+                        widget.clearOutputSignal.emit,
+                        context=QtCore.Qt.WidgetShortcut)
+
 def execSelectedText(widget):
     """
     Emit a signal with either selected text
@@ -19,6 +25,7 @@ def execSelectedText(widget):
     """
     textCursor = widget.textCursor()
 
+    wholeText = widget.toPlainText()
 
     if textCursor.hasSelection():
         text = textCursor.selection().toPlainText()
@@ -30,7 +37,6 @@ def execSelectedText(widget):
         text = '\n' * blockNo + text
         
     else:
-        text = widget.toPlainText()
+        text = wholeText 
 
-
-    widget.execTextSignal.emit(text)
+    widget.execTextSignal.emit(text, wholeText)
