@@ -35,7 +35,6 @@ def mainexec(text, wholeText):
                 if  value not in _.values():
                     print(value)
 
-
 def print_syntax_traceback():
     """
     Strip out lines of the error that refer to this file.
