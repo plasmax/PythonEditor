@@ -3,7 +3,7 @@ import sys
 from Qt import QtWidgets, QtCore, QtGui
 from editor import Editor
 from terminal import Terminal
-from ..utils import execute
+from ..core import execute
 
 class IDE(QtWidgets.QWidget):
     """
