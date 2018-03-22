@@ -1,8 +1,6 @@
 from __main__ import __dict__
 import traceback
 import sys
-import inspect
-from pprint import pprint
 
 def mainexec(text, wholeText):
     """
@@ -29,11 +27,11 @@ def mainexec(text, wholeText):
     except Exception:
         print_traceback(wholeText)
     else:
-        __dict__.update(_)
         if mode == 'single': 
             for value in __dict__.values():
                 if  value not in _.values():
                     print(value)
+            del _
 
 def print_syntax_traceback():
     """
