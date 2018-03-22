@@ -1,9 +1,13 @@
 from Qt import QtGui, QtCore, QtWidgets
 
 class LineNumberArea(QtWidgets.QWidget):
-
+    """
+    Installs line numbers along 
+    left column of QPlainTextEdit.
+    """
     def __init__(self, editor):
         super(LineNumberArea, self).__init__(editor)
+        self.setObjectName('LineNumberArea')
         self.editor = editor
         self.setupLineNumbers()
 

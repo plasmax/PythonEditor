@@ -1,16 +1,18 @@
 from Qt import QtWidgets, QtGui, QtCore
+
 import shortcuts
 import linenumberarea
+import syntaxhighlighter
 
 class Editor(QtWidgets.QPlainTextEdit):
     """
-    Code Editor widget with 
-    basic functionality and signals.
+    Code Text Editor widget with 
+    basic functionality.
     """
-    clearOutputSignal = QtCore.Signal()
-    execTextSignal = QtCore.Signal(str, str)
-    
+
     def __init__(self):
         super(Editor, self).__init__()
-        shortcuts.installShortcuts(self)
+        self.setObjectName('Editor')
         linenumberarea.LineNumberArea(self)
+        syntaxhighlighter.Highlight(self.document())
+        self.setTabStopWidth(4)

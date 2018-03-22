@@ -54,6 +54,7 @@ class Speaker(QtCore.QObject):
 class Terminal(QtWidgets.QTextEdit):
     def __init__(self):
         super(Terminal, self).__init__()
+        self.setObjectName('Terminal')
         self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
         self.setReadOnly(True)
         self.setup()

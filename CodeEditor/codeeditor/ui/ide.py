@@ -3,6 +3,7 @@ import sys
 from Qt import QtWidgets, QtCore, QtGui
 from editor import Editor
 from terminal import Terminal
+from shortcuts import ShortcutHandler
 from ..core import execute
 
 class IDE(QtWidgets.QWidget):
@@ -11,11 +12,14 @@ class IDE(QtWidgets.QWidget):
     """
     def __init__(self):
         super(IDE, self).__init__()
+        self.setObjectName('IDE')
 
         #construct layout
         layout = QtWidgets.QHBoxLayout(self)
+        layout.setObjectName('IDE_MainLayout')
         layout.setContentsMargins(0,0,0,0)
         splitter = QtWidgets.QSplitter(QtCore.Qt.Vertical)
+        splitter.setObjectName('IDE_MainVerticalSplitter')
 
         self.editor = Editor()
         terminal = Terminal()
@@ -25,6 +29,7 @@ class IDE(QtWidgets.QWidget):
         layout.addWidget(splitter)
 
         #connect signals
-        self.editor.execTextSignal.connect(execute.mainexec)
-        self.editor.execTextSignal.connect(terminal.setTabFocus)
-        self.editor.clearOutputSignal.connect(terminal.clear)
+        sch = ShortcutHandler(self.editor)
+        sch.execTextSignal.connect(execute.mainexec)
+        sch.execTextSignal.connect(terminal.setTabFocus)
+        sch.clearOutputSignal.connect(terminal.clear)
