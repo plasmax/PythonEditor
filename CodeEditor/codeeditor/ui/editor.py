@@ -15,4 +15,3 @@ class Editor(QtWidgets.QPlainTextEdit):
         self.setObjectName('Editor')
         linenumberarea.LineNumberArea(self)
         syntaxhighlighter.Highlight(self.document())
-        self.setTabStopWidth(4)

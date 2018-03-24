@@ -4,7 +4,7 @@ from Qt import QtWidgets, QtCore, QtGui
 from editor import Editor
 from terminal import Terminal
 from shortcuts import ShortcutHandler
-from ..core import execute
+from codeeditor.core import execute
 
 class IDE(QtWidgets.QWidget):
     """

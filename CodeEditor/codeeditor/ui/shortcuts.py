@@ -15,7 +15,6 @@ class ShortcutHandler(QtCore.QObject):
         self.setObjectName('ShortcutHandler')
         self.setParent(widget)
         self.widget = widget
-        print widget
         self.installShortcuts()
             
     def installShortcuts(self):

@@ -31,9 +31,6 @@ class SERedirector(object):
     def stream(self):
         return self.savedStream
 
-    def reset(self):
-        pass
-
     def __del__(self):
         self.reset()
 
@@ -52,6 +49,7 @@ class Speaker(QtCore.QObject):
     emitter = QtCore.Signal(str)
 
 class Terminal(QtWidgets.QTextEdit):
+    """ Output text display widget """
     def __init__(self):
         super(Terminal, self).__init__()
         self.setObjectName('Terminal')
@@ -62,12 +60,12 @@ class Terminal(QtWidgets.QTextEdit):
 
     @QtCore.Slot(str)
     def receive(self, text):
-        self.insertPlainText(text)
         try:
             if bool(self.textCursor()):
                 self.moveCursor(QtGui.QTextCursor.End)
         except Exception, e:
             pass
+        self.insertPlainText(text)
 
     @QtCore.Slot(str)
     def setTabFocus(self):
@@ -82,12 +80,9 @@ class Terminal(QtWidgets.QTextEdit):
 
     def setup(self):
         """
-        To stop:
-        runner.shouldRun = False
-
-        To connect:
-        speaker.emitter.connect(recv)
-
+        Checks for an existing stream wrapper 
+        for sys.stdout and connects to it. If
+        not present, creates a new one.
         """
 
         if hasattr(sys.stdout, 'sig'):
