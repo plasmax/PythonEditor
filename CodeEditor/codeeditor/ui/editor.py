@@ -3,7 +3,8 @@ from Qt import QtWidgets, QtGui, QtCore
 from features import (shortcuts, 
                       linenumberarea, 
                       syntaxhighlighter,
-                      autocompletion)
+                      autocompletion,
+                      contextmenu)
 
 class Editor(QtWidgets.QPlainTextEdit):
     """
@@ -16,12 +17,15 @@ class Editor(QtWidgets.QPlainTextEdit):
     focus_in_signal = QtCore.Signal(QtGui.QFocusEvent)
     key_pressed_signal = QtCore.Signal(QtGui.QKeyEvent)
     post_key_pressed_signal = QtCore.Signal(QtGui.QKeyEvent)
+    context_menu_signal = QtCore.Signal(QtWidgets.QMenu)
 
     def __init__(self):
         super(Editor, self).__init__()
         self.setObjectName('Editor')
         linenumberarea.LineNumberArea(self)
         syntaxhighlighter.Highlight(self.document())
+        self.contextmenu = contextmenu.ContextMenu(self)
+
         self.wait_for_autocomplete = True
         self.autocomplete = autocompletion.AutoCompleter(self)
         self.wrap_types = [
@@ -61,4 +65,13 @@ class Editor(QtWidgets.QPlainTextEdit):
 
         super(Editor, self).keyPressEvent(event)
         self.post_key_pressed_signal.emit(event)
+
+    def contextMenuEvent(self, event):
+        """
+        Creates a standard context menu
+        and emits it for futher changes 
+        and execution elsewhere.
+        """
+        menu = self.createStandardContextMenu()
+        self.context_menu_signal.emit(menu)
 

@@ -70,13 +70,6 @@ class Terminal(QtWidgets.QTextEdit):
             pass
         self.insertPlainText(text)
 
-    @QtCore.Slot(str)
-    def setTabFocus(self):
-        tabWidget = self.parentWidget().parentWidget()
-        if isinstance(tabWidget, QtWidgets.QTabWidget):
-            index = tabWidget.indexOf(self)
-            tabWidget.setCurrentIndex(index)
-
     def stop(self):
         sys.stdout.reset()
         sys.stderr.reset()

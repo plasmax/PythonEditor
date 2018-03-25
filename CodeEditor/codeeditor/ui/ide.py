@@ -3,8 +3,7 @@ import sys
 from Qt import QtWidgets, QtCore, QtGui
 from editor import Editor
 from terminal import Terminal
-from features.shortcuts import ShortcutHandler
-from codeeditor.core import execute
+from features import shortcuts
 
 class IDE(QtWidgets.QWidget):
     """
@@ -16,7 +15,10 @@ class IDE(QtWidgets.QWidget):
         super(IDE, self).__init__()
         self.setObjectName('IDE')
 
-        #construct layout
+        self.construct_ui()
+        self.connect_signals()
+
+    def construct_ui(self):
         layout = QtWidgets.QVBoxLayout(self)
         layout.setObjectName('IDE_MainLayout')
         layout.setContentsMargins(0,0,0,0)
@@ -27,21 +29,32 @@ class IDE(QtWidgets.QWidget):
         splitter.setObjectName('IDE_MainVerticalSplitter')
 
         self.editor = Editor()
-        terminal = Terminal()
-        splitter.addWidget(terminal)
+        self.terminal = Terminal()
+        splitter.addWidget(self.terminal)
         splitter.addWidget(self.editor)
 
         layout.addWidget(splitter)
 
-        #connect signals
-        sch = ShortcutHandler(self.editor)
-        sch.execTextSignal.connect(execute.mainexec)
-        sch.execTextSignal.connect(terminal.setTabFocus)
-        sch.clearOutputSignal.connect(terminal.clear)
+    def connect_signals(self):
+        """
+        Connect child widget slots to shortcuts.
+        TODO: Find a better place to set this up,
+        as the shortcuthandler will not be so readily 
+        available when the editor is placed inside a 
+        TabWidget. Could relay the signal through the 
+        TabWidget, or find a global connection mechanism.
+
+        Alternatively, we can dynamically set ShortcutHandler's
+        editor widget depending on the TabWidget's current tab.
+        (In this case the QShortcut widget is the tabwidget and
+        context is QTabWidgetChildren)
+        """
+        sch = shortcuts.ShortcutHandler(self.editor)
+        sch.clear_output_signal.connect(self.terminal.clear)
 
     def setup_menu(self):
         """
-        Adds top menu bar and various manu items.
+        Adds top menu bar and various menu items.
         """
         menuBar = QtWidgets.QMenuBar(self)
         fileMenu = QtWidgets.QMenu('File')
@@ -60,4 +73,4 @@ class IDE(QtWidgets.QWidget):
         helpMenu.addAction('About Python Editor')
         helpMenu.addAction('Shortcuts')
 
-        # self.layout().addWidget(menuBar)
+        self.layout().addWidget(menuBar)

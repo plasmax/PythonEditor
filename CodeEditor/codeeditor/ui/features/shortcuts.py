@@ -1,12 +1,13 @@
 from functools import partial
 from codeeditor.ui.Qt import QtWidgets, QtGui, QtCore
+from codeeditor.core import execute
 
 class ShortcutHandler(QtCore.QObject):
     """
     Shortcut Manager with custom signals.
     """
-    clearOutputSignal = QtCore.Signal()
-    execTextSignal = QtCore.Signal(str, str)
+    clear_output_signal = QtCore.Signal()
+    exec_text_signal = QtCore.Signal()
 
     def __init__(self, editor):
         super(ShortcutHandler, self).__init__(parent=editor)
@@ -32,11 +33,11 @@ class ShortcutHandler(QtCore.QObject):
         """
         notimp = lambda msg: partial(self.notimplemented, msg)
         mapping = { 
-                    'Ctrl+Return': self.execSelectedText,
-                    'Ctrl+B': self.execSelectedText,
+                    'Ctrl+Return': self.exec_selected_text,
+                    'Ctrl+B': self.exec_selected_text,
                     'Ctrl+Shift+Return': self.new_line_above,
                     'Ctrl+Alt+Return': self.new_line_below,
-                    'Ctrl+Backspace' : self.clearOutputSignal.emit,
+                    'Ctrl+Backspace' : self.clear_output_signal.emit,
                     'Ctrl+D': notimp('select word or next word'),
                     'Ctrl+Shift+D': notimp('duplicate lines'),
                     'Ctrl+W': notimp('close tab'),
@@ -69,6 +70,7 @@ class ShortcutHandler(QtCore.QObject):
                                             self.editor, 
                                             func,
                                             context=context)
+            qshortcut.setObjectName(shortcut)
 
     def notimplemented(self, text):
         """ Development reminders to implement features """
@@ -98,9 +100,9 @@ class ShortcutHandler(QtCore.QObject):
 
         return blocks
 
-    def execSelectedText(self):
+    def exec_selected_text(self):
         """
-        Emit a signal with either selected text
+        Calls exec with either selected text
         or all the text in the edit widget.
         """
         textCursor = self.editor.textCursor()
@@ -119,7 +121,8 @@ class ShortcutHandler(QtCore.QObject):
         else:
             text = whole_text
 
-        self.execTextSignal.emit(text, whole_text)
+        self.exec_text_signal.emit()
+        execute.mainexec(text, whole_text)
 
     @QtCore.Slot()
     def return_handler(self):

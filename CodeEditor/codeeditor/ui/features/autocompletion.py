@@ -12,6 +12,11 @@ class Completer(QtWidgets.QCompleter):
         self.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
         
 class AutoCompleter(QtCore.QObject):
+    """
+    Provides autocompletion to QPlainTextEdit.
+    Requires signals to be emitted from such
+    with -pre and -post keyPressEvent signals.
+    """
     def __init__(self, editor):
         super(AutoCompleter, self).__init__()
 
@@ -33,11 +38,17 @@ class AutoCompleter(QtCore.QObject):
             self.completer.activated.connect(self.insertCompletion)
 
     def wordUnderCursor(self):
+        """
+        Returns a string with the word under the cursor.
+        """
         textCursor = self.editor.textCursor()
         textCursor.select(QtGui.QTextCursor.WordUnderCursor)
         return textCursor.selectedText()
 
     def getObjectBeforeChar(self, _char):
+        """
+        Return python object from string.
+        """
         self.completer.setCompletionPrefix('')
         textCursor = self.editor.textCursor()
 
@@ -116,13 +127,6 @@ class AutoCompleter(QtCore.QObject):
         textCursor.movePosition(QtGui.QTextCursor.EndOfWord)
         textCursor.insertText(completion[-extra:])
         self.editor.setTextCursor(textCursor)
-
-    # @QtCore.Slot(QtGui.QKeyEvent)
-    # def key_press_handler(self, event):
-    #     if self.editor.wait_for_autocomplete:
-    #     self._pre_keyPressEvent(event)
-    #     self._post_keyPressEvent(event)
-
 
     @QtCore.Slot(QtGui.QKeyEvent)
     def _pre_keyPressEvent(self, event):
