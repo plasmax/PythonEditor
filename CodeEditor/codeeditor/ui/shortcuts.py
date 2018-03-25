@@ -85,12 +85,15 @@ class ShortcutHandler(QtCore.QObject):
                 for b in range(textCursor.selectionStart(), textCursor.selectionEnd())
                     ])
         blockNumbers |= set([doc.findBlock(textCursor.position()).blockNumber()])
-        blocks = [
-                doc.findBlockByNumber(b)
-                for b in blockNumbers
-                if (doc.findBlockByNumber(b).text().strip() != ''
-                    and ignoreEmpty)
-                ]
+
+        blocks = []
+        for b in blockNumbers:
+            bn = doc.findBlockByNumber(b)
+            if not ignoreEmpty:
+                blocks.append(bn)
+            elif doc.findBlockByNumber(b).text().strip() != '':
+                blocks.append(bn)
+
         return blocks
 
     def execSelectedText(self):
@@ -124,11 +127,8 @@ class ShortcutHandler(QtCore.QObject):
     def indent_next_line(self):
         """
         Match next line indentation to current line
-        TODO:
-        # if ':' is character in textCursor position,
-        # add an extra line
-        #TODO: extend extra tab width
-        #for try: else: class ) and def ) cases
+        If ':' is character in cursor position,
+        add an extra line.
         """
         textCursor = self.editor.textCursor()
         line = textCursor.block().text()
@@ -187,7 +187,7 @@ class ShortcutHandler(QtCore.QObject):
 
     def unindent(self):
         """ Indent Selected Text """
-        blocks = self.get_selected_blocks()
+        blocks = self.get_selected_blocks(ignoreEmpty=False)
         for block in blocks:
             cursor = QtGui.QTextCursor(block)
             cursor.select(QtGui.QTextCursor.LineUnderCursor)

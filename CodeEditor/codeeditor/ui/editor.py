@@ -23,6 +23,7 @@ class Editor(QtWidgets.QPlainTextEdit):
                             '[', ']',
                             '(', ')',
                             '{', '}'
+                            '<', '>'
                             ]
 
     def keyPressEvent(self, event):
@@ -39,7 +40,7 @@ class Editor(QtWidgets.QPlainTextEdit):
         if (event.text() in self.wrap_types
                 and self.textCursor().hasSelection()):
             return self.wrap_signal.emit(event.text())
-            
+
         if (event.key() == QtCore.Qt.Key_Home
                 and event.modifiers() == QtCore.Qt.ControlModifier | QtCore.Qt.AltModifier):
             raise NotImplementedError, 'add move line to top function'
