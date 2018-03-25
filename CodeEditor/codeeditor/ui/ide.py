@@ -8,7 +8,9 @@ from codeeditor.core import execute
 
 class IDE(QtWidgets.QWidget):
     """
-    Main widget. Sets up layout and connects signals.
+    Main widget. 
+    Sets up layout and connects 
+    some signals.
     """
     def __init__(self):
         super(IDE, self).__init__()
