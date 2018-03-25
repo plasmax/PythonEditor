@@ -46,6 +46,9 @@ class SESysStdErr(SERedirector, PySingleton):
         print 'reset stream err'
 
 class Speaker(QtCore.QObject):
+    """
+    Used to relay sys stdout, stderr
+    """
     emitter = QtCore.Signal(str)
 
 class Terminal(QtWidgets.QTextEdit):

@@ -3,7 +3,7 @@ import sys
 from Qt import QtWidgets, QtCore, QtGui
 from editor import Editor
 from terminal import Terminal
-from shortcuts import ShortcutHandler
+from features.shortcuts import ShortcutHandler
 from codeeditor.core import execute
 
 class IDE(QtWidgets.QWidget):
@@ -17,9 +17,12 @@ class IDE(QtWidgets.QWidget):
         self.setObjectName('IDE')
 
         #construct layout
-        layout = QtWidgets.QHBoxLayout(self)
+        layout = QtWidgets.QVBoxLayout(self)
         layout.setObjectName('IDE_MainLayout')
         layout.setContentsMargins(0,0,0,0)
+
+        self.setup_menu()
+
         splitter = QtWidgets.QSplitter(QtCore.Qt.Vertical)
         splitter.setObjectName('IDE_MainVerticalSplitter')
 
@@ -35,3 +38,26 @@ class IDE(QtWidgets.QWidget):
         sch.execTextSignal.connect(execute.mainexec)
         sch.execTextSignal.connect(terminal.setTabFocus)
         sch.clearOutputSignal.connect(terminal.clear)
+
+    def setup_menu(self):
+        """
+        Adds top menu bar and various manu items.
+        """
+        menuBar = QtWidgets.QMenuBar(self)
+        fileMenu = QtWidgets.QMenu('File')
+        editMenu =  QtWidgets.QMenu('Edit')
+        helpMenu =  QtWidgets.QMenu('Help')
+        for menu in [fileMenu, editMenu, helpMenu]:
+            menuBar.addMenu(menu)
+
+        fileMenu.addAction('Save') #QtGui.QAction (?)
+        fileMenu.addAction('Save As')
+
+        editMenu.addAction('Settings')
+        editMenu.addAction('Copy to Sublime')
+        editMenu.addAction('Open in Sublime')
+
+        helpMenu.addAction('About Python Editor')
+        helpMenu.addAction('Shortcuts')
+
+        # self.layout().addWidget(menuBar)

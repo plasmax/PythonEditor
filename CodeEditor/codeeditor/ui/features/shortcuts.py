@@ -1,5 +1,5 @@
 from functools import partial
-from Qt import QtWidgets, QtGui, QtCore
+from codeeditor.ui.Qt import QtWidgets, QtGui, QtCore
 
 class ShortcutHandler(QtCore.QObject):
     """

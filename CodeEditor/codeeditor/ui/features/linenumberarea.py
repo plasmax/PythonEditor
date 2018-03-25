@@ -1,4 +1,4 @@
-from Qt import QtGui, QtCore, QtWidgets
+from codeeditor.ui.Qt import QtGui, QtCore, QtWidgets
 
 class LineNumberArea(QtWidgets.QWidget):
     """
