@@ -1,7 +1,3 @@
-"""
-Taken from Python Editor v0.1. Not yet implemented.
-"""
-
 import time
 from codeeditor.utils.constants import AUTOSAVE_FILE
 from codeeditor.ui.Qt import QtCore
