@@ -1,19 +1,14 @@
-"""
-TODO: Update to latest version.
-"""
 import sys
 import os
 
-try:
+pyside = 'PySide'
+pyqt = 'PyQt4'
+
+if 'nuke' in globals():
     import nuke
     if nuke.NUKE_VERSION_MAJOR > 10:
         pyside = 'PySide2'
         pyqt = 'PyQt5'
-    else:
-        raise NotImplementedError
-except Exception:
-    pyside = 'PySide'
-    pyqt = 'PyQt4'
 
 if sys.platform == "linux" or sys.platform == "linux2":
     # linux
