@@ -75,3 +75,19 @@ class IDE(QtWidgets.QWidget):
         helpMenu.addAction('Shortcuts')
 
         self.layout().addWidget(menuBar)
+
+    def showEvent(self, event):
+        """
+        Hack to get rid of margins automatically put in
+        place by Nuke Dock Window.
+        """
+        try:
+            parent = self.parentWidget().parentWidget()
+            parent.layout().setContentsMargins(0,0,0,0)
+
+            parent = self.parentWidget().parentWidget().parentWidget().parentWidget()
+            parent.layout().setContentsMargins(0,0,0,0)
+        except:
+            pass
+
+        super(IDE, self).showEvent(event)
