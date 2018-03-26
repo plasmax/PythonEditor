@@ -5,7 +5,7 @@ import __main__
 import subprocess
 from functools import partial
 from pprint import pprint
-from codeeditor.ui.Qt import QtWidgets, QtGui, QtCore
+from PythonEditor.ui.Qt import QtWidgets, QtGui, QtCore
 
 # os.environ['SUBLIME_PATH'] = '/net/homes/mlast/software/sublime_text_3/sublime_text'
 os.environ['SUBLIME_PATH'] = 'C:/Program Files/Sublime Text 3/sublime_text.exe'

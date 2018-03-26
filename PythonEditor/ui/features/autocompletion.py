@@ -1,53 +1,63 @@
-import os
 import sys
 import re
+import __main__
 
-import time
-print 'importing', __name__, 'at', time.asctime()
+from PythonEditor.ui.Qt import QtGui, QtCore, QtWidgets
 
-from ...qt import QtGui, QtCore
-
-import linenumbers
-CodeEditor = linenumbers.CodeEditorWithLines
-
-class Codepleter(QtGui.QCompleter):
+class Completer(QtWidgets.QCompleter):
     def __init__(self, stringlist):
-        super(Codepleter, self).__init__(stringlist)
+        super(Completer, self).__init__(stringlist)
 
-        self.setCompletionMode(QtGui.QCompleter.PopupCompletion)
+        self.setCompletionMode(QtWidgets.QCompleter.PopupCompletion)
         self.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
         
-class CodeEditorAuto(CodeEditor):
-    def __init__(self, file, output):
-        super(CodeEditorAuto, self).__init__(file, output)
+class AutoCompleter(QtCore.QObject):
+    """
+    Provides autocompletion to QPlainTextEdit.
+    Requires signals to be emitted from such
+    with -pre and -post keyPressEvent signals.
+    """
+    def __init__(self, editor):
+        super(AutoCompleter, self).__init__()
 
         self.loadedModules = sys.modules.keys()
         self.completer = None
 
-    def focusInEvent(self, event):
+        self.editor = editor
+        editor.focus_in_signal.connect(self._focusInEvent)
+        editor.key_pressed_signal.connect(self._pre_keyPressEvent)
+        editor.post_key_pressed_signal.connect(self._post_keyPressEvent)
+
+    @QtCore.Slot(QtGui.QFocusEvent)
+    def _focusInEvent(self, event):
         if self.completer == None:
-            wordlist = list(set(re.findall('\w+', self.toPlainText())))
-            self.completer = Codepleter(wordlist)
+            wordlist = list(set(re.findall('\w+', self.editor.toPlainText())))
+            self.completer = Completer(wordlist)
             self.completer.setParent(self)
-            self.completer.setWidget(self)
+            self.completer.setWidget(self.editor)
             self.completer.activated.connect(self.insertCompletion)
-        super(CodeEditorAuto, self).focusInEvent(event)
 
     def wordUnderCursor(self):
-        textCursor = self.textCursor()
+        """
+        Returns a string with the word under the cursor.
+        """
+        textCursor = self.editor.textCursor()
         textCursor.select(QtGui.QTextCursor.WordUnderCursor)
         return textCursor.selectedText()
 
     def getObjectBeforeChar(self, _char):
+        """
+        Return python object from string.
+        """
         self.completer.setCompletionPrefix('')
-        textCursor = self.textCursor()
+        textCursor = self.editor.textCursor()
 
-        pos = self.textCursor().position()
-        bn = self.document().findBlock(pos).blockNumber()
+        pos = self.editor.textCursor().position()
+        bn = self.editor.document().findBlock(pos).blockNumber()
 
-        bl = self.document().findBlockByNumber(bn)
+        bl = self.editor.document().findBlockByNumber(bn)
         bp = bl.position()
-        s = self.toPlainText()[bp:pos]
+        s = self.editor.toPlainText()[bp:pos]
 
         for c in s:
             if (not c.isalnum() 
@@ -62,8 +72,7 @@ class CodeEditorAuto(CodeEditor):
                 or not word_before_dot[-1].isalnum()):
             return
 
-        _objects = self._globals.copy()
-        _objects.update(self._locals.copy())
+        _objects = __main__.__dict__.copy()
 
         varname_exists = (word_before_dot in _objects)
 
@@ -71,10 +80,10 @@ class CodeEditorAuto(CodeEditor):
             _obj = _objects.get(word_before_dot)
         else:
             try:
-                loc = {}
-                exec('_obj = '+word_before_dot, self._globals, loc)
-                print loc
-                _obj = loc.get('_obj')
+                _ = {}
+                exec('_obj = '+word_before_dot, _objects, _)
+                print _
+                _obj = _.get('_obj')
             except NameError, e: #we want to handle this silently
                 return
                 
@@ -100,26 +109,30 @@ class CodeEditorAuto(CodeEditor):
         pass
 
     def setList(self, stringlist):
-        qslm =  QtGui.QStringListModel()
+        qslm =  QtCore.QStringListModel()
         qslm.setStringList(stringlist)
         self.completer.setModel(qslm)
 
     def showPopup(self):
-        cursorRect = self.cursorRect()
+        cursorRect = self.editor.cursorRect()
         cursorRect.setWidth(self.completer.popup().sizeHintForColumn(0)
             + self.completer.popup().verticalScrollBar().sizeHint().width())
         self.completer.complete(cursorRect)
 
     def insertCompletion(self, completion):
-        textCursor = self.textCursor()
+        textCursor = self.editor.textCursor()
         extra = (len(completion) -
             len(self.completer.completionPrefix()))
         textCursor.movePosition(QtGui.QTextCursor.Left)
         textCursor.movePosition(QtGui.QTextCursor.EndOfWord)
         textCursor.insertText(completion[-extra:])
-        self.setTextCursor(textCursor)
+        self.editor.setTextCursor(textCursor)
 
-    def keyPressEvent(self, event):
+    @QtCore.Slot(QtGui.QKeyEvent)
+    def _pre_keyPressEvent(self, event):
+        """
+        Called before QPlainTextEdit.keyPressEvent
+        """
         cp = self.completer
         cpActive = cp and cp.popup() and cp.popup().isVisible()
 
@@ -137,7 +150,7 @@ class CodeEditorAuto(CodeEditor):
                 cp.popup().hide()
 
         if event.key() == QtCore.Qt.Key_Tab:
-            textCursor = self.textCursor()
+            textCursor = self.editor.textCursor()
             if (not textCursor.hasSelection()
                     and not event.modifiers() == QtCore.Qt.ShiftModifier):
                 textCursor.select(QtGui.QTextCursor.LineUnderCursor)
@@ -149,7 +162,7 @@ class CodeEditorAuto(CodeEditor):
                     ret = {}
                     cmd = '__ret = '+ selectedText[:-1].split(' ')[-1]
                     cmd = compile(cmd, '<Python Editor Tooltip>', 'exec')
-                    exec(cmd, self._globals, ret)
+                    exec(cmd, __main__.__dict__.copy(), ret)
                     _obj = ret.get('__ret')
                     if _obj:
                         info = str('')
@@ -162,11 +175,21 @@ class CodeEditorAuto(CodeEditor):
                             if _obj.__doc__:
                                 info += '\n' + _obj.__doc__
 
-                        QtGui.QToolTip.showText(self.mapToGlobal(self.cursorRect().center()), info)
+                        center_cursor_rect = self.editor.cursorRect().center()
+                        global_rect = self.editor.mapToGlobal(center_cursor_rect)
+                        QtWidgets.QToolTip.showText(global_rect, info)
                     return True
 
-        super(CodeEditorAuto, self).keyPressEvent(event)
-                
+        self.editor.wait_for_autocomplete = False
+        self.editor.keyPressEvent(event)
+
+    @QtCore.Slot(QtGui.QKeyEvent)
+    def _post_keyPressEvent(self, event):
+        """
+        Called after QPlainTextEdit.keyPressEvent
+        """
+        cp = self.completer
+
         if event.key() == QtCore.Qt.Key_Period:
             if cp.popup():
                 cp.popup().hide()
@@ -179,12 +202,9 @@ class CodeEditorAuto(CodeEditor):
             cp.setCompletionPrefix(currentWord)
             cp.popup().setCurrentIndex(cp.completionModel().index(0,0))
 
+        self.editor.wait_for_autocomplete = True
         # else:
         #     self.getObjectBeforeChar(event.text())
         #     print 'word'
         #     print self.wordUnderCursor()
         #     # self.completeVariables()
-
-
-            
-

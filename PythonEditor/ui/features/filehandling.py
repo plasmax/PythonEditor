@@ -1,6 +1,6 @@
 import time
-from codeeditor.utils.constants import AUTOSAVE_FILE
-from codeeditor.ui.Qt import QtCore
+from PythonEditor.utils.constants import AUTOSAVE_FILE
+from PythonEditor.ui.Qt import QtCore
 from xml.etree import ElementTree
 
 class FileHandler(QtCore.QObject):

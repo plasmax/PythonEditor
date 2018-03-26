@@ -10,11 +10,11 @@ with open( TEST_FILE, 'r' ) as f:
     TEST_CODE = f.read()
 
 for m in sys.modules.keys():
-    if 'codeeditor' in m:
+    if 'PythonEditor' in m:
         del sys.modules[m]
 
-from codeeditor.ui.Qt import QtWidgets, QtGui, QtCore
-from codeeditor.ui import edittabs 
+from PythonEditor.ui.Qt import QtWidgets, QtGui, QtCore
+from PythonEditor.ui import edittabs 
 
 @QtCore.Slot(int)
 def cw(num):

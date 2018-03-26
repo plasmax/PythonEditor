@@ -7,16 +7,16 @@ PACKAGE_PATH = os.path.dirname( TESTS_DIR )
 sys.path.append( PACKAGE_PATH )
 
 for m in sys.modules.keys():
-    if 'codeeditor' in m:
+    if 'PythonEditor' in m:
         del sys.modules[m]
 
-import codeeditor
-reload(codeeditor)
+import PythonEditor
+reload(PythonEditor)
 
 if __name__ == '__main__':
-    from codeeditor.ui.Qt import QtWidgets, QtGui, QtCore
+    from PythonEditor.ui.Qt import QtWidgets, QtGui, QtCore
     app = QtWidgets.QApplication(sys.argv)
-    ide = codeeditor.ide.IDE()
+    ide = PythonEditor.ide.IDE()
     ide.show()
     ide.resize(500, 800)
     QtWidgets.QApplication.setStyle(QtWidgets.QStyleFactory.create('Plastique'))

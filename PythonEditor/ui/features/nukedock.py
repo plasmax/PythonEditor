@@ -1,11 +1,11 @@
 """
 For menu.py usage:
-from codeeditor.ui.features import nukedock
+from PythonEditor.ui.features import nukedock
 nukedock.setup_dock()
 """
 import time
 import sys
-from codeeditor.utils.constants import NUKE_DIR
+from PythonEditor.utils.constants import NUKE_DIR
 
 reloadAllModules ="""
 for m in sys.modules.keys():
@@ -51,7 +51,7 @@ def setup_dock():
     #         return None
     #     registerWidgetAsPanel( widget, name, id, create = False )
 
-    registerWidgetAsPanel('__import__("codeeditor").ide.IDE', "Python Editor", 'i.d.e.Python_Editor')
+    registerWidgetAsPanel('__import__("PythonEditor").ide.IDE', "Python Editor", 'i.d.e.Python_Editor')
 
     nuke.menu('Nuke').addCommand('.   Python Editor   .', reloadAllModules,
         '\\', icon= NUKE_DIR + '/icons/PythonEditor.png')

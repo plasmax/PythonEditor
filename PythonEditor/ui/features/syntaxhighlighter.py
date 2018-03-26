@@ -1,4 +1,4 @@
-from codeeditor.ui.Qt import QtGui, QtCore
+from PythonEditor.ui.Qt import QtGui, QtCore
 
 class Highlight(QtGui.QSyntaxHighlighter):
     """

@@ -1,6 +1,6 @@
 from functools import partial
-from codeeditor.ui.Qt import QtWidgets, QtGui, QtCore
-from codeeditor.core import execute
+from PythonEditor.ui.Qt import QtWidgets, QtGui, QtCore
+from PythonEditor.core import execute
 
 class ShortcutHandler(QtCore.QObject):
     """

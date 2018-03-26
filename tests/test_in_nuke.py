@@ -8,15 +8,15 @@ with open( TEST_FILE, 'r' ) as f:
 sys.path.append(PACKAGE_PATH)
 
 for m in sys.modules.keys():
-    if 'codeeditor' in m:
+    if 'PythonEditor' in m:
         del sys.modules[m]
 
-import codeeditor
-reload(codeeditor)
-ide = codeeditor.ide.IDE()
+import PythonEditor
+reload(PythonEditor)
+ide = PythonEditor.ide.IDE()
 ide.show()
 ide.editor.setPlainText(TEST_CODE)
 
 import nukescripts
-nukescripts.registerWidgetAsPanel('__import__("codeeditor").ide.IDE', 
+nukescripts.registerWidgetAsPanel('__import__("PythonEditor").ide.IDE', 
                                   'Python Editor', 'i.d.e')
