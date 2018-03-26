@@ -51,7 +51,7 @@ def setup_dock():
     #         return None
     #     registerWidgetAsPanel( widget, name, id, create = False )
 
-    registerWidgetAsPanel('__import__("codeeditor").IDE.IDE', "Python Editor", 'i.d.e.Python_Editor')
+    registerWidgetAsPanel('__import__("codeeditor").ide.IDE', "Python Editor", 'i.d.e.Python_Editor')
 
     nuke.menu('Nuke').addCommand('.   Python Editor   .', reloadAllModules,
         '\\', icon= NUKE_DIR + '/icons/PythonEditor.png')
