@@ -10,7 +10,7 @@ class ShortcutHandler(QtCore.QObject):
     exec_text_signal = QtCore.Signal()
 
     def __init__(self, editor):
-        super(ShortcutHandler, self).__init__(parent=editor)
+        super(ShortcutHandler, self).__init__()
         self.setObjectName('ShortcutHandler')
         self.setParent(editor)
         self.editor = editor
