@@ -1,3 +1,4 @@
+import __main__
 from functools import partial
 from PythonEditor.ui.Qt import QtWidgets, QtGui, QtCore
 from PythonEditor.core import execute
@@ -39,14 +40,15 @@ class ShortcutHandler(QtCore.QObject):
                     'Ctrl+Alt+Return': self.new_line_below,
                     'Ctrl+Backspace' : self.clear_output_signal.emit,
                     'Ctrl+D': notimp('select word or next word'),
-                    'Ctrl+Shift+D': notimp('duplicate lines'),
+                    'Ctrl+Shift+D': self.duplicate_lines,
                     'Ctrl+W': notimp('close tab'),
-                    'Ctrl+H': notimp('print selection help'),
-                    'Ctrl+T': notimp('print selection type'),
-                    'Ctrl+F': notimp('search function'),
+                    'Ctrl+H': self.printHelp,
+                    'Ctrl+T': self.printType,
+                    'Ctrl+F': self.searchInput,
                     'Ctrl+L': self.select_lines,
-                    'Ctrl+J': notimp('join lines'),
+                    'Ctrl+J': self.join_lines,
                     'Ctrl+M': notimp('jump to nearest bracket'),
+                    'Ctrl+N': notimp('new tab'), # not sure if nuke will allow this one
                     'Ctrl+Shift+M': notimp('select between brackets'),
                     'Ctrl+/': self.comment_toggle,
                     'Ctrl+]': self.indent,
@@ -55,7 +57,7 @@ class ShortcutHandler(QtCore.QObject):
                     'Ctrl+=': notimp('zoom in'),
                     'Ctrl++': notimp('zoom in'),
                     'Ctrl+-': notimp('zoom out'),
-                    'Ctrl+Shift+K': notimp('delete lines'),
+                    'Ctrl+Shift+K': self.delete_lines,
                     'Ctrl+Shift+Down': notimp('move lines down'),
                     'Ctrl+Shift+Up': notimp('move lines up'),
                     'Ctrl+Alt+Up': notimp('duplicate cursor up'),
@@ -90,12 +92,13 @@ class ShortcutHandler(QtCore.QObject):
                     ])
         blockNumbers |= set([doc.findBlock(textCursor.position()).blockNumber()])
 
+        isEmpty = lambda b:  doc.findBlockByNumber(b).text().strip() != ''
         blocks = []
         for b in blockNumbers:
             bn = doc.findBlockByNumber(b)
             if not ignoreEmpty:
                 blocks.append(bn)
-            elif doc.findBlockByNumber(b).text().strip() != '':
+            elif isEmpty(b):
                 blocks.append(bn)
 
         return blocks
@@ -272,3 +275,108 @@ class ShortcutHandler(QtCore.QObject):
         new_start = textCursor.position()
         textCursor.setPosition(new_end, QtGui.QTextCursor.KeepAnchor)
         self.editor.setTextCursor(textCursor)
+
+    def join_lines(self):
+        """
+        Deletes the newline at end
+        of current line(s).
+        """
+        textCursor = self.editor.textCursor()
+
+        blocks = self.get_selected_blocks(ignoreEmpty=False)
+        if len(blocks) > 1:
+            textCursor.insertText(textCursor.selectedText().replace(u'\u2029',''))
+        else:
+            textCursor.movePosition(QtGui.QTextCursor.EndOfLine)
+            new_pos = textCursor.position()+1
+            if new_pos >= self.editor.document().characterCount():
+                return
+            textCursor.setPosition(new_pos, QtGui.QTextCursor.KeepAnchor)
+            textCursor.insertText('')
+            self.editor.setTextCursor(textCursor)
+
+    def delete_lines(self):
+        """
+        Deletes the contents of the 
+        current line(s).
+        """
+        textCursor = self.editor.textCursor()
+
+        start = textCursor.selectionStart()
+        end = textCursor.selectionEnd()
+        textCursor.setPosition(start, QtGui.QTextCursor.MoveAnchor)
+        textCursor.movePosition(QtGui.QTextCursor.StartOfLine)
+        new_start = textCursor.position()
+
+        textCursor.setPosition(end, QtGui.QTextCursor.MoveAnchor)
+        textCursor.movePosition(QtGui.QTextCursor.EndOfLine)
+
+        new_end = textCursor.position()
+
+        textCursor.setPosition(new_start, QtGui.QTextCursor.KeepAnchor)
+
+        if textCursor.selectedText() == '':
+            textCursor.setPosition(start, QtGui.QTextCursor.MoveAnchor)
+            next_line = new_end+1
+            if 0 < next_line >= self.editor.document().characterCount():
+                next_line = next_line-2
+                if next_line == -1:
+                    return
+            textCursor.setPosition(next_line, QtGui.QTextCursor.KeepAnchor)
+
+        textCursor.insertText('')
+
+    def searchInput(self):
+        """
+        Very basic search dialog.
+        TODO: Create a QAction and store
+        this in utils so that it can be 
+        linked to Ctrl + F as well.
+        """
+        dialog = QtWidgets.QInputDialog.getText(self.editor, 
+                                                'Search', '',)
+        text, ok = dialog
+        if not ok:
+            return
+
+        textCursor = self.editor.textCursor()
+        document = self.editor.document()
+        cursor = document.find(text, textCursor)
+        pos = cursor.position()
+        self.editor.setTextCursor(cursor)
+
+    def duplicate_lines(self):
+        """
+        Duplicates the current line or 
+        selected text downwards.
+        """
+        textCursor = self.editor.textCursor()
+        if textCursor.hasSelection():
+            raise NotImplementedError
+        else:
+            textCursor.movePosition(QtGui.QTextCursor.EndOfLine)
+            end_pos = textCursor.position()
+            textCursor.movePosition(QtGui.QTextCursor.StartOfLine)
+            textCursor.setPosition(end_pos, QtGui.QTextCursor.KeepAnchor)
+            selected_text = textCursor.selectedText()
+            textCursor.insertText(selected_text+'\n'+selected_text)
+
+    def printHelp(self):
+        """
+        Prints documentation
+        for selected object
+        """
+        text = self.editor.textCursor().selectedText()
+        obj = __main__.__dict__.get(text)
+        if obj is not None:
+            print obj.__doc__
+            
+    def printType(self):
+        """
+        Prints type
+        for selected object
+        """
+        text = self.editor.textCursor().selectedText()
+        obj = __main__.__dict__.get(text)
+        if obj is not None:
+            print type(obj)

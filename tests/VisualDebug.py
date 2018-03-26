@@ -30,7 +30,8 @@ class VisualDebug(QtGui.QWidget):
                                                 'windowTitle', 
                                                 'text', 
                                                 'title', 
-                                                '__repr__'])
+                                                '__repr__',
+                                                'python object'])
 
         self.treeview.header().setStretchLastSection(False)
         self.treeview.header().setResizeMode(QtGui.QHeaderView.ResizeToContents)
@@ -38,7 +39,6 @@ class VisualDebug(QtGui.QWidget):
         rootItem = self.treemodel.invisibleRootItem()
         for w in QtGui.qApp.topLevelWidgets(): #extra stuff
             self.recurseWidgets(w, rootItem)
-        # self.recurseWidgets(QtGui.qApp.activeWindow(), rootItem)
 
     def getObjectInfo( self, widget, indent=0 ):
         return [widget.metaObject().className(), 

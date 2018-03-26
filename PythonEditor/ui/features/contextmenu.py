@@ -72,12 +72,10 @@ class ContextMenu(QtCore.QObject):
 
     def printHelp(self):
         selectedText = self.selectedText
-        try:
-            helpInfo = eval(selectedText)
-            print help(helpInfo)
-        except:
-            print "Couldn't get help for selected text"
-
+        obj = __main__.__dict__.get(text)
+        if obj is not None:
+            print obj.__doc__
+            
     def openModule(self):
         text = str(self.selectedText)
         obj = __main__.__dict__.get(text)
