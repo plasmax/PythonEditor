@@ -7,9 +7,8 @@ from features import shortcuts
 
 class IDE(QtWidgets.QWidget):
     """
-    Main widget. 
-    Sets up layout and connects 
-    some signals.
+    Main widget. Sets up layout 
+    and connects some signals.
     """
     def __init__(self):
         super(IDE, self).__init__()
@@ -47,7 +46,9 @@ class IDE(QtWidgets.QWidget):
         Alternatively, we can dynamically set ShortcutHandler's
         editor widget depending on the TabWidget's current tab.
         (In this case the QShortcut widget is the tabwidget and
-        context is QTabWidgetChildren)
+        context is QTabWidgetChildren). This would mean keeping
+        the ShortcutHandler here (and avoid creating new shortcut
+        objects for every tab).
         """
         sch = shortcuts.ShortcutHandler(self.editor)
         sch.clear_output_signal.connect(self.terminal.clear)

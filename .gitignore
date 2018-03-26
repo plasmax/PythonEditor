@@ -4,3 +4,7 @@ _tests/
 _old
 *.nk
 icons/
+test_app.bat
+test_code.py
+QTDark.stylesheet
+test_code_objects.py
