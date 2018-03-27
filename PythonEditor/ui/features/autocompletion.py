@@ -132,11 +132,17 @@ class AutoCompleter(QtCore.QObject):
     def _pre_keyPressEvent(self, event):
         """
         Called before QPlainTextEdit.keyPressEvent
+        TODO:
+        - Fix bug whereby sometimes "enter" key doesn't
+        trigger completion
+        - Complete on any key after dot (not just tab)
+        - Complete global variables
+        - Complete defined names (parse for "name =" thing)
         """
         cp = self.completer
         cpActive = cp and cp.popup() and cp.popup().isVisible()
 
-        if cpActive:
+        if cpActive: #sometimes "enter" key doesn't trigger completion
             if event.key() in (
                                 QtCore.Qt.Key_Enter,
                                 QtCore.Qt.Key_Return,
