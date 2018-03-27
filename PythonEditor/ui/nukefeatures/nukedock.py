@@ -13,7 +13,9 @@ for m in sys.modules.keys():
         del sys.modules[m]
 import PythonEditor
 reload(PythonEditor)
-nukescripts.panels.__panels["i.d.e"]()
+from PythonEditor.ui.nukefeatures import nukedock
+nukedock.setup_dock()
+nukescripts.panels.__panels["i.d.e.Python_Editor"]()
 """
 
 def setup_dock():
@@ -53,11 +55,12 @@ def setup_dock():
 
     registerWidgetAsPanel('__import__("PythonEditor").ide.IDE', "Python Editor", 'i.d.e.Python_Editor')
 
-    nuke.menu('Nuke').addCommand('.   Python Editor   .', reloadAllModules,
+    panelMenu = nuke.menu('Nuke').addMenu('Panels')
+    panelMenu.addCommand('Python Editor', reloadAllModules,
         '\\', icon= NUKE_DIR + '/icons/PythonEditor.png')
 
     nuke.menu('Nodes').addCommand('Python Editor', 
-        'nukescripts.panels.__panels["i.d.e.Python_Editor"](toPane=False).show()', 
+        'nukescripts.panels.__panels["i.d.e.Python_Editor"]()', 
         'Alt+z', icon= NUKE_DIR + '/icons/PythonEditor.png')
 
 if NUKE_DIR in sys.path:
