@@ -10,14 +10,14 @@ from PythonEditor.ui.Qt import QtWidgets, QtGui, QtCore
 # os.environ['SUBLIME_PATH'] = '/net/homes/mlast/software/sublime_text_3/sublime_text'
 os.environ['SUBLIME_PATH'] = 'C:/Program Files/Sublime Text 3/sublime_text.exe'
 
-def openModule(module):
-    try:
-        print bytes(module.__file__)
-        subprocess.Popen([os.environ['SUBLIME_PATH'], module.__file__.replace('.pyc', '.py')]) 
-    except AttributeError:
-        file = inspect.getfile(module)
-        subprocess.Popen([os.environ['SUBLIME_PATH'], file]) 
-
+def open_module_file(obj):
+    file = inspect.getfile(obj)
+    print file
+    SUBLIME_PATH = os.environ.get('SUBLIME_PATH')
+    if (SUBLIME_PATH
+            and os.path.isdir(os.path.dirname(SUBLIME_PATH))):
+        subprocess.Popen([SUBLIME_PATH, file]) 
+        
 def openDir(module):
     try:
         print bytes(module.__file__)
@@ -75,16 +75,12 @@ class ContextMenu(QtCore.QObject):
         obj = __main__.__dict__.get(text)
         if obj is not None:
             print obj.__doc__
-            
-    def openModule(self):
+
+    def open_module_file(self):
         text = str(self.selectedText)
         obj = __main__.__dict__.get(text)
-        if inspect.ismodule(obj):
-            openModule(obj)
-        else:
-            print inspect.getfile(obj)
-            openModule(obj)
-
+        open_module_file(obj)
+        
     def initInspectDict(self):
 
         self.inspectDict = {func:getattr(inspect, func) 
@@ -202,7 +198,7 @@ class ContextMenu(QtCore.QObject):
 
             #conditional on text selected and sublime path verified
             self.sublimeMenu = self.menu.addMenu('Sublime')
-            self.sublimeMenu.addAction('Open Module File', self.openModule)
+            self.sublimeMenu.addAction('Open Module File', self.open_module_file)
             self.sublimeMenu.addAction('Copy to Sublime', self.notImplemented) #/net/homes/mlast/.nuke/python/_scriptEditor
 
             #conditional on text selected and inspect.isModule
