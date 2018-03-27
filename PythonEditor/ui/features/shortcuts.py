@@ -27,6 +27,8 @@ class ShortcutHandler(QtCore.QObject):
         self.editor.tab_signal.connect(self.tab_handler)
         self.editor.return_signal.connect(self.return_handler)
         self.editor.wrap_signal.connect(self.wrap_text)
+        self.editor.home_key_ctrl_alt_signal.connect(self.move_to_top)
+        self.editor.end_key_ctrl_alt_signal.connect(self.move_to_bottom)
 
     def installShortcuts(self):
         """
@@ -59,10 +61,12 @@ class ShortcutHandler(QtCore.QObject):
                     'Ctrl+Shift+M': notimp('select between brackets'),
                     'Ctrl+Shift+Up': self.move_lines_up,
                     'Ctrl+Shift+Down': self.move_lines_down,
+                    'Ctrl+Shift+Home': notimp('move to start'),
                     'Ctrl+Shift+Alt+Up': notimp('duplicate cursor up'),
                     'Ctrl+Shift+Alt+Down': notimp('duplicate cursor down'),
                     'Ctrl+N': notimp('new tab'), # not sure if nuke will allow these two
                     'Ctrl+W': notimp('close tab'),
+                    'Ctrl+X': notimp('cut line'), #won't work without overriding keyEvent
                   }
 
         context = QtCore.Qt.WidgetShortcut
@@ -195,7 +199,10 @@ class ShortcutHandler(QtCore.QObject):
             cursor.insertText('    ')
 
     def unindent(self):
-        """ Indent Selected Text """
+        """ 
+        Unindent Selected Text 
+        TODO: Keep selection.
+        """
         blocks = self.get_selected_blocks(ignoreEmpty=False)
         for block in blocks:
             cursor = QtGui.QTextCursor(block)
@@ -443,6 +450,8 @@ class ShortcutHandler(QtCore.QObject):
             textCursor.setPosition(moved_start, QtGui.QTextCursor.MoveAnchor)
             moved_end = textCursor.position()+selection_length
             textCursor.setPosition(moved_end, QtGui.QTextCursor.KeepAnchor)
+        else:
+            textCursor.setPosition(pos+start_offset, QtGui.QTextCursor.MoveAnchor)
 
         self.editor.setTextCursor(textCursor)
 
@@ -486,5 +495,14 @@ class ShortcutHandler(QtCore.QObject):
             textCursor.setPosition(moved_end, QtGui.QTextCursor.MoveAnchor)
             moved_start = moved_end-selection_length
             textCursor.setPosition(moved_start, QtGui.QTextCursor.KeepAnchor)
+        else:
+            pos = textCursor.position()
+            textCursor.setPosition(pos-end_offset, QtGui.QTextCursor.MoveAnchor)
 
         self.editor.setTextCursor(textCursor)
+
+    def move_to_top(self):
+        raise NotImplementedError, 'add move line to top function'
+
+    def move_to_bottom(self):
+        raise NotImplementedError, 'add move line to bottom function'
