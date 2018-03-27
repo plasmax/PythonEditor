@@ -4,10 +4,6 @@ import os
 TESTS_DIR = os.path.dirname(__file__)
 PACKAGE_PATH = os.path.dirname( TESTS_DIR )
 sys.path.append( PACKAGE_PATH )
-TEST_FILE = os.path.join( PACKAGE_PATH, 'tests/test_code.py')
-
-with open( TEST_FILE, 'r' ) as f:
-    TEST_CODE = f.read()
 
 for m in sys.modules.keys():
     if 'PythonEditor' in m:
