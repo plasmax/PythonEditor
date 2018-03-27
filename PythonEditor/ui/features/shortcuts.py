@@ -1,3 +1,4 @@
+import sys
 import __main__
 from functools import partial
 from PythonEditor.ui.Qt import QtWidgets, QtGui, QtCore
@@ -39,29 +40,29 @@ class ShortcutHandler(QtCore.QObject):
                     'Ctrl+Shift+Return': self.new_line_above,
                     'Ctrl+Alt+Return': self.new_line_below,
                     'Ctrl+Backspace' : self.clear_output_signal.emit,
-                    'Ctrl+D': notimp('select word or next word'),
                     'Ctrl+Shift+D': self.duplicate_lines,
-                    'Ctrl+W': notimp('close tab'),
                     'Ctrl+H': self.printHelp,
                     'Ctrl+T': self.printType,
                     'Ctrl+F': self.searchInput,
                     'Ctrl+L': self.select_lines,
                     'Ctrl+J': self.join_lines,
-                    'Ctrl+M': notimp('jump to nearest bracket'),
-                    'Ctrl+N': notimp('new tab'), # not sure if nuke will allow this one
-                    'Ctrl+Shift+M': notimp('select between brackets'),
                     'Ctrl+/': self.comment_toggle,
                     'Ctrl+]': self.indent,
                     'Ctrl+[': self.unindent,
                     'Shift+Tab' : self.unindent,
-                    'Ctrl+=': notimp('zoom in'),
-                    'Ctrl++': notimp('zoom in'),
-                    'Ctrl+-': notimp('zoom out'),
+                    'Ctrl+=': self.zoomIn,
+                    'Ctrl++': self.zoomIn,
+                    'Ctrl+-': self.zoomOut,
                     'Ctrl+Shift+K': self.delete_lines,
-                    'Ctrl+Shift+Down': notimp('move lines down'),
-                    'Ctrl+Shift+Up': notimp('move lines up'),
-                    'Ctrl+Alt+Up': notimp('duplicate cursor up'),
-                    'Ctrl+Alt+Down': notimp('duplicate cursor down'),
+                    'Ctrl+D': notimp('select word or next word'),
+                    'Ctrl+M': notimp('jump to nearest bracket'),
+                    'Ctrl+Shift+M': notimp('select between brackets'),
+                    'Ctrl+Shift+Up': self.move_lines_up,
+                    'Ctrl+Shift+Down': self.move_lines_down,
+                    'Ctrl+Shift+Alt+Up': notimp('duplicate cursor up'),
+                    'Ctrl+Shift+Alt+Down': notimp('duplicate cursor down'),
+                    'Ctrl+N': notimp('new tab'), # not sure if nuke will allow these two
+                    'Ctrl+W': notimp('close tab'),
                   }
 
         context = QtCore.Qt.WidgetShortcut
@@ -380,3 +381,110 @@ class ShortcutHandler(QtCore.QObject):
         obj = __main__.__dict__.get(text)
         if obj is not None:
             print type(obj)
+
+    def zoomIn(self):
+        """
+        Zooms in by changing the font size.
+        """
+        font = self.editor.font()
+        size = font.pointSize()
+        new_size = size + 1
+        font.setPointSize(new_size)
+        self.editor.setFont(font)
+
+    def zoomOut(self):
+        """
+        Zooms out by changing the font size.
+        """
+        font = self.editor.font()
+        size = font.pointSize()
+        new_size = size - 1 if size > 1 else 1
+        font.setPointSize(new_size)
+        self.editor.setFont(font)
+
+    def move_lines_up(self):
+        """
+        Moves current lines upwards.
+        """
+        restoreSelection = False
+        textCursor = self.editor.textCursor()
+        if textCursor.hasSelection():
+            restoreSelection = True
+
+        start = textCursor.selectionStart()
+        end = textCursor.selectionEnd()
+        selection_length = end-start
+        textCursor.setPosition(start, QtGui.QTextCursor.MoveAnchor)
+        textCursor.movePosition(QtGui.QTextCursor.StartOfLine)
+        new_start = textCursor.position()
+
+        textCursor.setPosition(end, QtGui.QTextCursor.MoveAnchor)
+        textCursor.movePosition(QtGui.QTextCursor.EndOfLine)
+        new_end = textCursor.position()
+
+        start_offset = start-new_start
+        end_offset = new_end-end
+
+        if new_start == 0:
+            return
+
+        textCursor.setPosition(new_start, QtGui.QTextCursor.KeepAnchor)
+        selectedText = textCursor.selectedText()
+
+        textCursor.insertText('')
+        textCursor.deletePreviousChar()
+        textCursor.movePosition(QtGui.QTextCursor.StartOfLine)
+        pos = textCursor.position()
+        textCursor.insertText(selectedText+'\n')
+        textCursor.setPosition(pos, QtGui.QTextCursor.MoveAnchor)
+
+        if restoreSelection:
+            moved_start = textCursor.position()+start_offset
+            textCursor.setPosition(moved_start, QtGui.QTextCursor.MoveAnchor)
+            moved_end = textCursor.position()+selection_length
+            textCursor.setPosition(moved_end, QtGui.QTextCursor.KeepAnchor)
+
+        self.editor.setTextCursor(textCursor)
+
+    def move_lines_down(self):
+        """
+        Moves current lines downwards.
+        """
+        restoreSelection = False
+
+        textCursor = self.editor.textCursor()
+        if textCursor.hasSelection():
+            restoreSelection = True
+
+        start = textCursor.selectionStart()
+        end = textCursor.selectionEnd()
+        selection_length = end-start
+
+        textCursor.setPosition(start, QtGui.QTextCursor.MoveAnchor)
+        textCursor.movePosition(QtGui.QTextCursor.StartOfLine)
+        new_start = textCursor.position()
+
+        textCursor.setPosition(end, QtGui.QTextCursor.MoveAnchor)
+        textCursor.movePosition(QtGui.QTextCursor.EndOfLine)
+        new_end = textCursor.position()
+
+        if new_end + 1 >= self.editor.document().characterCount():
+            return
+
+        start_offset = start-new_start
+        end_offset = new_end-end
+
+        textCursor.setPosition(new_start, QtGui.QTextCursor.KeepAnchor)
+        selectedText = textCursor.selectedText()
+        textCursor.insertText('')
+        textCursor.deleteChar()
+        textCursor.movePosition(QtGui.QTextCursor.EndOfLine)
+        textCursor.insertText('\n'+selectedText)
+
+        if restoreSelection:
+            moved_end = textCursor.position()-end_offset
+            textCursor.setPosition(moved_end, QtGui.QTextCursor.MoveAnchor)
+            moved_start = moved_end-selection_length
+            textCursor.setPosition(moved_start, QtGui.QTextCursor.KeepAnchor)
+
+        self.editor.setTextCursor(textCursor)
