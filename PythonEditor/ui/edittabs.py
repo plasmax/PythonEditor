@@ -14,7 +14,7 @@ class EditTabs(QtWidgets.QTabWidget):
         self.new_tab()
         self._build_tabs()
         self.currentChanged.connect(self.widgetChanged)
-        self.tabCloseRequested.connect(self.closeTab)
+        self.tabCloseRequested.connect(self.close_tab)
 
     def _build_tabs(self):
         self.insertTab(1, QtWidgets.QWidget(),'')
@@ -35,8 +35,16 @@ class EditTabs(QtWidgets.QTabWidget):
                        'New Tab')
         self.setCurrentIndex(index)
 
-    def closeTab(self, index):
+    def close_current_tab(self):
         _index = self.currentIndex()
+        self.close_tab(_index)
+
+    def close_tab(self, index):
+        _index = self.currentIndex()
+
+        old_widget = self.widget(index)
+        old_widget.deleteLater()
+
         self.removeTab(index)
         index = self.count() - 1
         self.setCurrentIndex(_index-1)

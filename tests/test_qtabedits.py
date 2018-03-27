@@ -14,7 +14,7 @@ for m in sys.modules.keys():
         del sys.modules[m]
 
 from PythonEditor.ui.Qt import QtWidgets, QtGui, QtCore
-from PythonEditor.ui import edittabs 
+from PythonEditor.ui import idetabs 
 
 @QtCore.Slot(int)
 def cw(num):
@@ -25,9 +25,7 @@ if __name__ == '__main__':
     For testing outside of nuke.
     """
     app = QtWidgets.QApplication(sys.argv)
-    tabs = edittabs.EditTabs()
-    # tabs.currentChanged.connect(cw)
-    # tabs.tabCloseRequested.connect(cw)
-    tabs.show()
+    ide = idetabs.IDE()
+    ide.show()
     QtWidgets.QApplication.setStyle(QtWidgets.QStyleFactory.create('Plastique'))
     sys.exit(app.exec_())
