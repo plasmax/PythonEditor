@@ -19,6 +19,8 @@ class Editor(QtWidgets.QPlainTextEdit):
     key_pressed_signal = QtCore.Signal(QtGui.QKeyEvent)
     post_key_pressed_signal = QtCore.Signal(QtGui.QKeyEvent)
     context_menu_signal = QtCore.Signal(QtWidgets.QMenu)
+    home_key_ctrl_alt_signal = QtCore.Signal()
+    end_key_ctrl_alt_signal = QtCore.Signal()
 
     def __init__(self):
         super(Editor, self).__init__()
@@ -63,7 +65,11 @@ class Editor(QtWidgets.QPlainTextEdit):
 
         if (event.key() == QtCore.Qt.Key_Home
                 and event.modifiers() == QtCore.Qt.ControlModifier | QtCore.Qt.AltModifier):
-            raise NotImplementedError, 'add move line to top function'
+            self.home_key_ctrl_alt_signal.emit()
+
+        if (event.key() == QtCore.Qt.Key_End
+                and event.modifiers() == QtCore.Qt.ControlModifier | QtCore.Qt.AltModifier):
+            self.end_key_ctrl_alt_signal.emit()
 
         super(Editor, self).keyPressEvent(event)
         self.post_key_pressed_signal.emit(event)
