@@ -74,7 +74,7 @@ class IDE(QtWidgets.QWidget):
         helpMenu.addAction('About Python Editor')
         helpMenu.addAction('Shortcuts')
 
-        self.layout().addWidget(menuBar)
+        # self.layout().addWidget(menuBar)
 
     def showEvent(self, event):
         """
