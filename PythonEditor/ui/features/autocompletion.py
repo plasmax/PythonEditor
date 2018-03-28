@@ -4,6 +4,26 @@ import __main__
 
 from PythonEditor.ui.Qt import QtGui, QtCore, QtWidgets
 
+KEYWORDS = ['import',
+            'def', 
+            'class',
+            'return',
+            'continue',
+            'break',
+            'print(', 
+            'from']
+
+class_snippet = """class <!cursor>():
+    def __init__(self):
+        super(, self).__init__()
+"""
+node_loop_snippet = "for node in nuke.selectedNodes():\n    "
+
+SNIPPETS = {
+            'class [snippet]': class_snippet,
+            'for node selected [snippet]': node_loop_snippet,
+            }
+
 class Completer(QtWidgets.QCompleter):
     def __init__(self, stringlist):
         super(Completer, self).__init__(stringlist)
@@ -118,19 +138,23 @@ class AutoCompleter(QtCore.QObject):
         currentWord = self.word_under_cursor()
         cp.setCompletionPrefix(currentWord)
         cp.popup().setCurrentIndex(cp.completionModel().index(0,0))
-
+        
     def completeVariables(self):
         """
         Complete variable names in 
         global scope.
+        TODO: Substring matching ;)
         """
         cp = self.completer
         variables = __main__.__dict__.keys()
+        variables = variables+KEYWORDS+SNIPPETS.keys()
         self.setList(variables)
         word = self.word_under_cursor()
         char_len = len(word)
         cp.setCompletionPrefix(word)
         cp.popup().setCurrentIndex(cp.completionModel().index(0,0))
+
+        #TODO: substring matching
         if char_len and any(w[:char_len] == word for w in variables):
             self.showPopup()
 
@@ -153,6 +177,9 @@ class AutoCompleter(QtCore.QObject):
         Inserts a completion, 
         replacing current word.
         """
+        if '[snippet]' in completion:
+            return self.insertSnippetCompletion(completion)
+
         textCursor = self.editor.textCursor()
         prefix = self.completer.completionPrefix()
         pos = textCursor.position()
@@ -160,14 +187,38 @@ class AutoCompleter(QtCore.QObject):
         textCursor.insertText(completion)
         self.editor.setTextCursor(textCursor)
 
+    def insertSnippetCompletion(self, completion):
+        """
+        Fetches snippet from dictionary and 
+        completes with that. Sets text cursor position
+        to snippet insert point.
+        """
+        snippet = SNIPPETS[completion]
+        if '<!cursor>' in snippet:
+            cursor_insert = snippet.index('<!cursor>')
+            completion = snippet.replace('<!cursor>', '')
+        else:
+            completion = snippet
+            
+        textCursor = self.editor.textCursor()
+        prefix = self.completer.completionPrefix()
+        pos = textCursor.position()
+        textCursor.setPosition(pos-len(prefix), QtGui.QTextCursor.KeepAnchor)
+        textCursor.insertText(completion)
+
+        if '<!cursor>' in snippet:
+            textCursor.setPosition(pos+cursor_insert-len(prefix), QtGui.QTextCursor.MoveAnchor)
+
+        self.editor.setTextCursor(textCursor)
+
     @QtCore.Slot(QtGui.QKeyEvent)
     def _pre_keyPressEvent(self, event):
         """
         Called before QPlainTextEdit.keyPressEvent
         TODO:
-        - Fix bug whereby sometimes "enter" key doesn't
-        trigger completion (this is because keypressevent returns)
         - Complete defined names (parse for "name =" thing)
+        - Complete class names (parse for "self.")
+        - Complete snippets
         """
         cp = self.completer
         cpActive = cp and cp.popup() and cp.popup().isVisible()
@@ -180,6 +231,7 @@ class AutoCompleter(QtCore.QObject):
                                 QtCore.Qt.Key_Tab,
                                 QtCore.Qt.Key_Backtab):
                 event.ignore()
+                self.editor.wait_for_autocomplete = True
                 return True
             elif (not str(event.text()).isalnum()
                     and event.modifiers() == QtCore.Qt.NoModifier):
@@ -193,6 +245,7 @@ class AutoCompleter(QtCore.QObject):
                 selectedText = textCursor.selectedText()
                 if selectedText.endswith('.'):
                     self.completeObject()
+                    self.editor.wait_for_autocomplete = True #assuming this should be here too but untested
                     return True
                 elif selectedText.endswith('('):
                     ret = {}
@@ -214,6 +267,7 @@ class AutoCompleter(QtCore.QObject):
                         center_cursor_rect = self.editor.cursorRect().center()
                         global_rect = self.editor.mapToGlobal(center_cursor_rect)
                         QtWidgets.QToolTip.showText(global_rect, info)
+                    self.editor.wait_for_autocomplete = True #assuming this should be here too but untested
                     return True
 
         self.editor.wait_for_autocomplete = False
@@ -230,6 +284,7 @@ class AutoCompleter(QtCore.QObject):
             if cp.popup():
                 cp.popup().hide()
             self.completeObject()
+            self.editor.wait_for_autocomplete = True
             return True
 
         elif (cp and cp.popup() and cp.popup().isVisible()):
@@ -238,7 +293,7 @@ class AutoCompleter(QtCore.QObject):
             cp.setCompletionPrefix(currentWord)
             cp.popup().setCurrentIndex(cp.completionModel().index(0,0))
 
-        elif event.text().isalnum():
+        elif event.text().isalnum() or event.text() in ['_']:
             pos = self.editor.textCursor().position()
             document = self.editor.document()
             block_number = document.findBlock(pos).blockNumber()
