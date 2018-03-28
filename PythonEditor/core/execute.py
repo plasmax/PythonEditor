@@ -37,6 +37,7 @@ def print_syntax_traceback():
     """
     Strip out lines of the error that refer to this file.
     """
+    print('# Python Editor SyntaxError')
     formatted_lines = traceback.format_exc().splitlines()
     print( formatted_lines[0] )
     print( '\n'.join(formatted_lines[3:]) )
@@ -46,11 +47,17 @@ def print_traceback(wholeText):
     Using the whole text of the document,
     extract the lines of code that caused the error
     and print them in the normal traceback format.
+    TODO:
+    Verify that we always want to be editing the 
+    traceback and make sure we are only removing 
+    lines relevant to this file. (Which should be 
+    handled separately, through logging.) Currently 
+    doesn't seem to play nice with PySide error messages.
     """
     textlines = wholeText.splitlines()
     
 
-    print('Traceback (most recent call last):')
+    print('# Python Editor Traceback (most recent call last):')
     msg = '  File "{0}", line {1}, in {2}\n    {3}'
     _, _, exc_tb = sys.exc_info()
     for file, lineno, scope, code in traceback.extract_tb(exc_tb):
