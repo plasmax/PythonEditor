@@ -7,11 +7,8 @@ from functools import partial
 from pprint import pprint
 from PythonEditor.ui.Qt import QtWidgets, QtGui, QtCore
 
-# os.environ['SUBLIME_PATH'] = '/net/homes/mlast/software/sublime_text_3/sublime_text'
-os.environ['SUBLIME_PATH'] = 'C:/Program Files/Sublime Text 3/sublime_text.exe'
-
 def open_module_file(obj):
-    file = inspect.getfile(obj)
+    file = inspect.getfile(obj).replace('.pyc', '.py')
     print file
     SUBLIME_PATH = os.environ.get('SUBLIME_PATH')
     if (SUBLIME_PATH
