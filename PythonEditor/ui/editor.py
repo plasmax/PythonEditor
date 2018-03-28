@@ -78,6 +78,10 @@ class Editor(QtWidgets.QPlainTextEdit):
 
         super(Editor, self).keyPressEvent(event)
         self.post_key_pressed_signal.emit(event)
+        
+    def keyReleaseEvent(self, event):
+        self.wait_for_autocomplete = True
+        super(Editor, self).keyReleaseEvent(event)
 
     def contextMenuEvent(self, event):
         """
