@@ -24,12 +24,20 @@ class AutoCompleter(QtCore.QObject):
         self.completer = None
 
         self.editor = editor
-        editor.focus_in_signal.connect(self._focusInEvent)
-        editor.key_pressed_signal.connect(self._pre_keyPressEvent)
-        editor.post_key_pressed_signal.connect(self._post_keyPressEvent)
+        self.connect_signals()
+
+    def connect_signals(self):
+        self.editor.focus_in_signal.connect(self._focusInEvent)
+        self.editor.key_pressed_signal.connect(self._pre_keyPressEvent)
+        self.editor.post_key_pressed_signal.connect(self._post_keyPressEvent)
 
     @QtCore.Slot(QtGui.QFocusEvent)
     def _focusInEvent(self, event):
+        """
+        Connected to editor focusInEvent
+        via signal. Sets new completer 
+        if none present.
+        """
         if self.completer == None:
             wordlist = list(set(re.findall('\w+', self.editor.toPlainText())))
             self.completer = Completer(wordlist)
@@ -37,7 +45,7 @@ class AutoCompleter(QtCore.QObject):
             self.completer.setWidget(self.editor)
             self.completer.activated.connect(self.insertCompletion)
 
-    def wordUnderCursor(self):
+    def word_under_cursor(self):
         """
         Returns a string with the word under the cursor.
         """
@@ -51,13 +59,14 @@ class AutoCompleter(QtCore.QObject):
         """
         self.completer.setCompletionPrefix('')
         textCursor = self.editor.textCursor()
+        document = self.editor.document()
 
-        pos = self.editor.textCursor().position()
-        bn = self.editor.document().findBlock(pos).blockNumber()
+        pos = textCursor.position()
+        block_number = document.findBlock(pos).blockNumber()
 
-        bl = self.editor.document().findBlockByNumber(bn)
-        bp = bl.position()
-        s = self.editor.toPlainText()[bp:pos]
+        block = document.findBlockByNumber(block_number)
+        block_start = block.position()
+        s = self.editor.toPlainText()[block_start:pos]
 
         for c in s:
             if (not c.isalnum() 
@@ -73,12 +82,8 @@ class AutoCompleter(QtCore.QObject):
             return
 
         _objects = __main__.__dict__.copy()
-
-        varname_exists = (word_before_dot in _objects)
-
-        if varname_exists:
-            _obj = _objects.get(word_before_dot)
-        else:
+        _obj = _objects.get(word_before_dot)
+        if _obj is None:
             try:
                 _ = {}
                 exec('_obj = '+word_before_dot, _objects, _)
@@ -90,7 +95,11 @@ class AutoCompleter(QtCore.QObject):
         return _obj
 
     def completeObject(self, _obj=None):
-
+        """
+        Get list of object properties
+        and methods and set them as 
+        the completer string list.
+        """
         if _obj == None:
             _obj = self.getObjectBeforeChar('.')
 
@@ -105,8 +114,25 @@ class AutoCompleter(QtCore.QObject):
         self.setList(stringlist)
         self.showPopup()
 
+        cp = self.completer
+        currentWord = self.word_under_cursor()
+        cp.setCompletionPrefix(currentWord)
+        cp.popup().setCurrentIndex(cp.completionModel().index(0,0))
+
     def completeVariables(self):
-        pass
+        """
+        Complete variable names in 
+        global scope.
+        """
+        cp = self.completer
+        variables = __main__.__dict__.keys()
+        self.setList(variables)
+        word = self.word_under_cursor()
+        char_len = len(word)
+        cp.setCompletionPrefix(word)
+        cp.popup().setCurrentIndex(cp.completionModel().index(0,0))
+        if char_len and any(w[:char_len] == word for w in variables):
+            self.showPopup()
 
     def setList(self, stringlist):
         qslm =  QtCore.QStringListModel()
@@ -114,18 +140,24 @@ class AutoCompleter(QtCore.QObject):
         self.completer.setModel(qslm)
 
     def showPopup(self):
+        """
+        Show the completer list.
+        """
         cursorRect = self.editor.cursorRect()
         cursorRect.setWidth(self.completer.popup().sizeHintForColumn(0)
             + self.completer.popup().verticalScrollBar().sizeHint().width())
         self.completer.complete(cursorRect)
 
     def insertCompletion(self, completion):
+        """
+        Inserts a completion, 
+        replacing current word.
+        """
         textCursor = self.editor.textCursor()
-        extra = (len(completion) -
-            len(self.completer.completionPrefix()))
-        textCursor.movePosition(QtGui.QTextCursor.Left)
-        textCursor.movePosition(QtGui.QTextCursor.EndOfWord)
-        textCursor.insertText(completion[-extra:])
+        prefix = self.completer.completionPrefix()
+        pos = textCursor.position()
+        textCursor.setPosition(pos-len(prefix), QtGui.QTextCursor.KeepAnchor)
+        textCursor.insertText(completion)
         self.editor.setTextCursor(textCursor)
 
     @QtCore.Slot(QtGui.QKeyEvent)
@@ -134,9 +166,7 @@ class AutoCompleter(QtCore.QObject):
         Called before QPlainTextEdit.keyPressEvent
         TODO:
         - Fix bug whereby sometimes "enter" key doesn't
-        trigger completion
-        - Complete on any key after dot (not just tab)
-        - Complete global variables
+        trigger completion (this is because keypressevent returns)
         - Complete defined names (parse for "name =" thing)
         """
         cp = self.completer
@@ -203,14 +233,19 @@ class AutoCompleter(QtCore.QObject):
             return True
 
         elif (cp and cp.popup() and cp.popup().isVisible()):
-            currentWord = self.wordUnderCursor()
+            currentWord = self.word_under_cursor()
 
             cp.setCompletionPrefix(currentWord)
             cp.popup().setCurrentIndex(cp.completionModel().index(0,0))
 
+        elif event.text().isalnum():
+            pos = self.editor.textCursor().position()
+            document = self.editor.document()
+            block_number = document.findBlock(pos).blockNumber()
+            block = document.findBlockByNumber(block_number)            
+            if '.' in block.text().split(' ')[-1]:
+                self.completeObject()
+            else:
+                self.completeVariables()
+
         self.editor.wait_for_autocomplete = True
-        # else:
-        #     self.getObjectBeforeChar(event.text())
-        #     print 'word'
-        #     print self.wordUnderCursor()
-        #     # self.completeVariables()

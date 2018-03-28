@@ -29,6 +29,7 @@ class ShortcutHandler(QtCore.QObject):
         self.editor.wrap_signal.connect(self.wrap_text)
         self.editor.home_key_ctrl_alt_signal.connect(self.move_to_top)
         self.editor.end_key_ctrl_alt_signal.connect(self.move_to_bottom)
+        self.editor.ctrl_x_signal.connect(self.cut_line)
 
     def installShortcuts(self):
         """
@@ -66,7 +67,6 @@ class ShortcutHandler(QtCore.QObject):
                     'Ctrl+Shift+Alt+Down': notimp('duplicate cursor down'),
                     'Ctrl+N': notimp('new tab'), # not sure if nuke will allow these two
                     'Ctrl+W': notimp('close tab'),
-                    'Ctrl+X': notimp('cut line'), #won't work without overriding keyEvent
                   }
 
         context = QtCore.Qt.WidgetShortcut
@@ -150,7 +150,24 @@ class ShortcutHandler(QtCore.QObject):
         doc = self.editor.document()
         if doc.characterAt(textCursor.position()-1) == ':':
             indentCount = indentCount + 4
-        textCursor.insertText('\n'+' '*indentCount)
+        textCursor.insertText(' '*indentCount)
+
+    @QtCore.Slot()
+    def cut_line(self):
+        """
+        If no text selected, cut whole 
+        current line to clipboard.
+        """
+        textCursor = self.editor.textCursor()
+        if textCursor.hasSelection():
+            return
+
+        textCursor.select(QtGui.QTextCursor.LineUnderCursor)
+        text = textCursor.selectedText()
+        textCursor.insertText('')
+
+        QtGui.QClipboard().setText(text)
+
 
     def new_line_above(self):
         """
