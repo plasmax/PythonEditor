@@ -1,9 +1,11 @@
 import sys
+from functools import partial
 
 from Qt import QtWidgets, QtCore, QtGui
 from editor import Editor
 from terminal import Terminal
 from features import shortcuts
+from PythonEditor.utils import save
 
 class IDE(QtWidgets.QWidget):
     """
@@ -22,13 +24,15 @@ class IDE(QtWidgets.QWidget):
         layout.setObjectName('IDE_MainLayout')
         layout.setContentsMargins(0,0,0,0)
 
-        self.setup_menu()
 
         splitter = QtWidgets.QSplitter(QtCore.Qt.Vertical)
         splitter.setObjectName('IDE_MainVerticalSplitter')
 
         self.editor = Editor()
         self.terminal = Terminal()
+
+        self.setup_menu()
+
         splitter.addWidget(self.terminal)
         splitter.addWidget(self.editor)
 
@@ -56,25 +60,34 @@ class IDE(QtWidgets.QWidget):
     def setup_menu(self):
         """
         Adds top menu bar and various menu items.
-        """
-        menuBar = QtWidgets.QMenuBar(self)
-        fileMenu = QtWidgets.QMenu('File')
+
+        TODO: Implement the following:
         editMenu =  QtWidgets.QMenu('Edit')
         helpMenu =  QtWidgets.QMenu('Help')
         for menu in [fileMenu, editMenu, helpMenu]:
             menuBar.addMenu(menu)
+        # fileMenu.addAction('Save') #QtGui.QAction (?)
+        # fileMenu.addAction('Save As')
 
-        fileMenu.addAction('Save') #QtGui.QAction (?)
-        fileMenu.addAction('Save As')
+        # editMenu.addAction('Settings')
+        # editMenu.addAction('Copy to Sublime')
+        # editMenu.addAction('Open in Sublime')
 
-        editMenu.addAction('Settings')
-        editMenu.addAction('Copy to Sublime')
-        editMenu.addAction('Open in Sublime')
+        # helpMenu.addAction('About Python Editor')
+        # helpMenu.addAction('Shortcuts')
+        """
+        menuBar = QtWidgets.QMenuBar(self)
+        fileMenu = QtWidgets.QMenu('File')
 
-        helpMenu.addAction('About Python Editor')
-        helpMenu.addAction('Shortcuts')
+        menuBar.addMenu(fileMenu)
 
-        # self.layout().addWidget(menuBar)
+        save_selected = partial(save.save_selected_text, self.editor)
+        fileMenu.addAction('Save Selected Text', save_selected)
+        
+        export_to_sublime = partial(save.export_selected_to_sublime, self.editor)
+        fileMenu.addAction('Export Selected To Sublime', export_to_sublime)
+
+        self.layout().addWidget(menuBar)
 
     def showEvent(self, event):
         """
