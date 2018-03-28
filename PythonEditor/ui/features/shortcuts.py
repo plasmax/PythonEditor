@@ -46,7 +46,7 @@ class ShortcutHandler(QtCore.QObject):
                     'Ctrl+Shift+D': self.duplicate_lines,
                     'Ctrl+H': self.printHelp,
                     'Ctrl+T': self.printType,
-                    'Ctrl+F': self.searchInput,
+                    'Ctrl+F': self.searchInput, #doesn't appear to work in nuke. signal instead?
                     'Ctrl+L': self.select_lines,
                     'Ctrl+J': self.join_lines,
                     'Ctrl+/': self.comment_toggle,
@@ -141,7 +141,9 @@ class ShortcutHandler(QtCore.QObject):
         """
         Match next line indentation to current line
         If ':' is character in cursor position,
-        add an extra line.
+        add an extra four spaces.
+        TODO: stop this from inserting newline
+        if autocomplete is present.
         """
         textCursor = self.editor.textCursor()
         line = textCursor.block().text()
@@ -150,7 +152,9 @@ class ShortcutHandler(QtCore.QObject):
         doc = self.editor.document()
         if doc.characterAt(textCursor.position()-1) == ':':
             indentCount = indentCount + 4
-        textCursor.insertText(' '*indentCount)
+
+        if not self.editor.wait_for_autocomplete:
+            textCursor.insertText('\n'+' '*indentCount)
 
     @QtCore.Slot()
     def cut_line(self):
@@ -237,6 +241,8 @@ class ShortcutHandler(QtCore.QObject):
         """
         Toggles commenting out selected lines,
         or lines with cursor.
+        TODO:
+        - Insert '#' at correct indentation level.
         """
         blocks = self.get_selected_blocks()
         
