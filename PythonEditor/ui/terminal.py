@@ -79,6 +79,12 @@ class Terminal(QtWidgets.QTextEdit):
         Checks for an existing stream wrapper 
         for sys.stdout and connects to it. If
         not present, creates a new one.
+        TODO:
+        The FnRedirect sys.stdout is always active.
+        With a singleton object on a thread, 
+        that reads off this stream, we can make it 
+        available to Python Editor even before opening
+        the panel.
         """
 
         if hasattr(sys.stdout, 'sig'):
