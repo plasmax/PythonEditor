@@ -2,6 +2,9 @@ from __main__ import __dict__
 import traceback
 import sys
 
+class TempExceptionUntilIGetTracebacksWorkingException(Exception):
+    pass
+       
 def mainexec(text, wholeText):
     """
     Code execution in top level namespace.
@@ -24,7 +27,7 @@ def mainexec(text, wholeText):
     try:
         # Ian Thompson is a golden god
         exec(_code, __dict__)
-    except Exception:
+    except TempExceptionUntilIGetTracebacksWorkingException:#Exception:
         print_traceback(wholeText)
     else:
         if mode == 'single': 
@@ -54,10 +57,9 @@ def print_traceback(wholeText):
     handled separately, through logging.) Currently 
     doesn't seem to play nice with PySide error messages.
     """
-    textlines = wholeText.splitlines()
-    
 
     print('# Python Editor Traceback (most recent call last):')
+    textlines = wholeText.splitlines()
     msg = '  File "{0}", line {1}, in {2}\n    {3}'
     _, _, exc_tb = sys.exc_info()
     for file, lineno, scope, code in traceback.extract_tb(exc_tb):
