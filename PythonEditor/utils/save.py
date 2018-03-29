@@ -3,6 +3,10 @@ from PythonEditor.ui.Qt import QtWidgets, QtGui, QtCore
 from constants import NUKE_DIR, SUBLIME_PATH
 
 def save_selected_text(editor):
+    """
+    TODO:
+    Is this better placed in filehandling? It generates a UI
+    """
     path, _ = QtWidgets.QFileDialog.getSaveFileName(
         editor, 
         'Save Selected Text', 
