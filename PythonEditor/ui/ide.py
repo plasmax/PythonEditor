@@ -56,6 +56,7 @@ class IDE(QtWidgets.QWidget):
         """
         sch = shortcuts.ShortcutHandler(self.editor)
         sch.clear_output_signal.connect(self.terminal.clear)
+        self.shortcut_dict = sch.shortcut_dict
 
     def setup_menu(self):
         """
@@ -63,7 +64,6 @@ class IDE(QtWidgets.QWidget):
 
         TODO: Implement the following:
         editMenu =  QtWidgets.QMenu('Edit')
-        helpMenu =  QtWidgets.QMenu('Help')
         for menu in [fileMenu, editMenu, helpMenu]:
             menuBar.addMenu(menu)
         # fileMenu.addAction('Save') #QtGui.QAction (?)
@@ -74,18 +74,21 @@ class IDE(QtWidgets.QWidget):
         # editMenu.addAction('Open in Sublime')
 
         # helpMenu.addAction('About Python Editor')
-        # helpMenu.addAction('Shortcuts')
         """
         menuBar = QtWidgets.QMenuBar(self)
         fileMenu = QtWidgets.QMenu('File')
+        helpMenu =  QtWidgets.QMenu('Help')
 
         menuBar.addMenu(fileMenu)
+        menuBar.addMenu(helpMenu)
 
         save_selected = partial(save.save_selected_text, self.editor)
         fileMenu.addAction('Save Selected Text', save_selected)
         
         export_to_sublime = partial(save.export_selected_to_sublime, self.editor)
         fileMenu.addAction('Export Selected To Sublime', export_to_sublime)
+
+        helpMenu.addAction('Show Shortcuts', self.show_shortcuts)
 
         self.layout().addWidget(menuBar)
 
@@ -104,3 +107,17 @@ class IDE(QtWidgets.QWidget):
             pass
 
         super(IDE, self).showEvent(event)
+
+    def show_shortcuts(self):
+        """
+        Generates a popup dialog listing available shortcuts.
+        """
+        self.treeView = QtWidgets.QTreeView()
+        model = QtGui.QStandardItemModel()
+        self.treeView.setModel(model)
+        root = model.invisibleRootItem()
+        model.setHorizontalHeaderLabels(['Shortcut', 'Description'])
+        for item in self.shortcut_dict.items():
+            row = [QtGui.QStandardItem(val) for val in item]
+            model.appendRow(row)
+        self.treeView.show()

@@ -69,6 +69,9 @@ class ShortcutHandler(QtCore.QObject):
                     'Ctrl+W': notimp('close tab'),
                   }
 
+        self.shortcut_dict = {key:func.func_doc if hasattr(func, 'func_doc') else func.__doc__ 
+                                for key, func in mapping.items()}
+
         context = QtCore.Qt.WidgetShortcut
         for shortcut, func in mapping.iteritems():
             keySequence = QtGui.QKeySequence(shortcut)
@@ -251,8 +254,14 @@ class ShortcutHandler(QtCore.QObject):
         if commentAllOut:
             for block in blocks:
                 cursor = QtGui.QTextCursor(block)
-                cursor.movePosition(QtGui.QTextCursor.StartOfLine)
-                cursor.insertText('#')
+                cursor.select(QtGui.QTextCursor.LineUnderCursor)
+                selectedText = cursor.selectedText()
+                right_split = len(selectedText.lstrip())
+                count = len(selectedText)
+                split_index = count-right_split
+                split_text = selectedText[split_index:]
+                newText = ' '*split_index + '#' + split_text
+                cursor.insertText(newText)
         else:
             for block in blocks:
                 cursor = QtGui.QTextCursor(block)
@@ -309,8 +318,9 @@ class ShortcutHandler(QtCore.QObject):
 
     def join_lines(self):
         """
-        Deletes the newline at end
-        of current line(s).
+        Joins current line(s) with next by 
+        deleting the newline at the end
+        of the current line(s).
         """
         textCursor = self.editor.textCursor()
 
