@@ -2,9 +2,6 @@ from __main__ import __dict__
 import traceback
 import sys
 
-class TempExceptionUntilIGetTracebacksWorkingException(Exception):
-    pass
-       
 def mainexec(text, wholeText):
     """
     Code execution in top level namespace.
@@ -27,7 +24,7 @@ def mainexec(text, wholeText):
     try:
         # Ian Thompson is a golden god
         exec(_code, __dict__)
-    except TempExceptionUntilIGetTracebacksWorkingException:#Exception:
+    except Exception:
         print_traceback(wholeText)
     else:
         if mode == 'single': 
@@ -38,7 +35,8 @@ def mainexec(text, wholeText):
 
 def print_syntax_traceback():
     """
-    Strip out lines of the error that refer to this file.
+    Print traceback without lines of 
+    the error that refer to this file.
     """
     print('# Python Editor SyntaxError')
     formatted_lines = traceback.format_exc().splitlines()
@@ -47,15 +45,9 @@ def print_syntax_traceback():
 
 def print_traceback(wholeText):
     """
-    Using the whole text of the document,
-    extract the lines of code that caused the error
-    and print them in the normal traceback format.
-    TODO:
-    Verify that we always want to be editing the 
-    traceback and make sure we are only removing 
-    lines relevant to this file. (Which should be 
-    handled separately, through logging.) Currently 
-    doesn't seem to play nice with PySide error messages.
+    Print traceback ignoring lines that refer to the
+    external execution python file, using the whole 
+    text of the document.
     """
 
     print('# Python Editor Traceback (most recent call last):')
@@ -64,8 +56,12 @@ def print_traceback(wholeText):
     _, _, exc_tb = sys.exc_info()
     for file, lineno, scope, code in traceback.extract_tb(exc_tb):
         if code is None:
-            tracemsg = msg.format(file, lineno, scope, textlines[lineno-1].strip())
+            code = textlines[lineno-1].strip()
+        tracemsg = msg.format(file, lineno, scope, code)
+        if file != __file__:
             print(tracemsg)
+        else:
+            pass # TODO: collect and log unusual tracebacks referring to this file
 
     formatted_lines = traceback.format_exc().splitlines()
     print formatted_lines[-1]
