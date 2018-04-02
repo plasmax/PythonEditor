@@ -29,6 +29,7 @@ class Editor(QtWidgets.QPlainTextEdit):
     def __init__(self):
         super(Editor, self).__init__()
         self.setObjectName('Editor')
+        self.setAcceptDrops(True)
         linenumberarea.LineNumberArea(self)
         syntaxhighlighter.Highlight(self.document())
         self.contextmenu = contextmenu.ContextMenu(self)
@@ -95,3 +96,31 @@ class Editor(QtWidgets.QPlainTextEdit):
         menu = self.createStandardContextMenu()
         self.context_menu_signal.emit(menu)
 
+    def dragEnterEvent(self, e):
+        if e.mimeData().hasUrls:
+            e.accept()
+        else:
+            super(Editor, self).dragEnterEvent(e)
+    
+    def dragMoveEvent(self, e):
+        if e.mimeData().hasUrls:
+            e.accept()
+        else:
+            super(Editor, self).dragMoveEvent(e)
+
+    def dropEvent(self, e):
+        mimeData = e.mimeData()
+        if (mimeData.hasUrls
+                and mimeData.urls()):
+            urls = mimeData.urls()
+
+            text_list = []
+            for url in urls:
+                path = url.toLocalFile()
+                with open(path, 'r') as f:
+                    text_list.append(f.read())
+                    
+            self.textCursor().insertText('\n'.join(text_list))
+        else:
+            super(Editor, self).dropEvent(e)
+       

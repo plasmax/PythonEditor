@@ -67,7 +67,6 @@ class IDE(QtWidgets.QWidget):
         for menu in [fileMenu, editMenu, helpMenu]:
             menuBar.addMenu(menu)
         # fileMenu.addAction('Save') #QtGui.QAction (?)
-        # fileMenu.addAction('Save As')
 
         # editMenu.addAction('Settings')
         # editMenu.addAction('Copy to Sublime')
@@ -82,6 +81,9 @@ class IDE(QtWidgets.QWidget):
         menuBar.addMenu(fileMenu)
         menuBar.addMenu(helpMenu)
 
+        save_as = partial(save.save_as, self.editor)
+        fileMenu.addAction('Save As', save_as)
+
         save_selected = partial(save.save_selected_text, self.editor)
         fileMenu.addAction('Save Selected Text', save_selected)
         
@@ -91,6 +93,20 @@ class IDE(QtWidgets.QWidget):
         helpMenu.addAction('Show Shortcuts', self.show_shortcuts)
 
         self.layout().addWidget(menuBar)
+
+    def show_shortcuts(self):
+        """
+        Generates a popup dialog listing available shortcuts.
+        """
+        self.treeView = QtWidgets.QTreeView()
+        model = QtGui.QStandardItemModel()
+        self.treeView.setModel(model)
+        root = model.invisibleRootItem()
+        model.setHorizontalHeaderLabels(['Shortcut', 'Description'])
+        for item in self.shortcut_dict.items():
+            row = [QtGui.QStandardItem(val) for val in item]
+            model.appendRow(row)
+        self.treeView.show()
 
     def showEvent(self, event):
         """
@@ -108,16 +124,10 @@ class IDE(QtWidgets.QWidget):
 
         super(IDE, self).showEvent(event)
 
-    def show_shortcuts(self):
+    def dragEnterEvent(self, event):
         """
-        Generates a popup dialog listing available shortcuts.
+        Allow event to pass to the editor.
         """
-        self.treeView = QtWidgets.QTreeView()
-        model = QtGui.QStandardItemModel()
-        self.treeView.setModel(model)
-        root = model.invisibleRootItem()
-        model.setHorizontalHeaderLabels(['Shortcut', 'Description'])
-        for item in self.shortcut_dict.items():
-            row = [QtGui.QStandardItem(val) for val in item]
-            model.appendRow(row)
-        self.treeView.show()
+        event.ignore()
+        super(IDE, self).dragEnterEvent(event)
+
