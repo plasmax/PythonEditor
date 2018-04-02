@@ -91,6 +91,7 @@ class IDE(QtWidgets.QWidget):
         fileMenu.addAction('Export Selected To Sublime', export_to_sublime)
 
         helpMenu.addAction('Show Shortcuts', self.show_shortcuts)
+        helpMenu.addAction('Unload Python Editor', self.reload_package)
 
         self.layout().addWidget(menuBar)
 
@@ -131,3 +132,16 @@ class IDE(QtWidgets.QWidget):
         event.ignore()
         super(IDE, self).dragEnterEvent(event)
 
+    def reload_package(self):
+        """
+        Reloads the whole package.
+        TODO:
+        Make this work!
+        """
+        self.close()
+        loaded_modules = sys.modules
+        for name, mod in loaded_modules.items():
+            if (mod
+                    and hasattr(mod, '__file__') 
+                    and 'PythonEditor' in mod.__file__):
+                del sys.modules[name]
