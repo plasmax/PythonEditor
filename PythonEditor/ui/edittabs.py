@@ -36,6 +36,12 @@ class EditTabs(QtWidgets.QTabWidget):
         self.setCurrentIndex(index)
 
     def close_current_tab(self):
+        """
+        TODO: 
+        1) Block/return if tab is '+' tab.
+        2) Maybe check to see if file contents is saved 
+        somewhere. Restore all tabs on open from xml <subscript> ?
+        """
         _index = self.currentIndex()
         self.close_tab(_index)
 
