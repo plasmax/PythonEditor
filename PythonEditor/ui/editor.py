@@ -69,7 +69,7 @@ class Editor(QtWidgets.QPlainTextEdit):
                 and self.textCursor().hasSelection()):
             return self.wrap_signal.emit(event.text())
 
-       if event.key() == QtCore.Qt.Key_Home:
+        if event.key() == QtCore.Qt.Key_Home:
             if event.modifiers() == QtCore.Qt.ControlModifier | QtCore.Qt.AltModifier:
                 self.home_key_ctrl_alt_signal.emit()
             elif event.modifiers() == QtCore.Qt.NoModifier:
