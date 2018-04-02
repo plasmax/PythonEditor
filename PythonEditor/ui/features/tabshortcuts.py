@@ -40,6 +40,11 @@ class ShortcutHandler(QtCore.QObject):
         For shortcuts that cannot be 
         handled directly by QShortcut.
         """
+        try:
+            QtCore.Qt.UniqueConnection
+        except AttributeError as e:
+            print(e)
+            QtCore.Qt.UniqueConnection = 128
         self.editor.tab_signal.connect(self.tab_handler, QtCore.Qt.UniqueConnection)
         self.editor.return_signal.connect(self.return_handler, QtCore.Qt.UniqueConnection)
         self.editor.wrap_signal.connect(self.wrap_text, QtCore.Qt.UniqueConnection)
