@@ -22,6 +22,7 @@ class Editor(QtWidgets.QPlainTextEdit):
     key_pressed_signal = QtCore.Signal(QtGui.QKeyEvent)
     post_key_pressed_signal = QtCore.Signal(QtGui.QKeyEvent)
     context_menu_signal = QtCore.Signal(QtWidgets.QMenu)
+    home_key_signal = QtCore.Signal()
     home_key_ctrl_alt_signal = QtCore.Signal()
     end_key_ctrl_alt_signal = QtCore.Signal()
     ctrl_x_signal = QtCore.Signal()
@@ -68,9 +69,11 @@ class Editor(QtWidgets.QPlainTextEdit):
                 and self.textCursor().hasSelection()):
             return self.wrap_signal.emit(event.text())
 
-        if (event.key() == QtCore.Qt.Key_Home
-                and event.modifiers() == QtCore.Qt.ControlModifier | QtCore.Qt.AltModifier):
-            self.home_key_ctrl_alt_signal.emit()
+       if event.key() == QtCore.Qt.Key_Home:
+            if event.modifiers() == QtCore.Qt.ControlModifier | QtCore.Qt.AltModifier:
+                self.home_key_ctrl_alt_signal.emit()
+            elif event.modifiers() == QtCore.Qt.NoModifier:
+                self.home_key_signal.emit()
 
         if (event.key() == QtCore.Qt.Key_End
                 and event.modifiers() == QtCore.Qt.ControlModifier | QtCore.Qt.AltModifier):
