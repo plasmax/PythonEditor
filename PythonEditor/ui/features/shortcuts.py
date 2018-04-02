@@ -30,7 +30,7 @@ class ShortcutHandler(QtCore.QObject):
         self.editor.home_key_ctrl_alt_signal.connect(self.move_to_top)
         self.editor.end_key_ctrl_alt_signal.connect(self.move_to_bottom)
         self.editor.ctrl_x_signal.connect(self.cut_line)
-        self.editor.home_key_signal.connect(partial(self.notimplemented,'jump to beginning of text, then whitespace'))
+        self.editor.home_key_signal.connect(self.jump_to_start)
 
     def installShortcuts(self):
         """
@@ -61,7 +61,7 @@ class ShortcutHandler(QtCore.QObject):
                     'Ctrl+D': notimp('select word or next word'),
                     'Ctrl+M': notimp('jump to nearest bracket'),
                     'Ctrl+Shift+M': notimp('select between brackets'),
-                    'Ctrl+Shift+Delete': notimp('delete rest of line'),
+                    'Ctrl+Shift+Delete': self.delete_to_eol,
                     'Ctrl+Shift+Up': self.move_lines_up,
                     'Ctrl+Shift+Down': self.move_lines_down,
                     'Ctrl+Shift+Home': notimp('move to start'),
@@ -102,7 +102,7 @@ class ShortcutHandler(QtCore.QObject):
                     ])
         blockNumbers |= set([doc.findBlock(textCursor.position()).blockNumber()])
 
-        isEmpty = lambda b:  doc.findBlockByNumber(b).text().strip() != ''
+        isEmpty = lambda b: doc.findBlockByNumber(b).text().strip() != ''
         blocks = []
         for b in blockNumbers:
             bn = doc.findBlockByNumber(b)
@@ -177,7 +177,6 @@ class ShortcutHandler(QtCore.QObject):
 
         QtGui.QClipboard().setText(text)
 
-
     def new_line_above(self):
         """
         Inserts new line above current.
@@ -237,10 +236,28 @@ class ShortcutHandler(QtCore.QObject):
             if lineText.startswith(' '):
                 newText = str(lineText[:4]).replace(' ', '') + lineText[4:]
                 cursor.insertText(newText)
-
+                
     def tab_space(self):
         """ Insert spaces instead of tabs """
         self.editor.insertPlainText('    ')
+
+    def jump_to_start(self):
+        """
+        Jump to first character in line.
+        If at first character, jump to 
+        start of line.
+        """
+        textCursor = self.editor.textCursor()
+        init_pos = textCursor.position()
+        textCursor.select(QtGui.QTextCursor.LineUnderCursor)
+        text = textCursor.selection().toPlainText()
+        textCursor.movePosition(QtGui.QTextCursor.StartOfLine)
+        pos = textCursor.position()
+        offset = len(text)-len(text.lstrip())
+        new_pos = pos+offset
+        if new_pos != init_pos:
+            textCursor.setPosition(new_pos, QtGui.QTextCursor.MoveAnchor)
+        self.editor.setTextCursor(textCursor)
 
     def comment_toggle(self):
         """
@@ -389,6 +406,7 @@ class ShortcutHandler(QtCore.QObject):
         """
         Duplicates the current line or 
         selected text downwards.
+        TODO: Duplicate selection!
         """
         textCursor = self.editor.textCursor()
         if textCursor.hasSelection():
@@ -400,6 +418,17 @@ class ShortcutHandler(QtCore.QObject):
             textCursor.setPosition(end_pos, QtGui.QTextCursor.KeepAnchor)
             selected_text = textCursor.selectedText()
             textCursor.insertText(selected_text+'\n'+selected_text)
+
+    def delete_to_eol(self):
+        """
+        Deletes characters from cursor 
+        position to end of line.
+        """
+        textCursor = self.editor.textCursor()
+        pos = textCursor.position()
+        textCursor.movePosition(QtGui.QTextCursor.EndOfLine)
+        textCursor.setPosition(pos, QtGui.QTextCursor.KeepAnchor)
+        textCursor.insertText('')
 
     def printHelp(self):
         """

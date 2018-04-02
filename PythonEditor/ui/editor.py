@@ -73,7 +73,7 @@ class Editor(QtWidgets.QPlainTextEdit):
             if event.modifiers() == QtCore.Qt.ControlModifier | QtCore.Qt.AltModifier:
                 self.home_key_ctrl_alt_signal.emit()
             elif event.modifiers() == QtCore.Qt.NoModifier:
-                self.home_key_signal.emit()
+                return self.home_key_signal.emit()
 
         if (event.key() == QtCore.Qt.Key_End
                 and event.modifiers() == QtCore.Qt.ControlModifier | QtCore.Qt.AltModifier):
