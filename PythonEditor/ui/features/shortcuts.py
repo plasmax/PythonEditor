@@ -31,6 +31,7 @@ class ShortcutHandler(QtCore.QObject):
         self.editor.end_key_ctrl_alt_signal.connect(self.move_to_bottom)
         self.editor.ctrl_x_signal.connect(self.cut_line)
         self.editor.home_key_signal.connect(self.jump_to_start)
+        self.editor.wheel_signal.connect(self.wheel_zoom)
 
     def installShortcuts(self):
         """
@@ -62,6 +63,7 @@ class ShortcutHandler(QtCore.QObject):
                     'Ctrl+M': notimp('jump to nearest bracket'),
                     'Ctrl+Shift+M': notimp('select between brackets'),
                     'Ctrl+Shift+Delete': self.delete_to_eol,
+                    'Ctrl+Shift+Backspace': notimp('delete to start of line'),
                     'Ctrl+Shift+Up': self.move_lines_up,
                     'Ctrl+Shift+Down': self.move_lines_down,
                     'Ctrl+Shift+Home': notimp('move to start'),
@@ -226,7 +228,8 @@ class ShortcutHandler(QtCore.QObject):
     def unindent(self):
         """ 
         Unindent Selected Text 
-        TODO: Keep selection.
+        TODO: Maintain original selection
+        and cursor position.
         """
         blocks = self.get_selected_blocks(ignoreEmpty=False)
         for block in blocks:
@@ -236,7 +239,7 @@ class ShortcutHandler(QtCore.QObject):
             if lineText.startswith(' '):
                 newText = str(lineText[:4]).replace(' ', '') + lineText[4:]
                 cursor.insertText(newText)
-                
+
     def tab_space(self):
         """ Insert spaces instead of tabs """
         self.editor.insertPlainText('    ')
@@ -467,6 +470,20 @@ class ShortcutHandler(QtCore.QObject):
         font = self.editor.font()
         size = font.pointSize()
         new_size = size - 1 if size > 1 else 1
+        font.setPointSize(new_size)
+        self.editor.setFont(font)
+
+    def wheel_zoom(self, event):
+        """
+        Zooms by changing the font size
+        according to the wheel zoom delta.
+        """
+        font = self.editor.font()
+        size = font.pointSize()
+        delta = event.delta()
+        amount = int(delta/10) if delta > 1 or delta < -1 else delta
+        new_size = size + amount
+        new_size = new_size if new_size > 0 else 1
         font.setPointSize(new_size)
         self.editor.setFont(font)
 

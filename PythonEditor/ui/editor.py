@@ -21,6 +21,7 @@ class Editor(QtWidgets.QPlainTextEdit):
     focus_in_signal = QtCore.Signal(QtGui.QFocusEvent)
     key_pressed_signal = QtCore.Signal(QtGui.QKeyEvent)
     post_key_pressed_signal = QtCore.Signal(QtGui.QKeyEvent)
+    wheel_signal = QtCore.Signal(QtGui.QWheelEvent)
     context_menu_signal = QtCore.Signal(QtWidgets.QMenu)
     home_key_signal = QtCore.Signal()
     home_key_ctrl_alt_signal = QtCore.Signal()
@@ -126,4 +127,15 @@ class Editor(QtWidgets.QPlainTextEdit):
             self.textCursor().insertText('\n'.join(text_list))
         else:
             super(Editor, self).dropEvent(e)
+
+    def wheelEvent(self, e):
+        """
+        Restore focus and emit signal if
+        ctrl held.
+        """
+        self.setFocus(QtCore.Qt.MouseFocusReason)
+        if (e.modifiers() == QtCore.Qt.ControlModifier
+                and e.orientation() == QtCore.Qt.Orientation.Vertical):
+            return self.wheel_signal.emit(e)
+        super(Editor, self).wheelEvent(e)
        
