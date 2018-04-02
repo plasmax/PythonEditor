@@ -30,6 +30,7 @@ class ShortcutHandler(QtCore.QObject):
         self.editor.home_key_ctrl_alt_signal.connect(self.move_to_top)
         self.editor.end_key_ctrl_alt_signal.connect(self.move_to_bottom)
         self.editor.ctrl_x_signal.connect(self.cut_line)
+        self.editor.home_key_signal.connect(partial(self.notimplemented,'jump to beginning of text, then whitespace'))
 
     def installShortcuts(self):
         """
@@ -46,7 +47,7 @@ class ShortcutHandler(QtCore.QObject):
                     'Ctrl+Shift+D': self.duplicate_lines,
                     'Ctrl+H': self.printHelp,
                     'Ctrl+T': self.printType,
-                    'Ctrl+F': self.searchInput, #doesn't appear to work in nuke. signal instead?
+                    'Ctrl+Shift+F': self.searchInput,
                     'Ctrl+L': self.select_lines,
                     'Ctrl+J': self.join_lines,
                     'Ctrl+/': self.comment_toggle,
@@ -60,12 +61,13 @@ class ShortcutHandler(QtCore.QObject):
                     'Ctrl+D': notimp('select word or next word'),
                     'Ctrl+M': notimp('jump to nearest bracket'),
                     'Ctrl+Shift+M': notimp('select between brackets'),
+                    'Ctrl+Shift+Delete': notimp('delete rest of line'),
                     'Ctrl+Shift+Up': self.move_lines_up,
                     'Ctrl+Shift+Down': self.move_lines_down,
                     'Ctrl+Shift+Home': notimp('move to start'),
                     'Ctrl+Shift+Alt+Up': notimp('duplicate cursor up'),
                     'Ctrl+Shift+Alt+Down': notimp('duplicate cursor down'),
-                    'Ctrl+N': notimp('new tab'), # not sure if nuke will allow these two
+                    'Ctrl+N': notimp('new tab'),
                     'Ctrl+W': notimp('close tab'),
                   }
 
@@ -244,8 +246,6 @@ class ShortcutHandler(QtCore.QObject):
         """
         Toggles commenting out selected lines,
         or lines with cursor.
-        TODO:
-        - Insert '#' at correct indentation level.
         """
         blocks = self.get_selected_blocks()
         
@@ -370,9 +370,8 @@ class ShortcutHandler(QtCore.QObject):
     def searchInput(self):
         """
         Very basic search dialog.
-        TODO: Create a QAction and store
-        this in utils so that it can be 
-        linked to Ctrl + F as well.
+        TODO: Create a QAction/util for this
+        as it is also accessed through right-click menu.
         """
         dialog = QtWidgets.QInputDialog.getText(self.editor, 
                                                 'Search', '',)
