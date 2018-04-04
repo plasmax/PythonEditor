@@ -595,7 +595,30 @@ class ShortcutHandler(QtCore.QObject):
         self.editor.setTextCursor(textCursor)
 
     def move_to_top(self):
-        raise NotImplementedError, 'add move line to top function'
+        """
+        Move selection or line if no 
+        selection to top of document.
+        """
+        textCursor = self.editor.textCursor()
+        if not textCursor.hasSelection():
+            textCursor.select(QtGui.QTextCursor.LineUnderCursor)
+        text = textCursor.selectedText()
+        textCursor.insertText('')
+        textCursor.setPosition(0, QtGui.QTextCursor.MoveAnchor)
+        textCursor.insertText(text)
+        self.editor.setTextCursor(textCursor)
 
     def move_to_bottom(self):
-        raise NotImplementedError, 'add move line to bottom function'
+        """
+        Move selection or line if no 
+        selection to bottom of document.
+        """
+        textCursor = self.editor.textCursor()
+        if not textCursor.hasSelection():
+            textCursor.select(QtGui.QTextCursor.LineUnderCursor)
+        text = textCursor.selectedText()
+        textCursor.insertText('')
+        end = len(self.editor.toPlainText())
+        textCursor.setPosition(end, QtGui.QTextCursor.MoveAnchor)
+        textCursor.insertText(text)
+        self.editor.setTextCursor(textCursor)
