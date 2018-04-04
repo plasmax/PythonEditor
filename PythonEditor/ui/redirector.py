@@ -2,9 +2,9 @@
 
 import sys
 import Queue
-from Qt import QtGui, QtCore
+from Qt import QtGui, QtCore, QtWidgets
 
-class Terminal(QtGui.QTextEdit):
+class Terminal(QtWidgets.QTextEdit):
     def __init__(self):
         super(Terminal, self).__init__()
         self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
