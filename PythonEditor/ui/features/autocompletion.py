@@ -1,17 +1,11 @@
 import sys
 import re
 import __main__
-
+import keyword
 from PythonEditor.ui.Qt import QtGui, QtCore, QtWidgets
 
-KEYWORDS = ['import',
-            'def', 
-            'class',
-            'return',
-            'continue',
-            'break',
-            'print(', 
-            'from']
+KEYWORDS = ['True',
+            'False']
 
 class_snippet = """class <!cursor>():
     def __init__(self):
@@ -147,7 +141,7 @@ class AutoCompleter(QtCore.QObject):
         """
         cp = self.completer
         variables = __main__.__dict__.keys()
-        variables = variables+KEYWORDS+SNIPPETS.keys()
+        variables = variables+keyword.kwlist+SNIPPETS.keys()+dir(__builtins__)+KEYWORDS
         self.setList(variables)
         word = self.word_under_cursor()
         char_len = len(word)
@@ -279,8 +273,9 @@ class AutoCompleter(QtCore.QObject):
         Called after QPlainTextEdit.keyPressEvent
         """
         cp = self.completer
-
-        if event.key() == QtCore.Qt.Key_Period:
+            
+        if (event.key() == QtCore.Qt.Key_Period
+                or event.text() in [':', '!']): # TODO: this should hide on a lot more characters!
             if cp.popup():
                 cp.popup().hide()
             self.completeObject()
