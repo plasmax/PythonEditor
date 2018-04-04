@@ -1,6 +1,5 @@
 import sys
-import time
-from Queue import Queue
+
 from Qt import QtGui, QtWidgets, QtCore
 
 class PySingleton(object):
@@ -16,12 +15,7 @@ class Speaker(QtCore.QObject):
     emitter = QtCore.Signal(str)
 
 class SERedirector(object):
-    speaker = Speaker()
-    def __init__(self, stream, queue=None):
-
-        if hasattr(stream, 'saved_stream'):
-            stream.reset()
-
+    def __init__(self, stream, sig=None):
         fileMethods = ('fileno', 'flush', 'isatty', 'read', 'readline', 'readlines',
         'seek', 'tell', 'write', 'writelines', 'xreadlines', '__iter__')
 
@@ -29,76 +23,43 @@ class SERedirector(object):
             if not hasattr(self, i) and hasattr(stream, i):
                 setattr(self, i, getattr(stream, i))
 
-        self.saved_stream = stream
-        self.queue = queue
+        self.savedStream = stream
+        self.sig = sig
 
     def write(self, text):
-        self.queue.put(text)
-        self.saved_stream.write(text)
+        if self.sig != None:
+            self.sig.emitter.emit(text)
+        self.savedStream.write(text)
 
     def close(self):
         self.flush()
 
     def stream(self):
-        return self.saved_stream
+        return self.savedStream
 
     def __del__(self):
         self.reset()
 
 class SESysStdOut(SERedirector, PySingleton):
     def reset(self):
-        sys.stdout = self.saved_stream
+        sys.stdout = self.savedStream
         print 'reset stream out'
         
+
 class SESysStdErr(SERedirector, PySingleton):
     def reset(self):
-        sys.stderr = self.saved_stream
+        sys.stderr = self.savedStream
         print 'reset stream err'
-        
-class SESysStdIn(SERedirector, PySingleton):
-    def reset(self):
-        sys.stdin = self.saved_stream
-        print 'reset stream in'
 
-class Worker(QtCore.QObject):
-    emitter = QtCore.Signal(str)
-
-    @property
-    def queue(self):
-        return self._queue
-    
-    @queue.setter
-    def queue(self, q):
-        self._queue = q
-
-    @QtCore.Slot()
-    def run(self):
-        while True:
-            if not self._queue.empty():
-                text = self._queue.get()
-                self.emitter.emit(text)
-                time.sleep(0.001)
-
-class Terminal(QtWidgets.QTextBrowser):
+class Terminal(QtWidgets.QTextEdit):
     """ Output text display widget """
     def __init__(self):
         super(Terminal, self).__init__()
         self.setObjectName('Terminal')
         self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
         self.setReadOnly(True)
-
+        self.setup()
         self.destroyed.connect(self.stop)
-        self.setup_worker()
-
-    def setup_worker(self):
-        global queue
-        self.worker = Worker()
-        self.worker.emitter.connect(self.receive)
-        self.worker.queue = queue
-        self.worker_thread = QtCore.QThread(self)
-        self.worker.moveToThread(self.worker_thread)
-        self.worker_thread.started.connect(self.worker.run)
-        self.worker_thread.start()
 
     @QtCore.Slot(str)
     def receive(self, text):
@@ -113,7 +74,24 @@ class Terminal(QtWidgets.QTextBrowser):
         sys.stdout.reset()
         sys.stderr.reset()
 
-queue = Queue()
-sys.stdout = SESysStdOut(sys.stdout, queue)
-sys.stderr = SESysStdErr(sys.stderr, queue)
-sys.stdin = SESysStdIn(sys.stdin, queue)
+    def setup(self):
+        """
+        Checks for an existing stream wrapper 
+        for sys.stdout and connects to it. If
+        not present, creates a new one.
+        TODO:
+        The FnRedirect sys.stdout is always active.
+        With a singleton object on a thread, 
+        that reads off this stream, we can make it 
+        available to Python Editor even before opening
+        the panel.
+        """
+
+        if hasattr(sys.stdout, 'sig'):
+            speaker = sys.stdout.sig
+        else:
+            speaker = Speaker()
+            sys.stdout = SESysStdOut(sys.stdout, speaker)
+            sys.stderr = SESysStdErr(sys.stderr, speaker)
+
+        speaker.emitter.connect(self.receive)
