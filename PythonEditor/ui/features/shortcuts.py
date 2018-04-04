@@ -63,7 +63,7 @@ class ShortcutHandler(QtCore.QObject):
                     'Ctrl+M': notimp('jump to nearest bracket'),
                     'Ctrl+Shift+M': notimp('select between brackets'),
                     'Ctrl+Shift+Delete': self.delete_to_eol,
-                    'Ctrl+Shift+Backspace': notimp('delete to start of line'),
+                    'Ctrl+Shift+Backspace': self.delete_to_sol,
                     'Ctrl+Shift+Up': self.move_lines_up,
                     'Ctrl+Shift+Down': self.move_lines_down,
                     'Ctrl+Shift+Home': notimp('move to start'),
@@ -433,6 +433,17 @@ class ShortcutHandler(QtCore.QObject):
         textCursor.setPosition(pos, QtGui.QTextCursor.KeepAnchor)
         textCursor.insertText('')
 
+    def delete_to_sol(self):
+        """
+        Deletes characters from cursor 
+        position to start of line.
+        """
+        textCursor = self.editor.textCursor()
+        pos = textCursor.position()
+        textCursor.movePosition(QtGui.QTextCursor.StartOfLine)
+        textCursor.setPosition(pos, QtGui.QTextCursor.KeepAnchor)
+        textCursor.insertText('')
+
     def printHelp(self):
         """
         Prints documentation
@@ -442,6 +453,8 @@ class ShortcutHandler(QtCore.QObject):
         obj = __main__.__dict__.get(text)
         if obj is not None:
             print obj.__doc__
+        else:
+            exec('help('+text+')', __main__.__dict__)
             
     def printType(self):
         """
@@ -452,6 +465,8 @@ class ShortcutHandler(QtCore.QObject):
         obj = __main__.__dict__.get(text)
         if obj is not None:
             print type(obj)
+        else:
+            exec('print(type('+text+'))', __main__.__dict__)
 
     def zoomIn(self):
         """
