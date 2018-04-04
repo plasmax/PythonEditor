@@ -69,12 +69,23 @@ class ShortcutHandler(QtCore.QObject):
                     'Ctrl+Shift+Home': notimp('move to start'),
                     'Ctrl+Shift+Alt+Up': notimp('duplicate cursor up'),
                     'Ctrl+Shift+Alt+Down': notimp('duplicate cursor down'),
-                    'Ctrl+N': notimp('new tab'),
-                    'Ctrl+W': notimp('close tab'),
                   }
 
         self.shortcut_dict = {key:func.func_doc if hasattr(func, 'func_doc') else func.__doc__ 
                                 for key, func in mapping.items()}
+
+        signal_dict = {
+            'Tab': self.tab_handler.__doc__,
+            'Return/Enter': self.return_handler.__doc__,
+            '\' " ( ) [ ] \{ \}': self.wrap_text.__doc__,
+            'Ctrl+Alt+Home': self.move_to_top.__doc__,
+            'Ctrl+Alt+End': self.move_to_bottom.__doc__,
+            'Ctrl+X': self.cut_line.__doc__,
+            'Home': self.jump_to_start.__doc__,
+            'Ctrl+Mouse Wheel': self.wheel_zoom.__doc__,
+            }
+
+        self.shortcut_dict.update(signal_dict)
 
         context = QtCore.Qt.WidgetShortcut
         for shortcut, func in mapping.iteritems():
@@ -141,7 +152,9 @@ class ShortcutHandler(QtCore.QObject):
 
     @QtCore.Slot()
     def return_handler(self):
-        """ Handles Return Key """
+        """
+        New line with auto-indentation.
+        """
         self.indent_next_line()
         
     def indent_next_line(self):
@@ -218,7 +231,9 @@ class ShortcutHandler(QtCore.QObject):
             self.tab_space()
 
     def indent(self):
-        """ Indent Selected Text """
+        """
+        Indent Selected Text
+        """
         blocks = self.get_selected_blocks()
         for block in blocks:
             cursor = QtGui.QTextCursor(block)
