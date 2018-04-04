@@ -66,7 +66,6 @@ class ShortcutHandler(QtCore.QObject):
                     'Ctrl+Shift+Backspace': self.delete_to_sol,
                     'Ctrl+Shift+Up': self.move_lines_up,
                     'Ctrl+Shift+Down': self.move_lines_down,
-                    'Ctrl+Shift+Home': notimp('move to start'),
                     'Ctrl+Shift+Alt+Up': notimp('duplicate cursor up'),
                     'Ctrl+Shift+Alt+Down': notimp('duplicate cursor down'),
                   }
