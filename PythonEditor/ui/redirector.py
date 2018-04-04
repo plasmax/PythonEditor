@@ -1,26 +1,7 @@
-#alternative to the terminal/signals on stdout method
-
 import sys
-import Queue
-from Qt import QtGui, QtCore, QtWidgets
-
-class Terminal(QtWidgets.QTextEdit):
-    def __init__(self):
-        super(Terminal, self).__init__()
-        self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
-        self.setReadOnly(True)
-        threadmanager.worker.emitter.connect(self.receive)
-        self.destroyed.connect(threadmanager.thread.quit)
-        # worker.emitter.connect(self.receive)
-
-    @QtCore.Slot()
-    def receive(self, text):
-        self.insertPlainText(text)
-        try:
-            if bool(self.textCursor()):
-                self.moveCursor(QtGui.QTextCursor.End)
-        except Exception, e:
-            pass
+import time
+from Queue import Queue
+from Qt import QtGui, QtWidgets, QtCore
 
 class PySingleton(object):
     def __new__(cls, *args, **kwargs):
@@ -28,8 +9,19 @@ class PySingleton(object):
             cls._the_instance = object.__new__(cls)
         return cls._the_instance
 
+class Speaker(QtCore.QObject):
+    """
+    Used to relay sys stdout, stderr
+    """
+    emitter = QtCore.Signal(str)
+
 class SERedirector(object):
-    def __init__(self, stream, queue):
+    speaker = Speaker()
+    def __init__(self, stream, queue=None):
+
+        if hasattr(stream, 'saved_stream'):
+            stream.reset()
+
         fileMethods = ('fileno', 'flush', 'isatty', 'read', 'readline', 'readlines',
         'seek', 'tell', 'write', 'writelines', 'xreadlines', '__iter__')
 
@@ -37,41 +29,40 @@ class SERedirector(object):
             if not hasattr(self, i) and hasattr(stream, i):
                 setattr(self, i, getattr(stream, i))
 
+        self.saved_stream = stream
         self.queue = queue
-        self.savedStream = stream
 
     def write(self, text):
         self.queue.put(text)
-        self.savedStream.write(text)
+        self.saved_stream.write(text)
 
     def close(self):
         self.flush()
 
     def stream(self):
-        return self.savedStream
-
-    def reset(self):
-        pass
+        return self.saved_stream
 
     def __del__(self):
         self.reset()
 
-class QtSingleton(QtCore.QObject):
-    def __new__(cls, *args, **kwargs):
-        if not '_the_instance' in cls.__dict__:
-            cls._the_instance =  QtCore.QObject.__new__(cls)
-        return cls._the_instance
+class SESysStdOut(SERedirector, PySingleton):
+    def reset(self):
+        sys.stdout = self.saved_stream
+        print 'reset stream out'
+        
+class SESysStdErr(SERedirector, PySingleton):
+    def reset(self):
+        sys.stderr = self.saved_stream
+        print 'reset stream err'
+        
+class SESysStdIn(SERedirector, PySingleton):
+    def reset(self):
+        sys.stdin = self.saved_stream
+        print 'reset stream in'
 
-    def __init__(self, *args, **kwargs):
-        if not '_the_instance' in self.__dict__:
-            QtCore.QObject.__init__(self, *args, **kwargs)
-
-class Worker(QtSingleton):
+class Worker(QtCore.QObject):
     emitter = QtCore.Signal(str)
 
-    def __init__(self):
-        super(Worker, self).__init__()
-  
     @property
     def queue(self):
         return self._queue
@@ -83,59 +74,46 @@ class Worker(QtSingleton):
     @QtCore.Slot()
     def run(self):
         while True:
-            text = self._queue.get()
-            self.emitter.emit(text)
+            if not self._queue.empty():
+                text = self._queue.get()
+                self.emitter.emit(text)
+                time.sleep(0.001)
 
-class SESysStdOut(SERedirector, PySingleton):
-    def reset(self):
-        sys.stdout = self.savedStream
-        print 'reset stream out'
-        
-
-class SESysStdErr(SERedirector, PySingleton):
-    def reset(self):
-        sys.stderr = self.savedStream
-        print 'reset stream err'
-
-class ThreadManager(QtSingleton):
+class Terminal(QtWidgets.QTextBrowser):
+    """ Output text display widget """
     def __init__(self):
-        super(ThreadManager, self).__init__()
-        
-        self.queue = Queue.Queue()
+        super(Terminal, self).__init__()
+        self.setObjectName('Terminal')
+        self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+        self.setReadOnly(True)
+
+        self.destroyed.connect(self.stop)
+        self.setup_worker()
+
+    def setup_worker(self):
+        global queue
         self.worker = Worker()
-        self.worker.queue = self.queue
-        self.thread = QtCore.QThread(self)
-        self.worker.moveToThread(self.thread)
-        self.thread.started.connect(self.worker.run)
-        self.thread.start()
-        self.setup()
+        self.worker.emitter.connect(self.receive)
+        self.worker.queue = queue
+        self.worker_thread = QtCore.QThread(self)
+        self.worker.moveToThread(self.worker_thread)
+        self.worker_thread.started.connect(self.worker.run)
+        self.worker_thread.start()
 
-    def setup(self):
-        for _stream in [sys.stdout, sys.stderr]:
-            if hasattr(_stream, 'reset'):
-                _stream.reset()
-            
-        sys.stdout = SESysStdOut(sys.stdout, self.queue)
-        sys.stderr = SESysStdErr(sys.stderr, self.queue)
+    @QtCore.Slot(str)
+    def receive(self, text):
+        try:
+            if bool(self.textCursor()):
+                self.moveCursor(QtGui.QTextCursor.End)
+        except Exception, e:
+            pass
+        self.insertPlainText(text)
 
-optional_module_exec = """
-queue = Queue.Queue()
+    def stop(self):
+        sys.stdout.reset()
+        sys.stderr.reset()
 
-worker = Worker()
-worker.queue = queue
-thread = QtCore.QThread()
-worker.moveToThread(thread)
-thread.started.connect(worker.run)
-thread.start()
-
-def setup():
-    for _stream in [sys.stdout, sys.stderr]:
-        if hasattr(_stream, 'reset'):
-            _stream.reset()
-        
-    sys.stdout = SESysStdOut(sys.stdout, queue)
-    sys.stderr = SESysStdErr(sys.stderr, queue)
-
-setup()
-"""
-threadmanager = ThreadManager()
+queue = Queue()
+sys.stdout = SESysStdOut(sys.stdout, queue)
+sys.stderr = SESysStdErr(sys.stderr, queue)
+sys.stdin = SESysStdIn(sys.stdin, queue)
