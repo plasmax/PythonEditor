@@ -94,8 +94,8 @@ class IDE(QtWidgets.QWidget):
         fileMenu.addAction('Export Selected To External Editor', export_to_external_editor)
 
         editMenu.addAction('Preferences') #TODO: Set up Preferences widget with External Editor path option 
+        editMenu.addAction('Shortcuts', self.show_shortcuts)
 
-        helpMenu.addAction('Show Shortcuts', self.show_shortcuts)
         helpMenu.addAction('Unload Python Editor', self.reload_package)
 
         self.layout().addWidget(menuBar)
@@ -103,6 +103,7 @@ class IDE(QtWidgets.QWidget):
     def show_shortcuts(self):
         """
         Generates a popup dialog listing available shortcuts.
+        TODO: Make this editable, and reassign shortcuts on edit.
         """
         self.treeView = QtWidgets.QTreeView()
         model = QtGui.QStandardItemModel()
@@ -141,7 +142,8 @@ class IDE(QtWidgets.QWidget):
         """
         Reloads the whole package.
         TODO:
-        Make this work!
+        Currently unloads only. 
+        Needs to reload.
         """
         self.close()
         loaded_modules = sys.modules
