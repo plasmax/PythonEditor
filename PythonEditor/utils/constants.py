@@ -61,7 +61,10 @@ def get_external_editor_path():
             with open(AUTOSAVE_FILE, 'w') as f:
                 f.write(header+data)
         else:
-            msg = u'External editor not found. Certain features will not work.'
+            msg = u'External editor not found. '\
+            'Certain features will not work.'\
+            '\nYou can add or change an external '\
+            'editor path later in Edit>Preferences.'
             msgBox = QtWidgets.QMessageBox()
             msgBox.setText(msg)
             msgBox.exec_()
