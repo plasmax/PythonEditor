@@ -71,8 +71,8 @@ class IDE(QtWidgets.QWidget):
         fileMenu.addAction('Save As')
 
         editMenu.addAction('Settings')
-        editMenu.addAction('Copy to Sublime')
-        editMenu.addAction('Open in Sublime')
+        editMenu.addAction('Copy to External Editor')
+        editMenu.addAction('Open in External Editor')
 
         helpMenu.addAction('About Python Editor')
         helpMenu.addAction('Shortcuts')

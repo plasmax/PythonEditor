@@ -1,7 +1,8 @@
 from __future__ import print_function
+import os
 import subprocess
 from PythonEditor.ui.Qt import QtWidgets, QtGui, QtCore
-from constants import NUKE_DIR, SUBLIME_PATH
+from constants import NUKE_DIR
 
 def save_text(editor, text):
     """
@@ -24,13 +25,14 @@ def save_text(editor, text):
 
 def save_selected_text(editor):
     text = editor.textCursor().selection().toPlainText()
-    save_text(editor, text)
+    return save_text(editor, text)
 
 def save_as(editor):
     text = editor.toPlainText()
-    save_text(editor, text)
+    return save_text(editor, text)
 
-def export_selected_to_sublime(editor):
+def export_selected_to_external_editor(editor):
     path = save_selected_text(editor)
-    if path:
-        subprocess.Popen([SUBLIME_PATH, path])
+    EXTERNAL_EDITOR_PATH = os.environ.get('EXTERNAL_EDITOR_PATH')
+    if path and EXTERNAL_EDITOR_PATH:
+        subprocess.Popen([EXTERNAL_EDITOR_PATH, path])

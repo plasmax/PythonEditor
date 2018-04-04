@@ -10,10 +10,10 @@ from PythonEditor.ui.Qt import QtWidgets, QtGui, QtCore
 def open_module_file(obj):
     file = inspect.getfile(obj).replace('.pyc', '.py')
     print file
-    SUBLIME_PATH = os.environ.get('SUBLIME_PATH')
-    if (SUBLIME_PATH
-            and os.path.isdir(os.path.dirname(SUBLIME_PATH))):
-        subprocess.Popen([SUBLIME_PATH, file]) 
+    EXTERNAL_EDITOR_PATH = os.environ.get('EXTERNAL_EDITOR_PATH')
+    if (EXTERNAL_EDITOR_PATH
+            and os.path.isdir(os.path.dirname(EXTERNAL_EDITOR_PATH))):
+        subprocess.Popen([EXTERNAL_EDITOR_PATH, file]) 
         
 def openDir(module):
     try:
@@ -193,10 +193,10 @@ class ContextMenu(QtCore.QObject):
                 self.nodesMenu.addAction('Copy to Nodes %s'%knob, 
                     lambda knobName=knob: self.setKnobScript(knobName))
 
-            #conditional on text selected and sublime path verified
-            self.sublimeMenu = self.menu.addMenu('Sublime')
-            self.sublimeMenu.addAction('Open Module File', self.open_module_file)
-            self.sublimeMenu.addAction('Copy to Sublime', self.notImplemented) #/net/homes/mlast/.nuke/python/_scriptEditor
+            #conditional on text selected and external editor path verified
+            self.editorMenu = self.menu.addMenu('External Editor')
+            self.editorMenu.addAction('Open Module File', self.open_module_file)
+            self.editorMenu.addAction('Copy to External Editor', self.notImplemented) #/net/homes/mlast/.nuke/python/_scriptEditor
 
             #conditional on text selected and inspect.isModule
             self.inspectMenu = self.menu.addMenu('Inspect')

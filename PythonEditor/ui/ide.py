@@ -6,6 +6,8 @@ from editor import Editor
 from terminal import Terminal
 from features import shortcuts
 from PythonEditor.utils import save
+from PythonEditor.utils import constants
+from PythonEditor.ui.features import filehandling
 
 class IDE(QtWidgets.QWidget):
     """
@@ -28,9 +30,12 @@ class IDE(QtWidgets.QWidget):
         splitter = QtWidgets.QSplitter(QtCore.Qt.Vertical)
         splitter.setObjectName('IDE_MainVerticalSplitter')
 
+
         self.editor = Editor()
+        self.filehandler = filehandling.FileHandler(self.editor)
         self.terminal = Terminal()
 
+        constants.get_external_editor_path()
         self.setup_menu()
 
         splitter.addWidget(self.terminal)
@@ -63,23 +68,21 @@ class IDE(QtWidgets.QWidget):
         Adds top menu bar and various menu items.
 
         TODO: Implement the following:
-        editMenu =  QtWidgets.QMenu('Edit')
-        for menu in [fileMenu, editMenu, helpMenu]:
-            menuBar.addMenu(menu)
         # fileMenu.addAction('Save') #QtGui.QAction (?)
 
-        # editMenu.addAction('Settings')
-        # editMenu.addAction('Copy to Sublime')
-        # editMenu.addAction('Open in Sublime')
+        # editMenu.addAction('Copy to External Editor')
+        # editMenu.addAction('Open in External Editor')
 
         # helpMenu.addAction('About Python Editor')
         """
         menuBar = QtWidgets.QMenuBar(self)
         fileMenu = QtWidgets.QMenu('File')
         helpMenu =  QtWidgets.QMenu('Help')
+        editMenu =  QtWidgets.QMenu('Edit')
+        
+        for menu in [fileMenu, editMenu, helpMenu]:
+            menuBar.addMenu(menu)
 
-        menuBar.addMenu(fileMenu)
-        menuBar.addMenu(helpMenu)
 
         save_as = partial(save.save_as, self.editor)
         fileMenu.addAction('Save As', save_as)
@@ -87,8 +90,10 @@ class IDE(QtWidgets.QWidget):
         save_selected = partial(save.save_selected_text, self.editor)
         fileMenu.addAction('Save Selected Text', save_selected)
         
-        export_to_sublime = partial(save.export_selected_to_sublime, self.editor)
-        fileMenu.addAction('Export Selected To Sublime', export_to_sublime)
+        export_to_external_editor = partial(save.export_selected_to_external_editor, self.editor)
+        fileMenu.addAction('Export Selected To External Editor', export_to_external_editor)
+
+        editMenu.addAction('Preferences') #TODO: Set up Preferences widget with External Editor path option 
 
         helpMenu.addAction('Show Shortcuts', self.show_shortcuts)
         helpMenu.addAction('Unload Python Editor', self.reload_package)

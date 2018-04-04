@@ -21,3 +21,4 @@ if __name__ == '__main__':
     ide.resize(500, 800)
     QtWidgets.QApplication.setStyle(QtWidgets.QStyleFactory.create('Plastique'))
     sys.exit(app.exec_())
+

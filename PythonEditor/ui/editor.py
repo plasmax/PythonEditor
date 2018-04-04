@@ -4,8 +4,7 @@ from features import (shortcuts,
                       linenumberarea, 
                       syntaxhighlighter,
                       autocompletion,
-                      contextmenu,
-                      filehandling)
+                      contextmenu)
 
 class Editor(QtWidgets.QPlainTextEdit):
     """
@@ -35,7 +34,6 @@ class Editor(QtWidgets.QPlainTextEdit):
         linenumberarea.LineNumberArea(self)
         syntaxhighlighter.Highlight(self.document())
         self.contextmenu = contextmenu.ContextMenu(self)
-        self.filehandler = filehandling.FileHandler(self)
 
         self.wait_for_autocomplete = True
         self.autocomplete = autocompletion.AutoCompleter(self)

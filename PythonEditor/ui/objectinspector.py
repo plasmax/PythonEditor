@@ -76,11 +76,12 @@ class ObjectInspector(QtWidgets.QWidget):
         if not self.names == __dict__:
             self.load_globals()
 
-    def open_in_sublime(self):
+    def open_in_external_editor(self):
         """
         Like sublime's "Go to"
         Open file in which object was defined.
         TODO: Would be excellent to jump to line.
         """
+        pass
 
 
