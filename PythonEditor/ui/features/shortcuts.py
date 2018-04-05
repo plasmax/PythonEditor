@@ -32,7 +32,8 @@ class ShortcutHandler(QtCore.QObject):
         self.editor.ctrl_x_signal.connect(self.cut_line)
         self.editor.home_key_signal.connect(self.jump_to_start)
         self.editor.wheel_signal.connect(self.wheel_zoom)
-
+        self.editor.ctrl_enter_signal.connect(self.exec_selected_text)
+        
     def installShortcuts(self):
         """
         Set up all shortcuts on 
@@ -40,7 +41,6 @@ class ShortcutHandler(QtCore.QObject):
         """
         notimp = lambda msg: partial(self.notimplemented, msg)
         mapping = { 
-                    'Ctrl+Return': self.exec_selected_text,
                     'Ctrl+B': self.exec_selected_text,
                     'Ctrl+Shift+Return': self.new_line_above,
                     'Ctrl+Alt+Return': self.new_line_below,
