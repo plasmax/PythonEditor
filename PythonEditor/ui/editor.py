@@ -27,6 +27,7 @@ class Editor(QtWidgets.QPlainTextEdit):
     home_key_ctrl_alt_signal = QtCore.Signal()
     end_key_ctrl_alt_signal = QtCore.Signal()
     ctrl_x_signal = QtCore.Signal()
+    ctrl_enter_signal = QtCore.Signal()
 
     relay_clear_output_signal = QtCore.Signal() 
 
@@ -46,7 +47,7 @@ class Editor(QtWidgets.QPlainTextEdit):
                             '(', ')',
                             '{', '}'
                             '<', '>'
-                            ]
+                            ] #for wrap_signal
 
         if handle_shortcuts:
             sch = shortcuts.ShortcutHandler(self)
@@ -71,6 +72,10 @@ class Editor(QtWidgets.QPlainTextEdit):
                 return self.tab_signal.emit()
             if event.key() == QtCore.Qt.Key_Return:
                 return self.return_signal.emit()
+
+        if (event.key() == QtCore.Qt.Key_Return
+                and event.modifiers() == QtCore.Qt.ControlModifier):
+            return self.ctrl_enter_signal.emit()
 
         if (event.text() in self.wrap_types
                 and self.textCursor().hasSelection()):
