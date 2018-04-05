@@ -149,6 +149,20 @@ class ShortcutHandler(QtCore.QObject):
 
         self.exec_text_signal.emit()
         execute.mainexec(text, whole_text)
+        
+    def exec_current_line(self):
+        """
+        Calls exec with the text of 
+        the line the cursor is on.
+        TODO: Find a good shortcut for this.
+        """
+        textCursor = self.editor.textCursor()
+        textCursor.select(QtGui.QTextCursor.LineUnderCursor)
+        text = textCursor.selectedText()
+        whole_text = self.editor.toPlainText()
+
+        # self.editor.setTextCursor(textCursor) #good for testing
+        execute.mainexec(text, whole_text)
 
     @QtCore.Slot()
     def return_handler(self):
