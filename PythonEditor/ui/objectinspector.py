@@ -2,9 +2,8 @@ import os
 import inspect
 from __main__ import __dict__
 
-from codeeditor.utils.constants import QT_VERSION
+from PythonEditor.utils.constants import QT_VERSION
 
-import os
 os.environ['QT_PREFERRED_BINDING'] = 'PySide:PyQt4'
 
 from Qt import QtWidgets, QtCore, QtGui

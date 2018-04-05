@@ -28,6 +28,8 @@ class ShortcutHandler(QtCore.QObject):
         """
         if hasattr(self, 'editor'):
             self.disconnectSignals()
+        if editor is None:
+            return
         if editor.objectName() == 'Editor':
             self.editor = editor
             try:

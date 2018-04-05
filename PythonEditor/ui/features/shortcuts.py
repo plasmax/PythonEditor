@@ -82,6 +82,7 @@ class ShortcutHandler(QtCore.QObject):
             'Ctrl+X': self.cut_line.__doc__,
             'Home': self.jump_to_start.__doc__,
             'Ctrl+Mouse Wheel': self.wheel_zoom.__doc__,
+            'Ctrl+Backspace': '\n'+' '*8+'Clear Output Terminal\n',
             }
 
         self.shortcut_dict.update(signal_dict)
@@ -423,11 +424,13 @@ class ShortcutHandler(QtCore.QObject):
         """
         Duplicates the current line or 
         selected text downwards.
-        TODO: Duplicate selection!
         """
         textCursor = self.editor.textCursor()
         if textCursor.hasSelection():
-            raise NotImplementedError
+            selected_text = textCursor.selectedText()
+            for i in range(2):
+                textCursor.insertText(selected_text)
+                self.editor.setTextCursor(textCursor)
         else:
             textCursor.movePosition(QtGui.QTextCursor.EndOfLine)
             end_pos = textCursor.position()

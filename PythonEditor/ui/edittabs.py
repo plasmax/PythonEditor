@@ -19,6 +19,7 @@ class EditTabs(QtWidgets.QTabWidget):
     def _build_tabs(self):
         self.insertTab(1, QtWidgets.QWidget(),'')
         nb = self.new_btn = QtWidgets.QToolButton()
+        nb.setObjectName('Tab_Widget_New_Button')
         nb.setMinimumSize(QtCore.QSize(50,10))
         nb.setText('+') # you could set an icon instead of text
         nb.setAutoRaise(True)
@@ -29,7 +30,7 @@ class EditTabs(QtWidgets.QTabWidget):
     @QtCore.Slot(str)
     def new_tab(self):
         index = self.count() - 1
-        editor = Editor()
+        editor = Editor(handle_shortcuts=False)
         self.insertTab(index, 
                        editor, 
                        'New Tab')
@@ -49,6 +50,8 @@ class EditTabs(QtWidgets.QTabWidget):
         _index = self.currentIndex()
 
         old_widget = self.widget(index)
+        if old_widget.objectName() != 'Editor':
+            return
         old_widget.deleteLater()
 
         self.removeTab(index)

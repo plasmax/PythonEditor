@@ -1,14 +1,24 @@
+import os
 import time
 from PythonEditor.utils.constants import AUTOSAVE_FILE
 from PythonEditor.ui.Qt import QtCore
 from xml.etree import ElementTree
 
+XML_HEADER = '<?xml version="1.0" encoding="UTF-8"?>'
 class FileHandler(QtCore.QObject):
     """
     Simple xml text storage.
     """
     def __init__(self, editor, path=None):
+        if not os.path.isfile(AUTOSAVE_FILE):
+            if not os.path.isdir(os.path.dirname(AUTOSAVE_FILE)):
+                return
+            else:
+                with open(AUTOSAVE_FILE, 'w') as f:
+                    f.write(XML_HEADER+'<script></script>')
+
         self._path = (path if path else AUTOSAVE_FILE)
+
         self.editor = editor
 
         self.readautosave()
@@ -20,11 +30,19 @@ class FileHandler(QtCore.QObject):
         to the file's contents. Changes .pyc to .py in 
         path arguments.
         """
+        if '.xml' in path:
+            return self.readxml(path)
+
         path = path.replace('.pyc', '.py') #do not open compiled python files
 
-        with open(file, 'r') as f:
+        with open(path, 'r') as f:
             text = f.read()
         self.editor.setPlainText(text)
+
+    def readxml(self, path):
+        parser = ElementTree.parse(path)
+        root = parser.getroot()
+        self.editor.setPlainText(root.text)
 
     def readautosave(self, path=None):
         """
@@ -49,10 +67,9 @@ class FileHandler(QtCore.QObject):
             root.append(sub)
             sub.text = self.editor.toPlainText()
 
-            header = '<?xml version="1.0" encoding="UTF-8"?>'
             data = ElementTree.tostring(root)
             with open(AUTOSAVE_FILE, 'w') as f:
-                f.write(header+data)
+                f.write(XML_HEADER+data)
 
         for s in subscripts:
             if s.attrib.get('path') == path:
@@ -73,7 +90,6 @@ class FileHandler(QtCore.QObject):
                 s.text = self.editor.toPlainText()
                 s.attrib['date'] = time.asctime()
 
-        header = '<?xml version="1.0" encoding="UTF-8"?>'
         data = ElementTree.tostring(root)
         with open(AUTOSAVE_FILE, 'w') as f:
-            f.write(header+data) #all xml contents
+            f.write(XML_HEADER+data) #all xml contents

@@ -1,5 +1,6 @@
 from Qt import QtWidgets, QtGui, QtCore
 
+import shortcuteditor
 from features import (shortcuts, 
                       linenumberarea, 
                       syntaxhighlighter,
@@ -27,7 +28,9 @@ class Editor(QtWidgets.QPlainTextEdit):
     end_key_ctrl_alt_signal = QtCore.Signal()
     ctrl_x_signal = QtCore.Signal()
 
-    def __init__(self):
+    relay_clear_output_signal = QtCore.Signal() 
+
+    def __init__(self, handle_shortcuts=True):
         super(Editor, self).__init__()
         self.setObjectName('Editor')
         self.setAcceptDrops(True)
@@ -44,6 +47,11 @@ class Editor(QtWidgets.QPlainTextEdit):
                             '{', '}'
                             '<', '>'
                             ]
+
+        if handle_shortcuts:
+            sch = shortcuts.ShortcutHandler(self)
+            sch.clear_output_signal.connect(self.relay_clear_output_signal)
+            self.shortcuteditor = shortcuteditor.ShortcutEditor(sch)
 
     def focusInEvent(self, event):
         self.focus_in_signal.emit(event)

@@ -26,16 +26,17 @@ class IDE(QtWidgets.QWidget):
         layout.setObjectName('IDE_MainLayout')
         layout.setContentsMargins(0,0,0,0)
 
-
         splitter = QtWidgets.QSplitter(QtCore.Qt.Vertical)
         splitter.setObjectName('IDE_MainVerticalSplitter')
 
-
-        self.editor = Editor()
+        self.editor = Editor(handle_shortcuts=True)
         self.filehandler = filehandling.FileHandler(self.editor)
         self.terminal = Terminal()
 
-        constants.get_external_editor_path()
+        editor_path = constants.get_external_editor_path()
+        if not editor_path:
+            constants.set_external_editor_path()
+
         self.setup_menu()
 
         splitter.addWidget(self.terminal)
@@ -59,9 +60,8 @@ class IDE(QtWidgets.QWidget):
         This would mean keeping the ShortcutHandler here (and avoid 
         creating new shortcut objects for every tab).
         """
-        sch = shortcuts.ShortcutHandler(self.editor)
-        sch.clear_output_signal.connect(self.terminal.clear)
-        self.shortcut_dict = sch.shortcut_dict
+        rco = self.editor.relay_clear_output_signal
+        rco.connect(self.terminal.clear)
 
     def setup_menu(self):
         """
@@ -82,7 +82,6 @@ class IDE(QtWidgets.QWidget):
         
         for menu in [fileMenu, editMenu, helpMenu]:
             menuBar.addMenu(menu)
-
 
         save_as = partial(save.save_as, self.editor)
         fileMenu.addAction('Save As', save_as)
@@ -105,15 +104,7 @@ class IDE(QtWidgets.QWidget):
         Generates a popup dialog listing available shortcuts.
         TODO: Make this editable, and reassign shortcuts on edit.
         """
-        self.treeView = QtWidgets.QTreeView()
-        model = QtGui.QStandardItemModel()
-        self.treeView.setModel(model)
-        root = model.invisibleRootItem()
-        model.setHorizontalHeaderLabels(['Shortcut', 'Description'])
-        for item in self.shortcut_dict.items():
-            row = [QtGui.QStandardItem(val) for val in item]
-            model.appendRow(row)
-        self.treeView.show()
+        self.editor.shortcuteditor.show()
 
     def showEvent(self, event):
         """
