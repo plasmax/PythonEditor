@@ -15,9 +15,8 @@ def save_text(editor, text):
         NUKE_DIR, 
         selectedFilter='*.py')
 
-    print('Saved', path, sep=' ')
-
     if path:
+        print('Saved', path, sep=' ')
         text = editor.textCursor().selection().toPlainText()
         with open(path, 'w') as f:
             f.write(text)
