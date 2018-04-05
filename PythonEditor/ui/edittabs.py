@@ -1,10 +1,12 @@
 from Qt import QtWidgets, QtCore
-from editor import Editor
+from PythonEditor.ui import editor as EDITOR
 
 class EditTabs(QtWidgets.QTabWidget):
     """
     QTabWidget containing Editor
     QPlainTextEdit widgets.
+    TODO: Set stylesheet to 
+    have tabs the same height as Nuke's.
     """
     widget_changed_signal = QtCore.Signal(object)
 
@@ -13,6 +15,7 @@ class EditTabs(QtWidgets.QTabWidget):
         self.setTabsClosable(True)
         self.new_tab()
         self._build_tabs()
+        self.current_editor = None
         self.currentChanged.connect(self.widgetChanged)
         self.tabCloseRequested.connect(self.close_tab)
 
@@ -30,7 +33,7 @@ class EditTabs(QtWidgets.QTabWidget):
     @QtCore.Slot(str)
     def new_tab(self):
         index = self.count() - 1
-        editor = Editor(handle_shortcuts=False)
+        editor = EDITOR.Editor(handle_shortcuts=False)
         self.insertTab(index, 
                        editor, 
                        'New Tab')
@@ -64,4 +67,6 @@ class EditTabs(QtWidgets.QTabWidget):
         Triggers widget_changed signal
         with current widget.
         """
-        self.widget_changed_signal.emit(self.currentWidget())
+        current = self.currentWidget()
+        self.widget_changed_signal.emit(current)
+        self.current_editor = current
