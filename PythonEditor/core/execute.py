@@ -14,7 +14,7 @@ def mainexec(text, wholeText):
         mode = 'exec'
 
     try:
-        _code = compile(text, '<i.d.e>', mode)
+        _code = compile(text, '<Python Editor Contents>', mode)
     except SyntaxError:
         print_syntax_traceback()
         return
@@ -24,8 +24,8 @@ def mainexec(text, wholeText):
     try:
         # Ian Thompson is a golden god
         exec(_code, __dict__)
-    except Exception:
-        print_traceback(wholeText)
+    except Exception as e:
+        print_traceback(wholeText, e)
     else:
         if mode == 'single': 
             for value in __dict__.values():
@@ -43,25 +43,14 @@ def print_syntax_traceback():
     print( formatted_lines[0] )
     print( '\n'.join(formatted_lines[3:]) )
 
-def print_traceback(wholeText):
+def print_traceback(wholeText, error):
     """
     Print traceback ignoring lines that refer to the
     external execution python file, using the whole 
     text of the document.
     """
-
-    print('# Python Editor Traceback (most recent call last):')
-    textlines = wholeText.splitlines()
-    msg = '  File "{0}", line {1}, in {2}\n    {3}'
-    _, _, exc_tb = sys.exc_info()
-    for file, lineno, scope, code in traceback.extract_tb(exc_tb):
-        if code is None:
-            code = textlines[lineno-1].strip()
-        tracemsg = msg.format(file, lineno, scope, code)
-        if file != __file__:
-            print(tracemsg)
-        else:
-            pass # TODO: collect and log unusual tracebacks referring to this file
-
-    formatted_lines = traceback.format_exc().splitlines()
-    print formatted_lines[-1]
+    error_message = traceback.format_exc()
+    error_message = '\n'.join([line for line in error_message.splitlines()
+                    if not (__file__ in line 
+                    or 'exec(_code, __dict__)' in line)])
+    print(error_message)
