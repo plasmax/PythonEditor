@@ -1,37 +1,39 @@
 import sys
-
+from functools import partial
 from Qt import QtWidgets, QtCore, QtGui
 from editor import Editor
 from terminal import Terminal
-from features import shortcuts
 
-from edittabs import EditTabs
-from features import tabshortcuts
+from PythonEditor.ui import edittabs
+from PythonEditor.ui.features import tabshortcuts
+from PythonEditor.utils import save
+from PythonEditor.utils import constants
 
-class IDE(QtWidgets.QWidget):
+class PythonEditorTabs(QtWidgets.QWidget):
     """
     Main widget. Sets up layout 
     and connects some signals.
     """
-    def __init__(self):
-        super(IDE, self).__init__()
-        self.setObjectName('IDE')
+    def __init__(self, parent=None):
+        super(PythonEditorTabs, self).__init__()
+        self.setObjectName('PythonEditorTabs')
+        self.parent = parent
 
         self.construct_ui()
         self.connect_signals()
 
     def construct_ui(self):
         layout = QtWidgets.QVBoxLayout(self)
-        layout.setObjectName('IDE_MainLayout')
+        layout.setObjectName('PythonEditorTabs_MainLayout')
         layout.setContentsMargins(0,0,0,0)
+
+        self.edittabs = edittabs.EditTabs()
+        self.terminal = Terminal()
 
         self.setup_menu()
 
         splitter = QtWidgets.QSplitter(QtCore.Qt.Vertical)
-        splitter.setObjectName('IDE_MainVerticalSplitter')
-
-        self.edittabs = EditTabs()
-        self.terminal = Terminal()
+        splitter.setObjectName('PythonEditorTabs_MainVerticalSplitter')
         splitter.addWidget(self.terminal)
         splitter.addWidget(self.edittabs)
 
@@ -59,25 +61,46 @@ class IDE(QtWidgets.QWidget):
     def setup_menu(self):
         """
         Adds top menu bar and various menu items.
+
+        TODO: Implement the following:
+        # fileMenu.addAction('Save') #QtGui.QAction (?)
+
+        # editMenu.addAction('Copy to External Editor')
+        # editMenu.addAction('Open in External Editor')
+
+        # helpMenu.addAction('About Python Editor')
         """
         menuBar = QtWidgets.QMenuBar(self)
         fileMenu = QtWidgets.QMenu('File')
-        editMenu =  QtWidgets.QMenu('Edit')
         helpMenu =  QtWidgets.QMenu('Help')
+        editMenu =  QtWidgets.QMenu('Edit')
+        
         for menu in [fileMenu, editMenu, helpMenu]:
             menuBar.addMenu(menu)
 
-        fileMenu.addAction('Save') #QtGui.QAction (?)
-        fileMenu.addAction('Save As')
+        save_as = partial(save.save_as, self.edittabs.current_editor)
+        fileMenu.addAction('Save As', save_as)
 
-        editMenu.addAction('Settings')
-        editMenu.addAction('Copy to External Editor')
-        editMenu.addAction('Open in External Editor')
+        save_selected = partial(save.save_selected_text, self.edittabs.current_editor)
+        fileMenu.addAction('Save Selected Text', save_selected)
+        
+        export_to_external_editor = partial(save.export_selected_to_external_editor, self.edittabs.current_editor)
+        fileMenu.addAction('Export Selected To External Editor', export_to_external_editor)
 
-        helpMenu.addAction('About Python Editor')
-        helpMenu.addAction('Shortcuts')
+        editMenu.addAction('Preferences') #TODO: Set up Preferences widget with External Editor path option 
+        editMenu.addAction('Shortcuts', self.show_shortcuts)
+
+        helpMenu.addAction('Reload Python Editor', self.parent.reload_package)
+        helpMenu.addAction('Load Python Editor With Tabs', partial(self.parent.reload_package, True))
 
         self.layout().addWidget(menuBar)
+
+    def show_shortcuts(self):
+        """
+        Generates a popup dialog listing available shortcuts.
+        TODO: Make this editable, and reassign shortcuts on edit.
+        """
+        self.edittabs.current_editor.shortcuteditor.show()
 
     def showEvent(self, event):
         """
@@ -93,4 +116,4 @@ class IDE(QtWidgets.QWidget):
         except:
             pass
 
-        super(IDE, self).showEvent(event)
+        super(PythonEditorTabs, self).showEvent(event)
