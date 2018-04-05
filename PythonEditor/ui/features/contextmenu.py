@@ -14,6 +14,15 @@ def open_module_file(obj):
     if (EXTERNAL_EDITOR_PATH
             and os.path.isdir(os.path.dirname(EXTERNAL_EDITOR_PATH))):
         subprocess.Popen([EXTERNAL_EDITOR_PATH, file]) 
+
+def open_module_directory(obj):
+    file = inspect.getfile(obj).replace('.pyc', '.py')
+    folder = os.path.dirname(file)
+    print folder
+    EXTERNAL_EDITOR_PATH = os.environ.get('EXTERNAL_EDITOR_PATH')
+    if (EXTERNAL_EDITOR_PATH
+            and os.path.isdir(os.path.dirname(EXTERNAL_EDITOR_PATH))):
+        subprocess.Popen([EXTERNAL_EDITOR_PATH, folder]) 
         
 def openDir(module):
     try:
@@ -73,11 +82,16 @@ class ContextMenu(QtCore.QObject):
         if obj is not None:
             print obj.__doc__
 
-    def open_module_file(self):
+    def _open_module_file(self):
         text = str(self.selectedText)
         obj = __main__.__dict__.get(text)
         open_module_file(obj)
         
+    def _open_module_directory(self):
+        text = str(self.selectedText)
+        obj = __main__.__dict__.get(text)
+        open_module_directory(obj)
+       
     def initInspectDict(self):
 
         self.inspectDict = {func:getattr(inspect, func) 
@@ -195,7 +209,8 @@ class ContextMenu(QtCore.QObject):
 
             #conditional on text selected and external editor path verified
             self.editorMenu = self.menu.addMenu('External Editor')
-            self.editorMenu.addAction('Open Module File', self.open_module_file)
+            self.editorMenu.addAction('Open Module File', self._open_module_file)
+            self.editorMenu.addAction('Open Module Directory', self._open_module_directory)
             self.editorMenu.addAction('Copy to External Editor', self.notImplemented) #/net/homes/mlast/.nuke/python/_scriptEditor
 
             #conditional on text selected and inspect.isModule
