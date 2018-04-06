@@ -1,9 +1,9 @@
-﻿from pprint import pprint
+from pprint import pprint
 import types
 
-from PySide import QtGui, QtCore, QtOpenGL
+from PythonEditor.ui.Qt import QtWidgets, QtGui, QtCore, QtOpenGL
 
-class VisualDebug(QtGui.QWidget):
+class VisualDebug(QtWidgets.QWidget):
     """
     A TreeView containing downwards recursively searched 
     QObjects through their 'children' attribute. On object selection,
@@ -14,7 +14,7 @@ class VisualDebug(QtGui.QWidget):
     """
     def __init__(self):
         super(VisualDebug, self).__init__()
-        self.layout = QtGui.QGridLayout(self)
+        self.layout = QtWidgets.QGridLayout(self)
 
         self.setMinimumWidth(900)
         self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
@@ -34,10 +34,11 @@ class VisualDebug(QtGui.QWidget):
                                                 'python object'])
 
         self.treeview.header().setStretchLastSection(False)
-        self.treeview.header().setResizeMode(QtGui.QHeaderView.ResizeToContents)
+        self.treeview.header().setResizeMode(QtWidgets.QHeaderView.ResizeToContents)
 
         rootItem = self.treemodel.invisibleRootItem()
-        for w in QtGui.qApp.topLevelWidgets(): #extra stuff
+        qApp = QtWidgets.QApplication.instance()
+        for w in qApp.topLevelWidgets(): #extra stuff
             self.recurseWidgets(w, rootItem)
 
     def getObjectInfo( self, widget, indent=0 ):
@@ -72,7 +73,7 @@ class VisualDebug(QtGui.QWidget):
         recursion(widget, firstParent)
         # return treeInfo
 
-class WidgetTreeView(QtGui.QTreeView):
+class WidgetTreeView(QtWidgets.QTreeView):
     def mousePressEvent(self, event):
 
         self.selectedIndices = self.selectedIndexes()
@@ -81,21 +82,21 @@ class WidgetTreeView(QtGui.QTreeView):
             print self.widget
 
         if event.button() == QtCore.Qt.RightButton:
-            self.menu = QtGui.QMenu()
+            self.menu = QtWidgets.QMenu()
 
-            self.regularMenu = QtGui.QMenu('regular')
+            self.regularMenu = QtWidgets.QMenu('regular')
             self.menu.addMenu(self.regularMenu)
 
-            self.builtInMethodMenu = QtGui.QMenu('built-in methods')
+            self.builtInMethodMenu = QtWidgets.QMenu('built-in methods')
             self.regularMenu.addMenu(self.builtInMethodMenu)
 
-            self.eventMenu = QtGui.QMenu('events')
+            self.eventMenu = QtWidgets.QMenu('events')
             self.builtInMethodMenu.addMenu(self.eventMenu)
 
-            self.methodMenu = QtGui.QMenu('method-wrappers')
+            self.methodMenu = QtWidgets.QMenu('method-wrappers')
             self.regularMenu.addMenu(self.methodMenu)
 
-            self.dictMenu = QtGui.QMenu('dict types')
+            self.dictMenu = QtWidgets.QMenu('dict types')
             self.regularMenu.addMenu(self.dictMenu)
 
             for method in dir(self.widget):
@@ -135,10 +136,10 @@ class WidgetTreeView(QtGui.QTreeView):
                     except:
                         pass
 
-            self.metaMenu = QtGui.QMenu('meta')
+            self.metaMenu = QtWidgets.QMenu('meta')
             self.menu.addMenu(self.metaMenu)
 
-            self.metaMethodMenu = QtGui.QMenu('meta methods')
+            self.metaMethodMenu = QtWidgets.QMenu('meta methods')
             self.metaMenu.addMenu(self.metaMethodMenu)
             
             o = self.widget
@@ -149,7 +150,7 @@ class WidgetTreeView(QtGui.QTreeView):
                     lambda obj=o, conn=conn: o.metaObject().invokeMethod(obj,
                     QtCore.QGenericArgument()))
 
-            self.metaPropMenu = QtGui.QMenu('meta properties')
+            self.metaPropMenu = QtWidgets.QMenu('meta properties')
             self.metaMenu.addMenu(self.metaPropMenu)
 
             for name, prop in self.getMetaProperties(self.widget):
@@ -185,7 +186,9 @@ class WidgetTreeView(QtGui.QTreeView):
             properties.append((name, metaproperty))
         return properties
 
-for w in QtGui.qApp.topLevelWidgets():
+        
+qApp = QtWidgets.QApplication.instance()
+for w in qApp.topLevelWidgets():
     if w.metaObject().className() == 'VisualDebug':
         print w
         w.deleteLater()
