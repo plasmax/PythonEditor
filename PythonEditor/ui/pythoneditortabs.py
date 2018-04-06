@@ -6,6 +6,7 @@ from terminal import Terminal
 
 from PythonEditor.ui import edittabs
 from PythonEditor.ui.features import tabshortcuts
+from PythonEditor.ui.features import tabfilehandling
 from PythonEditor.utils import save
 from PythonEditor.utils import constants
 
@@ -57,6 +58,8 @@ class PythonEditorTabs(QtWidgets.QWidget):
         """
         sch = tabshortcuts.ShortcutHandler(self.edittabs)
         sch.clear_output_signal.connect(self.terminal.clear)
+
+        self.filehandler = tabfilehandling.FileHandler(self.edittabs)
 
     def setup_menu(self):
         """

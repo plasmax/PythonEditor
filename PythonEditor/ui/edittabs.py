@@ -8,7 +8,7 @@ class EditTabs(QtWidgets.QTabWidget):
     TODO: Set stylesheet to 
     have tabs the same height as Nuke's.
     """
-    widget_changed_signal = QtCore.Signal(object)
+    widget_changed_signal = QtCore.Signal(QtWidgets.QPlainTextEdit)
 
     def __init__(self):
         QtWidgets.QTabWidget.__init__(self)
@@ -38,6 +38,7 @@ class EditTabs(QtWidgets.QTabWidget):
                        editor, 
                        'New Tab')
         self.setCurrentIndex(index)
+        return editor
 
     def close_current_tab(self):
         """

@@ -10,12 +10,12 @@ class IDE(QtWidgets.QWidget):
     whole package to be reloaded for 
     development purposes.
     """
-    def __init__(self):
+    def __init__(self, tabs=False):
         super(IDE, self).__init__()
         self.layout = QtWidgets.QHBoxLayout(self)
         self.layout.setContentsMargins(0,0,0,0)
         self.setObjectName('IDE')
-        self.buildUI()
+        self.buildUI(tabs=tabs)
 
     def buildUI(self, tabs=False):
         if tabs:

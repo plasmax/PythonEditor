@@ -59,12 +59,12 @@ class ShortcutHandler(QtCore.QObject):
         handled directly by QShortcut.
         """
         editor = self.editor
+        editor.tab_signal.disconnect()
+        editor.return_signal.disconnect()
+        editor.wrap_signal.disconnect()
+        editor.home_key_ctrl_alt_signal.disconnect()
+        editor.end_key_ctrl_alt_signal.disconnect()
         del self.editor
-        editor.tab_signal.disconnect(self.tab_handler)
-        editor.return_signal.disconnect(self.return_handler)
-        editor.wrap_signal.disconnect(self.wrap_text)
-        editor.home_key_ctrl_alt_signal.disconnect(self.move_to_top)
-        editor.end_key_ctrl_alt_signal.disconnect(self.move_to_bottom)
 
     def installShortcuts(self):
         """
