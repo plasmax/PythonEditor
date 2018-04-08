@@ -1,15 +1,19 @@
 import os
 import time
 from PythonEditor.utils.constants import AUTOSAVE_FILE
-from PythonEditor.ui.Qt import QtCore
+from PythonEditor.ui.Qt import QtCore, QtWidgets
 from xml.etree import ElementTree
 
 XML_HEADER = '<?xml version="1.0" encoding="UTF-8"?>'
+
 class FileHandler(QtCore.QObject):
     """
     Simple xml text storage.
     """
-    def __init__(self, editor, path=None):
+    restore_tab_signal = QtCore.Signal(str)
+
+    def __init__(self, editortabs, tab_index=None):
+        super(FileHandler, self).__init__()
         if not os.path.isfile(AUTOSAVE_FILE):
             if not os.path.isdir(os.path.dirname(AUTOSAVE_FILE)):
                 return
@@ -17,12 +21,41 @@ class FileHandler(QtCore.QObject):
                 with open(AUTOSAVE_FILE, 'w') as f:
                     f.write(XML_HEADER+'<script></script>')
 
-        self._path = (path if path else AUTOSAVE_FILE)
+        self.setObjectName('TabFileHandler')
 
-        self.editor = editor
+        self.editortabs = editortabs
+        self.setParent(editortabs)
+        self.editortabs.widget_changed_signal.connect(self.setEditor)
+        self.editortabs.tabCloseRequested.connect(self.removeempty) #document().modificationChanged is more sophisticated
+        self.setEditor(editortabs.currentWidget())
 
         self.readautosave()
-        editor.textChanged.connect(self.autosave) #document().modificationChanged is more sophisticated
+
+    @QtCore.Slot(QtWidgets.QPlainTextEdit)
+    def setEditor(self, editor):
+        """
+        Sets the current editor
+        and connects signals.
+        """
+        if hasattr(self, 'editor'):
+            self.disconnectSignals()
+        if editor is None:
+            return
+        if editor.objectName() == 'Editor':
+            self.editor = editor
+            self.connectSignals()
+
+    def connectSignals(self):
+        try:
+            QtCore.Qt.UniqueConnection
+        except AttributeError as e:
+            print(e)
+            QtCore.Qt.UniqueConnection = 128
+        self.editor.textChanged.connect(self.autosave, QtCore.Qt.UniqueConnection) #document().modificationChanged is more sophisticated
+
+    def disconnectSignals(self):
+
+        self.editor.textChanged.disconnect()
     
     def readfile(self, path):
         """
@@ -44,36 +77,20 @@ class FileHandler(QtCore.QObject):
         root = parser.getroot()
         self.editor.setPlainText(root.text)
 
-    def readautosave(self, path=None):
+    def readautosave(self):
         """
         Sets editor text content. First checks the 
-        autosave file for a <subscript> element with 
-        a property that matches the path name provided. 
-        If no path is provided (as on __init__), the 
-        default autosave is read.
+        autosave file for <subscript> elements and
+        creates a tab per element.
         """
-        path = (path if path else self._path)
-
         parser = ElementTree.parse(AUTOSAVE_FILE)
         root = parser.getroot()
         subscripts = root.findall('subscript')
 
-        path_list = [s.attrib.get('path') == path for s in subscripts]
-        if not any(path_list):
-            self.readfile(path)
-            sub = ElementTree.Element('subscript')
-            sub.attrib['path'] = path
-            sub.attrib['date'] = time.asctime()
-            root.append(sub)
-            sub.text = self.editor.toPlainText()
-
-            data = ElementTree.tostring(root)
-            with open(AUTOSAVE_FILE, 'w') as f:
-                f.write(XML_HEADER+data)
-
         for s in subscripts:
-            if s.attrib.get('path') == path:
-                self.editor.setPlainText(s.text)        
+            if s.attrib.get('tab'):
+                editor = self.editortabs.new_tab()#TODO should assign a UUID 
+                editor.setPlainText(s.text)
 
     @QtCore.Slot()
     def autosave(self):
@@ -85,11 +102,32 @@ class FileHandler(QtCore.QObject):
         root = parser.getroot()
         subscripts = root.findall('subscript')
 
+        tab_index = str(self.editortabs.currentIndex())
+        found = False
         for s in subscripts:
-            if s.attrib.get('path') == self._path:
+            if s.attrib.get('tab') == tab_index:
                 s.text = self.editor.toPlainText()
-                s.attrib['date'] = time.asctime()
+                found = True
 
+        if not found:
+            sub = ElementTree.Element('subscript')
+            sub.attrib['tab'] = tab_index
+            root.append(sub)
+            sub.text = self.editor.toPlainText()
+   
         data = ElementTree.tostring(root)
         with open(AUTOSAVE_FILE, 'w') as f:
             f.write(XML_HEADER+data) #all xml contents
+
+    @QtCore.Slot(int)
+    def removeempty(self, tab_index):
+        parser = ElementTree.parse(AUTOSAVE_FILE)
+        root = parser.getroot()
+        subscripts = root.findall('subscript')
+
+        tab_index = str(self.editortabs.currentIndex())
+        found = False
+        for s in subscripts:
+            # if s.attrib.get('tab') == tab_index:
+            if s.text.strip() == '':
+                root.remove(s)
