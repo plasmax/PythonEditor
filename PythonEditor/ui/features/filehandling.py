@@ -105,7 +105,7 @@ class FileHandler(QtCore.QObject):
         tab_index = str(self.editortabs.currentIndex())
         found = False
         for s in subscripts:
-            if s.attrib.get('tab') == tab_index:
+            if s.attrib.get('tab') == tab_index: #this is not going to coincide unless we reset tab indices of the xml on startup
                 s.text = self.editor.toPlainText()
                 found = True
 
