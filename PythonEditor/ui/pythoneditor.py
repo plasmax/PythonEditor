@@ -97,8 +97,7 @@ class PythonEditor(QtWidgets.QWidget):
         editMenu.addAction('Shortcuts', self.show_shortcuts)
 
         helpMenu.addAction('Reload Python Editor', self.parent.reload_package)
-        helpMenu.addAction('Load Python Editor With Tabs', partial(self.parent.reload_package, True))
-
+        
         self.layout().addWidget(menuBar)
 
     def show_shortcuts(self):

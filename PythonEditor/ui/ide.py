@@ -2,7 +2,6 @@ import sys
 import imp
 from Qt import QtWidgets
 from PythonEditor.ui import pythoneditor
-from PythonEditor.ui import pythoneditortabs
 
 class IDE(QtWidgets.QWidget):
     """
@@ -10,21 +9,18 @@ class IDE(QtWidgets.QWidget):
     whole package to be reloaded for 
     development purposes.
     """
-    def __init__(self, tabs=False):
+    def __init__(self):
         super(IDE, self).__init__()
         self.layout = QtWidgets.QHBoxLayout(self)
         self.layout.setContentsMargins(0,0,0,0)
         self.setObjectName('IDE')
-        self.buildUI(tabs=tabs)
+        self.buildUI()
 
-    def buildUI(self, tabs=False):
-        if tabs:
-            self.pythonEditor = pythoneditortabs.PythonEditorTabs(parent=self)
-        else:
-            self.pythonEditor = pythoneditor.PythonEditor(parent=self)
+    def buildUI(self):
+        self.pythonEditor = pythoneditor.PythonEditor(parent=self)
         self.layout.addWidget(self.pythonEditor)
 
-    def reload_package(self, tabs=False):
+    def reload_package(self):
         """
         Reloads the whole package.
         """
@@ -49,9 +45,8 @@ class IDE(QtWidgets.QWidget):
                 # del sys.modules[name]
 
         reload(pythoneditor)
-        reload(pythoneditortabs)
 
-        self.buildUI(tabs=tabs)
+        self.buildUI()
 
     def showEvent(self, event):
         """

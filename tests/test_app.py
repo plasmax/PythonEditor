@@ -22,7 +22,7 @@ if __name__ == '__main__':
     from PythonEditor.ui.features import nukepalette
 
     app = QtWidgets.QApplication(sys.argv)
-    ide = PythonEditor.ide.IDE(tabs=False)
+    ide = PythonEditor.ide.IDE()
     app.setPalette(nukepalette.getNukePalette())
     ide.show()
     ide.resize(500, 800)
