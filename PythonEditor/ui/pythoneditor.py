@@ -5,10 +5,10 @@ from editor import Editor
 from terminal import Terminal
 
 from PythonEditor.ui import edittabs
-from PythonEditor.ui.features import shortcuts
-from PythonEditor.ui.features import filehandling
 from PythonEditor.utils import save
 from PythonEditor.utils import constants
+from PythonEditor.ui.features import shortcuts
+from PythonEditor.ui.features import filehandling
 
 class PythonEditor(QtWidgets.QWidget):
     """

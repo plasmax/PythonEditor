@@ -16,26 +16,30 @@ class ShortcutHandler(QtCore.QObject):
         self.setObjectName('ShortcutHandler')
         self.editortabs = editortabs
         self.setParent(editortabs)
-        self.editortabs.widget_changed_signal.connect(self.setEditor)
-        self.setEditor(editortabs.currentWidget())
+        self.editortabs.tab_switched_signal.connect(self.tab_switch_handler)
+        self.setEditor()
         self.installShortcuts()
 
-    @QtCore.Slot(QtWidgets.QPlainTextEdit)
-    def setEditor(self, editor):
+    @QtCore.Slot(int, int, bool)
+    def tab_switch_handler(self, previous, current, tabremoved):
+        if not tabremoved:  #nothing's been deleted
+                            #so we need to disconnect
+                            #signals from previous editor
+            self.disconnectSignals()
+
+        self.setEditor()
+
+    def setEditor(self):
         """
         Sets the current editor
         and connects signals.
         """
-        if hasattr(self, 'editor'):
-            self.disconnectSignals()
-        if editor is None:
-            return
-        if editor.objectName() == 'Editor':
+        editor = self.editortabs.currentWidget()
+        editorChanged = True if not hasattr(self, 'editor') else self.editor != editor
+        isEditor = editor.objectName() == 'Editor'
+        if isEditor and editorChanged:
             self.editor = editor
-            try:
-                self.connectSignals()
-            except RuntimeError as e:
-                print e
+            self.connectSignals()
 
     def connectSignals(self):
         """
@@ -57,14 +61,17 @@ class ShortcutHandler(QtCore.QObject):
         """
         For shortcuts that cannot be 
         handled directly by QShortcut.
+        TODO: If editor no longer exists (has been closed)
+        do not try to disconnect.
         """
+        if not hasattr(self, 'editor'):
+            return
         editor = self.editor
         editor.tab_signal.disconnect()
         editor.return_signal.disconnect()
         editor.wrap_signal.disconnect()
         editor.home_key_ctrl_alt_signal.disconnect()
         editor.end_key_ctrl_alt_signal.disconnect()
-        del self.editor
 
     def installShortcuts(self):
         """
