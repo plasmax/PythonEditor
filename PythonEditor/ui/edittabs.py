@@ -23,7 +23,6 @@ class EditTabs(QtWidgets.QTabWidget):
         tabBar.tabMoved.connect(self.tab_restrict_move)
 
         self.setup_new_tab_btn()
-        self.current_editor = None
         self.tabCloseRequested.connect(self.close_tab)
         self.currentChanged.connect(self.widgetChanged)
         self.setStyleSheet("QTabBar::tab { height: 25px; }")

@@ -83,21 +83,35 @@ class PythonEditor(QtWidgets.QWidget):
         for menu in [fileMenu, editMenu, helpMenu]:
             menuBar.addMenu(menu)
 
-        save_as = partial(save.save_as, self.edittabs.current_editor)
-        fileMenu.addAction('Save As', save_as)
+        fileMenu.addAction('Save As', 
+            self.save_as)
 
-        save_selected = partial(save.save_selected_text, self.edittabs.current_editor)
-        fileMenu.addAction('Save Selected Text', save_selected)
+        fileMenu.addAction('Save Selected Text', 
+            self.save_selected_text)
         
-        export_to_external_editor = partial(save.export_selected_to_external_editor, self.edittabs.current_editor)
-        fileMenu.addAction('Export Selected To External Editor', export_to_external_editor)
+        fileMenu.addAction('Export Selected To External Editor', 
+            self.export_selected_to_external_editor)
 
         editMenu.addAction('Preferences') #TODO: Set up Preferences widget with External Editor path option 
-        editMenu.addAction('Shortcuts', self.show_shortcuts)
+        editMenu.addAction('Shortcuts', 
+            self.show_shortcuts)
 
-        helpMenu.addAction('Reload Python Editor', self.parent.reload_package)
+        helpMenu.addAction('Reload Python Editor', 
+            self.parent.reload_package)
 
         self.layout().addWidget(menuBar)
+
+    def save_as(self):
+        cw = self.edittabs.currentWidget()
+        save.save_as(cw)
+
+    def save_selected_text(self):
+        cw = self.edittabs.currentWidget()
+        save.save_selected_text(cw)
+        
+    def export_selected_to_external_editor(self):
+        cw = self.edittabs.currentWidget()
+        save.export_selected_to_external_editor(cw)
 
     def show_shortcuts(self):
         """

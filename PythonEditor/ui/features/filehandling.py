@@ -134,7 +134,7 @@ class FileHandler(QtCore.QObject):
     def autosave(self):
         """
         Saves editor contents into autosave
-        file with a path attribute and timestamp.
+        file with a unique identifier (uuid).
         """
         root, subscripts = self.parsexml('subscript')
 
