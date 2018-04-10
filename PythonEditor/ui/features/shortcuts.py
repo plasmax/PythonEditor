@@ -11,29 +11,79 @@ class ShortcutHandler(QtCore.QObject):
     clear_output_signal = QtCore.Signal()
     exec_text_signal = QtCore.Signal()
 
-    def __init__(self, editor):
+    def __init__(self, editortabs):
         super(ShortcutHandler, self).__init__()
         self.setObjectName('ShortcutHandler')
-        self.setParent(editor)
-        self.editor = editor
+        self.editortabs = editortabs
+        self.setParent(editortabs)
+        self.editortabs.tab_switched_signal.connect(self.tab_switch_handler)
+        self.setEditor()
         self.installShortcuts()
-        self.connectSignals()
+
+    @QtCore.Slot(int, int, bool)
+    def tab_switch_handler(self, previous, current, tabremoved):
+        """
+        On tab switch, disconnects previous 
+        tab's signals before connecting the
+        new tab. 
+        """
+        if not tabremoved:  #nothing's been deleted
+                            #so we need to disconnect
+                            #signals from previous editor
+            self.disconnectSignals()
+
+        self.setEditor()
+
+    def setEditor(self):
+        """
+        Sets the current editor
+        and connects signals.
+        """
+        editor = self.editortabs.currentWidget()
+        editorChanged = True if not hasattr(self, 'editor') else self.editor != editor
+        isEditor = editor.objectName() == 'Editor'
+        if isEditor and editorChanged:
+            self.editor = editor
+            self.connectSignals()
 
     def connectSignals(self):
         """
         For shortcuts that cannot be 
         handled directly by QShortcut.
         """
-        self.editor.tab_signal.connect(self.tab_handler)
-        self.editor.return_signal.connect(self.return_handler)
-        self.editor.wrap_signal.connect(self.wrap_text)
-        self.editor.home_key_ctrl_alt_signal.connect(self.move_to_top)
-        self.editor.end_key_ctrl_alt_signal.connect(self.move_to_bottom)
+        try:
+            QtCore.Qt.UniqueConnection
+        except AttributeError as e:
+            print(e)
+            QtCore.Qt.UniqueConnection = 128
+        self.editor.tab_signal.connect(self.tab_handler, QtCore.Qt.UniqueConnection)
+        self.editor.return_signal.connect(self.return_handler, QtCore.Qt.UniqueConnection)
+        self.editor.wrap_signal.connect(self.wrap_text, QtCore.Qt.UniqueConnection)
+        self.editor.home_key_ctrl_alt_signal.connect(self.move_to_top, QtCore.Qt.UniqueConnection)
+        self.editor.end_key_ctrl_alt_signal.connect(self.move_to_bottom, QtCore.Qt.UniqueConnection)
         self.editor.ctrl_x_signal.connect(self.cut_line)
         self.editor.home_key_signal.connect(self.jump_to_start)
         self.editor.wheel_signal.connect(self.wheel_zoom)
         self.editor.ctrl_enter_signal.connect(self.exec_selected_text)
-        
+
+    def disconnectSignals(self):
+        """
+        For shortcuts that cannot be 
+        handled directly by QShortcut.
+        """
+        if not hasattr(self, 'editor'):
+            return
+        editor = self.editor
+        editor.tab_signal.disconnect()
+        editor.return_signal.disconnect()
+        editor.wrap_signal.disconnect()
+        editor.home_key_ctrl_alt_signal.disconnect()
+        editor.end_key_ctrl_alt_signal.disconnect()
+        editor.ctrl_x_signal.disconnect()
+        editor.home_key_signal.disconnect()
+        editor.wheel_signal.disconnect()
+        editor.ctrl_enter_signal.disconnect()
+
     def installShortcuts(self):
         """
         Set up all shortcuts on 
@@ -41,6 +91,7 @@ class ShortcutHandler(QtCore.QObject):
         """
         notimp = lambda msg: partial(self.notimplemented, msg)
         mapping = { 
+                    'Ctrl+Return': self.exec_selected_text,
                     'Ctrl+B': self.exec_selected_text,
                     'Ctrl+Shift+Return': self.new_line_above,
                     'Ctrl+Alt+Return': self.new_line_below,
@@ -66,8 +117,12 @@ class ShortcutHandler(QtCore.QObject):
                     'Ctrl+Shift+Backspace': self.delete_to_sol,
                     'Ctrl+Shift+Up': self.move_lines_up,
                     'Ctrl+Shift+Down': self.move_lines_down,
+                    'Ctrl+Shift+Home': notimp('move to start'),
                     'Ctrl+Shift+Alt+Up': notimp('duplicate cursor up'),
                     'Ctrl+Shift+Alt+Down': notimp('duplicate cursor down'),
+                    'Ctrl+N': self.editortabs.new_tab,
+                    'Ctrl+W': self.editortabs.close_current_tab,
+                    'Ctrl+X': notimp('cut line'), #won't work without overriding keyEvent
                   }
 
         self.shortcut_dict = {key:func.func_doc if hasattr(func, 'func_doc') else func.__doc__ 
@@ -92,7 +147,7 @@ class ShortcutHandler(QtCore.QObject):
             keySequence = QtGui.QKeySequence(shortcut)
             qshortcut = QtWidgets.QShortcut(
                                             keySequence, 
-                                            self.editor, 
+                                            self.editortabs, 
                                             func,
                                             context=context)
             qshortcut.setObjectName(shortcut)
@@ -115,7 +170,7 @@ class ShortcutHandler(QtCore.QObject):
                     ])
         blockNumbers |= set([doc.findBlock(textCursor.position()).blockNumber()])
 
-        isEmpty = lambda b: doc.findBlockByNumber(b).text().strip() != ''
+        isEmpty = lambda b:  doc.findBlockByNumber(b).text().strip() != ''
         blocks = []
         for b in blockNumbers:
             bn = doc.findBlockByNumber(b)
@@ -149,7 +204,7 @@ class ShortcutHandler(QtCore.QObject):
 
         self.exec_text_signal.emit()
         execute.mainexec(text, whole_text)
-        
+
     def exec_current_line(self):
         """
         Calls exec with the text of 
@@ -176,8 +231,6 @@ class ShortcutHandler(QtCore.QObject):
         Match next line indentation to current line
         If ':' is character in cursor position,
         add an extra four spaces.
-        TODO: stop this from inserting newline
-        if autocomplete is present.
         """
         textCursor = self.editor.textCursor()
         line = textCursor.block().text()
@@ -234,9 +287,8 @@ class ShortcutHandler(QtCore.QObject):
     @QtCore.Slot()
     def tab_handler(self):
         """
-        Handles Tab Key
-        TODO: check whole line selected 
-        before indenting.
+        Indents selected text. If no text
+        is selected, adds four spaces.
         """
         textCursor = self.editor.textCursor()
         if textCursor.hasSelection():
@@ -420,7 +472,8 @@ class ShortcutHandler(QtCore.QObject):
         """
         Very basic search dialog.
         TODO: Create a QAction/util for this
-        as it is also accessed through right-click menu.
+        as it is also accessed through 
+        the right-click menu.
         """
         dialog = QtWidgets.QInputDialog.getText(self.editor, 
                                                 'Search', '',)

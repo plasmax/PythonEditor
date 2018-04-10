@@ -1,12 +1,14 @@
 import sys
 from functools import partial
-
 from Qt import QtWidgets, QtCore, QtGui
+from editor import Editor
 from terminal import Terminal
-from features import shortcuts
+
+from PythonEditor.ui import shortcuteditor
+from PythonEditor.ui import edittabs
 from PythonEditor.utils import save
 from PythonEditor.utils import constants
-from PythonEditor.ui import editor
+from PythonEditor.ui.features import shortcuts
 from PythonEditor.ui.features import filehandling
 
 class PythonEditor(QtWidgets.QWidget):
@@ -27,21 +29,15 @@ class PythonEditor(QtWidgets.QWidget):
         layout.setObjectName('PythonEditor_MainLayout')
         layout.setContentsMargins(0,0,0,0)
 
-        splitter = QtWidgets.QSplitter(QtCore.Qt.Vertical)
-        splitter.setObjectName('PythonEditor_MainVerticalSplitter')
-
-        self.editor = editor.Editor(handle_shortcuts=True)
-        self.filehandler = filehandling.FileHandler(self.editor)
+        self.edittabs = edittabs.EditTabs()
         self.terminal = Terminal()
-
-        editor_path = constants.get_external_editor_path()
-        if not editor_path:
-            constants.set_external_editor_path()
 
         self.setup_menu()
 
+        splitter = QtWidgets.QSplitter(QtCore.Qt.Vertical)
+        splitter.setObjectName('PythonEditor_MainVerticalSplitter')
         splitter.addWidget(self.terminal)
-        splitter.addWidget(self.editor)
+        splitter.addWidget(self.edittabs)
 
         layout.addWidget(splitter)
 
@@ -61,8 +57,11 @@ class PythonEditor(QtWidgets.QWidget):
         This would mean keeping the ShortcutHandler here (and avoid 
         creating new shortcut objects for every tab).
         """
-        rco = self.editor.relay_clear_output_signal
-        rco.connect(self.terminal.clear)
+        sch = shortcuts.ShortcutHandler(self.edittabs)
+        sch.clear_output_signal.connect(self.terminal.clear)
+        self.shortcuteditor = shortcuteditor.ShortcutEditor(sch)
+
+        self.filehandler = filehandling.FileHandler(self.edittabs)
 
     def setup_menu(self):
         """
@@ -84,20 +83,20 @@ class PythonEditor(QtWidgets.QWidget):
         for menu in [fileMenu, editMenu, helpMenu]:
             menuBar.addMenu(menu)
 
-        save_as = partial(save.save_as, self.editor)
+        save_as = partial(save.save_as, self.edittabs.current_editor)
         fileMenu.addAction('Save As', save_as)
 
-        save_selected = partial(save.save_selected_text, self.editor)
+        save_selected = partial(save.save_selected_text, self.edittabs.current_editor)
         fileMenu.addAction('Save Selected Text', save_selected)
         
-        export_to_external_editor = partial(save.export_selected_to_external_editor, self.editor)
+        export_to_external_editor = partial(save.export_selected_to_external_editor, self.edittabs.current_editor)
         fileMenu.addAction('Export Selected To External Editor', export_to_external_editor)
 
         editMenu.addAction('Preferences') #TODO: Set up Preferences widget with External Editor path option 
         editMenu.addAction('Shortcuts', self.show_shortcuts)
 
         helpMenu.addAction('Reload Python Editor', self.parent.reload_package)
-        
+
         self.layout().addWidget(menuBar)
 
     def show_shortcuts(self):
@@ -105,7 +104,7 @@ class PythonEditor(QtWidgets.QWidget):
         Generates a popup dialog listing available shortcuts.
         TODO: Make this editable, and reassign shortcuts on edit.
         """
-        self.editor.shortcuteditor.show()
+        self.shortcuteditor.show()
 
     def showEvent(self, event):
         """

@@ -1,3 +1,4 @@
+import uuid
 from Qt import QtWidgets, QtGui, QtCore
 
 import shortcuteditor
@@ -53,6 +54,16 @@ class Editor(QtWidgets.QPlainTextEdit):
             sch = shortcuts.ShortcutHandler(self)
             sch.clear_output_signal.connect(self.relay_clear_output_signal)
             self.shortcuteditor = shortcuteditor.ShortcutEditor(sch)
+            
+        self.uid = str(uuid.uuid4())
+
+    @property
+    def uid(self):
+        return self._uid
+
+    @uid.setter
+    def uid(self, uid):
+        self._uid = uid
 
     def focusInEvent(self, event):
         self.focus_in_signal.emit(event)
