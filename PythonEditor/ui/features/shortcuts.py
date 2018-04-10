@@ -91,7 +91,6 @@ class ShortcutHandler(QtCore.QObject):
         """
         notimp = lambda msg: partial(self.notimplemented, msg)
         mapping = { 
-                    'Ctrl+Return': self.exec_selected_text,
                     'Ctrl+B': self.exec_selected_text,
                     'Ctrl+Shift+Return': self.new_line_above,
                     'Ctrl+Alt+Return': self.new_line_below,
@@ -117,12 +116,10 @@ class ShortcutHandler(QtCore.QObject):
                     'Ctrl+Shift+Backspace': self.delete_to_sol,
                     'Ctrl+Shift+Up': self.move_lines_up,
                     'Ctrl+Shift+Down': self.move_lines_down,
-                    'Ctrl+Shift+Home': notimp('move to start'),
                     'Ctrl+Shift+Alt+Up': notimp('duplicate cursor up'),
                     'Ctrl+Shift+Alt+Down': notimp('duplicate cursor down'),
                     'Ctrl+N': self.editortabs.new_tab,
                     'Ctrl+W': self.editortabs.close_current_tab,
-                    'Ctrl+X': notimp('cut line'), #won't work without overriding keyEvent
                   }
 
         self.shortcut_dict = {key:func.func_doc if hasattr(func, 'func_doc') else func.__doc__ 
@@ -170,7 +167,7 @@ class ShortcutHandler(QtCore.QObject):
                     ])
         blockNumbers |= set([doc.findBlock(textCursor.position()).blockNumber()])
 
-        isEmpty = lambda b:  doc.findBlockByNumber(b).text().strip() != ''
+        isEmpty = lambda b: doc.findBlockByNumber(b).text().strip() != ''
         blocks = []
         for b in blockNumbers:
             bn = doc.findBlockByNumber(b)
