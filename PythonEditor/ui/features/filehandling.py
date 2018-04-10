@@ -1,11 +1,11 @@
 import os
 import time
 import uuid
-from PythonEditor.utils.constants import AUTOSAVE_FILE
-from PythonEditor.ui.Qt import QtCore, QtWidgets
 from xml.etree import ElementTree
-
-XML_HEADER = '<?xml version="1.0" encoding="UTF-8"?>'
+from PythonEditor.ui.Qt import QtCore, QtWidgets
+from PythonEditor.utils.constants import (AUTOSAVE_FILE, 
+                                          XML_HEADER,
+                                          create_autosave_file)
 
 class FileHandler(QtCore.QObject):
     """
@@ -16,14 +16,7 @@ class FileHandler(QtCore.QObject):
     def __init__(self, editortabs, tab_index=None):
         super(FileHandler, self).__init__()
         self.setObjectName('TabFileHandler')
-
-        if not os.path.isfile(AUTOSAVE_FILE):
-            if not os.path.isdir(os.path.dirname(AUTOSAVE_FILE)):
-                return
-            else:
-                with open(AUTOSAVE_FILE, 'w') as f:
-                    f.write(XML_HEADER+'<script></script>')
-
+        create_autosave_file()
 
         self.editortabs = editortabs
         self.setParent(editortabs)
@@ -98,6 +91,8 @@ class FileHandler(QtCore.QObject):
             f.write(XML_HEADER+data)
 
     def parsexml(self, element_name, path=AUTOSAVE_FILE):
+        if not create_autosave_file():
+            return
         parser = ElementTree.parse(path)
         root = parser.getroot()
         elements = root.findall(element_name)

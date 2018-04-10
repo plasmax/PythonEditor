@@ -15,8 +15,20 @@ USER = os.environ.get('USERNAME')
 NUKE_DIR = os.path.join(os.path.expanduser('~'), '.nuke')
 AUTOSAVE_FILE = os.path.join(NUKE_DIR, 'PythonEditorHistory.xml')
 QT_VERSION = pyside + os.pathsep + pyqt
+XML_HEADER = '<?xml version="1.0" encoding="UTF-8"?>'
+
+def create_autosave_file():
+    if not os.path.isfile(AUTOSAVE_FILE):
+        if not os.path.isdir(os.path.dirname(AUTOSAVE_FILE)):
+            return False
+        else:
+            with open(AUTOSAVE_FILE, 'w') as f:
+                f.write(XML_HEADER+'<script></script>')
+    return True
 
 def get_editor_xml():
+    if not create_autosave_file():
+        return
     parser = ElementTree.parse(AUTOSAVE_FILE)
     root = parser.getroot()
     editor_elements = root.findall('external_editor_path')
