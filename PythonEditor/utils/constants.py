@@ -55,7 +55,8 @@ def get_external_editor_path():
 def set_external_editor_path(path=None):
     """
     Prompts the user for a new
-    external editor path. Overrides
+    external editor path.
+    TODO: Set temp program if none found.
     """
     root, editor_elements = get_editor_xml()
     for e in editor_elements:
