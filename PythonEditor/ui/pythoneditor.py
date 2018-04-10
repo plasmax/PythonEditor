@@ -31,6 +31,10 @@ class PythonEditor(QtWidgets.QWidget):
 
         self.edittabs = edittabs.EditTabs()
         self.terminal = Terminal()
+        
+        editor_path = constants.get_external_editor_path()
+        if not editor_path:
+            constants.set_external_editor_path()
 
         self.setup_menu()
 
