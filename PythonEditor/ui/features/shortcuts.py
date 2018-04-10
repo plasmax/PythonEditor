@@ -22,6 +22,11 @@ class ShortcutHandler(QtCore.QObject):
 
     @QtCore.Slot(int, int, bool)
     def tab_switch_handler(self, previous, current, tabremoved):
+        """
+        On tab switch, disconnects previous 
+        tab's signals before connecting the
+        new tab. 
+        """
         if not tabremoved:  #nothing's been deleted
                             #so we need to disconnect
                             #signals from previous editor
@@ -65,8 +70,6 @@ class ShortcutHandler(QtCore.QObject):
         """
         For shortcuts that cannot be 
         handled directly by QShortcut.
-        TODO: If editor no longer exists (has been closed)
-        do not try to disconnect.
         """
         if not hasattr(self, 'editor'):
             return
@@ -284,9 +287,8 @@ class ShortcutHandler(QtCore.QObject):
     @QtCore.Slot()
     def tab_handler(self):
         """
-        Handles Tab Key
-        TODO: check whole line selected 
-        before indenting.
+        Indents selected text. If no text
+        is selected, adds four spaces.
         """
         textCursor = self.editor.textCursor()
         if textCursor.hasSelection():

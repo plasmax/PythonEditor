@@ -38,9 +38,10 @@ class EditTabs(QtWidgets.QTabWidget):
             self.tabBar().moveTab(to_index, from_index)
 
     def setup_new_tab_btn(self):
-        self.insertTab(0, QtWidgets.QWidget(),'')
+        widget = QtWidgets.QWidget()
+        widget.setObjectName('Tab_Widget_New_Button')
+        self.insertTab(0, widget,'')
         nb = self.new_btn = QtWidgets.QToolButton()
-        nb.setObjectName('Tab_Widget_New_Button')
         nb.setMinimumSize(QtCore.QSize(50,10))
         nb.setText('+') # you could set an icon instead of text
         nb.setAutoRaise(True)
@@ -52,6 +53,9 @@ class EditTabs(QtWidgets.QTabWidget):
 
     @QtCore.Slot(str)
     def new_tab(self):
+        """
+        Creates a new tab.
+        """
         count = self.count()
         index = 0 if count == 0 else count - 1
         editor = EDITOR.Editor(handle_shortcuts=False)
@@ -68,9 +72,7 @@ class EditTabs(QtWidgets.QTabWidget):
 
     def close_current_tab(self):
         """
-        TODO: 
-        2) Maybe check to see if file contents is saved 
-        somewhere. 
+        Closes the active tab.
         """
         _index = self.currentIndex()
         self.close_tab(_index)
@@ -81,7 +83,7 @@ class EditTabs(QtWidgets.QTabWidget):
         _index = self.currentIndex()
 
         old_widget = self.widget(index)
-        if old_widget.objectName() != 'Editor':
+        if old_widget.objectName() == 'Tab_Widget_New_Button':
             return
 
         old_widget.deleteLater()

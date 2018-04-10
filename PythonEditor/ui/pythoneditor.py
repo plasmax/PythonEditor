@@ -4,6 +4,7 @@ from Qt import QtWidgets, QtCore, QtGui
 from editor import Editor
 from terminal import Terminal
 
+from PythonEditor.ui import shortcuteditor
 from PythonEditor.ui import edittabs
 from PythonEditor.utils import save
 from PythonEditor.utils import constants
@@ -58,6 +59,7 @@ class PythonEditor(QtWidgets.QWidget):
         """
         sch = shortcuts.ShortcutHandler(self.edittabs)
         sch.clear_output_signal.connect(self.terminal.clear)
+        self.shortcuteditor = shortcuteditor.ShortcutEditor(sch)
 
         self.filehandler = filehandling.FileHandler(self.edittabs)
 
@@ -102,7 +104,7 @@ class PythonEditor(QtWidgets.QWidget):
         Generates a popup dialog listing available shortcuts.
         TODO: Make this editable, and reassign shortcuts on edit.
         """
-        self.edittabs.current_editor.shortcuteditor.show()
+        self.shortcuteditor.show()
 
     def showEvent(self, event):
         """
