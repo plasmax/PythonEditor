@@ -5,6 +5,7 @@ from editor import Editor
 from terminal import Terminal
 
 from PythonEditor.ui import shortcuteditor
+from PythonEditor.ui import preferenceseditor
 from PythonEditor.ui import edittabs
 from PythonEditor.utils import save
 from PythonEditor.utils import constants
@@ -64,6 +65,7 @@ class PythonEditor(QtWidgets.QWidget):
         sch = shortcuts.ShortcutHandler(self.edittabs)
         sch.clear_output_signal.connect(self.terminal.clear)
         self.shortcuteditor = shortcuteditor.ShortcutEditor(sch)
+        self.preferenceseditor = preferenceseditor.PreferencesEditor()
 
         self.filehandler = filehandling.FileHandler(self.edittabs)
 
@@ -96,7 +98,8 @@ class PythonEditor(QtWidgets.QWidget):
         fileMenu.addAction('Export Selected To External Editor', 
             self.export_selected_to_external_editor)
 
-        editMenu.addAction('Preferences') #TODO: Set up Preferences widget with External Editor path option 
+        editMenu.addAction('Preferences',
+            self.show_preferences) #TODO: Set up Preferences widget with External Editor path option 
         editMenu.addAction('Shortcuts', 
             self.show_shortcuts)
 
@@ -120,9 +123,14 @@ class PythonEditor(QtWidgets.QWidget):
     def show_shortcuts(self):
         """
         Generates a popup dialog listing available shortcuts.
-        TODO: Make this editable, and reassign shortcuts on edit.
         """
         self.shortcuteditor.show()
+
+    def show_preferences(self):
+        """
+        Generates a popup dialog listing available preferences.
+        """
+        self.preferenceseditor.show()
 
     def showEvent(self, event):
         """

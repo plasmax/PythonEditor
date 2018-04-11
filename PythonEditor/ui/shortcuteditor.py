@@ -4,6 +4,7 @@ class ShortcutEditor(QtWidgets.QTreeView):
     """
     A display widget that allows editing of
     keyboard shortcuts assigned to the editor.
+    TODO: Make this editable, and reassign shortcuts on edit.
     """
     def __init__(self, shortcuthandler):
         super(ShortcutEditor, self).__init__()
