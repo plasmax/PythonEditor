@@ -24,7 +24,7 @@ class FileHandler(QtCore.QObject):
         #connect tab signals
         tss = editortabs.tab_switched_signal 
         tss.connect(self.tab_switch_handler)
-        tcr = editortabs.tabCloseRequested 
+        tcr = editortabs.tabCloseRequested
         tcr.connect(self.removeempty)
 
         self.setEditor()
@@ -87,6 +87,8 @@ class FileHandler(QtCore.QObject):
 
     def writexml(self, root, path=AUTOSAVE_FILE):
         data = ElementTree.tostring(root)
+        data = data.replace('><subscript','>\n<subscript')
+        data = data.replace('</subscript><','</subscript>\n<')
         with open(path, 'w') as f:
             f.write(XML_HEADER+data)
 
@@ -163,7 +165,6 @@ class FileHandler(QtCore.QObject):
         found = False
         for s in subscripts:
             if not s.text:
-                print s, 'TAB EMPTY'
                 root.remove(s)
    
         self.writexml(root)

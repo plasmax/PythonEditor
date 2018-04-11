@@ -75,6 +75,7 @@ class EditTabs(QtWidgets.QTabWidget):
         """
         _index = self.currentIndex()
         self.close_tab(_index)
+        self.tabCloseRequested.emit(_index)
 
     def close_tab(self, index):
         if self.count() < 3:
