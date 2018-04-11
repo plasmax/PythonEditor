@@ -1,4 +1,5 @@
 from PythonEditor.ui.Qt import QtGui, QtCore, QtWidgets
+from PythonEditor.utils.constants import IN_NUKE
 
 class LineNumberArea(QtWidgets.QWidget):
     """
@@ -19,7 +20,8 @@ class LineNumberArea(QtWidgets.QWidget):
 
         block = self.editor.firstVisibleBlock()
         blockNumber = block.blockNumber()
-        top = self.editor.blockBoundingGeometry(block).translated(self.editor.contentOffset()).top()
+        blockGeo = self.editor.blockBoundingGeometry(block)
+        top = blockGeo.translated(self.editor.contentOffset()).top()
         bottom = top + self.editor.blockBoundingRect(block).height()
 
         height = self.editor.fontMetrics().height()
@@ -70,7 +72,11 @@ class LineNumberArea(QtWidgets.QWidget):
         if not self.editor.isReadOnly():
             selection = QtWidgets.QTextEdit.ExtraSelection()
 
-            lineColor = self.editor.palette().color(QtGui.QPalette.Background).darker(100)
+            if IN_NUKE:
+                lineColor = self.editor.palette().color(QtGui.QPalette.Background).darker(100)
+            else:
+                lineColor = QtGui.QColor.fromRgbF(0.196078, 0.196078, 0.196078, 0.500000)
+                
             selection.format.setBackground(lineColor)
             selection.format.setProperty(QtGui.QTextFormat.FullWidthSelection, True)
             selection.cursor = self.editor.textCursor()
@@ -79,7 +85,6 @@ class LineNumberArea(QtWidgets.QWidget):
         self.editor.setExtraSelections(extraSelections)
         
     def resizeLineNo(self):
-
         cr = self.editor.contentsRect();
         self.setGeometry(QtCore.QRect(cr.left(), cr.top(),
                     self.lineNumberAreaWidth(), cr.height()))

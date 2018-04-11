@@ -11,13 +11,19 @@ class ShortcutHandler(QtCore.QObject):
     clear_output_signal = QtCore.Signal()
     exec_text_signal = QtCore.Signal()
 
-    def __init__(self, editortabs):
+    def __init__(self, parent_widget, use_tabs=True):
         super(ShortcutHandler, self).__init__()
         self.setObjectName('ShortcutHandler')
-        self.editortabs = editortabs
-        self.setParent(editortabs)
-        self.editortabs.tab_switched_signal.connect(self.tab_switch_handler)
-        self.setEditor()
+        self.setParent(parent_widget)
+        self.parent_widget = parent_widget
+
+        if use_tabs:
+            self.editortabs = parent_widget
+            self.editortabs.tab_switched_signal.connect(self.tab_switch_handler)
+            self.setEditor()
+        else:
+            self.editor = parent_widget
+            self.connectSignals()
         self.installShortcuts()
 
     @QtCore.Slot(int, int, bool)
@@ -90,7 +96,7 @@ class ShortcutHandler(QtCore.QObject):
         the QPlainTextEdit widget.
         """
         notimp = lambda msg: partial(self.notimplemented, msg)
-        mapping = { 
+        editor_shortcuts = { 
                     'Ctrl+B': self.exec_selected_text,
                     'Ctrl+Shift+Return': self.new_line_above,
                     'Ctrl+Alt+Return': self.new_line_below,
@@ -118,12 +124,17 @@ class ShortcutHandler(QtCore.QObject):
                     'Ctrl+Shift+Down': self.move_lines_down,
                     'Ctrl+Shift+Alt+Up': notimp('duplicate cursor up'),
                     'Ctrl+Shift+Alt+Down': notimp('duplicate cursor down'),
-                    'Ctrl+N': self.editortabs.new_tab,
-                    'Ctrl+W': self.editortabs.close_current_tab,
-                  }
+                    }
+
+        if hasattr(self, 'editortabs'):
+            tab_shortcuts = {
+                        'Ctrl+N': self.editortabs.new_tab,
+                        'Ctrl+W': self.editortabs.close_current_tab,
+                        }
+            editor_shortcuts.update(tab_shortcuts)
 
         self.shortcut_dict = {key:func.func_doc if hasattr(func, 'func_doc') else func.__doc__ 
-                                for key, func in mapping.items()}
+                                for key, func in editor_shortcuts.items()}
 
         signal_dict = {
             'Tab': self.tab_handler.__doc__,
@@ -140,11 +151,11 @@ class ShortcutHandler(QtCore.QObject):
         self.shortcut_dict.update(signal_dict)
 
         context = QtCore.Qt.WidgetShortcut
-        for shortcut, func in mapping.iteritems():
+        for shortcut, func in editor_shortcuts.iteritems():
             keySequence = QtGui.QKeySequence(shortcut)
             qshortcut = QtWidgets.QShortcut(
                                             keySequence, 
-                                            self.editortabs, 
+                                            self.parent_widget, 
                                             func,
                                             context=context)
             qshortcut.setObjectName(shortcut)

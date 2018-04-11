@@ -51,7 +51,7 @@ class Editor(QtWidgets.QPlainTextEdit):
                             ] #for wrap_signal
 
         if handle_shortcuts:
-            sch = shortcuts.ShortcutHandler(self)
+            sch = shortcuts.ShortcutHandler(self, use_tabs=False)
             sch.clear_output_signal.connect(self.relay_clear_output_signal)
             self.shortcuteditor = shortcuteditor.ShortcutEditor(sch)
             

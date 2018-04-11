@@ -5,7 +5,8 @@ from xml.etree import ElementTree
 pyside = 'PySide'
 pyqt = 'PyQt4'
 
-if 'nuke' in globals():
+IN_NUKE = 'nuke' in globals()
+if IN_NUKE:
     import nuke
     if nuke.NUKE_VERSION_MAJOR > 10:
         pyside = 'PySide2'
