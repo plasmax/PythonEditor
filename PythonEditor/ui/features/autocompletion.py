@@ -1,3 +1,4 @@
+from __future__ import print_function
 import sys
 import re
 import __main__
@@ -101,9 +102,9 @@ class AutoCompleter(QtCore.QObject):
             try:
                 _ = {}
                 exec('_obj = '+word_before_dot, _objects, _)
-                print _
+                print(_)
                 _obj = _.get('_obj')
-            except NameError, e: #we want to handle this silently
+            except NameError as e: #we want to handle this silently
                 return
                 
         return _obj
@@ -141,7 +142,7 @@ class AutoCompleter(QtCore.QObject):
         """
         cp = self.completer
         variables = __main__.__dict__.keys()
-        variables = variables+keyword.kwlist+SNIPPETS.keys()+dir(__builtins__)+KEYWORDS
+        variables = variables+keyword.kwlist+list(SNIPPETS.keys())+dir(__builtins__)+KEYWORDS
         self.setList(variables)
         word = self.word_under_cursor()
         char_len = len(word)

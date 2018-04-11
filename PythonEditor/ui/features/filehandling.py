@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+from __future__ import print_function
 import os
 import time
 import uuid
@@ -52,12 +54,12 @@ class FileHandler(QtCore.QObject):
             self.connectSignals()
 
     def connectSignals(self):
-        try:
-            QtCore.Qt.UniqueConnection
-        except AttributeError as e:
-            print(e)
-            QtCore.Qt.UniqueConnection = 128
-        self.editor.textChanged.connect(self.autosave, QtCore.Qt.UniqueConnection) 
+        # try:
+        #     QtCore.Qt.UniqueConnection
+        # except AttributeError as e:
+        #     print(e)
+        #     QtCore.Qt.UniqueConnection = 128
+        self.editor.textChanged.connect(self.autosave)#, QtCore.Qt.UniqueConnection) 
         #document().modificationChanged ? 
 
     def disconnectSignals(self):
@@ -87,9 +89,10 @@ class FileHandler(QtCore.QObject):
 
     def writexml(self, root, path=AUTOSAVE_FILE):
         data = ElementTree.tostring(root)
+        data = data.decode('utf-8')
         data = data.replace('><subscript','>\n<subscript')
         data = data.replace('</subscript><','</subscript>\n<')
-        with open(path, 'w') as f:
+        with open(path, 'wt') as f:
             f.write(XML_HEADER+data)
 
     def parsexml(self, element_name, path=AUTOSAVE_FILE):

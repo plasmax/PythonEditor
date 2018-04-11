@@ -40,9 +40,13 @@ def get_external_editor_path():
     Checks the autosave file for an 
     <external_editor_path> element.
     """
+    editor_path = os.environ.get('EXTERNAL_EDITOR_PATH')
+    if (editor_path is not None
+            and os.path.isdir( os.path.dirname(editor_path) )):
+        return editor_path
+
     root, editor_elements = get_editor_xml()
 
-    editor_path = None
     if editor_elements:
         editor_element = editor_elements[0] 
         path = editor_element.text
@@ -52,6 +56,8 @@ def get_external_editor_path():
     if editor_path:
         os.environ['EXTERNAL_EDITOR_PATH'] = editor_path
         return editor_path
+    else:
+        return set_external_editor_path()
 
 def set_external_editor_path(path=None):
     """
@@ -91,6 +97,7 @@ def set_external_editor_path(path=None):
         data = ElementTree.tostring(root)
         with open(AUTOSAVE_FILE, 'w') as f:
             f.write(header+data)
+        return path
             
     else:
         msg = u'External editor not found. '\

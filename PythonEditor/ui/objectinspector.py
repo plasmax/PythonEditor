@@ -6,7 +6,7 @@ from PythonEditor.utils.constants import QT_VERSION
 
 os.environ['QT_PREFERRED_BINDING'] = 'PySide:PyQt4'
 
-from Qt import QtWidgets, QtCore, QtGui
+from PythonEditor.ui.Qt import QtWidgets, QtCore, QtGui
 
 class ObjectInspector(QtWidgets.QWidget):
     """

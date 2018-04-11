@@ -1,6 +1,7 @@
+from __future__ import print_function
 import sys
 
-from Qt import QtGui, QtWidgets, QtCore
+from PythonEditor.ui.Qt import QtGui, QtWidgets, QtCore
 
 class PySingleton(object):
     def __new__(cls, *args, **kwargs):
@@ -43,13 +44,13 @@ class SERedirector(object):
 class SESysStdOut(SERedirector, PySingleton):
     def reset(self):
         sys.stdout = self.savedStream
-        print 'reset stream out'
+        print('reset stream out')
         
 
 class SESysStdErr(SERedirector, PySingleton):
     def reset(self):
         sys.stderr = self.savedStream
-        print 'reset stream err'
+        print('reset stream err')
 
 class Terminal(QtWidgets.QTextEdit):
     """ Output text display widget """
@@ -66,7 +67,7 @@ class Terminal(QtWidgets.QTextEdit):
         try:
             if bool(self.textCursor()):
                 self.moveCursor(QtGui.QTextCursor.End)
-        except Exception, e:
+        except Exception as e:
             pass
         self.insertPlainText(text)
 

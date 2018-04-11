@@ -1,3 +1,4 @@
+from __future__ import print_function
 import sys
 import __main__
 from functools import partial
@@ -56,21 +57,27 @@ class ShortcutHandler(QtCore.QObject):
         """
         For shortcuts that cannot be 
         handled directly by QShortcut.
+        TODO: as UniqueConnection appears
+        to create problems, find another 
+        connection tracking mechanism.
         """
-        try:
-            QtCore.Qt.UniqueConnection
-        except AttributeError as e:
-            print(e)
-            QtCore.Qt.UniqueConnection = 128
-        self.editor.tab_signal.connect(self.tab_handler, QtCore.Qt.UniqueConnection)
-        self.editor.return_signal.connect(self.return_handler, QtCore.Qt.UniqueConnection)
-        self.editor.wrap_signal.connect(self.wrap_text, QtCore.Qt.UniqueConnection)
-        self.editor.home_key_ctrl_alt_signal.connect(self.move_to_top, QtCore.Qt.UniqueConnection)
-        self.editor.end_key_ctrl_alt_signal.connect(self.move_to_bottom, QtCore.Qt.UniqueConnection)
-        self.editor.ctrl_x_signal.connect(self.cut_line)
-        self.editor.home_key_signal.connect(self.jump_to_start)
-        self.editor.wheel_signal.connect(self.wheel_zoom)
-        self.editor.ctrl_enter_signal.connect(self.exec_selected_text)
+        # try:
+        #     QtCore.Qt.UniqueConnection
+        # except AttributeError as e:
+        #     print(e)
+        #     QtCore.Qt.UniqueConnection = 128
+
+        editor = self.editor
+
+        editor.tab_signal.connect(self.tab_handler)#, QtCore.Qt.UniqueConnection)
+        editor.return_signal.connect(self.return_handler)#, QtCore.Qt.UniqueConnection)
+        editor.wrap_signal.connect(self.wrap_text)#, QtCore.Qt.UniqueConnection)
+        editor.home_key_ctrl_alt_signal.connect(self.move_to_top)#, QtCore.Qt.UniqueConnection)
+        editor.end_key_ctrl_alt_signal.connect(self.move_to_bottom)#, QtCore.Qt.UniqueConnection)
+        editor.ctrl_x_signal.connect(self.cut_line)
+        editor.home_key_signal.connect(self.jump_to_start)
+        editor.wheel_signal.connect(self.wheel_zoom)
+        editor.ctrl_enter_signal.connect(self.exec_selected_text)
 
     def disconnectSignals(self):
         """
@@ -79,7 +86,9 @@ class ShortcutHandler(QtCore.QObject):
         """
         if not hasattr(self, 'editor'):
             return
+
         editor = self.editor
+
         editor.tab_signal.disconnect()
         editor.return_signal.disconnect()
         editor.wrap_signal.disconnect()
@@ -128,8 +137,9 @@ class ShortcutHandler(QtCore.QObject):
 
         if hasattr(self, 'editortabs'):
             tab_shortcuts = {
-                        'Ctrl+N': self.editortabs.new_tab,
-                        'Ctrl+W': self.editortabs.close_current_tab,
+                        'Ctrl+Shift+N': self.editortabs.new_tab,
+                        'Ctrl+Shift+W': self.editortabs.close_current_tab,
+                        'Ctrl+Shift+T': notimp('reopen previous tab'),
                         }
             editor_shortcuts.update(tab_shortcuts)
 
@@ -151,7 +161,7 @@ class ShortcutHandler(QtCore.QObject):
         self.shortcut_dict.update(signal_dict)
 
         context = QtCore.Qt.WidgetShortcut
-        for shortcut, func in editor_shortcuts.iteritems():
+        for shortcut, func in editor_shortcuts.items():
             keySequence = QtGui.QKeySequence(shortcut)
             qshortcut = QtWidgets.QShortcut(
                                             keySequence, 
@@ -162,7 +172,7 @@ class ShortcutHandler(QtCore.QObject):
 
     def notimplemented(self, text):
         """ Development reminders to implement features """
-        raise NotImplementedError, text
+        raise NotImplementedError(text)
 
     def get_selected_blocks(self, ignoreEmpty=True):
         """
@@ -237,8 +247,9 @@ class ShortcutHandler(QtCore.QObject):
     def indent_next_line(self):
         """
         Match next line indentation to current line
-        If ':' is character in cursor position,
-        add an extra four spaces.
+        If ':' is character in cursor position and
+        current line contains non-whitespace 
+        characters, add an extra four spaces.
         """
         textCursor = self.editor.textCursor()
         line = textCursor.block().text()
@@ -248,8 +259,12 @@ class ShortcutHandler(QtCore.QObject):
         if doc.characterAt(textCursor.position()-1) == ':':
             indentCount = indentCount + 4
 
+        insertion = '\n'+' '*indentCount
+        if len(line.strip()) == 0:
+            insertion = '\n'
+
         if not self.editor.wait_for_autocomplete:
-            textCursor.insertText('\n'+' '*indentCount)
+            textCursor.insertText(insertion)
 
     @QtCore.Slot()
     def cut_line(self):
@@ -544,7 +559,7 @@ class ShortcutHandler(QtCore.QObject):
         text = self.editor.textCursor().selectedText()
         obj = __main__.__dict__.get(text)
         if obj is not None:
-            print obj.__doc__
+            print(obj.__doc__)
         else:
             exec('help('+text+')', __main__.__dict__)
             
@@ -556,7 +571,7 @@ class ShortcutHandler(QtCore.QObject):
         text = self.editor.textCursor().selectedText()
         obj = __main__.__dict__.get(text)
         if obj is not None:
-            print type(obj)
+            print(type(obj))
         else:
             exec('print(type('+text+'))', __main__.__dict__)
 

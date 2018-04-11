@@ -2,7 +2,7 @@ from __future__ import print_function
 import os
 import subprocess
 from PythonEditor.ui.Qt import QtWidgets, QtGui, QtCore
-from constants import NUKE_DIR
+from PythonEditor.utils import constants
 
 def save_text(editor, text):
     """
@@ -12,7 +12,7 @@ def save_text(editor, text):
     path, _ = QtWidgets.QFileDialog.getSaveFileName(
         editor, 
         'Save Selected Text', 
-        NUKE_DIR, 
+        constants.NUKE_DIR, 
         selectedFilter='*.py')
 
     if path:
@@ -32,6 +32,6 @@ def save_as(editor):
 
 def export_selected_to_external_editor(editor):
     path = save_selected_text(editor)
-    EXTERNAL_EDITOR_PATH = os.environ.get('EXTERNAL_EDITOR_PATH')
+    EXTERNAL_EDITOR_PATH = constants.get_external_editor_path()
     if path and EXTERNAL_EDITOR_PATH:
         subprocess.Popen([EXTERNAL_EDITOR_PATH, path])

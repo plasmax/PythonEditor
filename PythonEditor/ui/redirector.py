@@ -1,7 +1,7 @@
 import sys
 import time
 from Queue import Queue
-from Qt import QtGui, QtWidgets, QtCore
+from PythonEditor.ui.Qt import QtGui, QtWidgets, QtCore
 
 class PySingleton(object):
     def __new__(cls, *args, **kwargs):

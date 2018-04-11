@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os
 import inspect
 import types
@@ -6,11 +7,12 @@ import subprocess
 from functools import partial
 from pprint import pprint
 from PythonEditor.ui.Qt import QtWidgets, QtGui, QtCore
+from PythonEditor.utils import constants
 
 def open_module_file(obj):
     file = inspect.getfile(obj).replace('.pyc', '.py')
-    print file
-    EXTERNAL_EDITOR_PATH = os.environ.get('EXTERNAL_EDITOR_PATH')
+    print(file)
+    EXTERNAL_EDITOR_PATH = constants.get_external_editor_path()#os.environ.get('EXTERNAL_EDITOR_PATH')
     if (EXTERNAL_EDITOR_PATH
             and os.path.isdir(os.path.dirname(EXTERNAL_EDITOR_PATH))):
         subprocess.Popen([EXTERNAL_EDITOR_PATH, file]) 
@@ -18,15 +20,15 @@ def open_module_file(obj):
 def open_module_directory(obj):
     file = inspect.getfile(obj).replace('.pyc', '.py')
     folder = os.path.dirname(file)
-    print folder
-    EXTERNAL_EDITOR_PATH = os.environ.get('EXTERNAL_EDITOR_PATH')
+    print(folder)
+    EXTERNAL_EDITOR_PATH = constants.get_external_editor_path()#os.environ.get('EXTERNAL_EDITOR_PATH')
     if (EXTERNAL_EDITOR_PATH
             and os.path.isdir(os.path.dirname(EXTERNAL_EDITOR_PATH))):
         subprocess.Popen([EXTERNAL_EDITOR_PATH, folder]) 
         
 def openDir(module):
     try:
-        print bytes(module.__file__)
+        print(bytes(module.__file__))
         subprocess.Popen(['nautilus', module.__file__]) 
     except AttributeError:
         file = inspect.getfile(module)
@@ -47,7 +49,7 @@ class ContextMenu(QtCore.QObject):
         menu.exec_(QtGui.QCursor().pos())
 
     def notImplemented(self):
-        raise NotImplementedError, 'not implemented yet'
+        raise NotImplementedError('not implemented yet')
 
     def setKnobScript(self, knobName='knobChanged'):
         self.textCursor = self.editor.textCursor()
@@ -55,7 +57,7 @@ class ContextMenu(QtCore.QObject):
         # text = self.selectedText
         for node in nuke.selectedNodes():
             node.knob(knobName).setValue(text)
-            print node.fullName(), 'set:', knobName
+            print(node.fullName(), 'set:', knobName)
 
     def searchInput(self):
         """
@@ -80,7 +82,7 @@ class ContextMenu(QtCore.QObject):
         selectedText = self.selectedText
         obj = __main__.__dict__.get(text)
         if obj is not None:
-            print obj.__doc__
+            print(obj.__doc__)
 
     def _open_module_file(self):
         text = str(self.selectedText)
@@ -103,7 +105,7 @@ class ContextMenu(QtCore.QObject):
         obj = __main__.__dict__.get(text)
         if obj is None:
             return
-        print self.inspectDict.get(func).__call__(obj)
+        print(self.inspectDict.get(func).__call__(obj))
 
     def initSnippetDict(self):
         """
@@ -126,7 +128,7 @@ class ContextMenu(QtCore.QObject):
         """
         Save a new snippet to JSON file.
         """
-        raise NotImplementedError, 'save new snippet'
+        raise NotImplementedError('save new snippet')
 
     def insert_snippet(self, snippet):
         self.textCursor = self.editor.textCursor()
@@ -142,7 +144,7 @@ class ContextMenu(QtCore.QObject):
         if keyword == 'globals':
             pprint(__main__.__dict__)
         elif keyword == 'locals':
-            print __main__.__dict__
+            print(__main__.__dict__)
 
         obj = __main__.__dict__.get(text)
         if obj is None:
@@ -153,11 +155,11 @@ class ContextMenu(QtCore.QObject):
         elif keyword == 'environ':
             pprint(os.environ.copy())
         elif keyword == 'help':
-            print help(obj)
+            print(help(obj))
         elif keyword == 'type':
-            print type(obj)
+            print(type(obj))
         elif keyword == 'len':
-            print len(obj)
+            print(len(obj))
         elif keyword == 'getattr':
             attrs = {attr:getattr(obj, attr) for attr in dir(obj)}
             pprint(attrs)
@@ -191,7 +193,7 @@ class ContextMenu(QtCore.QObject):
         cursor = self.editor.textCursor()
         self.selectedText = str(cursor.selectedText().encode('utf-8').strip())
 
-        print self.selectedText
+        print(self.selectedText)
         if self.selectedText != '':
             for info in ['help', 'type', 'dir', 'len', 'getattr']:
                 self.infoMenu.addAction('Print {}'.format(info), 

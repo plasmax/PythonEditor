@@ -1,4 +1,6 @@
-from Qt import QtWidgets, QtCore
+from __future__ import print_function
+from PythonEditor.ui.Qt import QtWidgets, QtGui, QtCore
+
 from PythonEditor.ui import editor as EDITOR
 
 class EditTabs(QtWidgets.QTabWidget):
@@ -25,7 +27,7 @@ class EditTabs(QtWidgets.QTabWidget):
         self.setup_new_tab_btn()
         self.tabCloseRequested.connect(self.close_tab)
         self.currentChanged.connect(self.widgetChanged)
-        self.setStyleSheet("QTabBar::tab { height: 25px; }")
+        self.setStyleSheet("QTabBar::tab { height: 24px; }")
 
     @QtCore.Slot(int, int)
     def tab_restrict_move(self, from_index, to_index):
@@ -74,7 +76,6 @@ class EditTabs(QtWidgets.QTabWidget):
         Closes the active tab.
         """
         _index = self.currentIndex()
-        self.close_tab(_index)
         self.tabCloseRequested.emit(_index)
 
     def close_tab(self, index):
@@ -98,6 +99,9 @@ class EditTabs(QtWidgets.QTabWidget):
         """
         Triggers widget_changed signal
         with current widget.
+        TODO: Investigate why
+        this sometimes seems to cause signal connection
+        errors in filehandling and shortcuts.
         """
         tabremoved = self.count() < self.tab_count
         previous = self.current_index

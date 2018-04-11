@@ -1,12 +1,12 @@
 import uuid
-from Qt import QtWidgets, QtGui, QtCore
+from PythonEditor.ui.Qt import QtWidgets, QtGui, QtCore
 
-import shortcuteditor
-from features import (shortcuts, 
-                      linenumberarea, 
-                      syntaxhighlighter,
-                      autocompletion,
-                      contextmenu)
+from PythonEditor.ui import shortcuteditor
+from PythonEditor.ui.features import (shortcuts, 
+                                      linenumberarea, 
+                                      syntaxhighlighter,
+                                      autocompletion,
+                                      contextmenu)
 
 class Editor(QtWidgets.QPlainTextEdit):
     """
@@ -28,6 +28,8 @@ class Editor(QtWidgets.QPlainTextEdit):
     home_key_ctrl_alt_signal = QtCore.Signal()
     end_key_ctrl_alt_signal = QtCore.Signal()
     ctrl_x_signal = QtCore.Signal()
+    ctrl_n_signal = QtCore.Signal()
+    ctrl_w_signal = QtCore.Signal()
     ctrl_enter_signal = QtCore.Signal()
 
     relay_clear_output_signal = QtCore.Signal() 
@@ -105,6 +107,14 @@ class Editor(QtWidgets.QPlainTextEdit):
         if (event.key() == QtCore.Qt.Key_X
                 and event.modifiers() == QtCore.Qt.ControlModifier):
             self.ctrl_x_signal.emit()
+
+        if (event.key() == QtCore.Qt.Key_N
+                and event.modifiers() == QtCore.Qt.ControlModifier):
+            self.ctrl_n_signal.emit()
+
+        if (event.key() == QtCore.Qt.Key_W
+                and event.modifiers() == QtCore.Qt.ControlModifier):
+            self.ctrl_w_signal.emit()
 
         super(Editor, self).keyPressEvent(event)
         self.post_key_pressed_signal.emit(event)

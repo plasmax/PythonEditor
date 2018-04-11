@@ -1,6 +1,7 @@
 """ For testing independently. """
 import sys
 import os
+import imp
 
 sys.dont_write_bytecode = True
 TESTS_DIR = os.path.dirname(__file__)
@@ -12,7 +13,7 @@ for m in sys.modules.keys():
         del sys.modules[m]
 
 import PythonEditor
-reload(PythonEditor)
+imp.reload(PythonEditor)
 
 if __name__ == '__main__':
     """

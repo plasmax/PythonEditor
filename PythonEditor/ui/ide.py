@@ -1,6 +1,6 @@
 import sys
 import imp
-from Qt import QtWidgets
+from PythonEditor.ui.Qt import QtWidgets
 from PythonEditor.ui import pythoneditor
 
 class IDE(QtWidgets.QWidget):
@@ -41,10 +41,8 @@ class IDE(QtWidgets.QWidget):
                     and 'PythonEditor' in mod.__file__
                     and name not in not_reloadable):
                 imp.reload(mod)
-                # print name
-                # del sys.modules[name]
 
-        reload(pythoneditor)
+        imp.reload(pythoneditor)
 
         self.buildUI()
 

@@ -1,9 +1,9 @@
 import sys
 from functools import partial
-from Qt import QtWidgets, QtCore, QtGui
-from editor import Editor
-from terminal import Terminal
 
+from PythonEditor.ui.Qt import QtWidgets, QtCore, QtGui
+from PythonEditor.ui.editor import Editor
+from PythonEditor.ui.terminal import Terminal
 from PythonEditor.ui import shortcuteditor
 from PythonEditor.ui import preferenceseditor
 from PythonEditor.ui import edittabs
@@ -33,10 +33,6 @@ class PythonEditor(QtWidgets.QWidget):
         self.edittabs = edittabs.EditTabs()
         self.terminal = Terminal()
         
-        editor_path = constants.get_external_editor_path()
-        if not editor_path:
-            constants.set_external_editor_path()
-
         self.setup_menu()
 
         splitter = QtWidgets.QSplitter(QtCore.Qt.Vertical)
