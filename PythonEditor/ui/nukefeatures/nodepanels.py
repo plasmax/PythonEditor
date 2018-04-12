@@ -1,9 +1,8 @@
-
 from functools import partial
 import nuke
-from PySide import QtGui, QtCore
+from PythonEditor.ui.Qt import QtWidgets, QtCore, QtGui
 
-class PyKnobEdit(QtGui.QPlainTextEdit):
+class PyKnobEdit(QtWidgets.QPlainTextEdit):
     def __init__(self, knob):
         super(PyKnobEdit, self).__init__()
         self._knob = knob
@@ -18,17 +17,17 @@ class PyKnobEdit(QtGui.QPlainTextEdit):
 def addTextKnobs(node):
     print node.name()
 
-    np_list = [w for w in QtGui.qApp.allWidgets()
-            if w.objectName() == node.name()]
+    np_list = [w for w in QtWidgets.QApplication.instance().allWidgets()
+               if w.objectName() == node.name()]
     if len(np_list) > 0:
         np = np_list.pop()
     else:
         return
         
-    sw = np.findChild(QtGui.QStackedWidget, 'qt_tabwidget_stackedwidget')
+    sw = np.findChild(QtWidgets.QStackedWidget, 'qt_tabwidget_stackedwidget')
     print sw
     tw = sw.parent()
-    stw = QtGui.QTabWidget() # probably nicer to have a dropdown connected to a single textedit
+    stw = QtWidgets.QTabWidget() # probably nicer to have a dropdown connected to a single textedit
     tw.addTab(stw, 'Python Knobs')
 
     for k in node.allKnobs():
