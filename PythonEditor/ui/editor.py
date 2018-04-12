@@ -12,9 +12,6 @@ class Editor(QtWidgets.QPlainTextEdit):
     """
     Code Text Editor widget with 
     basic functionality.
-    TODO: MouseWheelEvent + Ctrl == zoom in/out
-    Home Key should jump to end of whitespace
-    Ctrl+Shift+Delete for delete rest of line
     """
     tab_signal = QtCore.Signal()
     return_signal = QtCore.Signal()
@@ -41,6 +38,7 @@ class Editor(QtWidgets.QPlainTextEdit):
         linenumberarea.LineNumberArea(self)
         syntaxhighlighter.Highlight(self.document())
         self.contextmenu = contextmenu.ContextMenu(self)
+        self.setStyleSheet('background:#333;color:#EEE;') # Main Colors
 
         self.wait_for_autocomplete = True
         self.autocomplete = autocompletion.AutoCompleter(self)
