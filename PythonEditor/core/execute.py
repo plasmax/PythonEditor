@@ -1,7 +1,9 @@
 from __main__ import __dict__
 import traceback
 import sys
+import re
 
+FILENAME = '<Python Editor Contents>'
 def mainexec(text, wholeText):
     """
     Code execution in top level namespace.
@@ -14,7 +16,7 @@ def mainexec(text, wholeText):
         mode = 'exec'
 
     try:
-        _code = compile(text, '<Python Editor Contents>', mode)
+        _code = compile(text, FILENAME, mode)
     except SyntaxError:
         print_syntax_traceback()
         return
@@ -47,13 +49,29 @@ def print_traceback(wholeText, error):
     """
     Print traceback ignoring lines that refer to the
     external execution python file, using the whole 
-    text of the document.
-    TODO: Extract lines of code from wholeText that 
-    caused the error. Can grab this from a previous 
-    version of PythonEditor.
+    text of the document. Extracts lines of code from
+    wholeText that caused the error.
     """
+    text_lines = wholeText.splitlines()
+
     error_message = traceback.format_exc()
-    error_message = '\n'.join([line for line in error_message.splitlines()
-                    if not (__file__ in line 
-                    or 'exec(_code, __dict__)' in line)])
+
+    message_lines = []
+    error_lines = error_message.splitlines()
+    error = error_lines.pop()
+    for line in error_lines:
+        if (__file__ in line 
+                or 'exec(_code, __dict__)' in line):
+            continue
+
+        message_lines.append(line)
+
+        result = re.search('(?<="{0}", line )(\d+)'.format(FILENAME), line)
+        if result:
+            lineno = int(result.group())
+            text = '      ' + text_lines[lineno].strip()
+            message_lines.append(text)
+
+    message_lines.append(error)
+    error_message = '\n'.join(message_lines)
     print(error_message)
