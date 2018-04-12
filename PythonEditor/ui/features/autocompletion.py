@@ -104,7 +104,11 @@ class AutoCompleter(QtCore.QObject):
                 exec('_obj = '+word_before_dot, _objects, _)
                 print(_)
                 _obj = _.get('_obj')
-            except NameError as e: #we want to handle this silently
+            except (NameError, SyntaxError) as e: #we want to handle this
+                                                  #silently, except. TODO: 
+                                                  #SyntaxError avoidance
+                                                  #is a lazy way to avoid 
+                                                  #properly formatting the object.
                 return
                 
         return _obj
