@@ -48,6 +48,9 @@ def print_traceback(wholeText, error):
     Print traceback ignoring lines that refer to the
     external execution python file, using the whole 
     text of the document.
+    TODO: Extract lines of code from wholeText that 
+    caused the error. Can grab this from a previous 
+    version of PythonEditor.
     """
     error_message = traceback.format_exc()
     error_message = '\n'.join([line for line in error_message.splitlines()
