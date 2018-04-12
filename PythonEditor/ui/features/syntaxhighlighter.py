@@ -14,25 +14,29 @@ class Highlight(QtGui.QSyntaxHighlighter):
         self.setObjectName('Highlight')
 
         self.styles = {
-            'keyword': self.format([238,117,181],'bold'),
-            'string': self.format([242, 136, 135]),
-            'comment': self.format([143, 221, 144 ]),
+            'keyword': self.format([249,38,114]),
+            'string': self.format([230,219,116]),
+            'comment': self.format([140, 140, 140]),
             'numbers': self.format([174, 129, 255]),
-            'functions': self.format([102, 217, 239]),
-            'classes': self.format([166,226,46]),
+            'names': self.format([166,226,46]),
             'arguments': self.format([253, 151, 31]),
+            'instantiators': self.format([102, 217, 239]),
             }
 
         self.arguments = [
-            'self', 'cls',
+            'self', 'cls', 'args', 'kwargs'
             ]
 
         self.keywords = [
-            'and', 'assert', 'break', 'class', 'continue', 'def',
+            'and', 'assert', 'break', 'continue',
             'del', 'elif', 'else', 'except', 'exec', 'finally',
             'for', 'from', 'global', 'if', 'import', 'in',
             'is', 'lambda', 'not', 'or', 'pass', 'print',
             'raise', 'return', 'try', 'while', 'yield', 'with'
+            ]
+
+        self.instantiators = [
+            'def', 'class'
             ]
 
         self.operatorKeywords = [
@@ -46,15 +50,16 @@ class Highlight(QtGui.QSyntaxHighlighter):
 
         self.tri_single = (QtCore.QRegExp("'''"), 1, self.styles['comment'])
         self.tri_double = (QtCore.QRegExp('"""'), 2, self.styles['comment'])
-        # self.tri_double = (QtCore.QRegExp('class \w+^\('), 2, self.styles['classes'])
 
         #rules
         rules = []
 
+        rules += [('(?: \()(\w+)(?:\))', 1, self.styles['names'])]
         rules += [(r'\b%s\b' % i, 0, self.styles['arguments']) for i in self.arguments]
         rules += [(r'\b%s\b' % i, 0, self.styles['keyword']) for i in self.keywords]
         rules += [(i, 0, self.styles['keyword']) for i in self.operatorKeywords]
         rules += [(r'\b%s\b' % i, 0, self.styles['numbers']) for i in self.numbers]
+        rules += [(r'\b%s\b' % i, 0, self.styles['instantiators']) for i in self.instantiators]
 
         rules += [
 
@@ -64,6 +69,10 @@ class Highlight(QtGui.QSyntaxHighlighter):
             (r'"[^"\\]*(\\.[^"\\]*)*"', 0, self.styles['string']),
             # Single-quoted string, possibly containing escape sequences
             (r"'[^'\\]*(\\.[^'\\]*)*'", 0, self.styles['string']),
+            #class and function names
+            ('(?:def |class )(\w+)(?:\()', 1, self.styles['names']),
+            #methods
+            ('(?:\.)(\w+)(?:\()', 1, self.styles['instantiators']),
             # From '#' until a newline
             (r'#[^\n]*', 0, self.styles['comment']),
             ]
