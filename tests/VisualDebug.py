@@ -1,6 +1,7 @@
 from pprint import pprint
 import types
-
+import os
+os.environ['QT_PREFERRED_BINDING'] ='PySide:PyQt4'
 from PythonEditor.ui.Qt import QtWidgets, QtGui, QtCore, QtOpenGL
 
 class VisualDebug(QtWidgets.QWidget):
