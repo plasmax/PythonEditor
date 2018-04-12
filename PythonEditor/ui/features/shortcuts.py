@@ -221,6 +221,7 @@ class ShortcutHandler(QtCore.QObject):
             text = whole_text
 
         self.exec_text_signal.emit()
+        whole_text = '\n'+whole_text
         execute.mainexec(text, whole_text)
 
     def exec_current_line(self):
