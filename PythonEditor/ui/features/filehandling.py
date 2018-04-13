@@ -3,11 +3,26 @@ from __future__ import print_function
 import os
 import time
 import uuid
+import unicodedata
+from io import open
 from xml.etree import ElementTree
 from PythonEditor.ui.Qt import QtCore, QtWidgets
 from PythonEditor.utils.constants import (AUTOSAVE_FILE, 
                                           XML_HEADER,
                                           create_autosave_file)
+
+def remove_control_characters(s):
+    cc = "".join(ch for ch in s if unicodedata.category(ch) == "Cc" and ch != '\n')
+    print('Removing undesirable control characters:', cc)
+
+    def no_cc(ch):
+        if ch == '\n':
+            return True
+        if unicodedata.category(ch) != "Cc":
+            return True
+        return False
+
+    return "".join(ch for ch in s if no_cc(ch))
 
 class FileHandler(QtCore.QObject):
     """
@@ -92,16 +107,42 @@ class FileHandler(QtCore.QObject):
         data = data.decode('utf-8')
         data = data.replace('><subscript','>\n<subscript')
         data = data.replace('</subscript><','</subscript>\n<')
-        with open(path, 'wt') as f:
+        with open(path, 'wt', encoding='utf8', errors='ignore') as f:
             f.write(XML_HEADER+data)
 
     def parsexml(self, element_name, path=AUTOSAVE_FILE):
         if not create_autosave_file():
             return
-        parser = ElementTree.parse(path)
+
+        try:
+            parser = ElementTree.parse(path, 
+                ElementTree.XMLParser(encoding="utf-8"))
+        except ElementTree.ParseError as e:
+            print('ElementTree.ParseError', e)
+            parser = self.fix_broken_xml(path)
+
         root = parser.getroot()
         elements = root.findall(element_name)
         return root, elements 
+
+    def fix_broken_xml(self, path):
+        """
+        Removes unwanted characters and
+        (in case necessary in future 
+        implementations..) fixes other 
+        parsing errors with the xml file.
+        """
+        with open(path, 'r', encoding='utf-8') as f:
+            content = f.read()
+
+        safe_string = remove_control_characters(content)
+
+        with open(path, 'wt') as f:
+            f.write(safe_string)
+
+        parser = ElementTree.parse(path, 
+            ElementTree.XMLParser(encoding="utf-8"))
+        return parser
 
     def readautosave(self):
         """

@@ -218,6 +218,7 @@ class AutoCompleter(QtCore.QObject):
         - Complete defined names (parse for "name =" thing)
         - Complete class names (parse for "self.")
         - Complete snippets
+        - Hide popup if no completions available
         """
         cp = self.completer
         cpActive = cp and cp.popup() and cp.popup().isVisible()
