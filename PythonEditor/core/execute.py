@@ -69,7 +69,7 @@ def print_traceback(wholeText, error):
         result = re.search('(?<="{0}", line )(\d+)'.format(FILENAME), line)
         if result:
             lineno = int(result.group())
-            text = '      ' + text_lines[lineno].strip()
+            text = '    ' + text_lines[lineno].strip()
             message_lines.append(text)
 
     message_lines.append(error)
