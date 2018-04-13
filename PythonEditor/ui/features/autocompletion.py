@@ -12,11 +12,20 @@ class_snippet = """class <!cursor>():
     def __init__(self):
         super(, self).__init__()
 """
+
+function_snippet = """def <!cursor>():"""
+
+method_snippet = """def <!cursor>(self):"""
+
 node_loop_snippet = "for node in nuke.selectedNodes():\n    "
+node_all_snippet = "for node in nuke.allNodes():\n    "
 
 SNIPPETS = {
             'class [snippet]': class_snippet,
+            'def [snippet] [func]': function_snippet,
+            'def [snippet] [method]': method_snippet,
             'for node selected [snippet]': node_loop_snippet,
+            'for node all [snippet]': node_all_snippet,
             }
 
 class Completer(QtWidgets.QCompleter):
