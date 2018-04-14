@@ -38,15 +38,24 @@ def get_called_code(func, *args, **kwargs):
                             if src == text:
                                 increment(c)
                 except IOError, e:
-                    print e, frame.f_code, event, arguments, '\n'*5 # TODO: perfect place to log
-        except Exception, e:
+                    pass
+                    # print e, frame.f_code, event, arguments, '\n'*5 # TODO: perfect place to log
+        except Exception as e:
             sys.setprofile(None)
-            print 'Trace Source Quitting on Error:', e
+            # print 'Trace Source Quitting on Error:', e
         
     srccode = []
-    prof = partial(trace_source, source=srccode)                                
+    prof = partial(trace_source, source=srccode)       
+
     sys.setprofile(prof)
-    func.__call__(*args, **kwargs)
+
+    try:
+        func.__call__(*args, **kwargs)
+    except Exception as e:
+        sys.setprofile(None)
+    finally:
+        sys.setprofile(None)
+
     sys.setprofile(None)
 
     def info(filename, sourcecode, count):
