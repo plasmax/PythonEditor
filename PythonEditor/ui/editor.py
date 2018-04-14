@@ -2,16 +2,18 @@ import uuid
 from PythonEditor.ui.Qt import QtWidgets, QtGui, QtCore
 
 from PythonEditor.ui import shortcuteditor
-from PythonEditor.ui.features import (shortcuts, 
-                                      linenumberarea, 
+from PythonEditor.ui.features import (shortcuts,
+                                      linenumberarea,
                                       syntaxhighlighter,
                                       autocompletion,
                                       contextmenu)
 
+CTRL_ALT = QtCore.Qt.ControlModifier | QtCore.Qt.AltModifier
+
+
 class Editor(QtWidgets.QPlainTextEdit):
     """
-    Code Text Editor widget with 
-    basic functionality.
+    Code Editor widget.
     """
     tab_signal = QtCore.Signal()
     return_signal = QtCore.Signal()
@@ -29,7 +31,7 @@ class Editor(QtWidgets.QPlainTextEdit):
     ctrl_w_signal = QtCore.Signal()
     ctrl_enter_signal = QtCore.Signal()
 
-    relay_clear_output_signal = QtCore.Signal() 
+    relay_clear_output_signal = QtCore.Signal()
 
     def __init__(self, handle_shortcuts=True):
         super(Editor, self).__init__()
@@ -38,7 +40,7 @@ class Editor(QtWidgets.QPlainTextEdit):
         linenumberarea.LineNumberArea(self)
         syntaxhighlighter.Highlight(self.document())
         self.contextmenu = contextmenu.ContextMenu(self)
-        self.setStyleSheet('background:#333;color:#EEE;') # Main Colors
+        self.setStyleSheet('background:#333;color:#EEE;')  # Main Colors
 
         self.wait_for_autocomplete = True
         self.autocomplete = autocompletion.AutoCompleter(self)
@@ -48,13 +50,13 @@ class Editor(QtWidgets.QPlainTextEdit):
                             '(', ')',
                             '{', '}'
                             '<', '>'
-                            ] #for wrap_signal
+                            ]  # for wrap_signal
 
         if handle_shortcuts:
             sch = shortcuts.ShortcutHandler(self, use_tabs=False)
             sch.clear_output_signal.connect(self.relay_clear_output_signal)
             self.shortcuteditor = shortcuteditor.ShortcutEditor(sch)
-            
+
         self.uid = str(uuid.uuid4())
 
     @property
@@ -70,13 +72,13 @@ class Editor(QtWidgets.QPlainTextEdit):
         super(Editor, self).focusInEvent(event)
 
     def keyPressEvent(self, event):
-        """ 
+        """
         Emit signals for key events
         that QShortcut cannot override.
         """
         if self.wait_for_autocomplete:
             self.key_pressed_signal.emit(event)
-            return 
+            return
 
         if event.modifiers() == QtCore.Qt.NoModifier:
             if event.key() == QtCore.Qt.Key_Tab:
@@ -93,13 +95,13 @@ class Editor(QtWidgets.QPlainTextEdit):
             return self.wrap_signal.emit(event.text())
 
         if event.key() == QtCore.Qt.Key_Home:
-            if event.modifiers() == QtCore.Qt.ControlModifier | QtCore.Qt.AltModifier:
+            if event.modifiers() == CTRL_ALT:
                 self.home_key_ctrl_alt_signal.emit()
             elif event.modifiers() == QtCore.Qt.NoModifier:
                 return self.home_key_signal.emit()
 
         if (event.key() == QtCore.Qt.Key_End
-                and event.modifiers() == QtCore.Qt.ControlModifier | QtCore.Qt.AltModifier):
+                and event.modifiers() == CTRL_ALT):
             self.end_key_ctrl_alt_signal.emit()
 
         if (event.key() == QtCore.Qt.Key_X
@@ -116,7 +118,7 @@ class Editor(QtWidgets.QPlainTextEdit):
 
         super(Editor, self).keyPressEvent(event)
         self.post_key_pressed_signal.emit(event)
-        
+
     def keyReleaseEvent(self, event):
         self.wait_for_autocomplete = True
         super(Editor, self).keyReleaseEvent(event)
@@ -124,7 +126,7 @@ class Editor(QtWidgets.QPlainTextEdit):
     def contextMenuEvent(self, event):
         """
         Creates a standard context menu
-        and emits it for futher changes 
+        and emits it for futher changes
         and execution elsewhere.
         """
         menu = self.createStandardContextMenu()
@@ -135,7 +137,7 @@ class Editor(QtWidgets.QPlainTextEdit):
             e.accept()
         else:
             super(Editor, self).dragEnterEvent(e)
-    
+
     def dragMoveEvent(self, e):
         if e.mimeData().hasUrls:
             e.accept()
@@ -153,7 +155,7 @@ class Editor(QtWidgets.QPlainTextEdit):
                 path = url.toLocalFile()
                 with open(path, 'r') as f:
                     text_list.append(f.read())
-                    
+
             self.textCursor().insertText('\n'.join(text_list))
         else:
             super(Editor, self).dropEvent(e)
@@ -168,4 +170,4 @@ class Editor(QtWidgets.QPlainTextEdit):
                 and e.orientation() == QtCore.Qt.Orientation.Vertical):
             return self.wheel_signal.emit(e)
         super(Editor, self).wheelEvent(e)
-       
+

@@ -1,19 +1,16 @@
 import os
-import inspect
 from __main__ import __dict__
-
-from PythonEditor.utils.constants import QT_VERSION
 
 os.environ['QT_PREFERRED_BINDING'] = 'PySide:PyQt4'
 
 from PythonEditor.ui.Qt import QtWidgets, QtCore, QtGui
 
+
 class ObjectInspector(QtWidgets.QWidget):
     """
-    Inspired by the Object Inspector from 
+    Inspired by the Object Inspector from
     the Pythonista app.
     """
-    pass
     def __init__(self):
         super(ObjectInspector, self).__init__()
         self.layout = QtWidgets.QGridLayout(self)
@@ -28,11 +25,12 @@ class ObjectInspector(QtWidgets.QWidget):
 
         self.layout.addWidget(self.treeview)
 
-        self.treemodel.setHorizontalHeaderLabels(['object name', 
-                                                'object'])
+        self.treemodel.setHorizontalHeaderLabels(['object name',
+                                                 'object'])
 
         self.treeview.header().setStretchLastSection(False)
-        self.treeview.header().setResizeMode(QtWidgets.QHeaderView.ResizeToContents)
+        mode = QtWidgets.QHeaderView.ResizeToContents
+        self.treeview.header().setResizeMode(mode)
 
         self.load_globals()
         self.start_timer()
@@ -41,7 +39,7 @@ class ObjectInspector(QtWidgets.QWidget):
         """
         Load globals into Tree
         """
-        self.treemodel.removeRows( 0, self.treemodel.rowCount() )
+        self.treemodel.removeRows(0, self.treemodel.rowCount())
 
         self.names = __dict__.copy()
 
@@ -49,26 +47,25 @@ class ObjectInspector(QtWidgets.QWidget):
         for key, value in __dict__.iteritems():
             # if hasattr(value, '__repr__'):
             try:
-                items = [QtGui.QStandardItem(i.__repr__()) 
-                        for i in [key, value]]
+                items = [QtGui.QStandardItem(i.__repr__())
+                         for i in [key, value]]
                 rootItem.appendRow(items)
             except Exception, e:
                 print key, value, e
 
-
     def start_timer(self):
         """
-        Starts timer for 
+        Starts timer for
         self.check_update_globals
         """
         self.timer = QtCore.QTimer()
         self.timer.setInterval(100)
         self.timer.timeout.connect(self.check_update_globals)
         self.timer.start()
-        
+
     def check_update_globals(self):
         """
-        Timer that checks len() of 
+        Timer that checks len() of
         __main__.__dict__
         and updates globals on new items.
         """
@@ -82,5 +79,3 @@ class ObjectInspector(QtWidgets.QWidget):
         TODO: Would be excellent to jump to line.
         """
         pass
-
-

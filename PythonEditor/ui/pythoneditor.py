@@ -1,20 +1,16 @@
-import sys
-from functools import partial
-
-from PythonEditor.ui.Qt import QtWidgets, QtCore, QtGui
-from PythonEditor.ui.editor import Editor
+from PythonEditor.ui.Qt import QtWidgets, QtCore
 from PythonEditor.ui.terminal import Terminal
 from PythonEditor.ui import shortcuteditor
 from PythonEditor.ui import preferenceseditor
 from PythonEditor.ui import edittabs
 from PythonEditor.utils import save
-from PythonEditor.utils import constants
 from PythonEditor.ui.features import shortcuts
 from PythonEditor.ui.features import filehandling
 
+
 class PythonEditor(QtWidgets.QWidget):
     """
-    Main widget. Sets up layout 
+    Main widget. Sets up layout
     and connects some signals.
     """
     def __init__(self, parent=None):
@@ -28,11 +24,11 @@ class PythonEditor(QtWidgets.QWidget):
     def construct_ui(self):
         layout = QtWidgets.QVBoxLayout(self)
         layout.setObjectName('PythonEditor_MainLayout')
-        layout.setContentsMargins(0,0,0,0)
+        layout.setContentsMargins(0, 0, 0, 0)
 
         self.edittabs = edittabs.EditTabs()
         self.terminal = Terminal()
-        
+
         self.setup_menu()
 
         splitter = QtWidgets.QSplitter(QtCore.Qt.Vertical)
@@ -46,16 +42,16 @@ class PythonEditor(QtWidgets.QWidget):
         """
         Connect child widget slots to shortcuts.
         TODO: Find a better place to set this up,
-        as the shortcuthandler will not be so readily 
-        available when the editor is placed inside a 
-        TabWidget. Could relay the signal through the 
+        as the shortcuthandler will not be so readily
+        available when the editor is placed inside a
+        TabWidget. Could relay the signal through the
         TabWidget, or find a global connection mechanism.
 
         Alternatively, we can dynamically set ShortcutHandler's
         editor widget depending on the TabWidget's current tab.
         (In this case the QShortcut widget is the tabwidget and
-        ShortcutContext is WidgetWithChildrenShortcut or WindowShortcut). 
-        This would mean keeping the ShortcutHandler here (and avoid 
+        ShortcutContext is WidgetWithChildrenShortcut or WindowShortcut).
+        This would mean keeping the ShortcutHandler here (and avoid
         creating new shortcut objects for every tab).
         """
         sch = shortcuts.ShortcutHandler(self.edittabs)
@@ -79,28 +75,28 @@ class PythonEditor(QtWidgets.QWidget):
         """
         menuBar = QtWidgets.QMenuBar(self)
         fileMenu = QtWidgets.QMenu('File')
-        helpMenu =  QtWidgets.QMenu('Help')
-        editMenu =  QtWidgets.QMenu('Edit')
-        
+        helpMenu = QtWidgets.QMenu('Help')
+        editMenu = QtWidgets.QMenu('Edit')
+
         for menu in [fileMenu, editMenu, helpMenu]:
             menuBar.addMenu(menu)
 
-        fileMenu.addAction('Save As', 
-            self.save_as)
+        fileMenu.addAction('Save As',
+                           self.save_as)
 
-        fileMenu.addAction('Save Selected Text', 
-            self.save_selected_text)
-        
-        fileMenu.addAction('Export Selected To External Editor', 
-            self.export_selected_to_external_editor)
+        fileMenu.addAction('Save Selected Text',
+                           self.save_selected_text)
+
+        fileMenu.addAction('Export Selected To External Editor',
+                           self.export_selected_to_external_editor)
 
         editMenu.addAction('Preferences',
-            self.show_preferences) #TODO: Set up Preferences widget with External Editor path option 
-        editMenu.addAction('Shortcuts', 
-            self.show_shortcuts)
+                           self.show_preferences)
+        editMenu.addAction('Shortcuts',
+                           self.show_shortcuts)
 
-        helpMenu.addAction('Reload Python Editor', 
-            self.parent.reload_package)
+        helpMenu.addAction('Reload Python Editor',
+                           self.parent.reload_package)
 
         self.layout().addWidget(menuBar)
 
@@ -111,7 +107,7 @@ class PythonEditor(QtWidgets.QWidget):
     def save_selected_text(self):
         cw = self.edittabs.currentWidget()
         save.save_selected_text(cw)
-        
+
     def export_selected_to_external_editor(self):
         cw = self.edittabs.currentWidget()
         save.export_selected_to_external_editor(cw)
@@ -135,11 +131,11 @@ class PythonEditor(QtWidgets.QWidget):
         """
         try:
             parent = self.parentWidget().parentWidget()
-            parent.layout().setContentsMargins(0,0,0,0)
+            parent.layout().setContentsMargins(0, 0, 0, 0)
 
             parent = self.parentWidget().parentWidget().parentWidget().parentWidget()
-            parent.layout().setContentsMargins(0,0,0,0)
-        except:
+            parent.layout().setContentsMargins(0, 0, 0, 0)
+        except Exception:
             pass
 
         super(PythonEditor, self).showEvent(event)

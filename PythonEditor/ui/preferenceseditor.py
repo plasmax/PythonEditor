@@ -1,6 +1,6 @@
 import os
-from PythonEditor.ui.Qt import QtWidgets, QtCore, QtGui
-from PythonEditor.utils.constants import set_external_editor_path
+from PythonEditor.ui.Qt import QtWidgets
+from PythonEditor.utils import constants
 
 class PreferencesEditor(QtWidgets.QTreeView):
     """
@@ -13,17 +13,21 @@ class PreferencesEditor(QtWidgets.QTreeView):
         self.setObjectName('PythonEditorPreferences')
         self.layout = QtWidgets.QVBoxLayout(self)
 
-        self.externalEditorPath = QtWidgets.QLineEdit()
+        self.editPath = QtWidgets.QLineEdit()
         self.externalEditorLabel = QtWidgets.QLabel('External Editor Path')
-        self.externalEditorLabel.setBuddy(self.externalEditorPath)
+        self.externalEditorLabel.setBuddy(self.editPath)
         self.layout.addWidget(self.externalEditorLabel)
-        self.layout.addWidget(self.externalEditorPath)
+        self.layout.addWidget(self.editPath)
 
-        #TODO: connect externaleditorpath text changed signal (or set prefs on preferences > close?)
+        self.editPath.editingFinished.connect(self.set_editor_path)
+
+    def set_editor_path(self):
+        path = self.editPath.text()
+        constants.set_external_editor_path(path=path)
 
     def showEvent(self, event):
         self.show_current_preferences()
         super(PreferencesEditor, self).showEvent(event)
 
     def show_current_preferences(self):
-        self.externalEditorPath.setText(unicode(os.environ.get('EXTERNAL_EDITOR_PATH')))
+        self.editPath.setText(unicode(os.environ.get('EXTERNAL_EDITOR_PATH')))

@@ -1,8 +1,9 @@
-from PythonEditor.ui.Qt import QtCore, QtGui, QtWidgets
+from PythonEditor.ui.Qt import QtCore, QtGui
 
 QPalette = QtGui.QPalette
 QBrush = QtGui.QBrush
 QColor = QtGui.QColor
+
 
 def getNukePalette():
     """

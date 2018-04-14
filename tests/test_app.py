@@ -5,8 +5,8 @@ import imp
 
 sys.dont_write_bytecode = True
 TESTS_DIR = os.path.dirname(__file__)
-PACKAGE_PATH = os.path.dirname( TESTS_DIR )
-sys.path.append( PACKAGE_PATH )
+PACKAGE_PATH = os.path.dirname(TESTS_DIR)
+sys.path.append(PACKAGE_PATH)
 
 for m in sys.modules.keys():
     if 'PythonEditor' in m:
@@ -19,7 +19,7 @@ if __name__ == '__main__':
     """
     For testing outside of nuke.
     """
-    from PythonEditor.ui.Qt import QtWidgets, QtGui, QtCore
+    from PythonEditor.ui.Qt import QtWidgets
     from PythonEditor.ui.features import nukepalette
 
     app = QtWidgets.QApplication(sys.argv)
@@ -27,6 +27,6 @@ if __name__ == '__main__':
     app.setPalette(nukepalette.getNukePalette())
     ide.show()
     ide.resize(500, 800)
-    QtWidgets.QApplication.setStyle(QtWidgets.QStyleFactory.create('Plastique'))
+    plastique = QtWidgets.QStyleFactory.create('Plastique')
+    QtWidgets.QApplication.setStyle(plastique)
     sys.exit(app.exec_())
-

@@ -3,16 +3,17 @@ import imp
 from PythonEditor.ui.Qt import QtWidgets
 from PythonEditor.ui import pythoneditor
 
+
 class IDE(QtWidgets.QWidget):
     """
     Container widget that allows the
-    whole package to be reloaded for 
+    whole package to be reloaded for
     development purposes.
     """
     def __init__(self):
         super(IDE, self).__init__()
         self.layout = QtWidgets.QHBoxLayout(self)
-        self.layout.setContentsMargins(0,0,0,0)
+        self.layout.setContentsMargins(0, 0, 0, 0)
         self.setObjectName('IDE')
         self.buildUI()
 
@@ -27,11 +28,10 @@ class IDE(QtWidgets.QWidget):
         self.pythonEditor.deleteLater()
         del self.pythonEditor
 
-
         not_reloadable = [
                             'PythonEditor.ui.idetabs',
                             'PythonEditor.ui.pythoneditor',
-                            'PythonEditor.ui.ide', 
+                            'PythonEditor.ui.ide',
                             '__main__'
                          ]
 
@@ -53,11 +53,11 @@ class IDE(QtWidgets.QWidget):
         """
         try:
             parent = self.parentWidget().parentWidget()
-            parent.layout().setContentsMargins(0,0,0,0)
+            parent.layout().setContentsMargins(0, 0, 0, 0)
 
             parent = self.parentWidget().parentWidget().parentWidget().parentWidget()
-            parent.layout().setContentsMargins(0,0,0,0)
-        except:
+            parent.layout().setContentsMargins(0, 0, 0, 0)
+        except Exception:
             pass
 
         super(IDE, self).showEvent(event)

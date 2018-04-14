@@ -1,9 +1,9 @@
 from __future__ import print_function
-import sys
 import __main__
 from functools import partial
 from PythonEditor.ui.Qt import QtWidgets, QtGui, QtCore
 from PythonEditor.core import execute
+
 
 class ShortcutHandler(QtCore.QObject):
     """
@@ -20,7 +20,8 @@ class ShortcutHandler(QtCore.QObject):
 
         if use_tabs:
             self.editortabs = parent_widget
-            self.editortabs.tab_switched_signal.connect(self.tab_switch_handler)
+            tss = self.editortabs.tab_switched_signal
+            tss.connect(self.tab_switch_handler)
             self.setEditor()
         else:
             self.editor = parent_widget
@@ -30,13 +31,13 @@ class ShortcutHandler(QtCore.QObject):
     @QtCore.Slot(int, int, bool)
     def tab_switch_handler(self, previous, current, tabremoved):
         """
-        On tab switch, disconnects previous 
+        On tab switch, disconnects previous
         tab's signals before connecting the
-        new tab. 
+        new tab.
         """
-        if not tabremoved:  #nothing's been deleted
-                            #so we need to disconnect
-                            #signals from previous editor
+        if not tabremoved:  # nothing's been deleted
+                            # so we need to disconnect
+                            # signals from previous editor
             self.disconnectSignals()
 
         self.setEditor()
@@ -47,7 +48,8 @@ class ShortcutHandler(QtCore.QObject):
         and connects signals.
         """
         editor = self.editortabs.currentWidget()
-        editorChanged = True if not hasattr(self, 'editor') else self.editor != editor
+        editorChanged = (True if not hasattr(self, 'editor')
+                         else self.editor != editor)
         isEditor = editor.objectName() == 'Editor'
         if isEditor and editorChanged:
             self.editor = editor
@@ -55,10 +57,10 @@ class ShortcutHandler(QtCore.QObject):
 
     def connectSignals(self):
         """
-        For shortcuts that cannot be 
+        For shortcuts that cannot be
         handled directly by QShortcut.
         TODO: as UniqueConnection appears
-        to create problems, find another 
+        to create problems, find another
         connection tracking mechanism.
         """
         # try:
@@ -81,7 +83,7 @@ class ShortcutHandler(QtCore.QObject):
 
     def disconnectSignals(self):
         """
-        For shortcuts that cannot be 
+        For shortcuts that cannot be
         handled directly by QShortcut.
         """
         if not hasattr(self, 'editor'):
@@ -101,15 +103,15 @@ class ShortcutHandler(QtCore.QObject):
 
     def installShortcuts(self):
         """
-        Set up all shortcuts on 
+        Set up all shortcuts on
         the QPlainTextEdit widget.
         """
-        notimp = lambda msg: partial(self.notimplemented, msg)
-        editor_shortcuts = { 
-                    'Ctrl+B': self.exec_selected_text,
+        def notimp(msg): return partial(self.notimplemented, msg)
+        editor_shortcuts = {
+                    'Ctrl+B': self.exec_current_line,
                     'Ctrl+Shift+Return': self.new_line_above,
                     'Ctrl+Alt+Return': self.new_line_below,
-                    'Ctrl+Backspace' : self.clear_output_signal.emit,
+                    'Ctrl+Backspace': self.clear_output_signal.emit,
                     'Ctrl+Shift+D': self.duplicate_lines,
                     'Ctrl+H': self.printHelp,
                     'Ctrl+T': self.printType,
@@ -119,7 +121,7 @@ class ShortcutHandler(QtCore.QObject):
                     'Ctrl+/': self.comment_toggle,
                     'Ctrl+]': self.indent,
                     'Ctrl+[': self.unindent,
-                    'Shift+Tab' : self.unindent,
+                    'Shift+Tab': self.unindent,
                     'Ctrl+=': self.zoomIn,
                     'Ctrl++': self.zoomIn,
                     'Ctrl+-': self.zoomOut,
@@ -143,8 +145,9 @@ class ShortcutHandler(QtCore.QObject):
                         }
             editor_shortcuts.update(tab_shortcuts)
 
-        self.shortcut_dict = {key:func.func_doc if hasattr(func, 'func_doc') else func.__doc__ 
-                                for key, func in editor_shortcuts.items()}
+        def doc(f): return f.func_doc if hasattr(f, 'func_doc') else f.__doc__
+        self.shortcut_dict = {key: doc(func)
+                              for key, func in editor_shortcuts.items()}
 
         signal_dict = {
             'Tab': self.tab_handler.__doc__,
@@ -164,8 +167,8 @@ class ShortcutHandler(QtCore.QObject):
         for shortcut, func in editor_shortcuts.items():
             keySequence = QtGui.QKeySequence(shortcut)
             qshortcut = QtWidgets.QShortcut(
-                                            keySequence, 
-                                            self.parent_widget, 
+                                            keySequence,
+                                            self.parent_widget,
                                             func,
                                             context=context)
             qshortcut.setObjectName(shortcut)
@@ -180,15 +183,19 @@ class ShortcutHandler(QtCore.QObject):
         """
         textCursor = self.editor.textCursor()
         doc = self.editor.document()
+        start = textCursor.selectionStart()
+        end = textCursor.selectionEnd()
 
-        #get line numbers
+        # get line numbers
         blockNumbers = set([
                 doc.findBlock(b).blockNumber()
-                for b in range(textCursor.selectionStart(), textCursor.selectionEnd())
+                for b in range(start, end)
                     ])
-        blockNumbers |= set([doc.findBlock(textCursor.position()).blockNumber()])
 
-        isEmpty = lambda b: doc.findBlockByNumber(b).text().strip() != ''
+        pos = textCursor.position()
+        blockNumbers |= set([doc.findBlock(pos).blockNumber()])
+
+        def isEmpty(b): return doc.findBlockByNumber(b).text().strip() != ''
         blocks = []
         for b in blockNumbers:
             bn = doc.findBlockByNumber(b)
@@ -211,12 +218,12 @@ class ShortcutHandler(QtCore.QObject):
         if textCursor.hasSelection():
             text = textCursor.selection().toPlainText()
 
-            #to get proper line ref in tracebacks
+            # to get proper line ref in tracebacks
             selection_offset = textCursor.selectionStart()
             doc = self.editor.document()
             block_num = doc.findBlock(selection_offset).blockNumber()
             text = '\n' * block_num + text
-            
+
         else:
             text = whole_text
 
@@ -226,7 +233,7 @@ class ShortcutHandler(QtCore.QObject):
 
     def exec_current_line(self):
         """
-        Calls exec with the text of 
+        Calls exec with the text of
         the line the cursor is on.
         TODO: Find a good shortcut for this.
         """
@@ -244,12 +251,12 @@ class ShortcutHandler(QtCore.QObject):
         New line with auto-indentation.
         """
         self.indent_next_line()
-        
+
     def indent_next_line(self):
         """
         Match next line indentation to current line
         If ':' is character in cursor position and
-        current line contains non-whitespace 
+        current line contains non-whitespace
         characters, add an extra four spaces.
         """
         textCursor = self.editor.textCursor()
@@ -270,7 +277,7 @@ class ShortcutHandler(QtCore.QObject):
     @QtCore.Slot()
     def cut_line(self):
         """
-        If no text selected, cut whole 
+        If no text selected, cut whole
         current line to clipboard.
         """
         textCursor = self.editor.textCursor()
@@ -331,8 +338,8 @@ class ShortcutHandler(QtCore.QObject):
             cursor.insertText('    ')
 
     def unindent(self):
-        """ 
-        Unindent Selected Text 
+        """
+        Unindent Selected Text
         TODO: Maintain original selection
         and cursor position.
         """
@@ -352,7 +359,7 @@ class ShortcutHandler(QtCore.QObject):
     def jump_to_start(self):
         """
         Jump to first character in line.
-        If at first character, jump to 
+        If at first character, jump to
         start of line.
         """
         textCursor = self.editor.textCursor()
@@ -373,9 +380,11 @@ class ShortcutHandler(QtCore.QObject):
         or lines with cursor.
         """
         blocks = self.get_selected_blocks()
-        
-        #iterate through lines in doc commenting or uncommenting based on whether everything is commented or not
-        commentAllOut = any([not str(block.text()).lstrip().startswith('#') for block in blocks])
+
+        # iterate through lines in doc commenting or uncommenting
+        # based on whether everything is commented or not
+        commentAllOut = any([not str(block.text()).lstrip().startswith('#')
+                            for block in blocks])
         if commentAllOut:
             for block in blocks:
                 cursor = QtGui.QTextCursor(block)
@@ -415,7 +424,8 @@ class ShortcutHandler(QtCore.QObject):
             key_out = '}'
 
         textCursor = self.editor.textCursor()
-        textCursor.insertText( key_in + textCursor.selectedText() + key_out )
+        text = key_in + textCursor.selectedText() + key_out
+        textCursor.insertText(text)
 
     def select_lines(self):
         """
@@ -433,17 +443,16 @@ class ShortcutHandler(QtCore.QObject):
         new_end = textCursor.position()+1
         if new_end >= self.editor.document().characterCount():
             new_end = new_end-1
-        
+
         textCursor.setPosition(start, QtGui.QTextCursor.MoveAnchor)
         textCursor.movePosition(QtGui.QTextCursor.StartOfLine)
 
-        new_start = textCursor.position()
         textCursor.setPosition(new_end, QtGui.QTextCursor.KeepAnchor)
         self.editor.setTextCursor(textCursor)
 
     def join_lines(self):
         """
-        Joins current line(s) with next by 
+        Joins current line(s) with next by
         deleting the newline at the end
         of the current line(s).
         """
@@ -451,7 +460,8 @@ class ShortcutHandler(QtCore.QObject):
 
         blocks = self.get_selected_blocks(ignoreEmpty=False)
         if len(blocks) > 1:
-            textCursor.insertText(textCursor.selectedText().replace(u'\u2029',''))
+            text = textCursor.selectedText().replace(u'\u2029', '')
+            textCursor.insertText(text)
         else:
             textCursor.movePosition(QtGui.QTextCursor.EndOfLine)
             new_pos = textCursor.position()+1
@@ -463,7 +473,7 @@ class ShortcutHandler(QtCore.QObject):
 
     def delete_lines(self):
         """
-        Deletes the contents of the 
+        Deletes the contents of the
         current line(s).
         """
         textCursor = self.editor.textCursor()
@@ -496,10 +506,10 @@ class ShortcutHandler(QtCore.QObject):
         """
         Very basic search dialog.
         TODO: Create a QAction/util for this
-        as it is also accessed through 
+        as it is also accessed through
         the right-click menu.
         """
-        dialog = QtWidgets.QInputDialog.getText(self.editor, 
+        dialog = QtWidgets.QInputDialog.getText(self.editor,
                                                 'Search', '',)
         text, ok = dialog
         if not ok:
@@ -513,7 +523,7 @@ class ShortcutHandler(QtCore.QObject):
 
     def duplicate_lines(self):
         """
-        Duplicates the current line or 
+        Duplicates the current line or
         selected text downwards.
         """
         textCursor = self.editor.textCursor()
@@ -532,7 +542,7 @@ class ShortcutHandler(QtCore.QObject):
 
     def delete_to_eol(self):
         """
-        Deletes characters from cursor 
+        Deletes characters from cursor
         position to end of line.
         """
         textCursor = self.editor.textCursor()
@@ -543,7 +553,7 @@ class ShortcutHandler(QtCore.QObject):
 
     def delete_to_sol(self):
         """
-        Deletes characters from cursor 
+        Deletes characters from cursor
         position to start of line.
         """
         textCursor = self.editor.textCursor()
@@ -563,7 +573,7 @@ class ShortcutHandler(QtCore.QObject):
             print(obj.__doc__)
         else:
             exec('help('+text+')', __main__.__dict__)
-            
+
     def printType(self):
         """
         Prints type
@@ -631,7 +641,6 @@ class ShortcutHandler(QtCore.QObject):
         new_end = textCursor.position()
 
         start_offset = start-new_start
-        end_offset = new_end-end
 
         if new_start == 0:
             return
@@ -652,7 +661,8 @@ class ShortcutHandler(QtCore.QObject):
             moved_end = textCursor.position()+selection_length
             textCursor.setPosition(moved_end, QtGui.QTextCursor.KeepAnchor)
         else:
-            textCursor.setPosition(pos+start_offset, QtGui.QTextCursor.MoveAnchor)
+            new_pos = pos+start_offset, QtGui.QTextCursor.MoveAnchor
+            textCursor.setPosition(new_pos)
 
         self.editor.setTextCursor(textCursor)
 
@@ -681,7 +691,6 @@ class ShortcutHandler(QtCore.QObject):
         if new_end + 1 >= self.editor.document().characterCount():
             return
 
-        start_offset = start-new_start
         end_offset = new_end-end
 
         textCursor.setPosition(new_start, QtGui.QTextCursor.KeepAnchor)
@@ -698,13 +707,14 @@ class ShortcutHandler(QtCore.QObject):
             textCursor.setPosition(moved_start, QtGui.QTextCursor.KeepAnchor)
         else:
             pos = textCursor.position()
-            textCursor.setPosition(pos-end_offset, QtGui.QTextCursor.MoveAnchor)
+            new_pos = pos-end_offset, QtGui.QTextCursor.MoveAnchor
+            textCursor.setPosition(new_pos)
 
         self.editor.setTextCursor(textCursor)
 
     def move_to_top(self):
         """
-        Move selection or line if no 
+        Move selection or line if no
         selection to top of document.
         """
         textCursor = self.editor.textCursor()
@@ -718,7 +728,7 @@ class ShortcutHandler(QtCore.QObject):
 
     def move_to_bottom(self):
         """
-        Move selection or line if no 
+        Move selection or line if no
         selection to bottom of document.
         """
         textCursor = self.editor.textCursor()

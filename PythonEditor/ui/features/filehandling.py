@@ -1,18 +1,17 @@
 from __future__ import unicode_literals
 from __future__ import print_function
-import os
-import time
-import uuid
 import unicodedata
 from io import open
 from xml.etree import ElementTree
-from PythonEditor.ui.Qt import QtCore, QtWidgets
-from PythonEditor.utils.constants import (AUTOSAVE_FILE, 
+from PythonEditor.ui.Qt import QtCore
+from PythonEditor.utils.constants import (AUTOSAVE_FILE,
                                           XML_HEADER,
                                           create_autosave_file)
 
+
 def remove_control_characters(s):
-    cc = "".join(ch for ch in s if unicodedata.category(ch) == "Cc" and ch != '\n')
+    def notCtrl(ch): return unicodedata.category(ch) == "Cc" and ch != '\n'
+    cc = "".join(ch for ch in s if notCtrl(ch))
     print('Removing undesirable control characters:', cc)
 
     def no_cc(ch):
@@ -23,6 +22,7 @@ def remove_control_characters(s):
         return False
 
     return "".join(ch for ch in s if no_cc(ch))
+
 
 class FileHandler(QtCore.QObject):
     """
@@ -38,8 +38,8 @@ class FileHandler(QtCore.QObject):
         self.editortabs = editortabs
         self.setParent(editortabs)
 
-        #connect tab signals
-        tss = editortabs.tab_switched_signal 
+        # connect tab signals
+        tss = editortabs.tab_switched_signal
         tss.connect(self.tab_switch_handler)
         tcr = editortabs.tabCloseRequested
         tcr.connect(self.removeempty)
@@ -49,9 +49,9 @@ class FileHandler(QtCore.QObject):
 
     @QtCore.Slot(int, int, bool)
     def tab_switch_handler(self, previous, current, tabremoved):
-        if not tabremoved:  #nothing's been deleted
-                            #so we need to disconnect
-                            #signals from previous editor
+        if not tabremoved:  # nothing's been deleted
+                            # so we need to disconnect
+                            # signals from previous editor
             self.disconnectSignals()
 
         self.setEditor()
@@ -62,7 +62,8 @@ class FileHandler(QtCore.QObject):
         and connects signals.
         """
         editor = self.editortabs.currentWidget()
-        editorChanged = True if not hasattr(self, 'editor') else self.editor != editor
+        hasedit = hasattr(self, 'editor')
+        editorChanged = True if not hasedit else self.editor != editor
         isEditor = editor.objectName() == 'Editor'
         if isEditor and editorChanged:
             self.editor = editor
@@ -74,8 +75,8 @@ class FileHandler(QtCore.QObject):
         # except AttributeError as e:
         #     print(e)
         #     QtCore.Qt.UniqueConnection = 128
-        self.editor.textChanged.connect(self.autosave)#, QtCore.Qt.UniqueConnection) 
-        #document().modificationChanged ? 
+        self.editor.textChanged.connect(self.autosave)
+        # document().modificationChanged ?
 
     def disconnectSignals(self):
         if not hasattr(self, 'editor'):
@@ -85,13 +86,14 @@ class FileHandler(QtCore.QObject):
     def readfile(self, path):
         """
         Opens any file and sets the editor's contents
-        to the file's contents. Changes .pyc to .py in 
+        to the file's contents. Changes .pyc to .py in
         path arguments.
         """
         if '.xml' in path:
             return self.readxml(path)
 
-        path = path.replace('.pyc', '.py') #do not open compiled python files
+        # do not open compiled python files
+        path = path.replace('.pyc', '.py')
 
         with open(path, 'r') as f:
             text = f.read()
@@ -105,8 +107,8 @@ class FileHandler(QtCore.QObject):
     def writexml(self, root, path=AUTOSAVE_FILE):
         data = ElementTree.tostring(root)
         data = data.decode('utf-8')
-        data = data.replace('><subscript','>\n<subscript')
-        data = data.replace('</subscript><','</subscript>\n<')
+        data = data.replace('><subscript', '>\n<subscript')
+        data = data.replace('</subscript><', '</subscript>\n<')
         with open(path, 'wt', encoding='utf8', errors='ignore') as f:
             f.write(XML_HEADER+data)
 
@@ -115,21 +117,21 @@ class FileHandler(QtCore.QObject):
             return
 
         try:
-            parser = ElementTree.parse(path, 
-                ElementTree.XMLParser(encoding="utf-8"))
+            xmlp = ElementTree.XMLParser(encoding="utf-8")
+            parser = ElementTree.parse(path, xmlp)
         except ElementTree.ParseError as e:
             print('ElementTree.ParseError', e)
             parser = self.fix_broken_xml(path)
 
         root = parser.getroot()
         elements = root.findall(element_name)
-        return root, elements 
+        return root, elements
 
     def fix_broken_xml(self, path):
         """
         Removes unwanted characters and
-        (in case necessary in future 
-        implementations..) fixes other 
+        (in case necessary in future
+        implementations..) fixes other
         parsing errors with the xml file.
         """
         with open(path, 'r', encoding='utf-8') as f:
@@ -140,13 +142,13 @@ class FileHandler(QtCore.QObject):
         with open(path, 'wt') as f:
             f.write(safe_string)
 
-        parser = ElementTree.parse(path, 
-            ElementTree.XMLParser(encoding="utf-8"))
+        xmlp = ElementTree.XMLParser(encoding="utf-8")
+        parser = ElementTree.parse(path, xmlp)
         return parser
 
     def readautosave(self):
         """
-        Sets editor text content. First checks the 
+        Sets editor text content. First checks the
         autosave file for <subscript> elements and
         creates a tab per element.
         """
@@ -154,7 +156,7 @@ class FileHandler(QtCore.QObject):
 
         editor_count = 0
         for s in subscripts:
-                
+
             if not s.text:
                 root.remove(s)
                 continue
@@ -162,7 +164,7 @@ class FileHandler(QtCore.QObject):
             editor_count += 1
 
             editor = self.editortabs.new_tab()
-            tab_index = str(self.editortabs.currentIndex())
+            # tab_index = str(self.editortabs.currentIndex())
             s.attrib['uuid'] = editor.uid
             editor.setPlainText(s.text)
 
@@ -179,7 +181,7 @@ class FileHandler(QtCore.QObject):
         """
         root, subscripts = self.parsexml('subscript')
 
-        tab_index = str(self.editortabs.currentIndex())
+        # tab_index = str(self.editortabs.currentIndex())
 
         found = False
         for s in subscripts:
@@ -192,7 +194,7 @@ class FileHandler(QtCore.QObject):
             sub.attrib['uuid'] = self.editor.uid
             root.append(sub)
             sub.text = self.editor.toPlainText()
-   
+
         self.writexml(root)
 
     @QtCore.Slot(int)
@@ -206,9 +208,8 @@ class FileHandler(QtCore.QObject):
         """
         root, subscripts = self.parsexml('subscript')
 
-        found = False
         for s in subscripts:
             if not s.text:
                 root.remove(s)
-   
+
         self.writexml(root)

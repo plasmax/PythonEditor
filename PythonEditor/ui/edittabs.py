@@ -1,13 +1,14 @@
 from __future__ import print_function
-from PythonEditor.ui.Qt import QtWidgets, QtGui, QtCore
+from PythonEditor.ui.Qt import QtWidgets, QtCore
 
 from PythonEditor.ui import editor as EDITOR
+
 
 class EditTabs(QtWidgets.QTabWidget):
     """
     QTabWidget containing Editor
     QPlainTextEdit widgets.
-    TODO: Set stylesheet to 
+    TODO: Set stylesheet to
     have tabs the same height as Nuke's.
     """
     tab_switched_signal = QtCore.Signal(int, int, bool)
@@ -41,10 +42,10 @@ class EditTabs(QtWidgets.QTabWidget):
     def setup_new_tab_btn(self):
         widget = QtWidgets.QWidget()
         widget.setObjectName('Tab_Widget_New_Button')
-        self.insertTab(0, widget,'')
+        self.insertTab(0, widget, '')
         nb = self.new_btn = QtWidgets.QToolButton()
         nb.setMinimumSize(QtCore.QSize(50,10))
-        nb.setText('+') # you could set an icon instead of text
+        nb.setText('+')  # you could set an icon instead of text
         nb.setAutoRaise(True)
         nb.clicked.connect(self.new_tab)
 
@@ -60,8 +61,8 @@ class EditTabs(QtWidgets.QTabWidget):
         count = self.count()
         index = 0 if count == 0 else count - 1
         editor = EDITOR.Editor(handle_shortcuts=False)
-        self.insertTab(index, 
-                       editor, 
+        self.insertTab(index,
+                       editor,
                        'Tab {0}'.format(index)
                        )
         self.setCurrentIndex(index)

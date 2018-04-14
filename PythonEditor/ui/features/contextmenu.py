@@ -9,30 +9,34 @@ from pprint import pprint
 from PythonEditor.ui.Qt import QtWidgets, QtGui, QtCore
 from PythonEditor.utils import constants
 
+
 def open_module_file(obj):
     file = inspect.getfile(obj).replace('.pyc', '.py')
     print(file)
-    EXTERNAL_EDITOR_PATH = constants.get_external_editor_path()#os.environ.get('EXTERNAL_EDITOR_PATH')
+    EXTERNAL_EDITOR_PATH = constants.get_external_editor_path()
     if (EXTERNAL_EDITOR_PATH
             and os.path.isdir(os.path.dirname(EXTERNAL_EDITOR_PATH))):
-        subprocess.Popen([EXTERNAL_EDITOR_PATH, file]) 
+        subprocess.Popen([EXTERNAL_EDITOR_PATH, file])
+
 
 def open_module_directory(obj):
     file = inspect.getfile(obj).replace('.pyc', '.py')
     folder = os.path.dirname(file)
     print(folder)
-    EXTERNAL_EDITOR_PATH = constants.get_external_editor_path()#os.environ.get('EXTERNAL_EDITOR_PATH')
+    EXTERNAL_EDITOR_PATH = constants.get_external_editor_path()
     if (EXTERNAL_EDITOR_PATH
             and os.path.isdir(os.path.dirname(EXTERNAL_EDITOR_PATH))):
-        subprocess.Popen([EXTERNAL_EDITOR_PATH, folder]) 
-        
+        subprocess.Popen([EXTERNAL_EDITOR_PATH, folder])
+
+
 def openDir(module):
     try:
         print(bytes(module.__file__))
-        subprocess.Popen(['nautilus', module.__file__]) 
+        subprocess.Popen(['nautilus', module.__file__])
     except AttributeError:
         file = inspect.getfile(module)
         subprocess.Popen(['nautilus', file])
+
 
 class ContextMenu(QtCore.QObject):
     def __init__(self, editor):
@@ -53,8 +57,8 @@ class ContextMenu(QtCore.QObject):
 
     def setKnobScript(self, knobName='knobChanged'):
         self.textCursor = self.editor.textCursor()
-        text = self.textCursor.selectedText().encode('utf-8')#.strip()
-        # text = self.selectedText
+        text = self.textCursor.selectedText().encode('utf-8')
+
         for node in nuke.selectedNodes():
             node.knob(knobName).setValue(text)
             print(node.fullName(), 'set:', knobName)
@@ -63,11 +67,12 @@ class ContextMenu(QtCore.QObject):
         """
         Very basic search dialog.
         TODO: Create a QAction and store
-        this in utils so that it can be 
+        this in utils so that it can be
         linked to Ctrl + F as well.
         """
 
-        dialog = QtWidgets.QInputDialog.getText(self.editor, 'Search', '')
+        dialog = QtWidgets.QInputDialog.getText(
+            self.editor, 'Search', '')
         text, ok = dialog
         if not ok:
             return
@@ -75,11 +80,10 @@ class ContextMenu(QtCore.QObject):
         textCursor = self.editor.textCursor()
         document = self.editor.document()
         cursor = document.find(text, textCursor)
-        pos = cursor.position()
         self.editor.setTextCursor(cursor)
 
     def printHelp(self):
-        selectedText = self.selectedText
+        text = self.selectedText
         obj = __main__.__dict__.get(text)
         if obj is not None:
             print(obj.__doc__)
@@ -88,17 +92,17 @@ class ContextMenu(QtCore.QObject):
         text = str(self.selectedText)
         obj = __main__.__dict__.get(text)
         open_module_file(obj)
-        
+
     def _open_module_directory(self):
         text = str(self.selectedText)
         obj = __main__.__dict__.get(text)
         open_module_directory(obj)
-       
-    def initInspectDict(self):
 
-        self.inspectDict = {func:getattr(inspect, func) 
+    def initInspectDict(self):
+        self.inspectDict = {func: getattr(inspect, func)
                             for func in dir(inspect)
-                            if isinstance(getattr(inspect, func) , types.FunctionType)}
+                            if isinstance(getattr(inspect, func),
+                                          types.FunctionType)}
 
     def inspectExec(self, func):
         text = str(self.selectedText)
@@ -110,18 +114,23 @@ class ContextMenu(QtCore.QObject):
     def initSnippetDict(self):
         """
         Creates a basic snippet dictionary.
-        TODO: Add some nice getter/setters 
-        and JSON file parsing to store and 
+        TODO: Add some nice getter/setters
+        and JSON file parsing to store and
         read larger snippet samples.
         """
+        pkn = 'print nuke.thisKnob().name()'
+        nsn = 'nuke.selectedNode()'
+        fns = 'for node in nuke.selectedNodes():'
+        fna = 'for node in nuke.allNodes():'
+        ppa = 'pprint({attr:getattr(obj, attr) for attr in dir(obj)})'
+        nid = '_nuke_internal.debugBreakPoint()'
         self.snippetDict = {
-        'print nuke.thisKnob().name()' : 'print nuke.thisKnob().name()',
-        'print nuke.thisNode().name()' : 'print nuke.thisNode().name()',
-        'nuke.selectedNode()' : 'nuke.selectedNode()',
-        'for node in nuke.selectedNodes():' : 'for node in nuke.selectedNodes():',
-        'for node in nuke.allNodes():' : 'for node in nuke.allNodes():',
-        'pprint({attr:getattr(obj, attr) for attr in dir(obj)})' : 'pprint({attr:getattr(obj, attr) for attr in dir(obj)})',
-        '_nuke_internal.debugBreakPoint()' : '_nuke_internal.debugBreakPoint()',
+            pkn: pkn,
+            nsn: nsn,
+            fns: fns + '\n    ',
+            fna: fna + '\n    ',
+            ppa: ppa,
+            nid: nid,
         }
 
     def new_snippet(self):
@@ -161,7 +170,7 @@ class ContextMenu(QtCore.QObject):
         elif keyword == 'len':
             print(len(obj))
         elif keyword == 'getattr':
-            attrs = {attr:getattr(obj, attr) for attr in dir(obj)}
+            attrs = {attr: getattr(obj, attr) for attr in dir(obj)}
             pprint(attrs)
 
     def menuSetup(self):
@@ -169,68 +178,74 @@ class ContextMenu(QtCore.QObject):
         self.menu.addAction('Search', self.searchInput)
 
         self.infoMenu = self.menu.addMenu('Info')
-        self.infoMenu.addAction('Print globals', 
-            lambda keyword='globals': self.printInfo(keyword))
-        self.infoMenu.addAction('Print locals', 
-            lambda keyword='locals': self.printInfo(keyword))
-        self.infoMenu.addAction('Print environ', 
-            lambda keyword='environ': self.printInfo(keyword))
+
+        print_globals = partial(self.printInfo, 'globals')
+        self.infoMenu.addAction('Print globals',
+                                print_globals)
+        print_locals = partial(self.printInfo, 'locals')
+        self.infoMenu.addAction('Print locals',
+                                print_locals)
+        print_environ = partial(self.printInfo, 'environ')
+        self.infoMenu.addAction('Print environ',
+                                print_environ)
 
         self.snippetMenu = self.menu.addMenu('Snippets')
         self.utilsMenu = self.snippetMenu.addMenu('Utils')
 
         for snippet in self.snippetDict.keys():
-            self.snippetMenu.addAction(snippet, partial(self.insert_snippet, snippet))
+            snippet_insert = partial(self.insert_snippet, snippet)
+            self.snippetMenu.addAction(snippet,
+                                       snippet_insert)
 
-        # utildir = '/net/homes/mlast/.nuke/python/max/gear/utils/'
-        # for util in os.listdir(utildir):
-        #     self.utilsMenu.addAction(util,
-        #         partial(self.openUtil, os.path.join(utildir, util))) 
-        #         # lambda path=os.path.join(util,path): self.openUtil(path))
-
-        # all of these should be conditional on text selected! trigger separate method to process
-        #print globals(), locals(), dir(), getattrs,
         cursor = self.editor.textCursor()
         self.selectedText = str(cursor.selectedText().encode('utf-8').strip())
 
-        print(self.selectedText)
         if self.selectedText != '':
             for info in ['help', 'type', 'dir', 'len', 'getattr']:
-                self.infoMenu.addAction('Print {}'.format(info), 
-                    lambda keyword=info, 
-                    text=self.selectedText: self.printInfo(keyword, 
-                        text=self.selectedText))
+                text = self.selectedText
+                print_info = partial(self.printInfo,
+                                     info, text=text)
+                self.infoMenu.addAction('Print {0}'.format(info),
+                                        print_info)
 
-            #TODO: these could be conditional on nodes selected
+            # TODO: these could be conditional on nodes selected
             self.nodesMenu = self.menu.addMenu('Nodes')
-            self.nodesMenu.addAction('Run on All Nodes', self.notImplemented)
-            self.nodesMenu.addAction('Run on Selected Nodes', self.notImplemented)
-            for knob in ['knobChanged', 'onCreate', 'beforeRender', 'beforeFrameRender']:
-                self.nodesMenu.addAction('Copy to Nodes %s'%knob, 
-                    lambda knobName=knob: self.setKnobScript(knobName))
+            self.nodesMenu.addAction('Run on All Nodes',
+                                     self.notImplemented)
+            self.nodesMenu.addAction('Run on Selected Nodes',
+                                     self.notImplemented)
+            pyknobs = ['knobChanged',
+                       'onCreate',
+                       'beforeRender',
+                       'beforeFrameRender']
+            for knob in pyknobs:
+                title = 'Copy to Nodes {0}'.format(knob)
+                func = partial(self.setKnobScript, knob)
+                self.nodesMenu.addAction(title, func)
 
-            #conditional on text selected and external editor path verified
+            # conditional on text selected and external editor path verified
             self.editorMenu = self.menu.addMenu('External Editor')
-            self.editorMenu.addAction('Open Module File', self._open_module_file)
-            self.editorMenu.addAction('Open Module Directory', self._open_module_directory)
-            self.editorMenu.addAction('Copy to External Editor', self.notImplemented) #/net/homes/mlast/.nuke/python/_scriptEditor
+            self.editorMenu.addAction('Open Module File',
+                                      self._open_module_file)
+            self.editorMenu.addAction('Open Module Directory',
+                                      self._open_module_directory)
+            self.editorMenu.addAction('Copy to External Editor',
+                                      self.notImplemented)
 
-            #conditional on text selected and inspect.isModule
+            # conditional on text selected and inspect.isModule
             self.inspectMenu = self.menu.addMenu('Inspect')
             self.inspectIsMenu = self.inspectMenu.addMenu('is')
             self.inspectGetMenu = self.inspectMenu.addMenu('get')
             # self.inspectMenu.addAction('Inspect', print(self.inspectDict))
-            for func in self.inspectDict.keys():
-                if func.startswith('is'):
-                    self.inspectIsMenu.addAction(func, 
-                        lambda func=func: self.inspectExec(func))
-                elif func.startswith('get'):
-                    self.inspectGetMenu.addAction(func, 
-                        lambda func=func: self.inspectExec(func))
+            for attr in self.inspectDict.keys():
+                func = partial(self.inspectExec, attr)
+                if attr.startswith('is'):
+                    self.inspectIsMenu.addAction(attr, func)
+                elif attr.startswith('get'):
+                    self.inspectGetMenu.addAction(attr, func)
                 else:
-                    self.inspectMenu.addAction(func, 
-                        lambda func=func: self.inspectExec(func))
+                    self.inspectMenu.addAction(attr, func)
 
-            #http://doc.qt.io/archives/qt-4.8/qrubberband.html
-            self.menu.addAction('Open Qt Docs', self.notImplemented) # http://doc.qt.io/archives/qt-4.8/classes.html
-
+            # http://doc.qt.io/archives/qt-4.8/qrubberband.html
+            # http://doc.qt.io/archives/qt-4.8/classes.html
+            self.menu.addAction('Open Qt Docs', self.notImplemented)
