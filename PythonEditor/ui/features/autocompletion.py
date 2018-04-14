@@ -240,6 +240,8 @@ class AutoCompleter(QtCore.QObject):
         """
         Shows a tooltip with function documentation
         and input arguments if available.
+        TODO: failing return __doc__, 
+        try to get me the function code!
         """
         _ = {}
         name = text[:-1].split(' ')[-1]
