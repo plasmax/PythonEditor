@@ -3,11 +3,13 @@ import sys
 
 from PythonEditor.ui.Qt import QtGui, QtWidgets, QtCore
 
+
 class PySingleton(object):
     def __new__(cls, *args, **kwargs):
-        if not '_the_instance' in cls.__dict__:
+        if '_the_instance' not in cls.__dict__:
             cls._the_instance = object.__new__(cls)
         return cls._the_instance
+
 
 class Speaker(QtCore.QObject):
     """
@@ -15,10 +17,21 @@ class Speaker(QtCore.QObject):
     """
     emitter = QtCore.Signal(str)
 
+
 class SERedirector(object):
     def __init__(self, stream, sig=None):
-        fileMethods = ('fileno', 'flush', 'isatty', 'read', 'readline', 'readlines',
-        'seek', 'tell', 'write', 'writelines', 'xreadlines', '__iter__')
+        fileMethods = ('fileno',
+                       'flush',
+                       'isatty',
+                       'read',
+                       'readline',
+                       'readlines',
+                       'seek',
+                       'tell',
+                       'write',
+                       'writelines',
+                       'xreadlines',
+                       '__iter__')
 
         for i in fileMethods:
             if not hasattr(self, i) and hasattr(stream, i):
@@ -28,7 +41,7 @@ class SERedirector(object):
         self.sig = sig
 
     def write(self, text):
-        if self.sig != None:
+        if self.sig is not None:
             self.sig.emitter.emit(text)
         self.savedStream.write(text)
 
@@ -41,16 +54,18 @@ class SERedirector(object):
     def __del__(self):
         self.reset()
 
+
 class SESysStdOut(SERedirector, PySingleton):
     def reset(self):
         sys.stdout = self.savedStream
         print('reset stream out')
-        
+
 
 class SESysStdErr(SERedirector, PySingleton):
     def reset(self):
         sys.stderr = self.savedStream
         print('reset stream err')
+
 
 class Terminal(QtWidgets.QTextEdit):
     """ Output text display widget """
@@ -67,7 +82,7 @@ class Terminal(QtWidgets.QTextEdit):
         try:
             if bool(self.textCursor()):
                 self.moveCursor(QtGui.QTextCursor.End)
-        except Exception as e:
+        except Exception:
             pass
         self.insertPlainText(text)
 
@@ -77,13 +92,13 @@ class Terminal(QtWidgets.QTextEdit):
 
     def setup(self):
         """
-        Checks for an existing stream wrapper 
+        Checks for an existing stream wrapper
         for sys.stdout and connects to it. If
         not present, creates a new one.
         TODO:
         The FnRedirect sys.stdout is always active.
-        With a singleton object on a thread, 
-        that reads off this stream, we can make it 
+        With a singleton object on a thread,
+        that reads off this stream, we can make it
         available to Python Editor even before opening
         the panel.
         """

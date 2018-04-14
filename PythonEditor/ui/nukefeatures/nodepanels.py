@@ -1,10 +1,10 @@
 from functools import partial
 import nuke
-from PythonEditor.ui.Qt import QtWidgets, QtCore, QtGui
+from PythonEditor.ui.Qt import QtWidgets, QtCore
 from PythonEditor.ui import editor
 
+
 class PyKnobs(QtWidgets.QWidget):
-    """docstring for PyKnobs"""
     def __init__(self, knobs):
         super(PyKnobs, self).__init__()
         self.knobs = knobs
@@ -23,6 +23,7 @@ class PyKnobs(QtWidgets.QWidget):
     def updateKnob(self, index):
         self.editor.knob = self.knobs[index]
         self.editor.getKnobValue()
+
 
 class PyKnobEdit(editor.Editor):
     """
@@ -47,14 +48,15 @@ class PyKnobEdit(editor.Editor):
     @knob.setter
     def knob(self, knob):
         self._knob = knob
-        
+
     def getKnobValue(self):
         self.setPlainText(self.knob.value())
+
 
 @QtCore.Slot(object)
 def addTextKnobs(node):
     """
-    Finds node panel widget and adds some 
+    Finds node panel widget and adds some
     extra widgets to it that act like knobs.
     TODO: find node panels in Properties bin.
     also appears that this causes segmentation faults
@@ -68,13 +70,13 @@ def addTextKnobs(node):
         np = np_list.pop()
     else:
         return
-        
+
     sw = np.findChild(QtWidgets.QStackedWidget, 'qt_tabwidget_stackedwidget')
     print sw
     tw = sw.parent()
     pyk = PyKnobs([k for k in node.allKnobs() if 'py' in k.Class().lower()])
     tw.addTab(pyk, 'Python Knobs')
-    
+
     # stw = QtWidgets.QTabWidget() #TODO: probably nicer to have a dropdown connected to a single textedit
     # tw.addTab(stw, 'Python Knobs')
 
@@ -82,15 +84,15 @@ def addTextKnobs(node):
     #     if 'py' in k.Class().lower():
     #         stw.addTab(PyKnobEdit(k), k.name())
 
+
 def pythonKnobEdit():
-    if nuke.thisKnob().name() == 'showPanel': #TODO: is there a 'knob added' knobchanged?
+    if nuke.thisKnob().name() == 'showPanel':  # TODO: is there a 'knob added' knobchanged?
         node = nuke.thisNode()
         global timer
         timer = QtCore.QTimer()
         timer.setSingleShot(True)
         timer.setInterval(10)
-        timer.timeout.connect( partial(addTextKnobs, node) )
-        #timer.timeout.connect(lambda n=node:addTextKnobs(node) )
+        timer.timeout.connect(partial(addTextKnobs, node))
         timer.start()
 
 
@@ -104,8 +106,12 @@ del nuke.callbacks.knobChangeds['*'][1]
 
 knobChangeds = nuke.callbacks.knobChangeds['*']
 for index, info in enumerate(knobChangeds):
-    func, _,_,_ = info
+    func, _, _, _ = info
     if func.func_name == 'pythonKnobEdit':
         del knobChangeds[index]
 
-nuke.callbacks.addKnobChanged(pythonKnobEdit, args=(), kwargs={}, nodeClass='*', node=None)
+nuke.callbacks.addKnobChanged(pythonKnobEdit,
+                              args=(),
+                              kwargs={},
+                              nodeClass='*',
+                              node=None)

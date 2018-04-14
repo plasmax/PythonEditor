@@ -1,5 +1,6 @@
 from PythonEditor.ui.Qt import QtWidgets, QtCore, QtGui
 
+
 class ShortcutEditor(QtWidgets.QTreeView):
     """
     A display widget that allows editing of
@@ -9,7 +10,7 @@ class ShortcutEditor(QtWidgets.QTreeView):
     def __init__(self, shortcuthandler):
         super(ShortcutEditor, self).__init__()
         self.shortcuthandler = shortcuthandler
-        self.shortcut_dict = shortcuthandler.shortcut_dict        
+        self.shortcut_dict = shortcuthandler.shortcut_dict
 
         model = QtGui.QStandardItemModel()
         self.setModel(model)
@@ -18,7 +19,7 @@ class ShortcutEditor(QtWidgets.QTreeView):
 
         for item in self.shortcut_dict.items():
             row = [QtGui.QStandardItem(val) for val in item]
-            model.appendRow(row)
+            root.appendRow(row)
 
         self.header().setStretchLastSection(False)
         self.header().setResizeMode(QtWidgets.QHeaderView.ResizeToContents)

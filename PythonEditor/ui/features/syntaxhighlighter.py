@@ -1,11 +1,11 @@
 from PythonEditor.ui.Qt import QtGui, QtCore
 
+
 class Highlight(QtGui.QSyntaxHighlighter):
     """
-    Modified, simplified version of some code found I found when researching:
+    Modified, simplified version of some code
+    that Wouter Gilsing found and modified when researching.
     wiki.python.org/moin/PyQt/Python%20syntax%20highlighting
-    They did an awesome job, so credits to them. I only needed to make some
-    modifications to make it fit my needs.
     """
 
     def __init__(self, document):

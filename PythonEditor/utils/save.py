@@ -1,8 +1,9 @@
 from __future__ import print_function
-import os
 import subprocess
-from PythonEditor.ui.Qt import QtWidgets, QtGui, QtCore
+
+from PythonEditor.ui.Qt import QtWidgets
 from PythonEditor.utils import constants
+
 
 def save_text(editor, text):
     """
@@ -10,9 +11,9 @@ def save_text(editor, text):
     Is this better placed in filehandling? It generates a UI
     """
     path, _ = QtWidgets.QFileDialog.getSaveFileName(
-        editor, 
-        'Save Selected Text', 
-        constants.NUKE_DIR, 
+        editor,
+        'Save Selected Text',
+        constants.NUKE_DIR,
         selectedFilter='*.py')
 
     if path:
@@ -22,13 +23,16 @@ def save_text(editor, text):
             f.write(text)
     return path
 
+
 def save_selected_text(editor):
     text = editor.textCursor().selection().toPlainText()
     return save_text(editor, text)
 
+
 def save_as(editor):
     text = editor.toPlainText()
     return save_text(editor, text)
+
 
 def export_selected_to_external_editor(editor):
     path = save_selected_text(editor)

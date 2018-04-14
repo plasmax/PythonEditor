@@ -1,10 +1,10 @@
 from PythonEditor.ui.nukefeatures import nukedock
 from PythonEditor.utils import constants
-from PythonEditor.ui.Qt import QtWidgets, QtCore, QtGui
+from PythonEditor.ui.Qt import QtWidgets, QtCore
 
-panel_name = 'i.d.e.Python_Editor'
+PANEL_NAME = 'i.d.e.Python_Editor'
 
-reloadAllModules ="""
+RELOAD_CMD = """
 for m in sys.modules.keys():
     if 'PythonEditor' in m:
         del sys.modules[m]
@@ -16,21 +16,25 @@ nukedock.setup_dock()
 nukescripts.panels.__panels["i.d.e.Python_Editor"]()
 """
 
+ICON_PATH = constants.NUKE_DIR + '/icons/PythonEditor.png'
+
+
 def menu_setup():
     import nuke
 
     panelMenu = nuke.menu('Nuke').addMenu('Panels')
-    panelMenu.addCommand('Python Editor', reloadAllModules,
-        '\\', icon=constants.NUKE_DIR + '/icons/PythonEditor.png')
+    panelMenu.addCommand('Python Editor',
+                         RELOAD_CMD,
+                         '\\',
+                         icon=ICON_PATH)
 
-    # #TODO: add command like in ThumbsUp to add to correct panel.
-    # nuke.menu('Nodes').addCommand('Python Editor', 
-    #     'nukescripts.panels.__panels["i.d.e.Python_Editor"]()', 
-    #     'Alt+z', icon=constants.NUKE_DIR + '/icons/PythonEditor.png')
+    import_cmd = '__import__("PythonEditor")'\
+        '.ui.nukefeatures.nukeinit.add_to_pane()'
+    nuke.menu('Nodes').addCommand('Python Editor',
+                                  import_cmd,
+                                  'Alt+z',
+                                  icon=ICON_PATH)
 
-    nuke.menu('Nodes').addCommand('Python Editor', 
-        '__import__("PythonEditor").ui.nukefeatures.nukeinit.add_to_pane()',
-        'Alt+z', icon=constants.NUKE_DIR + '/icons/PythonEditor.png')
 
 def add_to_pane():
     """
@@ -42,11 +46,11 @@ def add_to_pane():
     for widget in QtWidgets.QApplication.instance().allWidgets():
         if isinstance(widget, QtWidgets.QStackedWidget):
             for child in widget.children():
-                if child.objectName() == panel_name:
+                if child.objectName() == PANEL_NAME:
                     panel = child
                     pane = widget
                     break
-    
+
     if bool(panel):
 
         pane.setCurrentWidget(panel)
@@ -54,7 +58,9 @@ def add_to_pane():
         panel.activateWindow()
 
     else:
-        panel = panels.__panels.get(panel_name).__call__()
+        import nuke
+        from nukescripts import panels
+        panel = panels.__panels.get(PANEL_NAME).__call__()
         for dock in ['Properties.1',
                      'DAG.1',
                      'Viewer.1']:
@@ -62,6 +68,7 @@ def add_to_pane():
             if pane:
                 panel.addToPane(pane)
                 break
+
 
 def setup():
     menu_setup()

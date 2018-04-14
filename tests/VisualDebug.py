@@ -1,12 +1,12 @@
-from pprint import pprint
 import types
 import os
-os.environ['QT_PREFERRED_BINDING'] ='PySide:PyQt4'
+os.environ['QT_PREFERRED_BINDING'] = 'PySide:PyQt4'
 from PythonEditor.ui.Qt import QtWidgets, QtGui, QtCore, QtOpenGL
+
 
 class VisualDebug(QtWidgets.QWidget):
     """
-    A TreeView containing downwards recursively searched 
+    A TreeView containing downwards recursively searched
     QObjects through their 'children' attribute. On object selection,
     additional information is displayed in separate widgets:
     QMetaMethod and QMetaPropety info in separate QListViews
@@ -26,30 +26,32 @@ class VisualDebug(QtWidgets.QWidget):
         self.treeview.setUniformRowHeights(True)
 
         self.layout.addWidget(self.treeview)
-        self.treemodel.setHorizontalHeaderLabels(['metaObject className', 
-                                                'objectName',
-                                                'windowTitle', 
-                                                'text', 
-                                                'title', 
-                                                '__repr__',
-                                                'python object'])
+        self.treemodel.setHorizontalHeaderLabels(['metaObject className',
+                                                  'objectName',
+                                                  'windowTitle',
+                                                  'text',
+                                                  'title',
+                                                  '__repr__',
+                                                  ])
 
         self.treeview.header().setStretchLastSection(False)
-        self.treeview.header().setResizeMode(QtWidgets.QHeaderView.ResizeToContents)
+        mode = QtWidgets.QHeaderView.ResizeToContents
+        self.treeview.header().setResizeMode(mode)
 
         rootItem = self.treemodel.invisibleRootItem()
         qApp = QtWidgets.QApplication.instance()
-        for w in qApp.topLevelWidgets(): #extra stuff
+        for w in qApp.topLevelWidgets():  # extra stuff
             self.recurseWidgets(w, rootItem)
 
-    def getObjectInfo( self, widget, indent=0 ):
-        return [widget.metaObject().className(), 
-                        widget.objectName(),
-                        (widget.windowTitle() if hasattr(widget, 'windowTitle') else '' ),
-                        (widget.text() if hasattr(widget, 'text') else '' ),
-                        (widget.title() if hasattr(widget, 'title') else '' ),
-                        (widget.windowTitle() if hasattr(widget, 'windowTitle') else '' ),
-                        widget.__repr__()]
+    def getObjectInfo(self, widget, indent=0):
+        wintitle = (widget.windowTitle()
+                    if hasattr(widget, 'windowTitle') else '')
+        return [widget.metaObject().className(),
+                widget.objectName(),
+                wintitle,
+                (widget.text() if hasattr(widget, 'text') else ''),
+                (widget.title() if hasattr(widget, 'title') else ''),
+                widget.__repr__()]
 
     def recurseWidgets( self, widget , parent):
         # later try and turn this into a generator pushed by a Qtimer
@@ -57,7 +59,7 @@ class VisualDebug(QtWidgets.QWidget):
         def recursion(widget, parent):
             for child in widget.children():
                 infoList = self.getObjectInfo(child)
-                items = [ QtGui.QStandardItem(info) for info in infoList ] 
+                items = [ QtGui.QStandardItem(info) for info in infoList ]
                 parent.appendRow(items)
                 childItem = items[0]
                 childItem.setData(child, QtCore.Qt.UserRole)
@@ -65,7 +67,7 @@ class VisualDebug(QtWidgets.QWidget):
                 recursion(child, childItem)
 
         infoList = self.getObjectInfo(widget)
-        items = [ QtGui.QStandardItem(info) for info in infoList ] 
+        items = [ QtGui.QStandardItem(info) for info in infoList ]
         # parentItem = QtGui.QStandardItem(', '.join(info)) #later setData adding widget object
         parent.appendRow(items)
         firstParent = items[0]
@@ -106,17 +108,17 @@ class WidgetTreeView(QtWidgets.QTreeView):
 
                 if isinstance(attr, types.BuiltinMethodType):
                     if 'event' in method.lower():
-                        self.eventMenu.addAction(method, 
-                            lambda method=attr, 
+                        self.eventMenu.addAction(method,
+                            lambda method=attr,
                             widget=self.widget: self.testWidget(method, widget))
                     else:
                         self.builtInMethodMenu.addAction(method,
-                            lambda method=attr, 
-                            widget=self.widget: self.testWidget(method, widget)) 
+                            lambda method=attr,
+                            widget=self.widget: self.testWidget(method, widget))
 
                 elif isinstance(attr, type(self.widget.__init__)):
                     self.methodMenu.addAction(method,
-                        lambda method=attr, widget=self.widget: self.testWidget(method, widget)) 
+                        lambda method=attr, widget=self.widget: self.testWidget(method, widget))
 
                 elif isinstance(attr, types.DictType):
                     for key in attr.keys():
@@ -132,7 +134,7 @@ class WidgetTreeView(QtWidgets.QTreeView):
 
                 else:
                     try:
-                         self.regularMenu.addAction(', '.join([method,str(attr), str(type(attr))]), 
+                         self.regularMenu.addAction(', '.join([method,str(attr), str(type(attr))]),
                             lambda method=attr, widget=self.widget: self.testWidget(method, widget))
                     except:
                         pass
@@ -142,12 +144,12 @@ class WidgetTreeView(QtWidgets.QTreeView):
 
             self.metaMethodMenu = QtWidgets.QMenu('meta methods')
             self.metaMenu.addMenu(self.metaMethodMenu)
-            
+
             o = self.widget
             conn = QtCore.Qt.QueuedConnection
             for method, signature in self.getMetaMethods(self.widget):
 
-                self.metaMethodMenu.addAction(signature, 
+                self.metaMethodMenu.addAction(signature,
                     lambda obj=o, conn=conn: o.metaObject().invokeMethod(obj,
                     QtCore.QGenericArgument()))
 
@@ -155,7 +157,7 @@ class WidgetTreeView(QtWidgets.QTreeView):
             self.metaMenu.addMenu(self.metaPropMenu)
 
             for name, prop in self.getMetaProperties(self.widget):
-                self.metaPropMenu.addAction(name, 
+                self.metaPropMenu.addAction(name,
                     lambda obj=o: prop.read(o))
 
             self.menu.exec_(QtGui.QCursor().pos())
@@ -187,13 +189,13 @@ class WidgetTreeView(QtWidgets.QTreeView):
             properties.append((name, metaproperty))
         return properties
 
-        
+
 qApp = QtWidgets.QApplication.instance()
 for w in qApp.topLevelWidgets():
     if w.metaObject().className() == 'VisualDebug':
         print w
         w.deleteLater()
-        
+
 vdb = VisualDebug()
 vdb.show()
 

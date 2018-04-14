@@ -1,28 +1,30 @@
 import sys
 import traceback
-from PythonEditor.ui.Qt import QtGui, QtCore, QtWidgets
+from PythonEditor.ui.Qt import QtCore, QtWidgets
+
 
 def full_stack():
     """
     Print full stack information from error within try/except block.
     """
-    import traceback, sys
     exc = sys.exc_info()[0]
     if exc is not None:
         f = sys.exc_info()[-1].tb_frame.f_back
         stack = traceback.extract_stack(f)
     else:
-        stack = traceback.extract_stack()[:-1]  # last one would be full_stack()
+        stack = traceback.extract_stack()[:-1]
+        # last one would be full_stack()
     trc = 'Traceback (most recent call last):\n'
     stackstr = trc + ''.join(traceback.format_list(stack))
     if exc is not None:
         stackstr += '  ' + traceback.format_exc().lstrip(trc)
     return stackstr
 
+
 class GenericEventFilter(QtCore.QObject):
     """
     Generic EventFilter
-    Implements safe filtering with auto-installation 
+    Implements safe filtering with auto-installation
     and autoquit with full stack trace on error.
 
     example usage:
@@ -46,12 +48,12 @@ class GenericEventFilter(QtCore.QObject):
 
     def eventFilter(self, obj, event):
         if (event.type() == QtCore.QEvent.KeyPress
-            and event.key() == QtCore.Qt.Key_Escape):
+                and event.key() == QtCore.Qt.Key_Escape):
                 self.quit()
                 return True
         try:
             return self.event_filter(obj, event)
-        except:
+        except Exception:
             self.quit()
             print full_stack()
             return True
@@ -66,6 +68,7 @@ class GenericEventFilter(QtCore.QObject):
         QtCore.QCoreApplication.removeEventFilter(self.target, self)
         self.deleteLater()
 
+
 class InfoFilter(GenericEventFilter):
     """
     Example Filter that prints object and event information.
@@ -74,10 +77,10 @@ class InfoFilter(GenericEventFilter):
         print obj.metaObject().className(), event.type()
         return False
 
+
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
     w = QtWidgets.QWidget()
-    f = SimpleFilter(target=w)
+    f = GenericEventFilter(target=w)
     w.show()
     app.exec_()
-    

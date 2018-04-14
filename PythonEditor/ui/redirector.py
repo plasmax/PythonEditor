@@ -3,11 +3,13 @@ import time
 from Queue import Queue
 from PythonEditor.ui.Qt import QtGui, QtWidgets, QtCore
 
+
 class PySingleton(object):
     def __new__(cls, *args, **kwargs):
-        if not '_the_instance' in cls.__dict__:
+        if '_the_instance' not in cls.__dict__:
             cls._the_instance = object.__new__(cls)
         return cls._the_instance
+
 
 class Speaker(QtCore.QObject):
     """
@@ -15,15 +17,27 @@ class Speaker(QtCore.QObject):
     """
     emitter = QtCore.Signal(str)
 
+
 class SERedirector(object):
     speaker = Speaker()
+
     def __init__(self, stream, queue=None):
 
         if hasattr(stream, 'saved_stream'):
             stream.reset()
 
-        fileMethods = ('fileno', 'flush', 'isatty', 'read', 'readline', 'readlines',
-        'seek', 'tell', 'write', 'writelines', 'xreadlines', '__iter__')
+        fileMethods = ('fileno',
+                       'flush',
+                       'isatty',
+                       'read',
+                       'readline',
+                       'readlines',
+                       'seek',
+                       'tell',
+                       'write',
+                       'writelines',
+                       'xreadlines',
+                       '__iter__')
 
         for i in fileMethods:
             if not hasattr(self, i) and hasattr(stream, i):
@@ -45,20 +59,24 @@ class SERedirector(object):
     def __del__(self):
         self.reset()
 
+
 class SESysStdOut(SERedirector, PySingleton):
     def reset(self):
         sys.stdout = self.saved_stream
         print 'reset stream out'
-        
+
+
 class SESysStdErr(SERedirector, PySingleton):
     def reset(self):
         sys.stderr = self.saved_stream
         print 'reset stream err'
-        
+
+
 class SESysStdIn(SERedirector, PySingleton):
     def reset(self):
         sys.stdin = self.saved_stream
         print 'reset stream in'
+
 
 class Worker(QtCore.QObject):
     emitter = QtCore.Signal(str)
@@ -66,7 +84,7 @@ class Worker(QtCore.QObject):
     @property
     def queue(self):
         return self._queue
-    
+
     @queue.setter
     def queue(self, q):
         self._queue = q
@@ -78,6 +96,7 @@ class Worker(QtCore.QObject):
                 text = self._queue.get()
                 self.emitter.emit(text)
                 time.sleep(0.001)
+
 
 class Terminal(QtWidgets.QTextBrowser):
     """ Output text display widget """
@@ -105,13 +124,14 @@ class Terminal(QtWidgets.QTextBrowser):
         try:
             if bool(self.textCursor()):
                 self.moveCursor(QtGui.QTextCursor.End)
-        except Exception, e:
+        except Exception:
             pass
         self.insertPlainText(text)
 
     def stop(self):
         sys.stdout.reset()
         sys.stderr.reset()
+
 
 queue = Queue()
 sys.stdout = SESysStdOut(sys.stdout, queue)

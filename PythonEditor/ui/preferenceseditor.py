@@ -2,6 +2,7 @@ import os
 from PythonEditor.ui.Qt import QtWidgets
 from PythonEditor.utils import constants
 
+
 class PreferencesEditor(QtWidgets.QTreeView):
     """
     A display widget that allows editing of
