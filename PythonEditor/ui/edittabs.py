@@ -1,6 +1,5 @@
 from __future__ import print_function
 from PythonEditor.ui.Qt import QtWidgets, QtCore
-
 from PythonEditor.ui import editor as EDITOR
 
 
@@ -15,6 +14,7 @@ class EditTabs(QtWidgets.QTabWidget):
 
     def __init__(self):
         QtWidgets.QTabWidget.__init__(self)
+        self.setTabBar(TabBar())
         self.setTabsClosable(True)
         self.setTabShape(QtWidgets.QTabWidget.Rounded)
 
@@ -110,3 +110,11 @@ class EditTabs(QtWidgets.QTabWidget):
         self.tab_switched_signal.emit(previous, current, tabremoved)
         self.current_index = self.currentIndex()
         self.tab_count = self.count()
+
+
+class TabBar(QtWidgets.QTabBar):
+    def mouseDoubleClickEvent(self, event):
+        index = self.currentIndex()
+        title = self.tabText(index)
+        print(title)
+        super(TabBar, self).mouseDoubleClickEvent(event)
