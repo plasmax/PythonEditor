@@ -163,8 +163,7 @@ class FileHandler(QtCore.QObject):
 
             editor_count += 1
 
-            editor = self.editortabs.new_tab()
-            # tab_index = str(self.editortabs.currentIndex())
+            editor = self.editortabs.new_tab(tab_name=s.attrib['name'])
             s.attrib['uuid'] = editor.uid
             editor.setPlainText(s.text)
 
@@ -181,17 +180,17 @@ class FileHandler(QtCore.QObject):
         """
         root, subscripts = self.parsexml('subscript')
 
-        # tab_index = str(self.editortabs.currentIndex())
-
         found = False
         for s in subscripts:
             if s.attrib.get('uuid') == self.editor.uid:
                 s.text = self.editor.toPlainText()
+                s.attrib['name'] = self.editor.name
                 found = True
 
         if not found:
             sub = ElementTree.Element('subscript')
             sub.attrib['uuid'] = self.editor.uid
+            sub.attrib['name'] = self.editor.name
             root.append(sub)
             sub.text = self.editor.toPlainText()
 

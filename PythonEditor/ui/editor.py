@@ -67,6 +67,14 @@ class Editor(QtWidgets.QPlainTextEdit):
     def uid(self, uid):
         self._uid = uid
 
+    @property
+    def name(self):
+        return self._name
+
+    @name.setter
+    def name(self, name):
+        self._name = name
+
     def focusInEvent(self, event):
         self.focus_in_signal.emit(event)
         super(Editor, self).focusInEvent(event)
@@ -170,4 +178,3 @@ class Editor(QtWidgets.QPlainTextEdit):
                 and e.orientation() == QtCore.Qt.Orientation.Vertical):
             return self.wheel_signal.emit(e)
         super(Editor, self).wheelEvent(e)
-
