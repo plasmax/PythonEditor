@@ -71,11 +71,11 @@ class ShortcutHandler(QtCore.QObject):
 
         editor = self.editor
 
-        editor.tab_signal.connect(self.tab_handler)#, QtCore.Qt.UniqueConnection)
-        editor.return_signal.connect(self.return_handler)#, QtCore.Qt.UniqueConnection)
-        editor.wrap_signal.connect(self.wrap_text)#, QtCore.Qt.UniqueConnection)
-        editor.home_key_ctrl_alt_signal.connect(self.move_to_top)#, QtCore.Qt.UniqueConnection)
-        editor.end_key_ctrl_alt_signal.connect(self.move_to_bottom)#, QtCore.Qt.UniqueConnection)
+        editor.tab_signal.connect(self.tab_handler)
+        editor.return_signal.connect(self.return_handler)
+        editor.wrap_signal.connect(self.wrap_text)
+        editor.home_key_ctrl_alt_signal.connect(self.move_to_top)
+        editor.end_key_ctrl_alt_signal.connect(self.move_to_bottom)
         editor.ctrl_x_signal.connect(self.cut_line)
         editor.home_key_signal.connect(self.jump_to_start)
         editor.wheel_signal.connect(self.wheel_zoom)
@@ -452,9 +452,8 @@ class ShortcutHandler(QtCore.QObject):
 
     def join_lines(self):
         """
-        Joins current line(s) with next by
-        deleting the newline at the end
-        of the current line(s).
+        Joins current line(s) with next by deleting the
+        newline at the end of the current line(s).
         """
         textCursor = self.editor.textCursor()
 
@@ -463,6 +462,14 @@ class ShortcutHandler(QtCore.QObject):
             text = textCursor.selectedText().replace(u'\u2029', '')
             textCursor.insertText(text)
         else:
+            # TODO: lstrip whitespace off next line
+            # leaving only a single space.
+            # doc = self.editor.document()
+            # pos = textCursor.position()
+            # blockno = doc.findBlock(pos).blockNumber()
+            # print(doc.findBlockByNumber(blockno))
+            # print(blockno)
+
             textCursor.movePosition(QtGui.QTextCursor.EndOfLine)
             new_pos = textCursor.position()+1
             if new_pos >= self.editor.document().characterCount():
@@ -473,8 +480,7 @@ class ShortcutHandler(QtCore.QObject):
 
     def delete_lines(self):
         """
-        Deletes the contents of the
-        current line(s).
+        Deletes the contents of the current line(s).
         """
         textCursor = self.editor.textCursor()
 
