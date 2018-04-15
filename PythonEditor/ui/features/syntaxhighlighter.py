@@ -75,7 +75,7 @@ class Highlight(QtGui.QSyntaxHighlighter):
             # Single-quoted string, possibly containing escape sequences
             (r"'[^'\\]*(\\.[^'\\]*)*'", 0, self.styles['string']),
             # class and function names
-            ('(?:def |class )(\w+)(?:\()', 1, self.styles['names']),
+            ('(?:def |class |)(\w+)(?:\()', 1, self.styles['names']),
             # methods
             ('(?:\.)(\w+)(?:\()', 1, self.styles['instantiators']),
             # From '#' until a newline
