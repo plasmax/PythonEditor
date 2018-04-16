@@ -62,7 +62,8 @@ class EditTabs(QtWidgets.QTabWidget):
         index = 0 if count == 0 else count - 1
         editor = EDITOR.Editor(handle_shortcuts=False)
 
-        if tab_name is None:
+        if (tab_name is None
+                or not tab_name):
             tab_name = 'Tab {0}'.format(index)
 
         editor.name = tab_name
