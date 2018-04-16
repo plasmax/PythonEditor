@@ -32,11 +32,17 @@ class Editor(QtWidgets.QPlainTextEdit):
     ctrl_enter_signal = QtCore.Signal()
 
     relay_clear_output_signal = QtCore.Signal()
+    editingFinished = QtCore.Signal()
 
     def __init__(self, handle_shortcuts=True):
         super(Editor, self).__init__()
         self.setObjectName('Editor')
         self.setAcceptDrops(True)
+
+        self.setTabChangesFocus(True)
+        self._changed = False
+        self.textChanged.connect(self._handle_text_changed)
+
         linenumberarea.LineNumberArea(self)
         syntaxhighlighter.Highlight(self.document())
         self.contextmenu = contextmenu.ContextMenu(self)
@@ -75,9 +81,20 @@ class Editor(QtWidgets.QPlainTextEdit):
     def name(self, name):
         self._name = name
 
+    def _handle_text_changed(self):
+        self._changed = True
+
+    def setTextChanged(self, state=True):
+        self._changed = state
+
     def focusInEvent(self, event):
         self.focus_in_signal.emit(event)
         super(Editor, self).focusInEvent(event)
+
+    def focusOutEvent(self, event):
+        if self._changed:
+            self.editingFinished.emit()
+        super(Editor, self).focusOutEvent(event)
 
     def keyPressEvent(self, event):
         """
