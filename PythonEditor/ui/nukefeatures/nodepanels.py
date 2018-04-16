@@ -33,9 +33,13 @@ class PyKnobEdit(editor.Editor):
         super(PyKnobEdit, self).__init__()
         self._knob = knob
         self.textChanged.connect(self.updateValue)
+        self.editingFinished.connect(self.updateKnobChanged)
 
     def updateValue(self):
-        # if self._knob.name() != 'knobChanged':
+        if self._knob.name() != 'knobChanged':
+            self._knob.setValue(self.toPlainText())
+
+    def updateKnobChanged(self):
         self._knob.setValue(self.toPlainText())
 
     def hideEvent(self, event):
@@ -83,7 +87,6 @@ def addTextKnobs(node):
     # for k in node.allKnobs():
     #     if 'py' in k.Class().lower():
     #         stw.addTab(PyKnobEdit(k), k.name())
-
 
 def pythonKnobEdit():
     if nuke.thisKnob().name() == 'showPanel':  # TODO: is there a 'knob added' knobchanged?
