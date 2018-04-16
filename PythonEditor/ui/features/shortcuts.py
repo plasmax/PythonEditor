@@ -206,6 +206,21 @@ class ShortcutHandler(QtCore.QObject):
 
         return blocks
 
+    def offset_for_traceback(self, text=None):
+        """
+        Offset text using newlines to get proper line ref in tracebacks.
+        """
+        textCursor = self.editor.textCursor()
+
+        if text is None:
+            text = textCursor.selection().toPlainText()
+
+        selection_offset = textCursor.selectionStart()
+        doc = self.editor.document()
+        block_num = doc.findBlock(selection_offset).blockNumber()
+        text = '\n' * block_num + text
+        return text
+        
     def exec_selected_text(self):
         """
         Calls exec with either selected text
@@ -216,14 +231,7 @@ class ShortcutHandler(QtCore.QObject):
         whole_text = self.editor.toPlainText()
 
         if textCursor.hasSelection():
-            text = textCursor.selection().toPlainText()
-
-            # to get proper line ref in tracebacks
-            selection_offset = textCursor.selectionStart()
-            doc = self.editor.document()
-            block_num = doc.findBlock(selection_offset).blockNumber()
-            text = '\n' * block_num + text
-
+            text = self.offset_for_traceback()
         else:
             text = whole_text
 
@@ -233,16 +241,22 @@ class ShortcutHandler(QtCore.QObject):
 
     def exec_current_line(self):
         """
-        Calls exec with the text of
-        the line the cursor is on.
-        TODO: Find a good shortcut for this.
+        Calls exec with the text of the line the cursor is on.
+        Calls lstrip on current line text to allow exec of indented text.
         """
         textCursor = self.editor.textCursor()
-        textCursor.select(QtGui.QTextCursor.LineUnderCursor)
-        text = textCursor.selectedText()
         whole_text = self.editor.toPlainText()
 
+        if textCursor.hasSelection():
+            return self.exec_selected_text()
+
+        textCursor.select(QtGui.QTextCursor.LineUnderCursor)
+        # text = textCursor.selectedText().lstrip()
+        text = textCursor.selection().toPlainText().lstrip()
+        text = self.offset_for_traceback(text=text)
+
         # self.editor.setTextCursor(textCursor) #good for testing
+        whole_text = '\n'+whole_text
         execute.mainexec(text, whole_text)
 
     @QtCore.Slot()
@@ -667,8 +681,8 @@ class ShortcutHandler(QtCore.QObject):
             moved_end = textCursor.position()+selection_length
             textCursor.setPosition(moved_end, QtGui.QTextCursor.KeepAnchor)
         else:
-            new_pos = pos+start_offset, QtGui.QTextCursor.MoveAnchor
-            textCursor.setPosition(new_pos)
+            new_pos = pos+start_offset
+            textCursor.setPosition(new_pos, QtGui.QTextCursor.MoveAnchor)
 
         self.editor.setTextCursor(textCursor)
 
@@ -713,8 +727,8 @@ class ShortcutHandler(QtCore.QObject):
             textCursor.setPosition(moved_start, QtGui.QTextCursor.KeepAnchor)
         else:
             pos = textCursor.position()
-            new_pos = pos-end_offset, QtGui.QTextCursor.MoveAnchor
-            textCursor.setPosition(new_pos)
+            new_pos = pos-end_offset
+            textCursor.setPosition(new_pos, QtGui.QTextCursor.MoveAnchor)
 
         self.editor.setTextCursor(textCursor)
 
