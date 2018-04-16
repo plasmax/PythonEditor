@@ -163,7 +163,12 @@ class FileHandler(QtCore.QObject):
 
             editor_count += 1
 
-            editor = self.editortabs.new_tab(tab_name=s.attrib['name'])
+            try:
+                tab_name = s.attrib['name']
+            except KeyError:
+                tab_name = None
+
+            editor = self.editortabs.new_tab(tab_name=tab_name)
             s.attrib['uuid'] = editor.uid
             editor.setPlainText(s.text)
 
