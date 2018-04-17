@@ -39,7 +39,6 @@ class Editor(QtWidgets.QPlainTextEdit):
         self.setObjectName('Editor')
         self.setAcceptDrops(True)
 
-        self.setTabChangesFocus(True)
         self._changed = False
         self.textChanged.connect(self._handle_text_changed)
 
