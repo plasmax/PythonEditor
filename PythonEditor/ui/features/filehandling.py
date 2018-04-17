@@ -69,19 +69,21 @@ class FileHandler(QtCore.QObject):
             self.editor = editor
             self.connectSignals()
 
-    def connectSignals(self):
+   def connectSignals(self):
         # try:
         #     QtCore.Qt.UniqueConnection
         # except AttributeError as e:
         #     print(e)
         #     QtCore.Qt.UniqueConnection = 128
         self.editor.textChanged.connect(self.autosave)
+        self.editor.focus_in_signal.connect(self.check_document_modified)
         # document().modificationChanged ?
 
     def disconnectSignals(self):
         if not hasattr(self, 'editor'):
             return
         self.editor.textChanged.disconnect()
+        self.editor.focus_in_signal.disconnect()
 
     def readfile(self, path):
         """
@@ -145,6 +147,15 @@ class FileHandler(QtCore.QObject):
         xmlp = ElementTree.XMLParser(encoding="utf-8")
         parser = ElementTree.parse(path, xmlp)
         return parser
+
+    def check_document_modified(self):
+        """
+        On focus in event, check the xml
+        to see if there are any differences.
+        If there are, prompt the user to see 
+        if they want to update their tab.
+        """
+        pass  # TODO: implement this!
 
     def readautosave(self):
         """
