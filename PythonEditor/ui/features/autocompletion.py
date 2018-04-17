@@ -19,8 +19,9 @@ function_snippet = """def <!cursor>():"""
 
 method_snippet = """def <!cursor>(self):"""
 
-node_loop_snippet = "for node in nuke.selectedNodes():\n    "
-node_all_snippet = "for node in nuke.allNodes():\n    "
+node_loop_snippet = 'for node in nuke.selectedNodes():\n    '
+node_all_snippet = 'for node in nuke.allNodes():\n    '
+node_deselect_snippet = '[n.setSelected(False) for n in nuke.allNodes(recurseGroups=True)]'
 
 SNIPPETS = {
             'class [snippet]': class_snippet,
@@ -28,6 +29,7 @@ SNIPPETS = {
             'def [snippet] [method]': method_snippet,
             'for node selected [snippet]': node_loop_snippet,
             'for node all [snippet]': node_all_snippet,
+            '[n.setSelected(False) for n in nuke.allNodes(recurseGroups=True)]': node_deselect_snippet,
             }
 
 
