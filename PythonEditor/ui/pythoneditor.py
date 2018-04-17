@@ -41,18 +41,6 @@ class PythonEditor(QtWidgets.QWidget):
     def connect_signals(self):
         """
         Connect child widget slots to shortcuts.
-        TODO: Find a better place to set this up,
-        as the shortcuthandler will not be so readily
-        available when the editor is placed inside a
-        TabWidget. Could relay the signal through the
-        TabWidget, or find a global connection mechanism.
-
-        Alternatively, we can dynamically set ShortcutHandler's
-        editor widget depending on the TabWidget's current tab.
-        (In this case the QShortcut widget is the tabwidget and
-        ShortcutContext is WidgetWithChildrenShortcut or WindowShortcut).
-        This would mean keeping the ShortcutHandler here (and avoid
-        creating new shortcut objects for every tab).
         """
         sch = shortcuts.ShortcutHandler(self.edittabs)
         sch.clear_output_signal.connect(self.terminal.clear)
