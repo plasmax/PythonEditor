@@ -6,9 +6,8 @@ from PythonEditor.ui import pythoneditor
 
 class IDE(QtWidgets.QWidget):
     """
-    Container widget that allows the
-    whole package to be reloaded for
-    development purposes.
+    Container widget that allows the whole 
+    package to be reloaded.
     """
     def __init__(self):
         super(IDE, self).__init__()
@@ -23,7 +22,8 @@ class IDE(QtWidgets.QWidget):
 
     def reload_package(self):
         """
-        Reloads the whole package.
+        Reloads the whole package, except for modules 
+        in the not_reloadable list.
         """
         self.pythonEditor.deleteLater()
         del self.pythonEditor
