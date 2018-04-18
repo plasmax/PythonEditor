@@ -225,6 +225,8 @@ class ShortcutHandler(QtCore.QObject):
         """
         Calls exec with either selected text
         or all the text in the edit widget.
+        TODO: in some instances, this can still have the wrong line number in tracebacks!
+        Frustratingly, it seems to right itself after a normal execution (full text) run.
         """
         textCursor = self.editor.textCursor()
 
