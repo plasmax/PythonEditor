@@ -43,8 +43,11 @@ class SERedirector(object):
     def write(self, text):
         if self.sig is not None:
             self.sig.emitter.emit(text)
-        self.savedStream.write(text)
-
+        self.savedStream.write(text)  # TODO: should write
+                                      # if not visible, else
+                                      # should emit. not both!
+                                      # set a global variable on
+                                      # terminal visible/invisible.
     def close(self):
         self.flush()
 
@@ -67,10 +70,13 @@ class SESysStdErr(SERedirector, PySingleton):
         print('reset stream err')
 
 
-class Terminal(QtWidgets.QTextEdit):
+class Terminal(QtWidgets.QPlainTextEdit):
     """ Output text display widget """
+    link_activated = QtCore.Signal(str)
+
     def __init__(self):
         super(Terminal, self).__init__()
+        self.setMaximumBlockCount(100)
         self.setObjectName('Terminal')
         self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
         self.setReadOnly(True)
@@ -79,12 +85,16 @@ class Terminal(QtWidgets.QTextEdit):
 
     @QtCore.Slot(str)
     def receive(self, text):
-        try:
-            if bool(self.textCursor()):
-                self.moveCursor(QtGui.QTextCursor.End)
-        except Exception:
-            pass
-        self.insertPlainText(text)
+        # try:
+        #     textCursor = self.textCursor()
+        #     if bool(textCursor):
+        #         self.moveCursor(QtGui.QTextCursor.End)
+        #         # pos = textCursor.position()
+        #         # self.moveCursor(pos-1)
+        # except Exception:
+        #     pass
+        # self.insertPlainText(text)
+        self.appendHtml(text)
 
     def stop(self):
         sys.stdout.reset()
@@ -111,3 +121,10 @@ class Terminal(QtWidgets.QTextEdit):
             sys.stderr = SESysStdErr(sys.stderr, speaker)
 
         speaker.emitter.connect(self.receive)
+
+    def mousePressEvent(self, e):
+        if (e.button() == QtCore.Qt.LeftButton):
+            clickedAnchor = self.anchorAt(e.pos())
+            if clickedAnchor:
+                self.link_activated.emit(clickedAnchor)
+        super(Terminal, self).mousePressEvent(e)
