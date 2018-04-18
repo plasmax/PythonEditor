@@ -69,7 +69,7 @@ class FileHandler(QtCore.QObject):
             self.editor = editor
             self.connectSignals()
 
-   def connectSignals(self):
+    def connectSignals(self):
         # try:
         #     QtCore.Qt.UniqueConnection
         # except AttributeError as e:
@@ -152,7 +152,7 @@ class FileHandler(QtCore.QObject):
         """
         On focus in event, check the xml
         to see if there are any differences.
-        If there are, prompt the user to see 
+        If there are, prompt the user to see
         if they want to update their tab.
         """
         pass  # TODO: implement this!

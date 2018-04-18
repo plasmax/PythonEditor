@@ -220,7 +220,7 @@ class ShortcutHandler(QtCore.QObject):
         block_num = doc.findBlock(selection_offset).blockNumber()
         text = '\n' * block_num + text
         return text
-        
+
     def exec_selected_text(self):
         """
         Calls exec with either selected text
@@ -658,7 +658,6 @@ class ShortcutHandler(QtCore.QObject):
 
         textCursor.setPosition(end, QtGui.QTextCursor.MoveAnchor)
         textCursor.movePosition(QtGui.QTextCursor.EndOfLine)
-        new_end = textCursor.position()
 
         start_offset = start-new_start
 
