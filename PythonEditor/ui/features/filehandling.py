@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 from __future__ import print_function
 import unicodedata
 from io import open
-from xml.etree import ElementTree
+from xml.etree import cElementTree as ElementTree
 from PythonEditor.ui.Qt import QtCore
 from PythonEditor.utils.constants import (AUTOSAVE_FILE,
                                           XML_HEADER,
@@ -77,7 +77,9 @@ class FileHandler(QtCore.QObject):
         #     QtCore.Qt.UniqueConnection = 128
         self.editor.textChanged.connect(self.autosave)
         self.editor.focus_in_signal.connect(self.check_document_modified)
-        # document().modificationChanged ?
+        # document().modificationChanged ?  # TODO: use this if it is faster!
+                                            # saving the xml every keystroke
+                                            # is quite slow.
 
     def disconnectSignals(self):
         if not hasattr(self, 'editor'):

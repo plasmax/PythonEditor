@@ -43,6 +43,7 @@ class SERedirector(object):
     def write(self, text):
         if self.sig is not None:
             self.sig.emitter.emit(text)
+        # sys.__stdout__.write(text)  # TODO: should write
         self.savedStream.write(text)  # TODO: should write
                                       # if not visible, else
                                       # should emit. not both!
@@ -68,6 +69,8 @@ class SESysStdErr(SERedirector, PySingleton):
     def reset(self):
         sys.stderr = self.savedStream
         print('reset stream err')
+    # def write(self, text):  # TODO: Write html links here
+                              # (or do it in a post process)
 
 
 class Terminal(QtWidgets.QPlainTextEdit):
@@ -76,7 +79,7 @@ class Terminal(QtWidgets.QPlainTextEdit):
 
     def __init__(self):
         super(Terminal, self).__init__()
-        self.setMaximumBlockCount(100)
+        # self.setMaximumBlockCount(100)
         self.setObjectName('Terminal')
         self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
         self.setReadOnly(True)
@@ -85,16 +88,17 @@ class Terminal(QtWidgets.QPlainTextEdit):
 
     @QtCore.Slot(str)
     def receive(self, text):
-        # try:
-        #     textCursor = self.textCursor()
-        #     if bool(textCursor):
-        #         self.moveCursor(QtGui.QTextCursor.End)
-        #         # pos = textCursor.position()
-        #         # self.moveCursor(pos-1)
-        # except Exception:
-        #     pass
-        # self.insertPlainText(text)
-        self.appendHtml(text)
+        try:
+            textCursor = self.textCursor()
+            if bool(textCursor):
+                self.moveCursor(QtGui.QTextCursor.End)
+                # pos = textCursor.position()
+                # self.moveCursor(pos-1)
+        except Exception:
+            pass
+        self.insertPlainText(text)
+
+        # self.appendHtml(text)
 
     def stop(self):
         sys.stdout.reset()

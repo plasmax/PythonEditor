@@ -1,5 +1,5 @@
 from PythonEditor.ui.Qt import QtWidgets, QtCore
-from PythonEditor.ui.terminal import Terminal
+from PythonEditor.ui import terminal
 from PythonEditor.ui import shortcuteditor
 from PythonEditor.ui import preferenceseditor
 from PythonEditor.ui import edittabs
@@ -27,7 +27,7 @@ class PythonEditor(QtWidgets.QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
 
         self.edittabs = edittabs.EditTabs()
-        self.terminal = Terminal()
+        self.terminal = terminal.Terminal()
 
         self.setup_menu()
 
