@@ -38,6 +38,9 @@ class Editor(QtWidgets.QPlainTextEdit):
         super(Editor, self).__init__()
         self.setObjectName('Editor')
         self.setAcceptDrops(True)
+        font = QtGui.QFont('Consolas')
+        font.setPointSize(9)
+        self.setFont(font)
 
         self._changed = False
         self.textChanged.connect(self._handle_text_changed)
@@ -45,7 +48,7 @@ class Editor(QtWidgets.QPlainTextEdit):
         linenumberarea.LineNumberArea(self)
         syntaxhighlighter.Highlight(self.document())
         self.contextmenu = contextmenu.ContextMenu(self)
-        self.setStyleSheet('background:#333;color:#EEE;')  # Main Colors
+        self.setStyleSheet('background:#272822;color:#EEE;')  # Main Colors
 
         self.wait_for_autocomplete = True
         self.autocomplete = autocompletion.AutoCompleter(self)
