@@ -20,7 +20,9 @@ class Highlight(QtGui.QSyntaxHighlighter):
             'numbers': self.format([174, 129, 255]),
             'names': self.format([166, 226, 46]),
             'arguments': self.format([253, 151, 31]),
-            'instantiators': self.format([102, 217, 239]),
+            'instantiators': self.format([102, 217, 239], 'italic'),
+            'exceptions': self.format([102, 217, 239], 'italic'),
+            'methods': self.format([102, 217, 239]),
             }
 
         self.arguments = [
@@ -38,6 +40,57 @@ class Highlight(QtGui.QSyntaxHighlighter):
         self.instantiators = [
             'def', 'class'
             ]
+
+        self.exceptions = ['BaseException',
+                           'SystemExit',
+                           'KeyboardInterrupt',
+                           'GeneratorExit',
+                           'Exception',
+                           'StopIteration',
+                           'StandardError',
+                           'BufferError',
+                           'ArithmeticError',
+                           'FloatingPointError',
+                           'OverflowError',
+                           'ZeroDivisionError',
+                           'AssertionError',
+                           'AttributeError',
+                           'EnvironmentError',
+                           'IOError',
+                           'OSError',
+                           'WindowsError',
+                           'VMSError',
+                           'EOFError',
+                           'ImportError',
+                           'LookupError',
+                           'IndexError',
+                           'KeyError',
+                           'MemoryError',
+                           'NameError',
+                           'UnboundLocalError',
+                           'ReferenceError',
+                           'RuntimeError',
+                           'NotImplementedError',
+                           'SyntaxError',
+                           'IndentationError',
+                           'TabError',
+                           'SystemError',
+                           'TypeError',
+                           'ValueError',
+                           'UnicodeError',
+                           'UnicodeDecodeError',
+                           'UnicodeEncodeError',
+                           'UnicodeTranslateError',
+                           'Warning',
+                           'DeprecationWarning',
+                           'PendingDeprecationWarning',
+                           'RuntimeWarning',
+                           'SyntaxWarning',
+                           'UserWarning',
+                           'FutureWarning',
+                           'ImportWarning',
+                           'UnicodeWarning',
+                           'BytesWarning']
 
         self.operatorKeywords = [
             '=', '==', '!=', '<', '<=', '>', '>=',
@@ -65,6 +118,8 @@ class Highlight(QtGui.QSyntaxHighlighter):
                   for i in self.numbers]
         rules += [(r'\b%s\b' % i, 0, self.styles['instantiators'])
                   for i in self.instantiators]
+        rules += [(r'\b%s\b' % i, 0, self.styles['exceptions'])
+                  for i in self.exceptions]
 
         rules += [
 
@@ -77,7 +132,7 @@ class Highlight(QtGui.QSyntaxHighlighter):
             # class and function names
             ('(?:def |class |)(\w+)(?:\()', 1, self.styles['names']),
             # methods
-            ('(?:\.)(\w+)(?:\()', 1, self.styles['instantiators']),
+            ('(?:\.)(\w+)(?:\()', 1, self.styles['methods']),
             # From '#' until a newline
             (r'#[^\n]*', 0, self.styles['comment']),
             ]
