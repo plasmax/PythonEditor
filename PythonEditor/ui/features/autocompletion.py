@@ -15,13 +15,14 @@ class_snippet = """class <!cursor>():
         super(, self).__init__()
 """
 
-function_snippet = """def <!cursor>():"""
+function_snippet = 'def <!cursor>():'
 
-method_snippet = """def <!cursor>(self):"""
+method_snippet = 'def <!cursor>(self):'
 
 node_loop_snippet = 'for node in nuke.selectedNodes():\n    '
 node_all_snippet = 'for node in nuke.allNodes():\n    '
-node_deselect_snippet = '[n.setSelected(False) for n in nuke.allNodes(recurseGroups=True)]'
+node_deselect_snippet = 'n.setSelected(False) for n in '\
+                        'nuke.allNodes(recurseGroups=True)]'
 
 SNIPPETS = {
             'class [snippet]': class_snippet,
@@ -29,7 +30,7 @@ SNIPPETS = {
             'def [snippet] [method]': method_snippet,
             'for node selected [snippet]': node_loop_snippet,
             'for node all [snippet]': node_all_snippet,
-            '[n.setSelected(False) for n in nuke.allNodes(recurseGroups=True)]': node_deselect_snippet,
+            'n.setSelected(False) [snippet]': node_deselect_snippet,
             }
 
 
@@ -64,12 +65,17 @@ class AutoCompleter(QtCore.QObject):
     @QtCore.Slot(QtGui.QFocusEvent)
     def _focusInEvent(self, event):
         """
-        Connected to editor focusInEvent
-        via signal. Sets new completer
-        if none present.
+        Connected to editor focusInEvent via signal.
+        """
+        self.set_completer()
+
+    def set_completer(self):
+        """
+        Sets new completer if none present.
         """
         if self.completer is None:
-            wordlist = list(set(re.findall('\w+', self.editor.toPlainText())))
+            wordlist = list(set(re.findall('\w+',
+                                self.editor.toPlainText())))
             self.completer = Completer(wordlist)
             self.completer.setParent(self)
             self.completer.setWidget(self.editor)
@@ -159,6 +165,13 @@ class AutoCompleter(QtCore.QObject):
         global scope.
         TODO: Substring matching ;)
         """
+        if self.completer is None:  # WARNING: Previously, this
+                                    # didn't need to be here.
+                                    # Something about adding
+                                    # another connection to the
+                                    # focus_in_signal made this
+                                    # necessary.
+            self.set_completer()
         cp = self.completer
         variables = __main__.__dict__.keys()
         variables = [variables
@@ -183,6 +196,13 @@ class AutoCompleter(QtCore.QObject):
         """
         qslm = QtCore.QStringListModel()
         qslm.setStringList(stringlist)
+        if self.completer is None:  # WARNING: Previously, this
+                                    # didn't need to be here.
+                                    # Something about adding
+                                    # another connection to the
+                                    # focus_in_signal made this
+                                    # necessary.
+            self.set_completer()
         self.completer.setModel(qslm)
 
     def showPopup(self):
@@ -242,7 +262,7 @@ class AutoCompleter(QtCore.QObject):
         """
         Shows a tooltip with function documentation
         and input arguments if available.
-        TODO: failing return __doc__, 
+        TODO: failing return __doc__,
         try to get me the function code!
         """
         _ = {}
