@@ -11,7 +11,7 @@ sys.path.append('/made/up/example/path/PythonEditor')
 
 Then add this to your menu.py
 ```python
-__import__('PythonEditor').ui.nukefeatures.nukeinit.setup()
+import PythonEditor
 ```
 
 ![ScreenShot](/media/PythonEditorScreenshot.jpg)
