@@ -52,10 +52,34 @@ class AutoCompleter(QtCore.QObject):
         super(AutoCompleter, self).__init__()
 
         self.loadedModules = sys.modules.keys()
-        self.completer = None
+        self._completer = None
 
         self.editor = editor
         self.connect_signals()
+
+    @property
+    def completer(self):
+        """
+        Sets new completer if none present.
+        # WARNING: Previously, this
+        # didn't need to be here.
+        # Something about adding
+        # another connection to the
+        # focus_in_signal made this
+        # necessary.
+        """
+        if self._completer is None:
+            wordlist = list(set(re.findall('\w+',
+                                self.editor.toPlainText())))
+            self._completer = Completer(wordlist)
+            self._completer.setParent(self)
+            self._completer.setWidget(self.editor)
+            self._completer.activated.connect(self.insertCompletion)
+        return self._completer
+
+    @completer.setter
+    def completer(self, completer):
+        self._completer = completer
 
     def connect_signals(self):
         self.editor.focus_in_signal.connect(self._focusInEvent)
@@ -67,19 +91,7 @@ class AutoCompleter(QtCore.QObject):
         """
         Connected to editor focusInEvent via signal.
         """
-        self.set_completer()
-
-    def set_completer(self):
-        """
-        Sets new completer if none present.
-        """
-        if self.completer is None:
-            wordlist = list(set(re.findall('\w+',
-                                self.editor.toPlainText())))
-            self.completer = Completer(wordlist)
-            self.completer.setParent(self)
-            self.completer.setWidget(self.editor)
-            self.completer.activated.connect(self.insertCompletion)
+        return self.completer
 
     def word_under_cursor(self):
         """
@@ -165,13 +177,6 @@ class AutoCompleter(QtCore.QObject):
         global scope.
         TODO: Substring matching ;)
         """
-        if self.completer is None:  # WARNING: Previously, this
-                                    # didn't need to be here.
-                                    # Something about adding
-                                    # another connection to the
-                                    # focus_in_signal made this
-                                    # necessary.
-            self.set_completer()
         cp = self.completer
         variables = __main__.__dict__.keys()
         variables = [variables
@@ -196,13 +201,6 @@ class AutoCompleter(QtCore.QObject):
         """
         qslm = QtCore.QStringListModel()
         qslm.setStringList(stringlist)
-        if self.completer is None:  # WARNING: Previously, this
-                                    # didn't need to be here.
-                                    # Something about adding
-                                    # another connection to the
-                                    # focus_in_signal made this
-                                    # necessary.
-            self.set_completer()
         self.completer.setModel(qslm)
 
     def showPopup(self):
