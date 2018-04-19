@@ -438,6 +438,9 @@ class ShortcutHandler(QtCore.QObject):
         elif key in ['{', '}']:
             key_in = '{'
             key_out = '}'
+        elif key in ['<', '>']:
+            key_in = '<'
+            key_out = '>'
 
         textCursor = self.editor.textCursor()
         text = key_in + textCursor.selectedText() + key_out
