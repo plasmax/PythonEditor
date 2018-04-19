@@ -1,5 +1,6 @@
 from __future__ import print_function
 import __main__
+import re
 from functools import partial
 from PythonEditor.ui.Qt import QtWidgets, QtGui, QtCore
 from PythonEditor.core import execute
@@ -116,48 +117,7 @@ class ShortcutHandler(QtCore.QObject):
                     'Ctrl+H': self.printHelp,
                     'Ctrl+T': self.printType,
                     'Ctrl+Shift+F': self.searchInput,
-                    'Ctrl+L': self.select_lines,
-                    'Ctrl+J': self.join_lines,
-                    'Ctrl+/': self.comment_toggle,
-                    'Ctrl+]': self.indent,
-                    'Ctrl+[': self.unindent,
-                    'Shift+Tab': self.unindent,
-                    'Ctrl+=': self.zoomIn,
-                    'Ctrl++': self.zoomIn,
-                    'Ctrl+-': self.zoomOut,
-                    'Ctrl+Shift+K': self.delete_lines,
-                    'Ctrl+D': notimp('select word or next word'),
-                    'Ctrl+M': notimp('jump to nearest bracket'),
-                    'Ctrl+Shift+M': notimp('select between brackets'),
-                    'Ctrl+Shift+Delete': self.delete_to_eol,
-                    'Ctrl+Shift+Backspace': self.delete_to_sol,
-                    'Ctrl+Shift+Up': self.move_lines_up,
-                    'Ctrl+Shift+Down': self.move_lines_down,
-                    'Ctrl+Shift+Alt+Up': notimp('duplicate cursor up'),
-                    'Ctrl+Shift+Alt+Down': notimp('duplicate cursor down'),
-                    }
-
-        if hasattr(self, 'editortabs'):
-            tab_shortcuts = {
-                        'Ctrl+Shift+N': self.editortabs.new_tab,
-                        'Ctrl+Shift+W': self.editortabs.close_current_tab,
-                        'Ctrl+Shift+T': notimp('reopen previous tab'),
-                        }
-            editor_shortcuts.update(tab_shortcuts)
-
-        def doc(f): return f.func_doc if hasattr(f, 'func_doc') else f.__doc__
-        self.shortcut_dict = {key: doc(func)
-                              for key, func in editor_shortcuts.items()}
-
-        signal_dict = {
-            'Tab': self.tab_handler.__doc__,
-            'Return/Enter': self.return_handler.__doc__,
-            '\' " ( ) [ ] \{ \}': self.wrap_text.__doc__,
-            'Ctrl+Alt+Home': self.move_to_top.__doc__,
-            'Ctrl+Alt+End': self.move_to_bottom.__doc__,
-            'Ctrl+X': self.cut_line.__doc__,
-            'Home': self.jump_to_start.__doc__,
-            'Ctrl+Mouse Wheel': self.wheel_zoom.__doc__,
+                    'Ctrl+_doc__,
             'Ctrl+Backspace': '\n'+' '*8+'Clear Output Terminal\n',
             }
 
@@ -261,12 +221,12 @@ class ShortcutHandler(QtCore.QObject):
         whole_text = '\n'+whole_text
         execute.mainexec(text, whole_text)
 
-    @QtCore.Slot()
-    def return_handler(self):
+    @QtCore.Slot(QtGui.QKeyEvent)
+    def return_handler(self, event):
         """
         New line with auto-indentation.
         """
-        self.indent_next_line()
+        return self.indent_next_line()
 
     def indent_next_line(self):
         """
@@ -289,6 +249,7 @@ class ShortcutHandler(QtCore.QObject):
 
         if not self.editor.wait_for_autocomplete:
             textCursor.insertText(insertion)
+            self.editor.setTextCursor(textCursor)
 
     @QtCore.Slot()
     def cut_line(self):
@@ -526,6 +487,29 @@ class ShortcutHandler(QtCore.QObject):
             textCursor.setPosition(next_line, QtGui.QTextCursor.KeepAnchor)
 
         textCursor.insertText('')
+
+    def select_between_brackets(self):
+        """
+        Selects text between [] {} ()
+        TODO: implement [] and {}
+        """
+        textCursor = self.editor.textCursor()
+        pos = textCursor.position()
+        whole_text = self.editor.toPlainText()
+
+        first_half = whole_text[:pos]
+        second_half = whole_text[pos:]
+        first_pos = first_half.rfind('(')
+        second_pos = second_half.find(')')
+
+        if first_pos and second_pos:
+            first_pos = first_pos + 1
+            second_pos = second_pos + pos
+            whole_text = self.editor.toPlainText()
+
+            textCursor.setPosition(first_pos, QtGui.QTextCursor.MoveAnchor)
+            textCursor.setPosition(second_pos, QtGui.QTextCursor.KeepAnchor)
+            self.editor.setTextCursor(textCursor)
 
     def searchInput(self):
         """
