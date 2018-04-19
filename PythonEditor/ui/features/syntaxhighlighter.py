@@ -1,5 +1,34 @@
 from PythonEditor.ui.Qt import QtGui, QtCore
 
+themes = {
+  'Monokai': {
+            'keyword': ((249, 38, 114), ''),
+            'string': ((230, 219, 116), ''),
+            'comment': ((140, 140, 140), ''),
+            'numbers': ((174, 129, 255), ''),
+            'inherited': ((102, 217, 239), 'italic'),
+            'names': ((166, 226, 46), ''),
+            'arguments': ((253, 151, 31), ''),
+            'formatters': ((114, 209, 221), 'italic'),
+            'instantiators': ((102, 217, 239), 'italic'),
+            'exceptions': ((102, 217, 239), 'italic'),
+            'methods': ((102, 217, 239), ''),
+            },
+  'Monokai Smooth': {
+            'keyword': ((255, 97, 136), ''),
+            'string': ((255, 216, 102), ''),
+            'comment': ((108, 106, 108), 'italic'),
+            'numbers': ((171, 157, 242), ''),
+            'inherited': ((114, 209, 221), 'italic'),
+            'names': ((169, 220, 118), ''),
+            'arguments': ((252, 152, 103), ''),
+            'formatters': ((114, 209, 221), 'italic'),
+            'instantiators': ((114, 209, 221), 'italic'),
+            'exceptions': ((114, 209, 221), 'italic'),
+            'methods': ((169, 220, 101), ''),
+            }
+}
+
 
 class Highlight(QtGui.QSyntaxHighlighter):
     """
@@ -13,17 +42,9 @@ class Highlight(QtGui.QSyntaxHighlighter):
         super(Highlight, self).__init__(document)
         self.setObjectName('Highlight')
 
-        self.styles = {
-            'keyword': self.format([249, 38, 114]),
-            'string': self.format([230, 219, 116]),
-            'comment': self.format([140, 140, 140]),
-            'numbers': self.format([174, 129, 255]),
-            'names': self.format([166, 226, 46]),
-            'arguments': self.format([253, 151, 31]),
-            'instantiators': self.format([102, 217, 239], 'italic'),
-            'exceptions': self.format([102, 217, 239], 'italic'),
-            'methods': self.format([102, 217, 239]),
-            }
+        theme = themes['Monokai Smooth']
+        self.styles = {feature: self.format(*style)
+                       for feature, style in theme.items()}
 
         self.arguments = [
             'self', 'cls', 'args', 'kwargs'
@@ -107,7 +128,7 @@ class Highlight(QtGui.QSyntaxHighlighter):
         # rules
         rules = []
 
-        rules += [('(?: \()(\w+)(?:\))', 1, self.styles['names'])]
+        rules += [('(?:class \w+\()(\w+)(?:\))', 1, self.styles['inherited'])]
         rules += [(r'\b%s\b' % i, 0, self.styles['arguments'])
                   for i in self.arguments]
         rules += [(r'\b%s\b' % i, 0, self.styles['keyword'])
@@ -123,6 +144,8 @@ class Highlight(QtGui.QSyntaxHighlighter):
 
         rules += [
 
+            # string formatters
+            (r'([rfb])(?:\'|\")', 0, self.styles['formatters']),
             # integers
             (r'\b[0-9]+\b', 0, self.styles['numbers']),
             # Double-quoted string, possibly containing escape sequences

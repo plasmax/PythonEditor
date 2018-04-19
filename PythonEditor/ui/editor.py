@@ -9,12 +9,22 @@ from PythonEditor.ui.features import (shortcuts,
                                       contextmenu)
 
 CTRL_ALT = QtCore.Qt.ControlModifier | QtCore.Qt.AltModifier
+themes = {
+    'Monokai': 'background:#272822;color:#EEE;',
+    'Monokai Smooth': 'background:rgb(45,42,46);color:rgb(252,252,250);',
+}
 
 
 class Editor(QtWidgets.QPlainTextEdit):
     """
     Code Editor widget.
     """
+    wrap_types = ['\'', '"',
+                  '[', ']',
+                  '(', ')',
+                  '{', '}',
+                  '<', '>']
+
     tab_signal = QtCore.Signal()
     return_signal = QtCore.Signal()
     wrap_signal = QtCore.Signal(str)
@@ -48,17 +58,10 @@ class Editor(QtWidgets.QPlainTextEdit):
         linenumberarea.LineNumberArea(self)
         syntaxhighlighter.Highlight(self.document())
         self.contextmenu = contextmenu.ContextMenu(self)
-        self.setStyleSheet('background:#272822;color:#EEE;')  # Main Colors
+        self.setStyleSheet(themes['Monokai Smooth'])
 
         self.wait_for_autocomplete = True
         self.autocomplete = autocompletion.AutoCompleter(self)
-        self.wrap_types = [
-                            '\'', '"',
-                            '[', ']',
-                            '(', ')',
-                            '{', '}'
-                            '<', '>'
-                            ]  # for wrap_signal
 
         if handle_shortcuts:
             sch = shortcuts.ShortcutHandler(self, use_tabs=False)
