@@ -89,14 +89,14 @@ class Terminal(QtWidgets.QPlainTextEdit):
 
     @QtCore.Slot(str)
     def receive(self, text):
-        # try:
-        #     textCursor = self.textCursor()
-        #     if bool(textCursor):
-        #         self.moveCursor(QtGui.QTextCursor.End)
-        #         # pos = textCursor.position()
-        #         # self.moveCursor(pos-1)
-        # except Exception:
-        #     pass
+        try:
+            textCursor = self.textCursor()
+            if bool(textCursor):
+                self.moveCursor(QtGui.QTextCursor.End)
+                # pos = textCursor.position()
+                # self.moveCursor(pos-1)
+        except Exception:
+            pass
         self.insertPlainText(text)
         # self.appendHtml(text)
 
