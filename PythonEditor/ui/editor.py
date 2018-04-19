@@ -26,7 +26,7 @@ class Editor(QtWidgets.QPlainTextEdit):
                   '<', '>']
 
     tab_signal = QtCore.Signal()
-    return_signal = QtCore.Signal()
+    return_signal = QtCore.Signal(QtGui.QKeyEvent)
     wrap_signal = QtCore.Signal(str)
     focus_in_signal = QtCore.Signal(QtGui.QFocusEvent)
     key_pressed_signal = QtCore.Signal(QtGui.QKeyEvent)
@@ -114,7 +114,7 @@ class Editor(QtWidgets.QPlainTextEdit):
             if event.key() == QtCore.Qt.Key_Tab:
                 return self.tab_signal.emit()
             if event.key() == QtCore.Qt.Key_Return:
-                return self.return_signal.emit()
+                return self.return_signal.emit(event)
 
         if (event.key() == QtCore.Qt.Key_Return
                 and event.modifiers() == QtCore.Qt.ControlModifier):
