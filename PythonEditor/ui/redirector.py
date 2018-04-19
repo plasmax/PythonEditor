@@ -105,6 +105,9 @@ class Terminal(QtWidgets.QTextBrowser):
         self.setObjectName('Terminal')
         self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
         self.setReadOnly(True)
+        font = QtGui.QFont('Consolas')
+        font.setPointSize(9)
+        self.setFont(font)
 
         self.destroyed.connect(self.stop)
         self.setup_worker()
