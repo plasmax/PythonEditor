@@ -1,6 +1,6 @@
 from __future__ import print_function
 import sys
-from queue import Queue
+from Queue import Queue
 from PythonEditor.ui.Qt import QtWidgets, QtCore, QtGui
 
 _QUEUE = Queue()
@@ -115,25 +115,12 @@ class Output(QtWidgets.QPlainTextEdit):
         self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
         self.setReadOnly(True)
 
-        # self.destroyed.connect(self.stop)
-        # self.setup_timer()
         self.setup_thread()
 
     def setup_thread(self):
         self.pool = QtCore.QThreadPool.globalInstance()
         self.worker = Worker(self)
         self.pool.start(self.worker)
-
-    def setup_timer(self):
-        self.timer = QtCore.QTimer()
-        self.timer.timeout.connect(self.q_pull)
-
-    @QtCore.Slot()
-    def q_pull(self):
-        global _QUEUE
-        if not _QUEUE.empty():
-            text = _QUEUE.get()
-            self.append_output(text)
 
     def append_output(self, text):
         try:
@@ -149,14 +136,12 @@ class Output(QtWidgets.QPlainTextEdit):
         global STEAL_OUTPUT
         STEAL_OUTPUT = True
         self.worker.active = True
-        # self.timer.start()
         super(Output, self).showEvent(e)
 
     def hideEvent(self, e):
         global STEAL_OUTPUT
         STEAL_OUTPUT = False
         self.worker.active = False
-        # self.timer.stop()
         super(Output, self).hideEvent(e)
 
 def setup():

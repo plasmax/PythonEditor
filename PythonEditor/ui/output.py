@@ -1,6 +1,6 @@
 from __future__ import print_function
 import sys
-from queue import Queue
+from Queue import Queue
 from PythonEditor.ui.Qt import QtWidgets, QtCore, QtGui
 
 _QUEUE = Queue()
