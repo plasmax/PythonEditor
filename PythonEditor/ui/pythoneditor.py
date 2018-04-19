@@ -43,6 +43,7 @@ class PythonEditor(QtWidgets.QWidget):
         Connect child widget slots to shortcuts.
         """
         sch = shortcuts.ShortcutHandler(self.edittabs)
+        sch.clear_output_signal.connect(self.terminal.clear)
         self.shortcuteditor = shortcuteditor.ShortcutEditor(sch)
         self.preferenceseditor = preferenceseditor.PreferencesEditor()
 
