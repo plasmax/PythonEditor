@@ -117,7 +117,48 @@ class ShortcutHandler(QtCore.QObject):
                     'Ctrl+H': self.printHelp,
                     'Ctrl+T': self.printType,
                     'Ctrl+Shift+F': self.searchInput,
-                    'Ctrl+_doc__,
+                    'Ctrl+L': self.select_lines,
+                    'Ctrl+J': self.join_lines,
+                    'Ctrl+/': self.comment_toggle,
+                    'Ctrl+]': self.indent,
+                    'Ctrl+[': self.unindent,
+                    'Shift+Tab': self.unindent,
+                    'Ctrl+=': self.zoomIn,
+                    'Ctrl++': self.zoomIn,
+                    'Ctrl+-': self.zoomOut,
+                    'Ctrl+Shift+K': self.delete_lines,
+                    'Ctrl+D': notimp('select word or next word'),
+                    'Ctrl+M': notimp('jump to nearest bracket'),
+                    'Ctrl+Shift+M': notimp('select between brackets'),
+                    'Ctrl+Shift+Delete': self.delete_to_eol,
+                    'Ctrl+Shift+Backspace': self.delete_to_sol,
+                    'Ctrl+Shift+Up': self.move_lines_up,
+                    'Ctrl+Shift+Down': self.move_lines_down,
+                    'Ctrl+Shift+Alt+Up': notimp('duplicate cursor up'),
+                    'Ctrl+Shift+Alt+Down': notimp('duplicate cursor down'),
+                    }
+
+        if hasattr(self, 'editortabs'):
+            tab_shortcuts = {
+                        'Ctrl+Shift+N': self.editortabs.new_tab,
+                        'Ctrl+Shift+W': self.editortabs.close_current_tab,
+                        'Ctrl+Shift+T': notimp('reopen previous tab'),
+                        }
+            editor_shortcuts.update(tab_shortcuts)
+
+        def doc(f): return f.func_doc if hasattr(f, 'func_doc') else f.__doc__
+        self.shortcut_dict = {key: doc(func)
+                              for key, func in editor_shortcuts.items()}
+
+        signal_dict = {
+            'Tab': self.tab_handler.__doc__,
+            'Return/Enter': self.return_handler.__doc__,
+            '\' " ( ) [ ] \{ \}': self.wrap_text.__doc__,
+            'Ctrl+Alt+Home': self.move_to_top.__doc__,
+            'Ctrl+Alt+End': self.move_to_bottom.__doc__,
+            'Ctrl+X': self.cut_line.__doc__,
+            'Home': self.jump_to_start.__doc__,
+            'Ctrl+Mouse Wheel': self.wheel_zoom.__doc__,
             'Ctrl+Backspace': '\n'+' '*8+'Clear Output Terminal\n',
             }
 
