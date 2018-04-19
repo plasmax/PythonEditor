@@ -14,4 +14,4 @@ Then add this to your menu.py
 import PythonEditor
 ```
 
-![ScreenShot](/media/PythonEditorScreenshot.jpg)
+![ScreenShot](/media/Screenshot.jpg)
