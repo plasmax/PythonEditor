@@ -157,7 +157,7 @@ class FileHandler(QtCore.QObject):
         If there are, prompt the user to see
         if they want to update their tab.
         """
-        pass  # TODO: implement this!
+        pass  # TODO: implement check_document_modified on focusInEvent
 
     def readautosave(self):
         """
