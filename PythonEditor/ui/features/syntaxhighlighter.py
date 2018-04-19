@@ -7,7 +7,8 @@ themes = {
             'comment': ((140, 140, 140), ''),
             'numbers': ((174, 129, 255), ''),
             'inherited': ((102, 217, 239), 'italic'),
-            'names': ((166, 226, 46), ''),
+            'class_names': ((166, 226, 46), ''),
+            'function_names': ((166, 226, 46), ''),
             'arguments': ((253, 151, 31), ''),
             'formatters': ((114, 209, 221), 'italic'),
             'instantiators': ((102, 217, 239), 'italic'),
@@ -20,8 +21,9 @@ themes = {
             'comment': ((108, 106, 108), 'italic'),
             'numbers': ((171, 157, 242), ''),
             'inherited': ((114, 209, 221), 'italic'),
-            'names': ((169, 220, 118), ''),
-            'arguments': ((252, 152, 103), ''),
+            'class_names': ((250, 250, 248), ''),
+            'function_names': ((169, 220, 118), ''),
+            'arguments': ((193, 192, 192), 'italic'),
             'formatters': ((114, 209, 221), 'italic'),
             'instantiators': ((114, 209, 221), 'italic'),
             'exceptions': ((114, 209, 221), 'italic'),
@@ -128,7 +130,7 @@ class Highlight(QtGui.QSyntaxHighlighter):
         # rules
         rules = []
 
-        rules += [('(?:class \w+\()(\w+)(?:\))', 1, self.styles['inherited'])]
+        rules += [('(?:class \w+\()([a-zA-Z\.]+)(?:\))', 1, self.styles['inherited'])]
         rules += [(r'\b%s\b' % i, 0, self.styles['arguments'])
                   for i in self.arguments]
         rules += [(r'\b%s\b' % i, 0, self.styles['keyword'])
@@ -152,10 +154,12 @@ class Highlight(QtGui.QSyntaxHighlighter):
             (r'"[^"\\]*(\\.[^"\\]*)*"', 0, self.styles['string']),
             # Single-quoted string, possibly containing escape sequences
             (r"'[^'\\]*(\\.[^'\\]*)*'", 0, self.styles['string']),
-            # class and function names
-            ('(?:def |class |)(\w+)(?:\()', 1, self.styles['names']),
+            # function names
+            ('(?:def |)(\w+)(?:\()', 1, self.styles['function_names']),
+            # class names
+            ('(?:class )(\w+)(?:\()', 1, self.styles['class_names']),
             # methods
-            ('(?:\.)(\w+)(?:\()', 1, self.styles['methods']),
+            ('(?:\.)([a-zA-Z\.]+)(?:\()', 1, self.styles['methods']),
             # From '#' until a newline
             (r'#[^\n]*', 0, self.styles['comment']),
             ]
