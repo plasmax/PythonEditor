@@ -1,5 +1,6 @@
 from PythonEditor.ui.Qt import QtWidgets, QtCore
-from PythonEditor.ui import terminal
+# from PythonEditor.ui import terminal
+from PythonEditor.ui import output
 from PythonEditor.ui import shortcuteditor
 from PythonEditor.ui import preferenceseditor
 from PythonEditor.ui import edittabs
@@ -27,13 +28,15 @@ class PythonEditor(QtWidgets.QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
 
         self.edittabs = edittabs.EditTabs()
-        self.terminal = terminal.Terminal()
+        self.output = output.Output()
+        # self.terminal = terminal.Terminal()
 
         self.setup_menu()
 
         splitter = QtWidgets.QSplitter(QtCore.Qt.Vertical)
         splitter.setObjectName('PythonEditor_MainVerticalSplitter')
-        splitter.addWidget(self.terminal)
+        splitter.addWidget(self.output)
+        # splitter.addWidget(self.terminal)
         splitter.addWidget(self.edittabs)
 
         layout.addWidget(splitter)
@@ -43,7 +46,8 @@ class PythonEditor(QtWidgets.QWidget):
         Connect child widget slots to shortcuts.
         """
         sch = shortcuts.ShortcutHandler(self.edittabs)
-        sch.clear_output_signal.connect(self.terminal.clear)
+        sch.clear_output_signal.connect(self.output.clear)
+        # sch.clear_output_signal.connect(self.terminal.clear)
         self.shortcuteditor = shortcuteditor.ShortcutEditor(sch)
         self.preferenceseditor = preferenceseditor.PreferencesEditor()
 

@@ -43,7 +43,7 @@ class SERedirector(object):
     def write(self, text):
         if self.sig is not None:
             self.sig.emitter.emit(text)
-        # sys.__stdout__.write(text)  # TODO: should write
+        # sys.__stdout__.write(text)
         self.savedStream.write(text)  # TODO: should write
                                       # if not visible, else
                                       # should emit. not both!
@@ -79,7 +79,8 @@ class Terminal(QtWidgets.QPlainTextEdit):
 
     def __init__(self):
         super(Terminal, self).__init__()
-        # self.setMaximumBlockCount(100)
+        self.setStyleSheet('background:rgb(45,42,46);')
+
         self.setObjectName('Terminal')
         self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
         self.setReadOnly(True)
@@ -88,16 +89,15 @@ class Terminal(QtWidgets.QPlainTextEdit):
 
     @QtCore.Slot(str)
     def receive(self, text):
-        try:
-            textCursor = self.textCursor()
-            if bool(textCursor):
-                self.moveCursor(QtGui.QTextCursor.End)
-                # pos = textCursor.position()
-                # self.moveCursor(pos-1)
-        except Exception:
-            pass
+        # try:
+        #     textCursor = self.textCursor()
+        #     if bool(textCursor):
+        #         self.moveCursor(QtGui.QTextCursor.End)
+        #         # pos = textCursor.position()
+        #         # self.moveCursor(pos-1)
+        # except Exception:
+        #     pass
         self.insertPlainText(text)
-
         # self.appendHtml(text)
 
     def stop(self):

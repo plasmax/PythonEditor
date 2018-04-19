@@ -33,6 +33,5 @@ if __name__ == '__main__':
     ide.setPlainText(test_code)
     ide.resize(500, 800)
     plastique = QtWidgets.QStyleFactory.create('Plastique')
-    # plastique = QtWidgets.QStyleFactory.create('Cleanlooks')
     QtWidgets.QApplication.setStyle(plastique)
     sys.exit(app.exec_())
