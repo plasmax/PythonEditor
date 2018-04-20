@@ -70,6 +70,8 @@ class Editor(QtWidgets.QPlainTextEdit):
 
         self.uid = str(uuid.uuid4())
 
+        self.selectionChanged.connect(self.highlight_same_words)
+
     @property
     def uid(self):
         return self._uid
@@ -91,6 +93,23 @@ class Editor(QtWidgets.QPlainTextEdit):
 
     def setTextChanged(self, state=True):
         self._changed = state
+
+    def highlight_same_words(self):
+        """
+        Highlights other matching words in document
+        when full word selected.
+        TODO: implement this!
+        """
+        textCursor = self.textCursor()
+        if not textCursor.hasSelection():
+            return
+
+        # text = textCursor.selection().toPlainText()
+        # textCursor.select(QtGui.QTextCursor.WordUnderCursor)
+        # word = textCursor.selection().toPlainText()
+        # print(text, word)
+        # if text == word:
+            # print(word)
 
     def focusInEvent(self, event):
         self.focus_in_signal.emit(event)
