@@ -60,14 +60,18 @@ def add_to_pane():
     else:
         import nuke
         from nukescripts import panels
+        found = False
         panel = panels.__panels.get(PANEL_NAME).__call__()
         for dock in ['Properties.1',
-                     'DAG.1',
-                     'Viewer.1']:
+                     'Viewer.1',
+                     'DAG.1']:
             pane = nuke.getPaneFor(dock)
             if pane:
                 panel.addToPane(pane)
+                found = True
                 break
+        if not found:
+            panels.__panels[PANEL_NAME]()
 
 
 def setup():
