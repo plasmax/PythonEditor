@@ -127,8 +127,8 @@ class ShortcutHandler(QtCore.QObject):
                     'Ctrl++': self.zoomIn,
                     'Ctrl+-': self.zoomOut,
                     'Ctrl+Shift+K': self.delete_lines,
-                    'Ctrl+D': notimp('select word or next word'),
-                    'Ctrl+M': notimp('jump to nearest bracket'),
+                    'Ctrl+D': self.select_word,
+                    'Ctrl+M': self.hop_brackets,
                     'Ctrl+Shift+M': self.select_between_brackets,
                     'Ctrl+Shift+Delete': self.delete_to_eol,
                     'Ctrl+Shift+Backspace': self.delete_to_sol,
@@ -226,8 +226,9 @@ class ShortcutHandler(QtCore.QObject):
         """
         Calls exec with either selected text
         or all the text in the edit widget.
-        TODO: in some instances, this can still have the wrong line number in tracebacks!
-        Frustratingly, it seems to right itself after a normal execution (full text) run.
+        TODO: in some instances, this can still have the wrong
+        line number in tracebacks! Frustratingly, it seems to right
+        itself after a normal execution (full text) run.
         """
         textCursor = self.editor.textCursor()
 
@@ -529,6 +530,71 @@ class ShortcutHandler(QtCore.QObject):
 
         textCursor.insertText('')
 
+    def select_word(self):
+        """
+        Selects the word under cursor if no selection.
+        If selection, selects next occurence of the same word.
+        TODO: could optionally highlight all occurences of the word
+        and iterate to the next selection. Would be nice if extra
+        selections could be made editable.
+        """
+        textCursor = self.editor.textCursor()
+        if not textCursor.hasSelection():
+            textCursor.select(QtGui.QTextCursor.WordUnderCursor)
+            return self.editor.setTextCursor(textCursor)
+
+        text = textCursor.selection().toPlainText()
+        start_pos = textCursor.selectionStart()
+        end_pos = textCursor.selectionEnd()
+        word_len = abs(end_pos - start_pos)
+
+        whole_text = self.editor.toPlainText()
+        second_half = whole_text[end_pos:]
+        next_pos = second_half.find(text)
+
+        if next_pos == -1:
+            return
+
+        next_start = next_pos + start_pos + word_len
+        next_end = next_start + word_len
+
+        textCursor.setPosition(next_start, QtGui.QTextCursor.MoveAnchor)
+        textCursor.setPosition(next_end, QtGui.QTextCursor.KeepAnchor)
+        self.editor.setTextCursor(textCursor)
+
+        extraSelections = []
+
+        selection = QtWidgets.QTextEdit.ExtraSelection()
+
+        lineColor = QtGui.QColor.fromRgbF(1, 1, 1, 0.3)
+        selection.format.setBackground(lineColor)
+        selection.cursor = self.editor.textCursor()
+        selection.cursor.setPosition(start_pos, QtGui.QTextCursor.MoveAnchor)
+        selection.cursor.setPosition(end_pos, QtGui.QTextCursor.KeepAnchor)
+        extraSelections.append(selection)
+        self.editor.setExtraSelections(extraSelections)
+
+    def hop_brackets(self):
+        """
+        Jump to closest bracket, starting
+        with closing bracket.
+        """
+        textCursor = self.editor.textCursor()
+        pos = textCursor.position()
+        whole_text = self.editor.toPlainText()
+
+        first_half = whole_text[:pos]
+        second_half = whole_text[pos:]
+        first_pos = first_half.rfind('(')
+        second_pos = second_half.find(')')
+
+        first_pos = first_pos + 1
+        second_pos = second_pos + pos
+
+        new_pos = first_pos if whole_text[pos] == ')' else second_pos
+        textCursor.setPosition(new_pos, QtGui.QTextCursor.MoveAnchor)
+        self.editor.setTextCursor(textCursor)
+
     def select_between_brackets(self):
         """
         Selects text between [] {} ()
@@ -543,14 +609,12 @@ class ShortcutHandler(QtCore.QObject):
         first_pos = first_half.rfind('(')
         second_pos = second_half.find(')')
 
-        if first_pos and second_pos:
-            first_pos = first_pos + 1
-            second_pos = second_pos + pos
-            whole_text = self.editor.toPlainText()
+        first_pos = first_pos + 1
+        second_pos = second_pos + pos
 
-            textCursor.setPosition(first_pos, QtGui.QTextCursor.MoveAnchor)
-            textCursor.setPosition(second_pos, QtGui.QTextCursor.KeepAnchor)
-            self.editor.setTextCursor(textCursor)
+        textCursor.setPosition(first_pos, QtGui.QTextCursor.MoveAnchor)
+        textCursor.setPosition(second_pos, QtGui.QTextCursor.KeepAnchor)
+        self.editor.setTextCursor(textCursor)
 
     def searchInput(self):
         """
