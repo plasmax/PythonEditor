@@ -25,14 +25,13 @@ def menu_setup():
     panelMenu = nuke.menu('Nuke').addMenu('Panels')
     panelMenu.addCommand('Python Editor',
                          RELOAD_CMD,
-                         '\\',
                          icon=ICON_PATH)
 
     import_cmd = '__import__("PythonEditor")'\
         '.ui.nukefeatures.nukeinit.add_to_pane()'
     nuke.menu('Nodes').addCommand('Python Editor',
                                   import_cmd,
-                                  'Alt+z',
+                                  '\\',
                                   icon=ICON_PATH)
 
 
