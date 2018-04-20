@@ -129,7 +129,7 @@ class ShortcutHandler(QtCore.QObject):
                     'Ctrl+Shift+K': self.delete_lines,
                     'Ctrl+D': notimp('select word or next word'),
                     'Ctrl+M': notimp('jump to nearest bracket'),
-                    'Ctrl+Shift+M': notimp('select between brackets'),
+                    'Ctrl+Shift+M': self.select_between_brackets,
                     'Ctrl+Shift+Delete': self.delete_to_eol,
                     'Ctrl+Shift+Backspace': self.delete_to_sol,
                     'Ctrl+Shift+Up': self.move_lines_up,
