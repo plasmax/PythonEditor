@@ -44,7 +44,7 @@ class FileHandler(QtCore.QObject):
         tcr = editortabs.tabCloseRequested
         tcr.connect(self.removeempty)
 
-        self.setEditor()
+        self.set_editor()
         self.readautosave()
 
     @QtCore.Slot(int, int, bool)
@@ -52,11 +52,11 @@ class FileHandler(QtCore.QObject):
         if not tabremoved:  # nothing's been deleted
                             # so we need to disconnect
                             # signals from previous editor
-            self.disconnectSignals()
+            self.disconnect_signals()
 
-        self.setEditor()
+        self.set_editor()
 
-    def setEditor(self):
+    def set_editor(self):
         """
         Sets the current editor
         and connects signals.
@@ -67,21 +67,14 @@ class FileHandler(QtCore.QObject):
         isEditor = editor.objectName() == 'Editor'
         if isEditor and editorChanged:
             self.editor = editor
-            self.connectSignals()
+            self.connect_signals()
 
-    def connectSignals(self):
-        # try:
-        #     QtCore.Qt.UniqueConnection
-        # except AttributeError as e:
-        #     print(e)
-        #     QtCore.Qt.UniqueConnection = 128
+    def connect_signals(self):
+        """ Connects signals to the give editor """
         self.editor.textChanged.connect(self.autosave)
         self.editor.focus_in_signal.connect(self.check_document_modified)
-        # document().modificationChanged ?  # TODO: use this if it is faster!
-                                            # saving the xml every keystroke
-                                            # is quite slow.
 
-    def disconnectSignals(self):
+    def disconnect_signals(self):
         if not hasattr(self, 'editor'):
             return
         self.editor.textChanged.disconnect()

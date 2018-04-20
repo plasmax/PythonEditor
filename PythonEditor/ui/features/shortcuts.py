@@ -1,6 +1,5 @@
 from __future__ import print_function
 import __main__
-import re
 from functools import partial
 from PythonEditor.ui.Qt import QtWidgets, QtGui, QtCore
 from PythonEditor.core import execute
@@ -23,11 +22,11 @@ class ShortcutHandler(QtCore.QObject):
             self.editortabs = parent_widget
             tss = self.editortabs.tab_switched_signal
             tss.connect(self.tab_switch_handler)
-            self.setEditor()
+            self.set_editor()
         else:
             self.editor = parent_widget
-            self.connectSignals()
-        self.installShortcuts()
+            self.connect_signals()
+        self.install_shortcuts()
 
     @QtCore.Slot(int, int, bool)
     def tab_switch_handler(self, previous, current, tabremoved):
@@ -39,11 +38,11 @@ class ShortcutHandler(QtCore.QObject):
         if not tabremoved:  # nothing's been deleted
                             # so we need to disconnect
                             # signals from previous editor
-            self.disconnectSignals()
+            self.disconnect_signals()
 
-        self.setEditor()
+        self.set_editor()
 
-    def setEditor(self):
+    def set_editor(self):
         """
         Sets the current editor
         and connects signals.
@@ -54,9 +53,9 @@ class ShortcutHandler(QtCore.QObject):
         isEditor = editor.objectName() == 'Editor'
         if isEditor and editorChanged:
             self.editor = editor
-            self.connectSignals()
+            self.connect_signals()
 
-    def connectSignals(self):
+    def connect_signals(self):
         """
         For shortcuts that cannot be
         handled directly by QShortcut.
@@ -64,12 +63,6 @@ class ShortcutHandler(QtCore.QObject):
         to create problems, find another
         connection tracking mechanism.
         """
-        # try:
-        #     QtCore.Qt.UniqueConnection
-        # except AttributeError as e:
-        #     print(e)
-        #     QtCore.Qt.UniqueConnection = 128
-
         editor = self.editor
 
         editor.tab_signal.connect(self.tab_handler)
@@ -82,7 +75,7 @@ class ShortcutHandler(QtCore.QObject):
         editor.wheel_signal.connect(self.wheel_zoom)
         editor.ctrl_enter_signal.connect(self.exec_selected_text)
 
-    def disconnectSignals(self):
+    def disconnect_signals(self):
         """
         For shortcuts that cannot be
         handled directly by QShortcut.
@@ -102,10 +95,10 @@ class ShortcutHandler(QtCore.QObject):
         editor.wheel_signal.disconnect()
         editor.ctrl_enter_signal.disconnect()
 
-    def installShortcuts(self):
+    def install_shortcuts(self):
         """
-        Set up all shortcuts on
-        the QPlainTextEdit widget.
+        Maps shortcuts on the QPlainTextEdit widget
+        to methods on this class.
         """
         def notimp(msg): return partial(self.notimplemented, msg)
         editor_shortcuts = {
@@ -114,18 +107,18 @@ class ShortcutHandler(QtCore.QObject):
                     'Ctrl+Alt+Return': self.new_line_below,
                     'Ctrl+Backspace': self.clear_output_signal.emit,
                     'Ctrl+Shift+D': self.duplicate_lines,
-                    'Ctrl+H': self.printHelp,
-                    'Ctrl+T': self.printType,
-                    'Ctrl+Shift+F': self.searchInput,
+                    'Ctrl+H': self.print_help,
+                    'Ctrl+T': self.print_type,
+                    'Ctrl+Shift+F': self.search_input,
                     'Ctrl+L': self.select_lines,
                     'Ctrl+J': self.join_lines,
                     'Ctrl+/': self.comment_toggle,
                     'Ctrl+]': self.indent,
                     'Ctrl+[': self.unindent,
                     'Shift+Tab': self.unindent,
-                    'Ctrl+=': self.zoomIn,
-                    'Ctrl++': self.zoomIn,
-                    'Ctrl+-': self.zoomOut,
+                    'Ctrl+=': self.zoom_in,
+                    'Ctrl++': self.zoom_in,
+                    'Ctrl+-': self.zoom_out,
                     'Ctrl+Shift+K': self.delete_lines,
                     'Ctrl+D': self.select_word,
                     'Ctrl+M': self.hop_brackets,
@@ -255,11 +248,9 @@ class ShortcutHandler(QtCore.QObject):
             return self.exec_selected_text()
 
         textCursor.select(QtGui.QTextCursor.LineUnderCursor)
-        # text = textCursor.selectedText().lstrip()
         text = textCursor.selection().toPlainText().lstrip()
         text = self.offset_for_traceback(text=text)
 
-        # self.editor.setTextCursor(textCursor) #good for testing
         whole_text = '\n'+whole_text
         execute.mainexec(text, whole_text)
 
@@ -534,9 +525,9 @@ class ShortcutHandler(QtCore.QObject):
         """
         Selects the word under cursor if no selection.
         If selection, selects next occurence of the same word.
-        TODO: could optionally highlight all occurences of the word
-        and iterate to the next selection. Would be nice if extra
-        selections could be made editable.
+        TODO: 1 )could optionally highlight all occurences of the word
+        and iterate to the next selection. 2) Would be nice if extra
+        selections could be made editable. 3) Wrap around.
         """
         textCursor = self.editor.textCursor()
         if not textCursor.hasSelection():
@@ -616,7 +607,7 @@ class ShortcutHandler(QtCore.QObject):
         textCursor.setPosition(second_pos, QtGui.QTextCursor.KeepAnchor)
         self.editor.setTextCursor(textCursor)
 
-    def searchInput(self):
+    def search_input(self):
         """
         Very basic search dialog.
         TODO: Create a QAction/util for this
@@ -676,7 +667,7 @@ class ShortcutHandler(QtCore.QObject):
         textCursor.setPosition(pos, QtGui.QTextCursor.KeepAnchor)
         textCursor.insertText('')
 
-    def printHelp(self):
+    def print_help(self):
         """
         Prints documentation
         for selected object
@@ -688,7 +679,7 @@ class ShortcutHandler(QtCore.QObject):
         else:
             exec('help('+text+')', __main__.__dict__)
 
-    def printType(self):
+    def print_type(self):
         """
         Prints type
         for selected object
@@ -700,7 +691,7 @@ class ShortcutHandler(QtCore.QObject):
         else:
             exec('print(type('+text+'))', __main__.__dict__)
 
-    def zoomIn(self):
+    def zoom_in(self):
         """
         Zooms in by changing the font size.
         """
@@ -710,7 +701,7 @@ class ShortcutHandler(QtCore.QObject):
         font.setPointSize(new_size)
         self.editor.setFont(font)
 
-    def zoomOut(self):
+    def zoom_out(self):
         """
         Zooms out by changing the font size.
         """
