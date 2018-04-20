@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 from __future__ import print_function
+import sys
 import unicodedata
 from io import open
 from xml.etree import cElementTree as ElementTree
@@ -150,7 +151,7 @@ class FileHandler(QtCore.QObject):
         If there are, prompt the user to see
         if they want to update their tab.
         """
-        pass  # TODO: implement check_document_modified on focusInEvent
+        print('sublime ', __file__, ':', sys._getframe().f_lineno, sep='')  # TODO: implement check_document_modified on focusInEvent
 
     def readautosave(self):
         """
