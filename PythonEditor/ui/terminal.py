@@ -127,6 +127,10 @@ class Terminal(QtWidgets.QPlainTextEdit):
         speaker.emitter.connect(self.receive)
 
     def mousePressEvent(self, e):
+        if not hasattr(self, 'anchorAt'):
+            #pyqt doesn't use anchorAt
+            return super(Terminal, self).mousePressEvent(e)
+            
         if (e.button() == QtCore.Qt.LeftButton):
             clickedAnchor = self.anchorAt(e.pos())
             if clickedAnchor:
