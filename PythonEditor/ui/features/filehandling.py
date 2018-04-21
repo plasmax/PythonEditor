@@ -185,36 +185,84 @@ class FileHandler(QtCore.QObject):
         to see if there are any differences.
         If there are, prompt the user to see
         if they want to update their tab.
-        TODO: currently opens multiple times
-        because called by editortabs.tab_switched_signal
-        but also caused solely by the focus in signal
-        Implement blocker/release boolean.
+        TODO: bugfix! If you create a new tab, then rename it straight
+        away or don't write anything and focus out, this causes te dialog 
+        window to pop up repeatedly.
         TODO: Display text/differences (difflib?)
         """
         root, subscripts = self.parsexml('subscript')
 
+        all_match = True
+        not_matching = []
         for s in subscripts:
             if s.attrib.get('uuid') == self.editor.uid:
-                editor_text= self.editor.toPlainText()
+
+                editor_text = self.editor.toPlainText()
                 text_match = (s.text == editor_text)
-                if not text_match:
-                    Yes = QtWidgets.QMessageBox.Yes
-                    No = QtWidgets.QMessageBox.No
-                    msg = 'Document not matching PythonEditorHistory.xml'\
-                          '\nClick Yes to update this text to '\
-                          'the saved version'\
-                          '\nor No to overwrite the saved document.'
 
-                    question = QtWidgets.QMessageBox.question
-                    reply = question(self.editor,
-                                    'Document Mismatch Warning',
-                                     msg, Yes, No)
+                editor_name = self.editor.name
+                name_match = (s.attrib.get('name') == editor_name)
 
-                    if reply == Yes:
-                        self.editor.setPlainText(s.text)
-                    else:
-                        s.text = self.editor
-                        self.autosave()
+                if not (text_match and name_match):
+                    all_match = False
+                    not_matching.append((s, self.editor))
+
+        
+        if all_match:
+            return
+
+        editor_present = False
+        for index in range(self.editortabs.count()):
+            editor = self.editortabs.widget(index)
+            for _, e in not_matching:
+                if e == editor:
+                    editor_present = True
+                    break
+
+        if not editor_present:
+            return
+
+        self.lock = True
+        mismatch_count = len(not_matching)
+        if mismatch_count != 1:
+            print('More than one mismatch! Found {0}'.format(str(mismatch_count)))
+            for s in not_matching:
+                uid = s.attrib.get('uuid')
+                name = s.attrib.get('name')
+                print(uid, name)
+
+        for s, editor in not_matching:
+            Yes = QtWidgets.QMessageBox.Yes
+            No = QtWidgets.QMessageBox.No
+            msg = 'Document "{0}" not matching'\
+                  '\nPythonEditorHistory.xml "{1}"'\
+                  '\n\nClick Yes to update this text to '\
+                  'the saved version'\
+                  '\nor No to overwrite the saved document.'
+
+            name = s.attrib.get('name')
+            msg = msg.format(editor.name, str(name))
+            question = QtWidgets.QMessageBox.question
+            reply = question(self.editor,
+                            'Document Mismatch Warning',
+                             msg, Yes, No)
+
+            if reply == Yes:
+                self.editor.setPlainText(s.text)
+                if name is not None:
+                    index = self.editortabs.currentIndex()
+                    self.editortabs.setTabText(index, name)
+            else:
+                s.text = self.editor
+                self.autosave()
+        self.lock = True
+
+        self._timer = QtCore.QTimer()
+        self._timer.setInterval(500)
+        self._timer.setSingleShot(True)
+        def unlock(): self.lock = False
+        self._timer.timeout.connect(unlock)
+        self._timer.start()
 
     @QtCore.Slot()
     def autosave(self):
