@@ -33,7 +33,6 @@ SNIPPETS = {
             'n.setSelected(False) [snippet]': node_deselect_snippet,
             }
 
-
 class Completer(QtWidgets.QCompleter):
     def __init__(self, stringlist):
         super(Completer, self).__init__(stringlist)
@@ -284,6 +283,14 @@ class AutoCompleter(QtCore.QObject):
 
             center_cursor_rect = self.editor.cursorRect().center()
             global_rect = self.editor.mapToGlobal(center_cursor_rect)
+
+            # TODO: border color? can be done with stylesheet? on the main widget?
+            palette = QtWidgets.QToolTip.palette()
+            palette.setColor(QtGui.QPalette.ToolTipText, QtGui.QColor("#F6F6F6")) # // light grey
+            palette.setColor(QtGui.QPalette.ToolTipBase, QtGui.QColor(45,42,46))#"#706F6F")) # //dark grey 
+            QtWidgets.QToolTip.setPalette(palette)
+
+            # TODO: Scrollable! Does QToolTip have this?
             QtWidgets.QToolTip.showText(global_rect, info)
 
     @QtCore.Slot(QtGui.QKeyEvent)
