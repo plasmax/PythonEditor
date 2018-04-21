@@ -9,6 +9,7 @@ from PythonEditor.ui.features import (shortcuts,
                                       contextmenu)
 
 CTRL_ALT = QtCore.Qt.ControlModifier | QtCore.Qt.AltModifier
+
 themes = {
     'Monokai': 'background:#272822;color:#EEE;',
     'Monokai Smooth': 'background:rgb(45,42,46);color:rgb(252,252,250);',
@@ -182,10 +183,17 @@ class Editor(QtWidgets.QPlainTextEdit):
         self.context_menu_signal.emit(menu)
 
     def dragEnterEvent(self, e):
-        if e.mimeData().hasUrls:
+        mimeData = e.mimeData()
+        if mimeData.hasUrls:
             e.accept()
         else:
             super(Editor, self).dragEnterEvent(e)
+
+        #let's see what the data contains, at least! 
+        # maybe restrict this to non-known formats...
+        for f in mimeData.formats():
+            data = str(mimeData.data(f)).replace(b'\0', b'').replace(b'\x12', b'')
+            print(f, data)
 
     def dragMoveEvent(self, e):
         if e.mimeData().hasUrls:
