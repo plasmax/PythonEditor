@@ -4,7 +4,7 @@ import sys
 import unicodedata
 from io import open
 from xml.etree import cElementTree as ElementTree
-from PythonEditor.ui.Qt import QtCore
+from PythonEditor.ui.Qt import QtCore, QtWidgets
 from PythonEditor.utils.constants import (AUTOSAVE_FILE,
                                           XML_HEADER,
                                           create_autosave_file)
@@ -42,6 +42,7 @@ class FileHandler(QtCore.QObject):
         # connect tab signals
         tss = editortabs.tab_switched_signal
         tss.connect(self.tab_switch_handler)
+        tss.connect(self.check_document_modified)
         tcr = editortabs.tabCloseRequested
         tcr.connect(self.removeempty)
 
@@ -144,15 +145,6 @@ class FileHandler(QtCore.QObject):
         parser = ElementTree.parse(path, xmlp)
         return parser
 
-    def check_document_modified(self):
-        """
-        On focus in event, check the xml
-        to see if there are any differences.
-        If there are, prompt the user to see
-        if they want to update their tab.
-        """
-        print('sublime ', __file__, ':', sys._getframe().f_lineno, sep='')  # TODO: implement check_document_modified on focusInEvent
-
     def readautosave(self):
         """
         Sets editor text content. First checks the
@@ -176,13 +168,53 @@ class FileHandler(QtCore.QObject):
                 tab_name = None
 
             editor = self.editortabs.new_tab(tab_name=tab_name)
-            s.attrib['uuid'] = editor.uid
+            if 'uuid' in s.attrib:
+                editor.uid = s.attrib['uuid']
+            else:
+                s.attrib['uuid'] = editor.uid
             editor.setPlainText(s.text)
 
         if editor_count == 0:
             self.editortabs.new_tab()
 
         self.writexml(root)
+
+    def check_document_modified(self):
+        """
+        On focus in event, check the xml
+        to see if there are any differences.
+        If there are, prompt the user to see
+        if they want to update their tab.
+        TODO: currently opens multiple times
+        because called by editortabs.tab_switched_signal
+        but also caused solely by the focus in signal
+        Implement blocker/release boolean.
+        TODO: Display text/differences (difflib?)
+        """
+        root, subscripts = self.parsexml('subscript')
+
+        for s in subscripts:
+            if s.attrib.get('uuid') == self.editor.uid:
+                editor_text= self.editor.toPlainText()
+                text_match = (s.text == editor_text)
+                if not text_match:
+                    Yes = QtWidgets.QMessageBox.Yes
+                    No = QtWidgets.QMessageBox.No
+                    msg = 'Document not matching PythonEditorHistory.xml'\
+                          '\nClick Yes to update this text to '\
+                          'the saved version'\
+                          '\nor No to overwrite the saved document.'
+
+                    question = QtWidgets.QMessageBox.question
+                    reply = question(self.editor,
+                                    'Document Mismatch Warning',
+                                     msg, Yes, No)
+
+                    if reply == Yes:
+                        self.editor.setPlainText(s.text)
+                    else:
+                        s.text = self.editor
+                        self.autosave()
 
     @QtCore.Slot()
     def autosave(self):
