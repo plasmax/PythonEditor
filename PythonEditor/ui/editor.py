@@ -189,7 +189,7 @@ class Editor(QtWidgets.QPlainTextEdit):
         else:
             super(Editor, self).dragEnterEvent(e)
 
-        #let's see what the data contains, at least! 
+        #let's see what the data contains, at least!
         # maybe restrict this to non-known formats...
         for f in mimeData.formats():
             data = str(mimeData.data(f)).replace(b'\0', b'').replace(b'\x12', b'')
@@ -202,6 +202,10 @@ class Editor(QtWidgets.QPlainTextEdit):
             super(Editor, self).dragMoveEvent(e)
 
     def dropEvent(self, e):
+        """
+        TODO: e.ignore() files and send to edittabs to
+        create new tab instead?
+        """
         mimeData = e.mimeData()
         if (mimeData.hasUrls
                 and mimeData.urls()):
@@ -219,8 +223,7 @@ class Editor(QtWidgets.QPlainTextEdit):
 
     def wheelEvent(self, e):
         """
-        Restore focus and emit signal if
-        ctrl held.
+        Restore focus and emit signal if ctrl held.
         """
         self.setFocus(QtCore.Qt.MouseFocusReason)
         if (e.modifiers() == QtCore.Qt.ControlModifier
