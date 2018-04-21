@@ -44,6 +44,8 @@ class FileHandler(QtCore.QObject):
         tss.connect(self.check_document_modified)
         tcr = editortabs.tabCloseRequested
         tcr.connect(self.removeempty)
+        rts = editortabs.reset_tab_signal
+        rts.connect(self.clear_subscripts)
 
         self.set_editor()
         self.readautosave()
@@ -303,5 +305,14 @@ class FileHandler(QtCore.QObject):
         for s in subscripts:
             if not s.text:
                 root.remove(s)
+
+        self.writexml(root)
+
+    @QtCore.Slot()
+    def clear_subscripts(self):
+        root, subscripts = self.parsexml('subscript')
+
+        for s in subscripts:
+            root.remove(s)
 
         self.writexml(root)

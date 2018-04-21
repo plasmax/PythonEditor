@@ -45,6 +45,43 @@ def export_selected_to_external_editor(editor):
         subprocess.Popen([EXTERNAL_EDITOR_PATH, path])
 
 
+def save_editor(folder, name, editor):
+    text = editor.toPlainText()
+    file = name.split('.')[0] + '.py'
+    path = os.path.join(folder, file)
+    save_text(path, text)
+
+
+def open_external_editor(path):
+    EXTERNAL_EDITOR_PATH = constants.get_external_editor_path()
+    if path and EXTERNAL_EDITOR_PATH:
+        subprocess.Popen([EXTERNAL_EDITOR_PATH, path])
+
+
+def export_current_tab_to_external_editor(edittabs):
+    widget = edittabs.currentWidget()
+    not_editor = (widget.objectName() != 'Editor')
+    if not_editor:
+        return
+
+    tab_index = edittabs.currentIndex()
+    name = edittabs.tabText(tab_index)
+
+    path, _ = QtWidgets.QFileDialog.getSaveFileName(
+        edittabs,
+        'Choose Directory to save current tab',
+        os.path.join(constants.NUKE_DIR, name),
+        selectedFilter='*.py')
+
+    if not path:
+        return
+
+    editor = widget
+    folder = os.path.dirname(path)
+    save_editor(folder, name, editor)
+    open_external_editor(path)
+
+
 def export_all_tabs_to_external_editor(edittabs):
     editors = []
     for tab_index in reversed(range(edittabs.count())):
@@ -68,14 +105,9 @@ def export_all_tabs_to_external_editor(edittabs):
     folder = os.path.dirname(path)
 
     for _, name, editor in editors:
-        text = editor.toPlainText()
-        file = name + '.py'
-        path = os.path.join(folder, file)
-        save_text(path, text)
-    
-    EXTERNAL_EDITOR_PATH = constants.get_external_editor_path()
-    if folder and EXTERNAL_EDITOR_PATH:
-        subprocess.Popen([EXTERNAL_EDITOR_PATH, folder])
+        save_editor(folder, name, editor)
+
+    open_external_editor(folder)
 
     Yes = QtWidgets.QMessageBox.Yes
     No = QtWidgets.QMessageBox.No
@@ -88,5 +120,4 @@ def export_all_tabs_to_external_editor(edittabs):
     if answer == Yes:
         for tab_index, _, editor in editors:
             editor.setPlainText('')
-            edittabs.tabCloseRequested.emit(tab_index) #TODO: rename last tab!
-        # edittabs.new_tab()
+        edittabs.reset_tab_signal.emit()

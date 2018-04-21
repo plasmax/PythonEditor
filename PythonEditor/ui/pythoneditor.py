@@ -78,16 +78,20 @@ class PythonEditor(QtWidgets.QWidget):
         fileMenu.addAction('Export Selected To External Editor',
                            self.export_selected_to_external_editor)
 
+        fileMenu.addAction('Export Current Tab To External Editor',
+                           self.export_current_tab_to_external_editor)
+
         fileMenu.addAction('Export All Tabs To External Editor',
                            self.export_all_tabs_to_external_editor)
 
-        editMenu.addAction('Preferences',
-                           self.show_preferences)
-        editMenu.addAction('Shortcuts',
-                           self.show_shortcuts)
-
         helpMenu.addAction('Reload Python Editor',
                            self.parent.reload_package)
+
+        editMenu.addAction('Preferences',
+                           self.show_preferences)
+
+        editMenu.addAction('Shortcuts',
+                           self.show_shortcuts)
 
         self.layout().addWidget(menuBar)
 
@@ -102,6 +106,9 @@ class PythonEditor(QtWidgets.QWidget):
     def export_selected_to_external_editor(self):
         cw = self.edittabs.currentWidget()
         save.export_selected_to_external_editor(cw)
+
+    def export_current_tab_to_external_editor(self):
+        save.export_current_tab_to_external_editor(self.edittabs)
 
     def export_all_tabs_to_external_editor(self):
         save.export_all_tabs_to_external_editor(self.edittabs)

@@ -10,6 +10,7 @@ class EditTabs(QtWidgets.QTabWidget):
     TODO: Set stylesheet to
     have tabs the same height as Nuke's.
     """
+    reset_tab_signal = QtCore.Signal()
     tab_switched_signal = QtCore.Signal(int, int, bool)
 
     def __init__(self):
@@ -27,6 +28,7 @@ class EditTabs(QtWidgets.QTabWidget):
 
         self.setup_new_tab_btn()
         self.tabCloseRequested.connect(self.close_tab)
+        self.reset_tab_signal.connect(self.reset_tabs)
         self.currentChanged.connect(self.widgetChanged)
         self.setStyleSheet("QTabBar::tab { height: 24px; }")
 
@@ -101,6 +103,15 @@ class EditTabs(QtWidgets.QTabWidget):
         index = self.count() - 1
         self.setCurrentIndex(_index-1)
         self.tab_count = self.count()
+
+    def reset_tabs(self):
+        for index in reversed(range(self.count())):
+            widget = self.widget(index)
+            if widget is None:
+                continue
+            if widget.objectName() == 'Editor':
+                self.removeTab(index)
+        self.new_tab()
 
     @QtCore.Slot(int)
     def widgetChanged(self, index):

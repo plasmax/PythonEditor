@@ -160,6 +160,8 @@ class Highlight(QtGui.QSyntaxHighlighter):
             (r"'[^'\\]*(\\.[^'\\]*)*'", 0, self.styles['string']),
             # function names
             ('(?:def |)(\w+)(?:\()', 1, self.styles['function_names']),
+            # decorators TODO: add this!
+            # ('(?:\n@)(\w+)', 1, self.styles['function_names']),
             # function args TODO: find correct regex pattern
             # ('(?:\() )(\w+)(?:\))', 1, self.styles['args']),
             # # function kwargs TODO: find correct regex pattern
