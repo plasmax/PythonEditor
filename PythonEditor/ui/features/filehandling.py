@@ -184,9 +184,6 @@ class FileHandler(QtCore.QObject):
         to see if there are any differences.
         If there are, prompt the user to see
         if they want to update their tab.
-        TODO: bugfix! If you create a new tab, then rename it straight
-        away or don't write anything and focus out, this causes te dialog
-        window to pop up repeatedly.
         TODO: Display text/differences (difflib?)
         """
         root, subscripts = self.parsexml('subscript')
