@@ -91,11 +91,11 @@ class EditTabs(QtWidgets.QTabWidget):
             return
         _index = self.currentIndex()
 
-        old_widget = self.widget(index)
-        if old_widget.objectName() == 'Tab_Widget_New_Button':
+        editor = self.widget(index)
+        if editor.objectName() == 'Tab_Widget_New_Button':
             return
 
-        old_widget.deleteLater()
+        editor.deleteLater()
 
         self.removeTab(index)
         index = self.count() - 1
