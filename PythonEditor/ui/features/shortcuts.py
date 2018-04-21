@@ -728,6 +728,8 @@ class ShortcutHandler(QtCore.QObject):
     def move_lines_up(self):
         """
         Moves current lines upwards.
+        TODO: Bug fix! Doesn't work with wrapped 
+        text (presumably needs correct block)
         """
         restoreSelection = False
         textCursor = self.editor.textCursor()
@@ -773,6 +775,8 @@ class ShortcutHandler(QtCore.QObject):
     def move_lines_down(self):
         """
         Moves current lines downwards.
+        TODO: Bug fix! Doesn't work with wrapped 
+        text (presumably needs correct block)
         """
         restoreSelection = False
 
