@@ -1,6 +1,5 @@
 from __future__ import unicode_literals
 from __future__ import print_function
-import sys
 import unicodedata
 from io import open
 from xml.etree import cElementTree as ElementTree
@@ -186,7 +185,7 @@ class FileHandler(QtCore.QObject):
         If there are, prompt the user to see
         if they want to update their tab.
         TODO: bugfix! If you create a new tab, then rename it straight
-        away or don't write anything and focus out, this causes te dialog 
+        away or don't write anything and focus out, this causes te dialog
         window to pop up repeatedly.
         TODO: Display text/differences (difflib?)
         """
@@ -196,6 +195,8 @@ class FileHandler(QtCore.QObject):
         not_matching = []
         for s in subscripts:
             if s.attrib.get('uuid') == self.editor.uid:
+                if s.text is None:
+                    continue
 
                 editor_text = self.editor.toPlainText()
                 text_match = (s.text == editor_text)
@@ -207,7 +208,6 @@ class FileHandler(QtCore.QObject):
                     all_match = False
                     not_matching.append((s, self.editor))
 
-        
         if all_match:
             return
 
@@ -225,7 +225,8 @@ class FileHandler(QtCore.QObject):
         self.lock = True
         mismatch_count = len(not_matching)
         if mismatch_count != 1:
-            print('More than one mismatch! Found {0}'.format(str(mismatch_count)))
+            count = str(mismatch_count)
+            print('More than one mismatch! Found {0}'.format(count))
             for s in not_matching:
                 uid = s.attrib.get('uuid')
                 name = s.attrib.get('name')
@@ -244,8 +245,10 @@ class FileHandler(QtCore.QObject):
             msg = msg.format(editor.name, str(name))
             question = QtWidgets.QMessageBox.question
             reply = question(self.editor,
-                            'Document Mismatch Warning',
-                             msg, Yes, No)
+                             'Document Mismatch Warning',
+                             msg,
+                             Yes,
+                             No)
 
             if reply == Yes:
                 self.editor.setPlainText(s.text)
@@ -260,6 +263,7 @@ class FileHandler(QtCore.QObject):
         self._timer = QtCore.QTimer()
         self._timer.setInterval(500)
         self._timer.setSingleShot(True)
+
         def unlock(): self.lock = False
         self._timer.timeout.connect(unlock)
         self._timer.start()
