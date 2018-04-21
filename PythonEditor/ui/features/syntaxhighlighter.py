@@ -3,6 +3,8 @@ from PythonEditor.ui.Qt import QtGui, QtCore
 themes = {
   'Monokai': {
             'keyword': ((249, 38, 114), ''),
+            'args': ((249, 38, 114), ''),
+            'kwargs': ((249, 38, 114), ''),
             'string': ((230, 219, 116), ''),
             'comment': ((140, 140, 140), ''),
             'numbers': ((174, 129, 255), ''),
@@ -17,6 +19,8 @@ themes = {
             },
   'Monokai Smooth': {
             'keyword': ((255, 97, 136), ''),
+            'args': ((255, 97, 136), ''),
+            'kwargs': ((255, 97, 136), ''),
             'string': ((255, 216, 102), ''),
             'comment': ((108, 106, 108), 'italic'),
             'numbers': ((171, 157, 242), ''),
@@ -156,6 +160,10 @@ class Highlight(QtGui.QSyntaxHighlighter):
             (r"'[^'\\]*(\\.[^'\\]*)*'", 0, self.styles['string']),
             # function names
             ('(?:def |)(\w+)(?:\()', 1, self.styles['function_names']),
+            # function args TODO: find correct regex pattern
+            # ('(?:\() )(\w+)(?:\))', 1, self.styles['args']),
+            # # function kwargs TODO: find correct regex pattern
+            # ('(?:\() )(\w+)(?:=)', 1, self.styles['kwargs']),
             # class names
             ('(?:class )(\w+)(?:\()', 1, self.styles['class_names']),
             # methods
