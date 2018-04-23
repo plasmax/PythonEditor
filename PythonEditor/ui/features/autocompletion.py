@@ -99,9 +99,10 @@ class AutoCompleter(QtCore.QObject):
         """
         textCursor = self.editor.textCursor()
         textCursor.select(QtGui.QTextCursor.WordUnderCursor)
-        return textCursor.selectedText()
+        word = textCursor.selection().toPlainText()
+        return word
 
-    def getObjectBeforeChar(self, _char):
+    def get_obj_before_char(self, _char):
         """
         Return python object from string.
         """
@@ -153,7 +154,7 @@ class AutoCompleter(QtCore.QObject):
         the completer string list.
         """
         if _obj is None:
-            _obj = self.getObjectBeforeChar('.')
+            _obj = self.get_obj_before_char('.')
 
         if _obj is None or False:
             return
@@ -167,8 +168,8 @@ class AutoCompleter(QtCore.QObject):
         self.show_popup()
 
         cp = self.completer
-        currentWord = self.word_under_cursor()
-        cp.setCompletionPrefix(currentWord)
+        current_word = self.word_under_cursor()
+        cp.setCompletionPrefix(current_word)
         cp.popup().setCurrentIndex(cp.completionModel().index(0, 0))
 
     def complete_variables(self):
@@ -189,9 +190,15 @@ class AutoCompleter(QtCore.QObject):
         word = self.word_under_cursor()
         char_len = len(word)
         cp.setCompletionPrefix(word)
-        cp.popup().setCurrentIndex(cp.completionModel().index(0, 0))
+        popup = cp.popup()
+        popup.setCurrentIndex(cp.completionModel().index(0, 0))
 
         # TODO: substring matching
+        # for var in variables:
+        #     found = nonconsec_find(word, var, anchored=True)
+        #     if found:
+        #         print(word, var)
+
         if char_len and any(w[:char_len] == word for w in variables):
             self.show_popup()
 
@@ -365,11 +372,11 @@ class AutoCompleter(QtCore.QObject):
             return True
 
         elif (cp and cp.popup()
-              and cp.popup().isVisible()
-              and not cp.completionCount() == 0):
-            currentWord = self.word_under_cursor()
+                  and cp.popup().isVisible()
+                  and not cp.completionCount() == 0):
+            current_word = self.word_under_cursor()
 
-            cp.setCompletionPrefix(currentWord)
+            cp.setCompletionPrefix(current_word)
             cp.popup().setCurrentIndex(cp.completionModel().index(0, 0))
             # TODO: currently lags one character behind. should hide if
             # completionPrefix not present in completionModel list.
