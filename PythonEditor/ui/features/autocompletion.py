@@ -33,6 +33,7 @@ SNIPPETS = {
             'n.setSelected(False) [snippet]': node_deselect_snippet,
             }
 
+
 class Completer(QtWidgets.QCompleter):
     def __init__(self, stringlist):
         super(Completer, self).__init__(stringlist)
@@ -73,7 +74,7 @@ class AutoCompleter(QtCore.QObject):
             self._completer = Completer(wordlist)
             self._completer.setParent(self)
             self._completer.setWidget(self.editor)
-            self._completer.activated.connect(self.insertCompletion)
+            self._completer.activated.connect(self.insert_completion)
         return self._completer
 
     @completer.setter
@@ -145,7 +146,7 @@ class AutoCompleter(QtCore.QObject):
 
         return _obj
 
-    def completeObject(self, _obj=None):
+    def complete_object(self, _obj=None):
         """
         Get list of object properties
         and methods and set them as
@@ -162,15 +163,15 @@ class AutoCompleter(QtCore.QObject):
         methods = [a for a in attrs if a[0].islower()]
         therest = [a for a in attrs if not a[0].islower()]
         stringlist = methods+therest
-        self.setList(stringlist)
-        self.showPopup()
+        self.set_list(stringlist)
+        self.show_popup()
 
         cp = self.completer
         currentWord = self.word_under_cursor()
         cp.setCompletionPrefix(currentWord)
         cp.popup().setCurrentIndex(cp.completionModel().index(0, 0))
 
-    def completeVariables(self):
+    def complete_variables(self):
         """
         Complete variable names in
         global scope.
@@ -184,7 +185,7 @@ class AutoCompleter(QtCore.QObject):
                      + dir(__builtins__)
                      + KEYWORDS]
         variables = list(set().union(*variables))
-        self.setList(variables)
+        self.set_list(variables)
         word = self.word_under_cursor()
         char_len = len(word)
         cp.setCompletionPrefix(word)
@@ -192,9 +193,9 @@ class AutoCompleter(QtCore.QObject):
 
         # TODO: substring matching
         if char_len and any(w[:char_len] == word for w in variables):
-            self.showPopup()
+            self.show_popup()
 
-    def setList(self, stringlist):
+    def set_list(self, stringlist):
         """
         Sets the list of completions.
         """
@@ -202,7 +203,7 @@ class AutoCompleter(QtCore.QObject):
         qslm.setStringList(stringlist)
         self.completer.setModel(qslm)
 
-    def showPopup(self):
+    def show_popup(self):
         """
         Show the completer list.
         """
@@ -212,13 +213,13 @@ class AutoCompleter(QtCore.QObject):
                             + pop.verticalScrollBar().sizeHint().width())
         self.completer.complete(cursorRect)
 
-    def insertCompletion(self, completion):
+    def insert_completion(self, completion):
         """
         Inserts a completion,
         replacing current word.
         """
         if '[snippet]' in completion:
-            return self.insertSnippetCompletion(completion)
+            return self.insert_snippet_completion(completion)
 
         textCursor = self.editor.textCursor()
         prefix = self.completer.completionPrefix()
@@ -230,7 +231,7 @@ class AutoCompleter(QtCore.QObject):
         textCursor.insertText(completion)
         self.editor.setTextCursor(textCursor)
 
-    def insertSnippetCompletion(self, completion):
+    def insert_snippet_completion(self, completion):
         """
         Fetches snippet from dictionary and
         completes with that. Sets text cursor position
@@ -284,10 +285,13 @@ class AutoCompleter(QtCore.QObject):
             center_cursor_rect = self.editor.cursorRect().center()
             global_rect = self.editor.mapToGlobal(center_cursor_rect)
 
-            # TODO: border color? can be done with stylesheet? on the main widget?
+            # TODO: border color? can be done with stylesheet?
+            # on the main widget?
             palette = QtWidgets.QToolTip.palette()
-            palette.setColor(QtGui.QPalette.ToolTipText, QtGui.QColor("#F6F6F6")) # // light grey
-            palette.setColor(QtGui.QPalette.ToolTipBase, QtGui.QColor(45,42,46))#"#706F6F")) # //dark grey 
+            palette.setColor(QtGui.QPalette.ToolTipText,
+                             QtGui.QColor("#F6F6F6"))
+            palette.setColor(QtGui.QPalette.ToolTipBase,
+                             QtGui.QColor(45, 42, 46))
             QtWidgets.QToolTip.setPalette(palette)
 
             # TODO: Scrollable! Does QToolTip have this?
@@ -306,7 +310,7 @@ class AutoCompleter(QtCore.QObject):
         cp = self.completer
         cpActive = cp and cp.popup() and cp.popup().isVisible()
 
-        if cpActive:  # sometimes "enter" key doesn't trigger completion
+        if cpActive:
             if event.key() in (
                                 QtCore.Qt.Key_Enter,
                                 QtCore.Qt.Key_Return,
@@ -316,9 +320,13 @@ class AutoCompleter(QtCore.QObject):
                 event.ignore()
                 self.editor.wait_for_autocomplete = True
                 return True
-            elif (not str(event.text()).isalnum()
-                    and event.modifiers() == QtCore.Qt.NoModifier):
-                cp.popup().hide()
+
+        not_alnum_or_mod = (not str(event.text()).isalnum()
+                            and event.modifiers() == QtCore.Qt.NoModifier)
+
+        zero_completions = cp.completionCount() == 0
+        if not_alnum_or_mod or zero_completions:
+            cp.popup().hide()
 
         if event.key() == QtCore.Qt.Key_Tab:
             textCursor = self.editor.textCursor()
@@ -327,7 +335,7 @@ class AutoCompleter(QtCore.QObject):
                 textCursor.select(QtGui.QTextCursor.LineUnderCursor)
                 selectedText = textCursor.selectedText()
                 if selectedText.endswith('.'):
-                    self.completeObject()
+                    self.complete_object()
                     # assuming this should be here too but untested
                     self.editor.wait_for_autocomplete = True
                     return True
@@ -352,15 +360,19 @@ class AutoCompleter(QtCore.QObject):
                                                     # on a lot more characters!
             if cp.popup():
                 cp.popup().hide()
-            self.completeObject()
+            self.complete_object()
             self.editor.wait_for_autocomplete = True
             return True
 
-        elif (cp and cp.popup() and cp.popup().isVisible()):
+        elif (cp and cp.popup()
+              and cp.popup().isVisible()
+              and not cp.completionCount() == 0):
             currentWord = self.word_under_cursor()
 
             cp.setCompletionPrefix(currentWord)
             cp.popup().setCurrentIndex(cp.completionModel().index(0, 0))
+            # TODO: currently lags one character behind. should hide if
+            # completionPrefix not present in completionModel list.
 
         elif event.text().isalnum() or event.text() in ['_']:
             pos = self.editor.textCursor().position()
@@ -368,15 +380,15 @@ class AutoCompleter(QtCore.QObject):
             block_number = document.findBlock(pos).blockNumber()
             block = document.findBlockByNumber(block_number)
             if '.' in block.text().split(' ')[-1]:
-                self.completeObject()
+                self.complete_object()
             else:
-                self.completeVariables()
+                self.complete_variables()
 
         self.editor.wait_for_autocomplete = True
 
 
 # from tabtabtab by Ben Dickson
-def nonconsec_find(needle, haystack, anchored = False):
+def nonconsec_find(needle, haystack, anchored=False):
     """checks if each character of "needle" can be found in order (but not
     necessarily consecutivly) in haystack.
     For example, "mm" can be found in "matchmove", but not "move2d"
@@ -422,7 +434,6 @@ def nonconsec_find(needle, haystack, anchored = False):
     elif len(needle) == 0 and len(haystack) == 0:
         # ..?
         return True
-
 
     # Turn haystack into list of characters (as strings are immutable)
     haystack = [hay for hay in str(haystack)]
