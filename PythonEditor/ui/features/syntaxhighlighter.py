@@ -48,7 +48,8 @@ class Highlight(QtGui.QSyntaxHighlighter):
         super(Highlight, self).__init__(document)
         self.setObjectName('Highlight')
 
-        theme = themes['Monokai Smooth']
+        # theme = themes['Monokai Smooth']
+        theme = themes['Monokai']
         self.styles = {feature: self.format(*style)
                        for feature, style in theme.items()}
 
