@@ -41,6 +41,8 @@ class PreferencesEditor(QtWidgets.QDialog):
         self.layout.addWidget(self.font_size_label)
         self.layout.addWidget(self.font_size)
 
+        # syntax highlighter themes
+
     def connect_signals(self):
         self.edit_path.editingFinished.connect(self.set_editor_path)
 
