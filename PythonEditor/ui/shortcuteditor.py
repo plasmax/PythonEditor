@@ -22,7 +22,11 @@ class ShortcutEditor(QtWidgets.QTreeView):
             root.appendRow(row)
 
         self.header().setStretchLastSection(False)
-        # self.header().setResizeMode(QtWidgets.QHeaderView.ResizeToContents)
+        try:
+            rtc = QtWidgets.QHeaderView.ResizeToContents
+            self.header().setResizeMode(rtc)
+        except Exception as e:
+            print(e)
         self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
         self.setUniformRowHeights(True)
         self.resize(500, 400)
