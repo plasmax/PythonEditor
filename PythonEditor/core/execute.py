@@ -6,11 +6,16 @@ import re
 FILENAME = '<Python Editor Contents>'
 
 
-def mainexec(text, wholeText):
+def mainexec(text, whole_text):
     """
     Code execution in top level namespace.
     Reformats exceptions to remove
     references to this file.
+
+    :param text: code to execute
+    :param whole_text: all text in document
+    :type text: str
+    :type whole_text: str
     """
     if len(text.strip().split('\n')) == 1:
         mode = 'single'
@@ -29,13 +34,12 @@ def mainexec(text, wholeText):
         # Ian Thompson is a golden god
         exec(_code, __dict__)
     except Exception as e:
-        print_traceback(wholeText, e)
+        print_traceback(whole_text, e)
     else:
         if mode == 'single':
             for value in __dict__.values():
                 if value not in _.values():
                     print(value)
-            del _
 
 
 def print_syntax_traceback():
@@ -49,14 +53,20 @@ def print_syntax_traceback():
     print('\n'.join(formatted_lines[3:]))
 
 
-def print_traceback(wholeText, error):
+def print_traceback(whole_text, error):
     """
     Print traceback ignoring lines that refer to the
     external execution python file, using the whole
     text of the document. Extracts lines of code from
-    wholeText that caused the error.
+    whole_text that caused the error.
+
+    :param whole_text: all text in document
+    :param error: python exception object
+    :type whole_text: str
+    :type error: exceptions.Exception
+
     """
-    text_lines = wholeText.splitlines()
+    text_lines = whole_text.splitlines()
 
     error_message = traceback.format_exc()
 
