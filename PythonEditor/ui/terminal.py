@@ -5,6 +5,10 @@ from PythonEditor.ui.Qt import QtGui, QtWidgets, QtCore
 
 
 class PySingleton(object):
+    """
+    Return a single instance of a class
+    or create a new instance if none exists.
+    """
     def __new__(cls, *args, **kwargs):
         if '_the_instance' not in cls.__dict__:
             cls._the_instance = object.__new__(cls)
@@ -13,13 +17,16 @@ class PySingleton(object):
 
 class Speaker(QtCore.QObject):
     """
-    Used to relay sys stdout, stderr
+    Used to relay sys stdout, stderr, stdin
     """
     emitter = QtCore.Signal(str)
 
 
 class SERedirector(object):
-    def __init__(self, stream, sig=None):
+    """
+    Wraps and replaces a stream object.
+    """
+    def __init__(self, stream, _signal=None):
         fileMethods = ('fileno',
                        'flush',
                        'isatty',
@@ -37,23 +44,24 @@ class SERedirector(object):
             if not hasattr(self, i) and hasattr(stream, i):
                 setattr(self, i, getattr(stream, i))
 
-        self.savedStream = stream
-        self.sig = sig
+        self.saved_stream = stream
+        self._signal = _signal
 
     def write(self, text):
-        if self.sig is not None:
-            self.sig.emitter.emit(text)
+        if self._signal is not None:
+            self._signal.emitter.emit(text)
         # sys.__stdout__.write(text)
-        self.savedStream.write(text)  # TODO: should write
-                                      # if not visible, else
-                                      # should emit. not both!
-                                      # set a global variable on
-                                      # terminal visible/invisible.
+        self.saved_stream.write(text)  # TODO: should write
+                                       # if not visible, else
+                                       # should emit. not both!
+                                       # set a global variable on
+                                       # terminal visible/invisible.
+
     def close(self):
         self.flush()
 
     def stream(self):
-        return self.savedStream
+        return self.saved_stream
 
     def __del__(self):
         self.reset()
@@ -61,18 +69,20 @@ class SERedirector(object):
 
 class SESysStdOut(SERedirector, PySingleton):
     def reset(self):
-        sys.stdout = self.savedStream
+        sys.stdout = self.saved_stream
         print('reset stream out')
 
 
 class SESysStdErr(SERedirector, PySingleton):
     def reset(self):
-        sys.stderr = self.savedStream
+        sys.stderr = self.saved_stream
         print('reset stream err')
     # def write(self, text):  # TODO: Write html links here
                               # (or do it in a post process)
 
 
+# TODO: This UI could be separate from the above
+# stream wrappers, which could be placed in 'core'
 class Terminal(QtWidgets.QPlainTextEdit):
     """ Output text display widget """
     link_activated = QtCore.Signal(str)
@@ -117,8 +127,8 @@ class Terminal(QtWidgets.QPlainTextEdit):
         the panel.
         """
 
-        if hasattr(sys.stdout, 'sig'):
-            speaker = sys.stdout.sig
+        if hasattr(sys.stdout, '_signal'):
+            speaker = sys.stdout._signal
         else:
             speaker = Speaker()
             sys.stdout = SESysStdOut(sys.stdout, speaker)
@@ -130,7 +140,7 @@ class Terminal(QtWidgets.QPlainTextEdit):
         if not hasattr(self, 'anchorAt'):
             #pyqt doesn't use anchorAt
             return super(Terminal, self).mousePressEvent(e)
-            
+
         if (e.button() == QtCore.Qt.LeftButton):
             clickedAnchor = self.anchorAt(e.pos())
             if clickedAnchor:
