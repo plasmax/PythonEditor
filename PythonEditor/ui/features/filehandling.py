@@ -34,6 +34,8 @@ class FileHandler(QtCore.QObject):
         super(FileHandler, self).__init__()
         self.setObjectName('TabFileHandler')
         create_autosave_file()
+        self.timer_waiting = False
+        self.setup_save_timer()
 
         self.editortabs = editortabs
         self.setParent(editortabs)
@@ -49,6 +51,22 @@ class FileHandler(QtCore.QObject):
 
         self.set_editor()
         self.readautosave()
+
+    def setup_save_timer(self):
+        self.timer = QtCore.QTimer()
+        self.timer.setSingleShot(True)
+        self.timer.setInterval(1000)
+        self.timer.timeout.connect(self.autosave_handler)
+
+    def save_timer(self):
+        self.timer_waiting = True
+        if self.timer.isActive():
+            self.timer.stop()
+        self.timer.start()
+
+    def autosave_handler(self):
+        self.timer_waiting = False
+        self.autosave()
 
     @QtCore.Slot(int, int, bool)
     def tab_switch_handler(self, previous, current, tabremoved):
@@ -74,7 +92,7 @@ class FileHandler(QtCore.QObject):
 
     def connect_signals(self):
         """ Connects signals to the give editor """
-        self.editor.textChanged.connect(self.autosave)
+        self.editor.textChanged.connect(self.save_timer)
         self.editor.focus_in_signal.connect(self.check_document_modified)
 
     def disconnect_signals(self):
@@ -188,6 +206,9 @@ class FileHandler(QtCore.QObject):
         if they want to update their tab.
         TODO: Display text/differences (difflib?)
         """
+        if self.timer_waiting:
+            return
+
         root, subscripts = self.parsexml('subscript')
 
         all_match = True
