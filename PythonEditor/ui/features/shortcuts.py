@@ -116,6 +116,8 @@ class ShortcutHandler(QtCore.QObject):
                     'Ctrl+]': self.indent,
                     'Ctrl+[': self.unindent,
                     'Shift+Tab': self.unindent,
+                    'Ctrl+Tab': self.next_tab,
+                    'Ctrl+Shift+Tab': self.previous_tab,
                     'Ctrl+=': self.zoom_in,
                     'Ctrl++': self.zoom_in,
                     'Ctrl+-': self.zoom_out,
@@ -365,6 +367,16 @@ class ShortcutHandler(QtCore.QObject):
     def tab_space(self):
         """ Insert spaces instead of tabs """
         self.editor.insertPlainText('    ')
+
+    def next_tab(self):
+        if hasattr(self, 'editortabs'):
+            next_index = self.editortabs.currentIndex()+1
+            if self.editortabs.widget(next_index).objectName() == 'Editor':
+                self.editortabs.setCurrentIndex(next_index)
+
+    def previous_tab(self):
+        if hasattr(self, 'editortabs'):
+            self.editortabs.setCurrentIndex(self.editortabs.currentIndex()-1)
 
     def jump_to_start(self):
         """
@@ -728,7 +740,7 @@ class ShortcutHandler(QtCore.QObject):
     def move_lines_up(self):
         """
         Moves current lines upwards.
-        TODO: Bug fix! Doesn't work with wrapped 
+        TODO: Bug fix! Doesn't work with wrapped
         text (presumably needs correct block)
         """
         restoreSelection = False
@@ -775,7 +787,7 @@ class ShortcutHandler(QtCore.QObject):
     def move_lines_down(self):
         """
         Moves current lines downwards.
-        TODO: Bug fix! Doesn't work with wrapped 
+        TODO: Bug fix! Doesn't work with wrapped
         text (presumably needs correct block)
         """
         restoreSelection = False
