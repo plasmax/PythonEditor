@@ -10,10 +10,10 @@ from PythonEditor.ui.features import (shortcuts,
 
 CTRL_ALT = QtCore.Qt.ControlModifier | QtCore.Qt.AltModifier
 
-themes = {
-    'Monokai': 'background:#272822;color:#EEE;',
-    'Monokai Smooth': 'background:rgb(45,42,46);color:rgb(252,252,250);',
-}
+# themes = {
+#     'Monokai': 'background:#272822;color:#EEE;',
+#     'Monokai Smooth': 'background:rgb(45,42,46);color:rgb(252,252,250);',
+# }
 
 
 class Editor(QtWidgets.QPlainTextEdit):
@@ -49,9 +49,9 @@ class Editor(QtWidgets.QPlainTextEdit):
         super(Editor, self).__init__()
         self.setObjectName('Editor')
         self.setAcceptDrops(True)
-        font = QtGui.QFont('Consolas')
-        font.setPointSize(9)
-        self.setFont(font)
+        # font = QtGui.QFont('Consolas')
+        # font.setPointSize(9)
+        # self.setFont(font)
 
         self._changed = False
         self.textChanged.connect(self._handle_text_changed)
@@ -59,7 +59,7 @@ class Editor(QtWidgets.QPlainTextEdit):
         linenumberarea.LineNumberArea(self)
         syntaxhighlighter.Highlight(self.document())
         self.contextmenu = contextmenu.ContextMenu(self)
-        self.setStyleSheet(themes['Monokai Smooth'])
+        # self.setStyleSheet(themes['Monokai Smooth'])
 
         self.wait_for_autocomplete = True
         self.autocomplete = autocompletion.AutoCompleter(self)

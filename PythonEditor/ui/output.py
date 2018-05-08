@@ -94,7 +94,7 @@ class Output(QtWidgets.QPlainTextEdit):
     """
     def __init__(self, ):
         super(Output, self).__init__()
-        self.setStyleSheet('background:rgb(45,42,46);')
+        # self.setStyleSheet('background:rgb(45,42,46);')
 
         self.setObjectName('Output')
         self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)

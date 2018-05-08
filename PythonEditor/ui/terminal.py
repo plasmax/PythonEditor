@@ -89,7 +89,7 @@ class Terminal(QtWidgets.QPlainTextEdit):
 
     def __init__(self):
         super(Terminal, self).__init__()
-        self.setStyleSheet('background:rgb(45,42,46);')
+        # self.setStyleSheet('background:rgb(45,42,46);')
 
         self.setObjectName('Terminal')
         self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
