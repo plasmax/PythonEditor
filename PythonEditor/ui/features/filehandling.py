@@ -35,7 +35,7 @@ class FileHandler(QtCore.QObject):
         self.setObjectName('TabFileHandler')
         create_autosave_file()
         self.timer_waiting = False
-        self.setup_save_timer()
+        self.setup_save_timer(interval=1000)
 
         self.editortabs = editortabs
         self.setParent(editortabs)
@@ -45,28 +45,12 @@ class FileHandler(QtCore.QObject):
         tss.connect(self.tab_switch_handler)
         tss.connect(self.check_document_modified)
         tcr = editortabs.tabCloseRequested
-        tcr.connect(self.removeempty)
+        tcr.connect(self.tab_close_handler)
         rts = editortabs.reset_tab_signal
         rts.connect(self.clear_subscripts)
 
         self.set_editor()
         self.readautosave()
-
-    def setup_save_timer(self):
-        self.timer = QtCore.QTimer()
-        self.timer.setSingleShot(True)
-        self.timer.setInterval(1000)
-        self.timer.timeout.connect(self.autosave_handler)
-
-    def save_timer(self):
-        self.timer_waiting = True
-        if self.timer.isActive():
-            self.timer.stop()
-        self.timer.start()
-
-    def autosave_handler(self):
-        self.timer_waiting = False
-        self.autosave()
 
     @QtCore.Slot(int, int, bool)
     def tab_switch_handler(self, previous, current, tabremoved):
@@ -91,15 +75,48 @@ class FileHandler(QtCore.QObject):
             self.connect_signals()
 
     def connect_signals(self):
-        """ Connects signals to the give editor """
+        """ Connects signals to the current editor """
         self.editor.textChanged.connect(self.save_timer)
         self.editor.focus_in_signal.connect(self.check_document_modified)
 
     def disconnect_signals(self):
+        """ Disconnects signals from the current editor """
         if not hasattr(self, 'editor'):
             return
         self.editor.textChanged.disconnect()
         self.editor.focus_in_signal.disconnect()
+
+    def setup_save_timer(self, interval=1000):
+        """
+        Initialise the autosave timer.
+        :param interval: autosave interval in milliseconds
+        :type interval: int
+        """
+        self.timer = QtCore.QTimer()
+        self.timer.setSingleShot(True)
+        self.timer.setInterval(interval)
+        self.timer.timeout.connect(self.autosave_handler)
+
+    def save_timer(self):
+        """
+        On textChanged, if no text present, save immediately.
+        Else, start a timer that will trigger autosave after
+        a brief pause in typing.
+        """
+        if not self.editor.toPlainText().strip():
+            return self.autosave()
+
+        self.timer_waiting = True
+        if self.timer.isActive():
+            self.timer.stop()
+        self.timer.start()
+
+    def autosave_handler(self):
+        """
+        Autosave timeout triggers this.
+        """
+        self.timer_waiting = False
+        self.autosave()
 
     def readfile(self, path):
         """
@@ -313,13 +330,13 @@ class FileHandler(QtCore.QObject):
         self.writexml(root)
 
     @QtCore.Slot(int)
-    def removeempty(self, tab_index):
+    def tab_close_handler(self, tab_index):
+        """Called on tabCloseRequested"""
+        self.remove_empty()
+
+    def remove_empty(self):
         """
-        On tab close, remove subscript if tab is empty
-        Reorder tab indices in autosave file to match
-        current tab indices.
-        TODO: currently, this only works when the button is clicked.
-        Trigger it for the Ctrl+W shortcut as well.
+        Remove empty subscripts if they are empty.
         """
         root, subscripts = self.parsexml('subscript')
 
