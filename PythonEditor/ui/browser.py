@@ -1,6 +1,6 @@
 import sys
 
-from PythonEditor.ui.Qt import QtCore, QtWidgets
+from PythonEditor.ui.Qt import QtCore, QtWidgets, QtGui
 from PythonEditor.utils.constants import NUKE_DIR
 
 
@@ -11,7 +11,7 @@ class FileTree(QtWidgets.QTreeView):
         super(FileTree, self).__init__()
         model = QtWidgets.QFileSystemModel()
         model.setRootPath(path)
-        # model.setNameFilterDisables(False)
+        model.setNameFilterDisables(False)
         model.setNameFilters(['*.py',
                               '*.txt',
                               '*.md'])
@@ -24,6 +24,12 @@ class FileTree(QtWidgets.QTreeView):
     def mousePressEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton:
             super(FileTree, self).mousePressEvent(event)
+        if event.button() == QtCore.Qt.RightButton:
+            menu = QtWidgets.QMenu()
+            menu.addAction('New File', 'print "does nothing"')
+            cursor = QtGui.QCursor()
+            pos = cursor.pos()
+            menu.exec_(pos)
 
     def selectionChanged(self, selected, deselected):
         index_sel = selected.indexes()[0]
