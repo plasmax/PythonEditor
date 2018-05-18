@@ -25,8 +25,8 @@ def mainexec(text, whole_text):
     try:
         _code = compile(text, FILENAME, mode)
     except SyntaxError:
-        print_syntax_traceback()
-        return
+        error_line_numbers = print_syntax_traceback()
+        return error_line_numbers
 
     _ = __dict__.copy()
     print('# Result: ')
@@ -34,12 +34,20 @@ def mainexec(text, whole_text):
         # Ian Thompson is a golden god
         exec(_code, __dict__)
     except Exception as e:
-        print_traceback(whole_text, e)
+        error_line_numbers = print_traceback(whole_text, e)
+        return error_line_numbers        
     else:
-        if mode == 'single':
-            for value in __dict__.values():
-                if value not in _.values():
-                    print(value)
+        if (not isinstance(_, dict) and isinstance(__dict__, dict)
+                or not hasattr(_, 'values')):
+            return None
+
+        try:
+            if mode == 'single':
+                for value in __dict__.values():
+                    if value not in _.values():
+                        print(value)
+        except NotImplementedError:
+            return None
 
 
 def print_syntax_traceback():
@@ -51,6 +59,14 @@ def print_syntax_traceback():
     formatted_lines = traceback.format_exc().splitlines()
     print(formatted_lines[0])
     print('\n'.join(formatted_lines[3:]))
+
+    error_line_numbers = []
+    for line in formatted_lines:
+        result = re.search('(?<="{0}", line )(\d+)'.format(FILENAME), line)
+        if result:
+            lineno = int(result.group())
+            error_line_numbers.append(lineno)
+    return error_line_numbers
 
 
 def print_traceback(whole_text, error):
@@ -73,6 +89,7 @@ def print_traceback(whole_text, error):
     message_lines = []
     error_lines = error_message.splitlines()
     error = error_lines.pop()
+    error_line_numbers = []
     for line in error_lines:
         if (__file__ in line
                 or 'exec(_code, __dict__)' in line):
@@ -85,7 +102,9 @@ def print_traceback(whole_text, error):
             lineno = int(result.group())
             text = '    ' + text_lines[lineno].strip()
             message_lines.append(text)
+            error_line_numbers.append(lineno)
 
     message_lines.append(error)
     error_message = '\n'.join(message_lines)
     print(error_message)
+    return error_line_numbers
