@@ -5,6 +5,6 @@
 
 
 #### Features - desired
-- [ ] Collapsible sidebar with directory tree
+- [ ] Foldable sidebar with directory tree
 - [ ] File Browser with connected file path
 - [ ] Using signal/slot to redirect stream is slower than desirable
