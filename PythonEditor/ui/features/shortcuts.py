@@ -236,7 +236,11 @@ class ShortcutHandler(QtCore.QObject):
 
         self.exec_text_signal.emit()
         whole_text = '\n'+whole_text
-        execute.mainexec(text, whole_text)
+        error_line_numbers = execute.mainexec(text, whole_text)
+        if error_line_numbers is None:
+            return
+        else:
+            self.highlight_errored_lines(error_line_numbers)
 
     def exec_current_line(self):
         """
@@ -254,7 +258,39 @@ class ShortcutHandler(QtCore.QObject):
         text = self.offset_for_traceback(text=text)
 
         whole_text = '\n'+whole_text
-        execute.mainexec(text, whole_text)
+        error_line_numbers = execute.mainexec(text, whole_text)
+        if error_line_numbers is None:
+            return
+        else:
+            self.highlight_errored_lines(error_line_numbers)
+
+    def highlight_errored_lines(self, error_line_numbers):
+        """
+        Draw a red background on any lines that caused an error.
+        """
+        extraSelections = []
+
+        cursor = self.editor.textCursor()
+        doc = self.editor.document()
+        for lineno in error_line_numbers:
+
+
+            selection = QtWidgets.QTextEdit.ExtraSelection()
+            lineColor = QtGui.QColor.fromRgbF(0.8,
+                                              0.1,
+                                              0,
+                                              0.2)
+
+            selection.format.setBackground(lineColor)
+            selection.format.setProperty(QtGui.QTextFormat.FullWidthSelection,
+                                         True)
+
+            block = doc.findBlockByLineNumber(lineno-1)
+            cursor.setPosition(block.position())
+            selection.cursor = cursor
+            selection.cursor.clearSelection()
+            extraSelections.append(selection)
+        self.editor.setExtraSelections(extraSelections)
 
     @QtCore.Slot(QtGui.QKeyEvent)
     def return_handler(self, event):
