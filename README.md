@@ -2,14 +2,10 @@
 A better Script Editor for Foundry's NUKE.
 
 ## Installation:
-Make sure PythonEditor is placed somewhere on your sys.path, e.g. in your user .nuke folder.
+Download or clone the repository.
+Copy the PythonEditor folder (the folder in the same directory as this README.md) into your user .nuke folder.
 
-You can add the location to your sys.path like so:
-```python
-sys.path.append('/made/up/example/path/PythonEditor')
-```
-
-Then add this to your menu.py
+Create a menu.py text file if you don't already have one and add the following import statement to it:
 ```python
 import PythonEditor
 ```
