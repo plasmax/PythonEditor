@@ -1,7 +1,9 @@
 import sys
 import os
 dn = os.path.dirname
-folder = dn(dn(__file__))
+TESTS_DIR = dn(__file__)
+PACKAGE_DIR = dn(TESTS_DIR)
+folder = PACKAGE_DIR
 sys.path.append(folder)
 
 from PythonEditor.ui import editor
@@ -15,13 +17,13 @@ class Manager(QtWidgets.QWidget):
         super(Manager, self).__init__()
         layout = QtWidgets.QHBoxLayout(self)
         layout.setContentsMargins(0,0,0,0)
-        
+
         left_widget = QtWidgets.QWidget()
         left_layout = QtWidgets.QHBoxLayout(left_widget)
-        
+
         splitter = QtWidgets.QSplitter(QtCore.Qt.Horizontal)
         self.splitter = splitter
-        
+
         self.setLayout(layout)
         b = QtWidgets.QToolButton()
         b.setText('>')
@@ -31,7 +33,7 @@ class Manager(QtWidgets.QWidget):
         self.xpanded = False
         layout.addWidget(splitter)
         #layout.setWidgetResizable(True)
-        
+
         nuke_folder = os.path.join(os.path.expanduser('~'), '.nuke')
         t = browser.FileTree(nuke_folder)
         t.path_signal.connect(self.set_file)
@@ -51,11 +53,11 @@ class Manager(QtWidgets.QWidget):
         else:
             symbol = '<'
             sizes = [0, 10, 800]  # should be current sizes
-            
+
         self.b.setText(symbol)
         self.splitter.setSizes(sizes)
         self.xpanded = not self.xpanded
-            
+
 
     @QtCore.Slot(str)
     def set_file(self, path):
@@ -65,5 +67,6 @@ class Manager(QtWidgets.QWidget):
             self.e.setPlainText(f.read())
 
 
-m = Manager()
-m.show()
+
+# m = Manager()
+# m.show()

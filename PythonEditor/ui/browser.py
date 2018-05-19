@@ -9,6 +9,9 @@ class FileTree(QtWidgets.QTreeView):
 
     def __init__(self, path):
         super(FileTree, self).__init__()
+        self.set_model(path)
+
+    def set_model(self, path):
         model = QtWidgets.QFileSystemModel()
         model.setRootPath(path)
         model.setNameFilterDisables(False)
