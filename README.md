@@ -1,5 +1,5 @@
 # PythonEditor
-A better Script Editor for Foundry's NUKE.
+A Script Editor for Foundry's NUKE with more features.
 
 ## Installation:
 Download or clone the repository.
