@@ -1,4 +1,9 @@
 
+#### Bug fixes
+- [ ] Extra indentation occurs in some other programs
+- [ ] Word wrapping and blocks can cause errors, especially in moving text up/down
+
+
 #### Features - parity
 - [x] Highlight line with error
 - [ ] Read stdout/stderr on open (redirect stdout to log file?)
