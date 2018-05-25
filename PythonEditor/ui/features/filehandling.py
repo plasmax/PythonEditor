@@ -208,6 +208,11 @@ class FileHandler(QtCore.QObject):
                 editor.uid = s.attrib['uuid']
             else:
                 s.attrib['uuid'] = editor.uid
+
+            if 'path' in s.attrib:
+                editor.path = s.attrib['path']
+            elif hasattr(editor, 'path'):
+                s.attrib['path'] = editor.path
             editor.setPlainText(s.text)
 
         if editor_count == 0:
@@ -318,6 +323,8 @@ class FileHandler(QtCore.QObject):
             if s.attrib.get('uuid') == self.editor.uid:
                 s.text = self.editor.toPlainText()
                 s.attrib['name'] = self.editor.name
+                if hasattr(self.editor, 'path'):
+                    s.attrib['path'] = self.editor.path
                 found = True
 
         if not found:
