@@ -37,16 +37,16 @@ def mainexec(text, whole_text):
         error_line_numbers = print_traceback(whole_text, e)
         return error_line_numbers        
     else:
-        if (not isinstance(_, dict) and isinstance(__dict__, dict)
-                or not hasattr(_, 'values')):
+        not_single = not (mode == 'single')
+        not_dicts = (not (isinstance(_, dict) and isinstance(__dict__, dict))) or (not hasattr(_, 'values'))
+        if not_single or not_dicts:
             return None
-
         try:
             if mode == 'single':
                 for value in __dict__.values():
                     if value not in _.values():
                         print(value)
-        except NotImplementedError:
+        except (NotImplementedError, AttributeError) as error:
             return None
 
 
