@@ -189,7 +189,7 @@ class Editor(QtWidgets.QPlainTextEdit):
         else:
             super(Editor, self).dragEnterEvent(e)
 
-        #let's see what the data contains, at least!
+        # let's see what the data contains, at least!
         # maybe restrict this to non-known formats...
         for f in mimeData.formats():
             data = str(mimeData.data(f)).replace(b'\0', b'').replace(b'\x12', b'')
