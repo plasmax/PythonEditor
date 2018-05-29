@@ -11,6 +11,7 @@ class EditTabs(QtWidgets.QTabWidget):
     have tabs the same height as Nuke's.
     """
     reset_tab_signal = QtCore.Signal()
+    closed_tab_signal = QtCore.Signal(object)
     tab_switched_signal = QtCore.Signal(int, int, bool)
 
     def __init__(self):
@@ -97,6 +98,7 @@ class EditTabs(QtWidgets.QTabWidget):
         if editor.objectName() == 'Tab_Widget_New_Button':
             return
 
+        self.closed_tab_signal.emit(editor)
         editor.deleteLater()
 
         self.removeTab(index)
@@ -118,7 +120,7 @@ class EditTabs(QtWidgets.QTabWidget):
         """
         Triggers widget_changed signal with current widget.
         TODO: Investigate why this sometimes seems to cause
-        signal connection errors in filehandling and shortcuts.
+        signal connection errors in autosavexml and shortcuts.
         """
         tabremoved = self.count() < self.tab_count
         previous = self.current_index
