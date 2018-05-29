@@ -1,3 +1,4 @@
+# put python shebang here for linux testing
 """ For testing independently. """
 import sys
 import os
@@ -26,6 +27,7 @@ if __name__ == '__main__':
     ide = PythonEditor.ide.IDE()
     app.setPalette(nukepalette.getNukePalette())
     ide.show()
+    ide.setStyleSheet('font-family:Consolas;font-size:8pt;')
     ide.resize(500, 800)
     plastique = QtWidgets.QStyleFactory.create('Plastique')
     QtWidgets.QApplication.setStyle(plastique)
