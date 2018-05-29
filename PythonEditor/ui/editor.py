@@ -69,7 +69,7 @@ class Editor(QtWidgets.QPlainTextEdit):
             sch.clear_output_signal.connect(self.relay_clear_output_signal)
             self.shortcuteditor = shortcuteditor.ShortcutEditor(sch)
 
-        self.uid = str(uuid.uuid4())
+        self._uid = str(uuid.uuid4())
 
         self.selectionChanged.connect(self.highlight_same_words)
 
@@ -192,7 +192,8 @@ class Editor(QtWidgets.QPlainTextEdit):
         # let's see what the data contains, at least!
         # maybe restrict this to non-known formats...
         for f in mimeData.formats():
-            data = str(mimeData.data(f)).replace(b'\0', b'').replace(b'\x12', b'')
+            data = str(mimeData.data(f)).replace(b'\0', b'')
+            data = data.replace(b'\x12', b'')
             print(f, data)
 
     def dragMoveEvent(self, e):
