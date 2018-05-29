@@ -4,10 +4,11 @@ from PythonEditor.ui.Qt import QtWidgets, QtCore, QtGui
 from PythonEditor.ui import shortcuteditor
 from PythonEditor.ui import preferenceseditor
 from PythonEditor.ui import edittabs
-from PythonEditor.utils import save
 from PythonEditor.ui import browser
+from PythonEditor.ui import menubar
 from PythonEditor.ui.features import shortcuts
-from PythonEditor.ui.features import filehandling
+from PythonEditor.ui.features import autosavexml
+# from PythonEditor.utils import save
 from PythonEditor.utils.constants import NUKE_DIR
 
 
@@ -28,6 +29,7 @@ class Manager(QtWidgets.QWidget):
     """
     def __init__(self):
         super(Manager, self).__init__()
+        self.currently_viewed_file = None
         self.build_layout()
 
     def build_layout(self):
@@ -36,7 +38,8 @@ class Manager(QtWidgets.QWidget):
         """
         layout = QtWidgets.QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        self.setup_menu()
+        # self.setup_menu()
+        self.menubar = menubar.MenuBar(self)
 
         left_widget = QtWidgets.QWidget()
         left_layout = QtWidgets.QVBoxLayout(left_widget)
@@ -72,101 +75,24 @@ class Manager(QtWidgets.QWidget):
 
         splitter.setSizes([200, 10, 800])
 
-        self.connect_signals()
+        self.install_features()
 
         self.check_modified_tabs()
         if self.tabs.count() == 0:
             self.tabs.new_tab()
 
-    def connect_signals(self):
+    def install_features(self):
         """
-        Connect child widget slots to shortcuts.
+        Install features and connect required signals.
         """
         sch = shortcuts.ShortcutHandler(self.tabs)
         # sch.clear_output_signal.connect(self.terminal.clear)
         self.shortcuteditor = shortcuteditor.ShortcutEditor(sch)
         self.preferenceseditor = preferenceseditor.PreferencesEditor()
 
-        self.filehandler = filehandling.FileHandler(self.tabs)
+        self.filehandler = autosavexml.AutoSaveManager(self.tabs)
 
         self.browser.path_signal.connect(self.read)
-
-    def setup_menu(self):
-        """
-        Adds top menu bar and various menu items.
-
-        TODO: Implement the following:
-        # fileMenu.addAction('Save') #QtGui.QAction (?)
-
-        # editMenu.addAction('Copy to External Editor')
-        # editMenu.addAction('Open in External Editor')
-
-        # helpMenu.addAction('About Python Editor')
-        """
-        menuBar = QtWidgets.QMenuBar(self)
-        menuBar.setMaximumHeight(30)
-        fileMenu = QtWidgets.QMenu('File')
-        helpMenu = QtWidgets.QMenu('Help')
-        editMenu = QtWidgets.QMenu('Edit')
-
-        for menu in [fileMenu, editMenu, helpMenu]:
-            menuBar.addMenu(menu)
-
-        fileMenu.addAction('Save As',
-                           self.save_as)
-
-        fileMenu.addAction('Save Selected Text',
-                           self.save_selected_text)
-
-        fileMenu.addAction('Export Selected To External Editor',
-                           self.export_selected_to_external_editor)
-
-        fileMenu.addAction('Export Current Tab To External Editor',
-                           self.export_current_tab_to_external_editor)
-
-        fileMenu.addAction('Export All Tabs To External Editor',
-                           self.export_all_tabs_to_external_editor)
-
-        # helpMenu.addAction('Reload Python Editor',
-        #                    self.parent.reload_package)
-
-        editMenu.addAction('Preferences',
-                           self.show_preferences)
-
-        editMenu.addAction('Shortcuts',
-                           self.show_shortcuts)
-
-        self.layout().addWidget(menuBar)
-
-    def save_as(self):
-        cw = self.edittabs.currentWidget()
-        save.save_as(cw)
-
-    def save_selected_text(self):
-        cw = self.edittabs.currentWidget()
-        save.save_selected_text(cw)
-
-    def export_selected_to_external_editor(self):
-        cw = self.edittabs.currentWidget()
-        save.export_selected_to_external_editor(cw)
-
-    def export_current_tab_to_external_editor(self):
-        save.export_current_tab_to_external_editor(self.edittabs)
-
-    def export_all_tabs_to_external_editor(self):
-        save.export_all_tabs_to_external_editor(self.edittabs)
-
-    def show_shortcuts(self):
-        """
-        Generates a popup dialog listing available shortcuts.
-        """
-        self.shortcuteditor.show()
-
-    def show_preferences(self):
-        """
-        Generates a popup dialog listing available preferences.
-        """
-        self.preferenceseditor.show()
 
     def check_modified_tabs(self):
         """
@@ -193,9 +119,8 @@ class Manager(QtWidgets.QWidget):
                 if f.read() != editor.toPlainText():
                     indices.append(tab_index)
 
-        print indices
         for index in indices:
-            self.set_tab_changed_icon(tab_index=index)
+            self.update_icon(tab_index=index)
 
     def xpand(self):
         """
@@ -230,7 +155,7 @@ class Manager(QtWidgets.QWidget):
         print path
         self.browser.set_model(path)
 
-    def find_opened_file(self, path):
+    def find_file_tab(self, path):
         """
         Search currently opened tabs for an editor
         that matches the given file path.
@@ -245,50 +170,83 @@ class Manager(QtWidgets.QWidget):
     @QtCore.Slot(str)
     def read(self, path):
         """
-        Read from text file and create
-        associated editor if not present.
+        Read from text file and create associated editor
+        if not present. This should replace last viewed file
+        if that file has not been edited, to avoid cluttering.
         """
-        tab_index, editor = self.find_opened_file(path)
-        if tab_index is None:
-            filename = os.path.basename(path)
-            self.tabs.new_tab(tab_name=filename)
+        self.path_edit.setText(path)
+        if not os.path.isfile(path):
+            return
+
+        tab_index, editor = self.find_file_tab(path)
+        already_open = (tab_index is not None)
+        if not already_open:
+            self.replace_viewed(path)
         else:
             self.tabs.setCurrentIndex(tab_index)
         # if no editor with path in tabs add new
         self.editor = self.tabs.currentWidget()
         self.editor.path = path
-        # self.editor.textChanged.connect(self.text_changed)
-        if not os.path.isfile(path):
-            return
 
         with open(path, 'rt') as f:
             text = f.read()
             self.editor.setPlainText(text)
-            self.path_edit.setText(path)
 
         doc = self.editor.document()
         doc.modificationChanged.connect(self.modification_handler)
         # self.editor.modificationChanged.connect(self.modification_handler)
 
-    @QtCore.Slot(object)
-    def text_changed(self, *args):
-        print args
+    def replace_viewed(self, path):
+        """
+        Replaces the currently viewed document,
+        if unedited, with a new document.
+        """
+        viewed = self.currently_viewed_file
+        self.currently_viewed_file = path
+
+        find_replaceable = (viewed is not None)
+
+        # let's only replace files if they're the current tab
+        editor = self.tabs.currentWidget()
+        tab_index = self.tabs.currentIndex()
+        if hasattr(editor, 'path'):
+            if path == viewed:
+                find_replaceable = True
+
+        if find_replaceable:
+            # tab_index, editor = self.find_file_tab(viewed)
+
+            is_replaceable = (tab_index is not None)
+            if is_replaceable:
+                with open(viewed, 'rt') as f:
+                    file_text = f.read()
+                    editor_text = editor.toPlainText()
+                    if file_text != editor_text:  # ndiff cool feature
+                        is_replaceable = False
+
+            if is_replaceable:
+                self.tabs.setCurrentIndex(tab_index)
+                self.tabs.setTabText(tab_index, os.path.basename(path))
+                return
+
+        filename = os.path.basename(path)
+        self.tabs.new_tab(tab_name=filename)
 
     @QtCore.Slot(bool)
     def modification_handler(self, changed):
         """
+        Slot for editor document modificationChanged
         """
         print changed, 'set tab italic!'
         size = 20, 20
         if changed:
             size = 10, 10
-        self.set_tab_changed_icon(size=size)
+        self.update_icon(size=size)
 
-    def set_tab_changed_icon(self, tab_index=None, size=(10, 10)):
+    def update_icon(self, tab_index=None, size=(10, 10)):
         """
-        Visually notify if the document has been
-        altered or is different from the editor's
-        file by setting an icon on the tab.
+        Represent the document's save state
+        by setting an icon on the tab.
         """
         if tab_index is None:
             tab_index = self.tabs.currentIndex()
@@ -297,22 +255,6 @@ class Manager(QtWidgets.QWidget):
         self.tabs.setTabIcon(tab_index, ico)
         # editor = self.tabs.widget(tab)
         # editor.document().setModified(False)
-
-    @QtCore.Slot(str)
-    def write(self):
-        """
-        Write to text file associated with editor.
-        """
-        self.editor = self.tabs.currentWidget()
-        if not hasattr(self.editor, 'path'):
-            return
-
-        path = self.editor.path
-        if not os.path.isfile(path):
-            raise Exception(path+' is not a file. should create it!')
-
-        with open(path, 'wt') as f:
-            f.write(self.editor.toPlainText())
 
     def showEvent(self, event):
         """

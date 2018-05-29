@@ -5,7 +5,7 @@ from PythonEditor.ui import preferenceseditor
 from PythonEditor.ui import edittabs
 from PythonEditor.utils import save
 from PythonEditor.ui.features import shortcuts
-from PythonEditor.ui.features import filehandling
+from PythonEditor.ui.features import autosavexml
 
 
 class PythonEditor(QtWidgets.QWidget):
@@ -47,7 +47,7 @@ class PythonEditor(QtWidgets.QWidget):
         self.shortcuteditor = shortcuteditor.ShortcutEditor(sch)
         self.preferenceseditor = preferenceseditor.PreferencesEditor()
 
-        self.filehandler = filehandling.FileHandler(self.edittabs)
+        self.filehandler = autosavexml.AutoSaveManager(self.edittabs)
 
     def setup_menu(self):
         """
