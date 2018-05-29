@@ -7,14 +7,29 @@ from PythonEditor.utils import constants
 
 
 def save_text(path, text):
-    with open(path, 'w') as f:
+    with open(path, 'wt') as f:
         f.write(text)
+
+
+def save(editor):
+    """
+    Look for a file path property on the editor
+    and save the text to that file.
+    """
+    if hasattr(editor, 'path'):
+        path = editor.path
+        if os.path.isfile(path):
+            text = editor.toPlainText()
+            save_text(path, text)
+            return
+
+    path = save_as(editor)
+    editor.path = path
 
 
 def save_text_as(editor, text, title='Save Text As'):
     """
-    TODO:
-    Is this better placed in filehandling? It generates a UI
+    Ask user where they would like to save the given text.
     """
     path, _ = QtWidgets.QFileDialog.getSaveFileName(
         editor,
@@ -30,12 +45,14 @@ def save_text_as(editor, text, title='Save Text As'):
 
 def save_selected_text(editor):
     text = editor.textCursor().selection().toPlainText()
-    return save_text_as(editor, text, title='Save Selected Text')
+    path = save_text_as(editor, text, title='Save Selected Text')
+    return path
 
 
 def save_as(editor):
     text = editor.toPlainText()
-    return save_text_as(editor, text, title='Save As')
+    path = save_text_as(editor, text, title='Save As')
+    return path
 
 
 def export_selected_to_external_editor(editor):
@@ -43,6 +60,7 @@ def export_selected_to_external_editor(editor):
     EXTERNAL_EDITOR_PATH = constants.get_external_editor_path()
     if path and EXTERNAL_EDITOR_PATH:
         subprocess.Popen([EXTERNAL_EDITOR_PATH, path])
+    return path
 
 
 def save_editor(folder, name, editor):
@@ -50,6 +68,7 @@ def save_editor(folder, name, editor):
     file = name.split('.')[0] + '.py'
     path = os.path.join(folder, file)
     save_text(path, text)
+    return path
 
 
 def open_external_editor(path):
