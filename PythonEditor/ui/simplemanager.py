@@ -9,8 +9,6 @@ def cd_up(path, level=1):
 package_dir = cd_up(__file__, level=3)
 sys.path.insert(0, package_dir)
 
-# raise Exception
-
 from PythonEditor.ui.Qt import QtWidgets, QtCore
 from PythonEditor.ui import editor
 from PythonEditor.ui import browser
