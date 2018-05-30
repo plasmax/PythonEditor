@@ -29,7 +29,8 @@ class FileTree(QtWidgets.QTreeView):
             super(FileTree, self).mousePressEvent(event)
         if event.button() == QtCore.Qt.RightButton:
             menu = QtWidgets.QMenu()
-            menu.addAction('New File', 'print "does nothing"')
+            menu.addAction('New', 'print "does nothing"')
+            menu.addAction('Delete', 'print "does nothing"')
             cursor = QtGui.QCursor()
             pos = cursor.pos()
             menu.exec_(pos)
