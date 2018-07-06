@@ -8,7 +8,9 @@ import inspect
 from PythonEditor.ui.Qt import QtGui, QtCore, QtWidgets
 
 KEYWORDS = ['True',
-            'False']
+            'False',
+            'execfile']
+KEYWORDS.extend(dir(__builtins__))
 
 class_snippet = """class <!cursor>():
     def __init__(self):
