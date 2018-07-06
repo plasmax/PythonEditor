@@ -44,8 +44,13 @@ def mainexec(text, whole_text):
         try:
             if mode == 'single':
                 for value in __dict__.values():
-                    if value not in _.values():
-                        print(value)
+                    try:
+                        # this line has caused so many errors! I will start collecting them:
+                        # SystemError: Objects/longobject.c:244: bad argument to internal function
+                        if value not in _.values():
+                            print(value)
+                    except TypeError:
+                        pass
         except (NotImplementedError, AttributeError) as error:
             return None
 
