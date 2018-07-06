@@ -96,7 +96,10 @@ class Terminal(QtWidgets.QPlainTextEdit):
         self.setReadOnly(True)
         self.setup()
         self.destroyed.connect(self.stop)
-
+        font = QtGui.QFont('DejaVu Sans Mono')
+        font.setPointSize(10)
+        self.setFont(font)
+        
     @QtCore.Slot(str)
     def receive(self, text):
         try:
