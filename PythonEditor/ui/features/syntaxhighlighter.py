@@ -64,7 +64,8 @@ class Highlight(QtGui.QSyntaxHighlighter):
             'is', 'lambda', 'not', 'or', 'pass', 'print',
             'raise', 'return', 'try', 'while', 'yield', 'with'
             ]
-
+        self.keywords.extend(dir(__builtins__))
+        
         self.instantiators = [
             'def', 'class'
             ]
