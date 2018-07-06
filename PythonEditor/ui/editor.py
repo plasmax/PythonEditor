@@ -49,9 +49,9 @@ class Editor(QtWidgets.QPlainTextEdit):
         super(Editor, self).__init__()
         self.setObjectName('Editor')
         self.setAcceptDrops(True)
-        # font = QtGui.QFont('Consolas')
-        # font.setPointSize(9)
-        # self.setFont(font)
+        font = QtGui.QFont('DejaVu Sans Mono')
+        font.setPointSize(10)
+        self.setFont(font)
 
         self._changed = False
         self.textChanged.connect(self._handle_text_changed)
