@@ -174,7 +174,7 @@ class AutoSaveManager(QtCore.QObject):
         implementations..) fixes other
         parsing errors with the xml file.
         """
-        with open(path, 'r', encoding='utf-8') as f:
+        with io.open(path, 'r', encoding='utf-8') as f:
             content = f.read()
 
         safe_string = remove_control_characters(content)
