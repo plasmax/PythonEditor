@@ -43,6 +43,9 @@ class EditTabs(QtWidgets.QTabWidget):
             self.tabBar().moveTab(to_index, from_index)
 
     def setup_new_tab_btn(self):
+        """
+        Adds a new tab [+] button to the right of the tabs.
+        """
         widget = QtWidgets.QWidget()
         widget.setObjectName('Tab_Widget_New_Button')
         self.insertTab(0, widget, '')
