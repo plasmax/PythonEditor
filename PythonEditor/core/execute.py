@@ -51,17 +51,17 @@ def mainexec(text, whole_text):
             return None
 
         try:
-            if mode == 'single':
-                for value in __main__.__dict__.values():
-                    try:
-                        # sometimes, this causes
-                        # SystemError: Objects/longobject.c:244:
-                        # bad argument to internal function
-                        if value not in namespace.values():
-                            print(value)
-                    except TypeError:
-                        pass
-        except (NotImplementedError, AttributeError):
+            for value in __main__.__dict__.values():
+                    if value not in namespace.values():
+                        print(value)
+        except Exception as e:
+            print('Value retrieval error from __main__.__dict__')
+            print(repr(e))
+            # TODO: do some logging here.
+            # sometimes, this causes
+            # SystemError: Objects/longobject.c:244:
+            # bad argument to internal function
+            # NotImplementedError, AttributeError, TypeError, SystemError
             return None
 
 
