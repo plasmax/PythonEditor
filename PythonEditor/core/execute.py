@@ -1,4 +1,4 @@
-from __main__ import __dict__
+import __main__
 import traceback
 import re
 
@@ -28,30 +28,40 @@ def mainexec(text, whole_text):
         error_line_numbers = print_syntax_traceback()
         return error_line_numbers
 
-    _ = __dict__.copy()
+    namespace = __main__.__dict__.copy()
     print('# Result: ')
     try:
         # Ian Thompson is a golden god
-        exec(_code, __dict__)
+        exec(_code, __main__.__dict__)
     except Exception as e:
         error_line_numbers = print_traceback(whole_text, e)
-        return error_line_numbers        
+        return error_line_numbers
     else:
-        not_single = not (mode == 'single')
-        not_dicts = (not (isinstance(_, dict) and isinstance(__dict__, dict))) or (not hasattr(_, 'values'))
-        if not_single or not_dicts:
+        # try to print new values initialised
+        if mode != 'single':
+            return
+
+        not_dicts = not all([
+            isinstance(namespace, dict),
+            isinstance(__main__.__dict__, dict),
+            hasattr(namespace, 'values')
+            ])
+
+        if not_dicts:
             return None
+
         try:
             if mode == 'single':
-                for value in __dict__.values():
+                for value in __main__.__dict__.values():
                     try:
-                        # this line has caused so many errors! I will start collecting them:
-                        # SystemError: Objects/longobject.c:244: bad argument to internal function
-                        if value not in _.values():
+                        # sometimes, this causes
+                        # SystemError: Objects/longobject.c:244:
+                        # bad argument to internal function
+                        if value not in namespace.values():
                             print(value)
                     except TypeError:
                         pass
-        except (NotImplementedError, AttributeError) as error:
+        except (NotImplementedError, AttributeError):
             return None
 
 
