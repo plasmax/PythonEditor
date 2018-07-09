@@ -1,7 +1,7 @@
 import uuid
 from PythonEditor.ui.Qt import QtWidgets, QtGui, QtCore
 
-from PythonEditor.ui import shortcuteditor
+from PythonEditor.ui.dialogs import shortcuteditor
 from PythonEditor.ui.features import (shortcuts,
                                       linenumberarea,
                                       syntaxhighlighter,

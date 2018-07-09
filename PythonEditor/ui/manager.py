@@ -1,14 +1,14 @@
 import os
 
 from PythonEditor.ui.Qt import QtWidgets, QtCore, QtGui
-from PythonEditor.ui import shortcuteditor
-from PythonEditor.ui import preferenceseditor
 from PythonEditor.ui import edittabs
 from PythonEditor.ui import browser
 from PythonEditor.ui import menubar
 from PythonEditor.ui.features import shortcuts
 from PythonEditor.ui.features import autosavexml
-# from PythonEditor.utils import save
+from PythonEditor.ui.dialogs import preferences
+from PythonEditor.ui.dialogs import shortcuteditor
+# from PythonEditor import save
 from PythonEditor.utils.constants import NUKE_DIR
 
 
@@ -88,7 +88,7 @@ class Manager(QtWidgets.QWidget):
         sch = shortcuts.ShortcutHandler(self.tabs)
         # sch.clear_output_signal.connect(self.terminal.clear)
         self.shortcuteditor = shortcuteditor.ShortcutEditor(sch)
-        self.preferenceseditor = preferenceseditor.PreferencesEditor()
+        self.preferenceseditor = preferences.PreferencesEditor()
 
         self.filehandler = autosavexml.AutoSaveManager(self.tabs)
 

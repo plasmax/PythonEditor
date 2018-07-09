@@ -1,11 +1,11 @@
 from PythonEditor.ui.Qt import QtWidgets, QtCore
 from PythonEditor.ui import terminal
-from PythonEditor.ui import shortcuteditor
-from PythonEditor.ui import preferenceseditor
 from PythonEditor.ui import edittabs
 from PythonEditor.utils import save
 from PythonEditor.ui.features import shortcuts
 from PythonEditor.ui.features import autosavexml
+from PythonEditor.ui.dialogs import preferences
+from PythonEditor.ui.dialogs import shortcuteditor
 
 
 class PythonEditor(QtWidgets.QWidget):
@@ -45,7 +45,7 @@ class PythonEditor(QtWidgets.QWidget):
         sch = shortcuts.ShortcutHandler(self.edittabs)
         sch.clear_output_signal.connect(self.terminal.clear)
         self.shortcuteditor = shortcuteditor.ShortcutEditor(sch)
-        self.preferenceseditor = preferenceseditor.PreferencesEditor()
+        self.preferenceseditor = preferences.PreferencesEditor()
 
         self.filehandler = autosavexml.AutoSaveManager(self.edittabs)
 
