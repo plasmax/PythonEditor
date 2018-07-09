@@ -1,5 +1,6 @@
-# put python shebang here for linux testing
+#!/usr/bin/env nuke-python
 """ For testing independently. """
+from __future__ import absolute_import
 import sys
 import os
 import imp
