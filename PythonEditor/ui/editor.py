@@ -18,7 +18,14 @@ CTRL_ALT = QtCore.Qt.ControlModifier | QtCore.Qt.AltModifier
 
 class Editor(QtWidgets.QPlainTextEdit):
     """
-    Code Editor widget.
+    Code Editor widget. Extends QPlainTextEdit to provide:
+    - Line Number Area
+    - Syntax Highlighting
+    - Autocompletion (of Python code)
+    - Shortcuts for code editing
+    - New Context Menu
+    - Signals for connecting the Editor to other UI elements.
+    - Unique identifier to match Editor widget to file storage.
     """
     wrap_types = ['\'', '"',
                   '[', ']',
@@ -70,11 +77,16 @@ class Editor(QtWidgets.QPlainTextEdit):
             self.shortcuteditor = shortcuteditor.ShortcutEditor(sch)
 
         self._uid = str(uuid.uuid4())
+        self._read_only = False
 
         self.selectionChanged.connect(self.highlight_same_words)
 
     @property
     def uid(self):
+        """
+        Unique identifier for keeping track of
+        document and editor changes in autosave files.
+        """
         return self._uid
 
     @uid.setter
@@ -83,12 +95,43 @@ class Editor(QtWidgets.QPlainTextEdit):
 
     @property
     def name(self):
+        """
+        The name for the editor document.
+        Generally corresponds to a tab name and/or
+        file name.
+        """
         return self._name
 
     @name.setter
     def name(self, name):
         self._name = name
+        
+    @property
+    def path(self):
+        """
+        A path to a file where the document
+        expects to be saved.
+        """
+        return self._path
 
+    @path.setter
+    def path(self, path):
+        self._path = path
+
+    @property
+    def read_only(self):
+        """
+        Returns True or False, 
+        detemining whether the editor is in
+        read-only mode or not. Should be disabled
+        when editing has begun.
+        """
+        return self._read_only
+
+    @read_only.setter
+    def read_only(self, read_only):
+        self._read_only = read_only
+    
     def _handle_text_changed(self):
         self._changed = True
 
