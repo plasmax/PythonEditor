@@ -28,6 +28,29 @@ def remove_control_characters(s):
 class AutoSaveManager(QtCore.QObject):
     """
     Simple xml text storage.
+
+    TODO: Implement full design!
+    # Reads when:
+    - A new file is opened (text is set and file path is stored)
+    - Restoring Autosave from XML: is read from xml file (unsaved)
+    - Restoring Autosave from File: File is read from xml path when tab is left open
+
+    # Writes when:
+    - A file is saved (asks for file path if xml attrib not present)
+
+    # Autosaves editor contents when:
+    - An opened file (in read-only mode) has been edited
+    - A new tab is opened and content created
+
+    # Deletes when:
+    - When writing to a file, the autosave text 
+    content is cleared, but the xml entry is left.
+    - When closing a tab:
+        if there is autosaved content:
+            the user will be asked to save.
+            if they do:
+                the file is saved, the xml content cleared
+        the xml entry will be deleted.
     """
     restore_tab_signal = QtCore.Signal(str)
 
@@ -135,6 +158,12 @@ class AutoSaveManager(QtCore.QObject):
 
         with io.open(path, 'r') as f:
             text = f.read()
+
+        self.editor.read_only = True
+        
+        # register the path on the editor object.
+        # TODO: set this in the xml file!
+        self.editor.path = path
 
         self.editor.setPlainText(text)
 
