@@ -7,7 +7,15 @@ folder = PACKAGE_DIR
 sys.path.append(folder)
 
 from PythonEditor.ui import manager
-reload(manager)
+from PythonEditor.ui.Qt import QtWidgets
 
-m = manager.Manager()
-m.show()
+
+if __name__ == '__main__':
+    if not QtWidgets.QApplication.instance():
+        app = QtWidgets.QApplication(sys.argv)
+        m = manager.Manager()
+        m.show()
+        sys.exit(app.exec_())
+    else:
+        m = manager.Manager()
+        m.show()
