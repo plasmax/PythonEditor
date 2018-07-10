@@ -1,3 +1,5 @@
+import os # temporary for self.open until files.py or files/open.py, save.py, autosave.py implemented.
+
 from PythonEditor.ui.Qt import QtWidgets, QtCore
 from PythonEditor.ui import terminal
 from PythonEditor.ui import edittabs
@@ -69,6 +71,12 @@ class PythonEditor(QtWidgets.QWidget):
         for menu in [file_menu, edit_menu, help_menu]:
             menu_bar.addMenu(menu)
 
+        file_menu.addAction('New',
+                           self.new)
+
+        file_menu.addAction('Open',
+                           self.open)
+
         file_menu.addAction('Save',
                            self.save)
 
@@ -104,6 +112,24 @@ class PythonEditor(QtWidgets.QWidget):
     @property
     def editor(self):
         return self.edittabs.currentWidget()
+
+    def new(self):
+        self.edittabs.new_tab()
+
+    def open(self):
+        """
+        Simple open file
+        """
+        o = QtWidgets.QFileDialog.getOpenFileName
+        path, _ = o(self, "Open File")
+        print(path)
+        editor = self.edittabs.new_tab(tab_name=os.path.basename(path))
+        editor.path = path
+        print('UNSAFE! CHANGES TO THE DOCUMENT WILL BE LOST UNTIL THE EDITOR AUTOMATICALLY SETS READ_ONLY TO FALSE WHEN EDITING STARTS!')
+        print('-- Also needs to save file path to xml')
+        editor.read_only = True # TODO!!!!!!!! SET THIS TO FALSE LATER. 
+        with open(path, 'rt') as f:
+            editor.setPlainText(f.read())
 
     def save(self):
         save.save(self.editor)
