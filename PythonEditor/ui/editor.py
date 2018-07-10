@@ -78,9 +78,10 @@ class Editor(QtWidgets.QPlainTextEdit):
             self.shortcuteditor = shortcuteditor.ShortcutEditor(sch)
 
         self._uid = str(uuid.uuid4())
-        self._read_only = False
 
         self.selectionChanged.connect(self.highlight_same_words)
+        self.modificationChanged.connect(self._handle_modificationChanged)
+        self._read_only = False
 
     @property
     def uid(self):
@@ -130,8 +131,14 @@ class Editor(QtWidgets.QPlainTextEdit):
         return self._read_only
 
     @read_only.setter
-    def read_only(self, read_only):
-        self._read_only = read_only
+    def read_only(self, state=False):
+        print('Read only set to', self.name, state)
+        self._read_only = state
+
+    @QtCore.Slot(bool)
+    def _handle_modificationChanged(self, changed):
+        self.read_only = not changed
+        # self.read_only = changed
 
     def _handle_text_changed(self):
         self._changed = True
