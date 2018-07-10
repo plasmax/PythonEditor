@@ -1,9 +1,12 @@
 from __future__ import unicode_literals
 from __future__ import print_function
+
 import os
 import io
 import unicodedata
 from xml.etree import cElementTree as ElementTree
+from functools import partial
+
 from PythonEditor.ui.Qt import QtCore, QtWidgets
 from PythonEditor.utils import save
 from PythonEditor.utils.constants import (AUTOSAVE_FILE,
@@ -112,6 +115,8 @@ class AutoSaveManager(QtCore.QObject):
         rts.connect(self.clear_subscripts)
         cts = tabs.closed_tab_signal
         cts.connect(self.editor_close_handler)
+        css = tabs.contents_saved_signal
+        css.connect(self.handle_document_save)
 
         self.set_editor()
         self.readautosave()
@@ -139,18 +144,16 @@ class AutoSaveManager(QtCore.QObject):
             self.connect_signals()
 
     def connect_signals(self):
-        """ Connects signals to the current editor """
+        """ Connects the current editor's signals to this class """
         self.editor.textChanged.connect(self.save_timer)
         self.editor.focus_in_signal.connect(self.check_document_modified)
-        self.editor.contents_saved_signal.connect(self.handle_document_save)
 
     def disconnect_signals(self):
-        """ Disconnects signals from the current editor """
+        """ Disconnects the current editor's signals from this class """
         if not hasattr(self, 'editor'):
             return
         self.editor.textChanged.disconnect()
         self.editor.focus_in_signal.disconnect()
-        self.editor.contents_saved_signal.disconnect()
 
     def setup_save_timer(self, interval=1000):
         """
@@ -161,7 +164,6 @@ class AutoSaveManager(QtCore.QObject):
         self.timer = QtCore.QTimer()
         self.timer.setSingleShot(True)
         self.timer.setInterval(interval)
-        self.timer.timeout.connect(self.autosave_handler)
 
     def save_timer(self):
         """
@@ -175,14 +177,18 @@ class AutoSaveManager(QtCore.QObject):
         self.timer_waiting = True
         if self.timer.isActive():
             self.timer.stop()
+
+        self.setup_save_timer()
+        autosave = partial(self.autosave_handler, self.editor)
+        self.timer.timeout.connect(autosave)
         self.timer.start()
 
-    def autosave_handler(self):
+    def autosave_handler(self, editor=None):
         """
         Autosave timeout triggers this.
         """
         self.timer_waiting = False
-        self.autosave()
+        self.autosave(editor=editor)
 
     def readfile(self, path):
         """
@@ -204,7 +210,6 @@ class AutoSaveManager(QtCore.QObject):
         # register the path on the editor object.
         # TODO: set this in the xml file!
         self.editor.path = path
-
         self.editor.setPlainText(text)
 
     def readxml(self, path):
@@ -261,6 +266,7 @@ class AutoSaveManager(QtCore.QObject):
 
             if s.text:
                 editor.setPlainText(s.text)
+                editor.read_only = False
             else:
                 self.editor = editor
                 self.readfile(path)
@@ -361,31 +367,41 @@ class AutoSaveManager(QtCore.QObject):
         self._timer.start()
 
     @QtCore.Slot()
-    def autosave(self):
+    def autosave(self, editor=None):
         """
         Saves editor contents into autosave
         file with a unique identifier (uuid)
         and accompanying file path if available.
         """
+        if editor is None:
+            editor = self.editor
+
         root, subscripts = parsexml('subscript')
 
         found = False
         for s in subscripts:
-            if s.attrib.get('uuid') == self.editor.uid:
-                s.text = self.editor.toPlainText()
-                s.attrib['name'] = self.editor.name
-                if hasattr(self.editor, 'path'):
-                    s.attrib['path'] = self.editor.path
+            if s.attrib.get('uuid') == editor.uid:
+                if not editor.read_only:
+                    s.text = editor.toPlainText()
+                    
+                s.attrib['name'] = editor.name
+                if hasattr(editor, 'path'):
+                    s.attrib['path'] = editor.path
                 found = True
 
         if not found:
             sub = ElementTree.Element('subscript')
-            sub.attrib['uuid'] = self.editor.uid
-            sub.attrib['name'] = self.editor.name
+            sub.attrib['uuid'] = editor.uid
+            sub.attrib['name'] = editor.name
+            if hasattr(editor, 'path'):
+                sub.attrib['path'] = editor.path
+            if not editor.read_only:
+                sub.text = editor.toPlainText()
             root.append(sub)
-            sub.text = self.editor.toPlainText()
 
         self.writexml(root)
+
+        print('Autosaved', editor.name, '. read_only:', editor.read_only)
 
     @QtCore.Slot(object)
     def handle_document_save(self, editor):
@@ -395,8 +411,10 @@ class AutoSaveManager(QtCore.QObject):
         these should be loaded from file on next app load
         (if the tab remains open).
         """
-        if editor.read_only:
-            return
+        # if editor.read_only:
+        #     return
+
+        print('Handling document save!', editor.path)
 
         root, subscripts = parsexml('subscript')
 
@@ -407,11 +425,14 @@ class AutoSaveManager(QtCore.QObject):
         editor_found = False
         for s in subscripts:
             if s.attrib.get('uuid') == editor.uid:
+                if not s.text:
+                    continue
                 with open(editor.path, 'rt') as f:
                     if s.text == f.read():
                         editor_found = True
                         s.text = ''
                         s.attrib['path'] = editor.path
+                        editor.read_only = True
                     else:
                         msg = '{0} did not match {1} contents, retaining autosave'
                         print(msg.format(editor.name, editor.path))
@@ -487,54 +508,91 @@ class AutoSaveManager(QtCore.QObject):
         have been saved (by checking the read_only state of the
         editor), then removes the autosave contents.
         """
-        if not editor.read_only:
+        # check for unsaved contents.
+        safe_to_remove = editor.read_only
+
+        # if there's no text and no path 
+        # (i.e. user doesn't want to resave file as empty)
+        is_empty = (editor.toPlainText().strip() == '')
+        no_path = not hasattr(editor, 'path')
+        if is_empty and no_path:
+            safe_to_remove = True
+
+        if not safe_to_remove:
             msg_box = QtWidgets.QMessageBox()
             msg_box.setText('The document has been modified.')
             msg_box.setInformativeText('Do you want to save your changes?')
-            buttons = msg_box.Save | msg_box.Discard# | msg_box.Cancel
+            buttons = msg_box.Save | msg_box.Discard | msg_box.Cancel
             msg_box.setStandardButtons(buttons)
             msg_box.setDefaultButton(msg_box.Save)
             ret = msg_box.exec_()
 
-            ## TODO: implement Cancel
-            # if (ret == msg_box.Cancel):
-            #     # restore the editor
-            #     index = self.tabs.currentIndex()
-            #     self.tabs.insertTab(index, editor, unicode(editor.name))
-            #     return
+            user_cancelled = (ret == msg_box.Cancel)
 
             if (ret == msg_box.Save):
-                path = save.save_as(editor)
+                path = save.save(editor)
                 if path is None:
-                    # user cancelled
-                    return
+                    user_cancelled = True
 
-                # we need to call this explicitly because the signal
-                # would otherwise be executed after self.remove_saved
-                self.handle_document_save(editor)
+            # TODO: this is ridiculous. 
+            # show the current editor again and 
+            # work around the disconnect signals.
+            if user_cancelled:
+                # recreate the editor
+                old_editor = editor
+                editor = self.tabs.new_tab(tab_name=old_editor.name)
+                editor.setPlainText(old_editor.toPlainText())
 
-        self.remove_saved(uid=editor.uid)
+                for attr in ['uid', 'name', 'path', 'read_only']:
+                    if hasattr(old_editor, attr):
+                        setattr(editor, attr, getattr(old_editor, attr))
 
-    def remove_saved(self, uid=None):
+
+                return
+
+        # if we arrive here it means on of the following: 
+        # a) file is not open for editing (read-only)
+        # b) we've already saved
+        # c) we've Discarded the document
+        # So it's safe to remove it.
+        self.remove_subscript(editor.uid)
+
+    # def remove_saved(self, uid=None):
+    #     """
+        
+    #     """
+    #     root, subscripts = parsexml('subscript')
+
+    #     for s in subscripts:
+    #         path = s.attrib.get('path')
+    #         if path is None:
+    #             continue
+    #         if not os.path.isfile(path):
+    #             continue
+    #         if s.attrib.get('uuid') != uid:
+    #             continue
+    #         if not s.text:
+    #             root.remove(s)
+
+    #     self.writexml(root)
+
+    def remove_subscript(self, uid):
         """
-        Extra cleanup. Remove subscripts
-        if they have an associated file
-        whose text matches.
+        Explicitly remove a subscript entry.
+
+        :param uid: Unique Identifier of subscript 
+        to remove
         """
         root, subscripts = parsexml('subscript')
 
+        item_removed = False
         for s in subscripts:
-            path = s.attrib.get('path')
-            if path is None:
-                continue
-            if not os.path.isfile(path):
-                continue
-            if s.attrib.get('uuid') != uid:
-                continue
-            if not s.text:
+            if s.attrib.get('uuid') == uid:
                 root.remove(s)
+                item_removed = True
 
-        self.writexml(root)
+        if item_removed:
+            self.writexml(root)
 
     @QtCore.Slot()
     def clear_subscripts(self):
