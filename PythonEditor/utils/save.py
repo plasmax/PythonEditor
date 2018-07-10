@@ -36,6 +36,10 @@ def save(editor):
     """
     Look for a file path property on the editor
     and save the entire document to that file.
+
+    Sets the read_only status of the editor to True,
+    meaning the autosave will consider it removable
+    if the tab is closed.
     """
     if not hasattr(editor, 'path'):
         path = save_as(editor)
