@@ -7,12 +7,11 @@ class EditTabs(QtWidgets.QTabWidget):
     """
     QTabWidget containing Editor
     QPlainTextEdit widgets.
-    TODO: Set stylesheet to
-    have tabs the same height as Nuke's.
     """
     reset_tab_signal = QtCore.Signal()
     closed_tab_signal = QtCore.Signal(object)
     tab_switched_signal = QtCore.Signal(int, int, bool)
+    contents_saved_signal = QtCore.Signal(object)
 
     def __init__(self):
         QtWidgets.QTabWidget.__init__(self)
@@ -79,6 +78,9 @@ class EditTabs(QtWidgets.QTabWidget):
                        tab_name
                        )
         self.setCurrentIndex(index)
+
+        # relay the contents saved signal
+        editor.contents_saved_signal.connect(self.contents_saved_signal)
 
         self.tab_count = self.count()
         self.current_index = self.currentIndex()
