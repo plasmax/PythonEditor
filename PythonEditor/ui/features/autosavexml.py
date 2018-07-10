@@ -5,6 +5,7 @@ import io
 import unicodedata
 from xml.etree import cElementTree as ElementTree
 from PythonEditor.ui.Qt import QtCore, QtWidgets
+from PythonEditor.utils import save
 from PythonEditor.utils.constants import (AUTOSAVE_FILE,
                                           XML_HEADER,
                                           create_autosave_file)
@@ -25,6 +26,42 @@ def remove_control_characters(s):
     return "".join(ch for ch in s if no_cc(ch))
 
 
+def parsexml(element_name, path=AUTOSAVE_FILE):
+    if not create_autosave_file():
+        return
+
+    try:
+        xmlp = ElementTree.XMLParser(encoding="utf-8")
+        parser = ElementTree.parse(path, xmlp)
+    except ElementTree.ParseError as e:
+        print('ElementTree.ParseError', e)
+        parser = fix_broken_xml(path)
+
+    root = parser.getroot()
+    elements = root.findall(element_name)
+    return root, elements
+
+
+def fix_broken_xml(path=AUTOSAVE_FILE):
+    """
+    Removes unwanted characters and
+    (in case necessary in future
+    implementations..) fixes other
+    parsing errors with the xml file.
+    """
+    with io.open(path, 'r', encoding='utf-8') as f:
+        content = f.read()
+
+    safe_string = remove_control_characters(content)
+
+    with open(path, 'wt') as f:
+        f.write(safe_string)
+
+    xmlp = ElementTree.XMLParser(encoding="utf-8")
+    parser = ElementTree.parse(path, xmlp)
+    return parser
+
+
 class AutoSaveManager(QtCore.QObject):
     """
     Simple xml text storage.
@@ -33,7 +70,8 @@ class AutoSaveManager(QtCore.QObject):
     # Reads when:
     - A new file is opened (text is set and file path is stored)
     - Restoring Autosave from XML: is read from xml file (unsaved)
-    - Restoring Autosave from File: File is read from xml path when tab is left open
+    - Restoring Autosave from File: File is read from xml path
+    when tab is left open
 
     # Writes when:
     - A file is saved (asks for file path if xml attrib not present)
@@ -43,7 +81,7 @@ class AutoSaveManager(QtCore.QObject):
     - A new tab is opened and content created
 
     # Deletes when:
-    - When writing to a file, the autosave text 
+    - When writing to a file, the autosave text
     content is cleared, but the xml entry is left.
     - When closing a tab:
         if there is autosaved content:
@@ -104,6 +142,7 @@ class AutoSaveManager(QtCore.QObject):
         """ Connects signals to the current editor """
         self.editor.textChanged.connect(self.save_timer)
         self.editor.focus_in_signal.connect(self.check_document_modified)
+        self.editor.contents_saved_signal.connect(self.handle_document_save)
 
     def disconnect_signals(self):
         """ Disconnects signals from the current editor """
@@ -111,6 +150,7 @@ class AutoSaveManager(QtCore.QObject):
             return
         self.editor.textChanged.disconnect()
         self.editor.focus_in_signal.disconnect()
+        self.editor.contents_saved_signal.disconnect()
 
     def setup_save_timer(self, interval=1000):
         """
@@ -160,7 +200,7 @@ class AutoSaveManager(QtCore.QObject):
             text = f.read()
 
         self.editor.read_only = True
-        
+
         # register the path on the editor object.
         # TODO: set this in the xml file!
         self.editor.path = path
@@ -181,54 +221,25 @@ class AutoSaveManager(QtCore.QObject):
         with io.open(path, 'wt', encoding='utf8', errors='ignore') as f:
             f.write(XML_HEADER+data)
 
-    def parsexml(self, element_name, path=AUTOSAVE_FILE):
-        if not create_autosave_file():
-            return
-
-        try:
-            xmlp = ElementTree.XMLParser(encoding="utf-8")
-            parser = ElementTree.parse(path, xmlp)
-        except ElementTree.ParseError as e:
-            print('ElementTree.ParseError', e)
-            parser = self.fix_broken_xml(path)
-
-        root = parser.getroot()
-        elements = root.findall(element_name)
-        return root, elements
-
-    def fix_broken_xml(self, path):
-        """
-        Removes unwanted characters and
-        (in case necessary in future
-        implementations..) fixes other
-        parsing errors with the xml file.
-        """
-        with io.open(path, 'r', encoding='utf-8') as f:
-            content = f.read()
-
-        safe_string = remove_control_characters(content)
-
-        with open(path, 'wt') as f:
-            f.write(safe_string)
-
-        xmlp = ElementTree.XMLParser(encoding="utf-8")
-        parser = ElementTree.parse(path, xmlp)
-        return parser
-
     def readautosave(self):
         """
         Sets editor text content. First checks the
         autosave file for <subscript> elements and
         creates a tab per element.
         """
-        root, subscripts = self.parsexml('subscript')
+        root, subscripts = parsexml('subscript')
 
         editor_count = 0
         for s in subscripts:
 
             if not s.text:
-                root.remove(s)
-                continue
+                path = s.attrib.get('path')
+                if path is None:
+                    root.remove(s)
+                    continue
+                if not os.path.isfile(path):
+                    continue
+                s.attrib['name'] = os.path.basename(path)
 
             editor_count += 1
 
@@ -247,7 +258,12 @@ class AutoSaveManager(QtCore.QObject):
                 editor.path = s.attrib['path']
             elif hasattr(editor, 'path'):
                 s.attrib['path'] = editor.path
-            editor.setPlainText(s.text)
+
+            if s.text:
+                editor.setPlainText(s.text)
+            else:
+                self.editor = editor
+                self.readfile(path)
 
         if editor_count == 0:
             self.tabs.new_tab()
@@ -265,7 +281,7 @@ class AutoSaveManager(QtCore.QObject):
         if self.timer_waiting:
             return
 
-        root, subscripts = self.parsexml('subscript')
+        root, subscripts = parsexml('subscript')
 
         all_match = True
         not_matching = []
@@ -351,7 +367,7 @@ class AutoSaveManager(QtCore.QObject):
         file with a unique identifier (uuid)
         and accompanying file path if available.
         """
-        root, subscripts = self.parsexml('subscript')
+        root, subscripts = parsexml('subscript')
 
         found = False
         for s in subscripts:
@@ -370,6 +386,39 @@ class AutoSaveManager(QtCore.QObject):
             sub.text = self.editor.toPlainText()
 
         self.writexml(root)
+
+    @QtCore.Slot(object)
+    def handle_document_save(self, editor):
+        """
+        Locate editor via uid attribute and remove the autosave
+        contents if they match the given path file contents as
+        these should be loaded from file on next app load
+        (if the tab remains open).
+        """
+        if editor.read_only:
+            return
+
+        root, subscripts = parsexml('subscript')
+
+        if not os.path.isfile(editor.path):
+            print('No save file found. Retaining autosave.')
+            return
+
+        editor_found = False
+        for s in subscripts:
+            if s.attrib.get('uuid') == editor.uid:
+                with open(editor.path, 'rt') as f:
+                    if s.text == f.read():
+                        editor_found = True
+                        s.text = ''
+                        s.attrib['path'] = editor.path
+                    else:
+                        msg = '{0} did not match {1} contents, retaining autosave'
+                        print(msg.format(editor.name, editor.path))
+
+        if editor_found:
+            self.writexml(root)
+            print('Document {0} should no longer have contents'.format(editor.uid))
 
     # @QtCore.Slot(str)
     # def check_editor_closed(self, uid):
@@ -407,7 +456,6 @@ class AutoSaveManager(QtCore.QObject):
     #     print('resetting hidden uid')
     #     self.last_hidden_uid = None
 
-
     @QtCore.Slot(int)
     def tab_close_handler(self, tab_index):
         """
@@ -422,10 +470,12 @@ class AutoSaveManager(QtCore.QObject):
         """
         Remove subscripts if they are empty.
         """
-        root, subscripts = self.parsexml('subscript')
+        root, subscripts = parsexml('subscript')
 
         for s in subscripts:
-            if not s.text:
+            notext = not s.text
+            nopath = s.attrib.get('path') is None
+            if notext and nopath:
                 root.remove(s)
 
         self.writexml(root)
@@ -433,16 +483,45 @@ class AutoSaveManager(QtCore.QObject):
     @QtCore.Slot(object)
     def editor_close_handler(self, editor):
         """
-        Called on closed_tab_signal
+        Called on closed_tab_signal. Checks to see if contents
+        have been saved (by checking the read_only state of the
+        editor), then removes the autosave contents.
         """
+        if not editor.read_only:
+            msg_box = QtWidgets.QMessageBox()
+            msg_box.setText('The document has been modified.')
+            msg_box.setInformativeText('Do you want to save your changes?')
+            buttons = msg_box.Save | msg_box.Discard# | msg_box.Cancel
+            msg_box.setStandardButtons(buttons)
+            msg_box.setDefaultButton(msg_box.Save)
+            ret = msg_box.exec_()
+
+            ## TODO: implement Cancel
+            # if (ret == msg_box.Cancel):
+            #     # restore the editor
+            #     index = self.tabs.currentIndex()
+            #     self.tabs.insertTab(index, editor, unicode(editor.name))
+            #     return
+
+            if (ret == msg_box.Save):
+                path = save.save_as(editor)
+                if path is None:
+                    # user cancelled
+                    return
+
+                # we need to call this explicitly because the signal
+                # would otherwise be executed after self.remove_saved
+                self.handle_document_save(editor)
+
         self.remove_saved(uid=editor.uid)
 
     def remove_saved(self, uid=None):
         """
-        Remove subscripts if they have an associated file
+        Extra cleanup. Remove subscripts
+        if they have an associated file
         whose text matches.
         """
-        root, subscripts = self.parsexml('subscript')
+        root, subscripts = parsexml('subscript')
 
         for s in subscripts:
             path = s.attrib.get('path')
@@ -452,16 +531,14 @@ class AutoSaveManager(QtCore.QObject):
                 continue
             if s.attrib.get('uuid') != uid:
                 continue
-            print(uid)
-            with open(path, 'rt') as f:
-                if s.text == f.read():
-                    root.remove(s)
+            if not s.text:
+                root.remove(s)
 
         self.writexml(root)
 
     @QtCore.Slot()
     def clear_subscripts(self):
-        root, subscripts = self.parsexml('subscript')
+        root, subscripts = parsexml('subscript')
 
         for s in subscripts:
             root.remove(s)

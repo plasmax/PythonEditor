@@ -48,6 +48,7 @@ class Editor(QtWidgets.QPlainTextEdit):
     ctrl_n_signal = QtCore.Signal()
     ctrl_w_signal = QtCore.Signal()
     ctrl_enter_signal = QtCore.Signal()
+    contents_saved_signal = QtCore.Signal(object)
 
     relay_clear_output_signal = QtCore.Signal()
     editingFinished = QtCore.Signal()
@@ -105,7 +106,7 @@ class Editor(QtWidgets.QPlainTextEdit):
     @name.setter
     def name(self, name):
         self._name = name
-        
+
     @property
     def path(self):
         """
@@ -121,7 +122,7 @@ class Editor(QtWidgets.QPlainTextEdit):
     @property
     def read_only(self):
         """
-        Returns True or False, 
+        Returns True or False,
         detemining whether the editor is in
         read-only mode or not. Should be disabled
         when editing has begun.
@@ -131,7 +132,7 @@ class Editor(QtWidgets.QPlainTextEdit):
     @read_only.setter
     def read_only(self, read_only):
         self._read_only = read_only
-    
+
     def _handle_text_changed(self):
         self._changed = True
 

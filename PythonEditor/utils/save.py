@@ -6,30 +6,19 @@ from PythonEditor.ui.Qt import QtWidgets
 from PythonEditor.utils import constants
 
 
-def save_text(path, text):
+def write_to_file(path, text):
+    """
+    Write text to a file.
+    """
     with open(path, 'wt') as f:
         f.write(text)
 
 
-def save(editor):
+def get_save_file_name(editor, title='Save Text As'):
     """
-    Look for a file path property on the editor
-    and save the text to that file.
-    """
-    if hasattr(editor, 'path'):
-        path = editor.path
-        if os.path.isfile(path):
-            text = editor.toPlainText()
-            save_text(path, text)
-            return
+    Ask user where they would like to save.
 
-    path = save_as(editor)
-    editor.path = path
-
-
-def save_text_as(editor, text, title='Save Text As'):
-    """
-    Ask user where they would like to save the given text.
+    :return: Path user chose to save. None if user cancels.
     """
     path, _ = QtWidgets.QFileDialog.getSaveFileName(
         editor,
@@ -37,21 +26,51 @@ def save_text_as(editor, text, title='Save Text As'):
         constants.NUKE_DIR,
         selectedFilter='*.py')
 
+    if not path:
+        path = None
+
+    return path
+
+
+def save(editor):
+    """
+    Look for a file path property on the editor
+    and save the entire document to that file.
+    """
+    if not hasattr(editor, 'path'):
+        path = save_as(editor)
+        if path is None:
+            # User cancelled
+            return
+
+    write_to_file(editor.path, editor.toPlainText())
+    editor.read_only = True
+    print('Saved', editor.path, sep=' ')
+    editor.contents_saved_signal.emit(editor)
+
+
+def save_as(editor):
+    """
+    Ask the user where they would like to save the document.
+    """
+    path = get_save_file_name(editor, title='Save As')
     if path:
-        print('Saved', path, sep=' ')
-        save_text(path, text)
+        editor.path = path
+        save(editor)
     return path
 
 
 def save_selected_text(editor):
+    """
+    Export whatever text we have selected to a file. It's only
+    in this case that we don't want to change the autosave or
+    set the editor status to read_only, because we may be saving
+    only part of the document.
+    """
     text = editor.textCursor().selection().toPlainText()
-    path = save_text_as(editor, text, title='Save Selected Text')
-    return path
-
-
-def save_as(editor):
-    text = editor.toPlainText()
-    path = save_text_as(editor, text, title='Save As')
+    path = get_save_file_name(editor, title='Save Selected Text')
+    if path:
+        write_to_file(path, text)
     return path
 
 
@@ -64,11 +83,14 @@ def export_selected_to_external_editor(editor):
 
 
 def save_editor(folder, name, editor):
-    text = editor.toPlainText()
+    """
+    Compose a path from folder and editor name.
+    Set the editor path property, then save.
+    """
     file = name.split('.')[0] + '.py'
-    path = os.path.join(folder, file)
-    save_text(path, text)
-    return path
+    editor.path = os.path.join(folder, file)
+    save(editor)
+    return editor.path
 
 
 def open_external_editor(path):

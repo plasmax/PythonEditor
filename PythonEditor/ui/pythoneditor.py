@@ -54,58 +54,68 @@ class PythonEditor(QtWidgets.QWidget):
         Adds top menu bar and various menu items.
 
         TODO: Implement the following:
-        # fileMenu.addAction('Save') #QtGui.QAction (?)
+        # file_menu.addAction('Save') #QtGui.QAction (?)
 
-        # editMenu.addAction('Copy to External Editor')
-        # editMenu.addAction('Open in External Editor')
+        # edit_menu.addAction('Copy to External Editor')
+        # edit_menu.addAction('Open in External Editor')
 
-        # helpMenu.addAction('About Python Editor')
+        # help_menu.addAction('About Python Editor')
         """
-        menuBar = QtWidgets.QMenuBar(self)
-        fileMenu = QtWidgets.QMenu('File')
-        helpMenu = QtWidgets.QMenu('Help')
-        editMenu = QtWidgets.QMenu('Edit')
+        menu_bar = QtWidgets.QMenuBar(self)
+        file_menu = QtWidgets.QMenu('File')
+        help_menu = QtWidgets.QMenu('Help')
+        edit_menu = QtWidgets.QMenu('Edit')
 
-        for menu in [fileMenu, editMenu, helpMenu]:
-            menuBar.addMenu(menu)
+        for menu in [file_menu, edit_menu, help_menu]:
+            menu_bar.addMenu(menu)
 
-        fileMenu.addAction('Save As',
+        file_menu.addAction('Save',
+                           self.save)
+
+        file_menu.addAction('Save As',
                            self.save_as)
 
-        fileMenu.addAction('Save Selected Text',
+        export_menu = QtWidgets.QMenu('Export')
+        file_menu.addMenu(export_menu)
+
+        export_menu.addAction('Save Selected Text',
                            self.save_selected_text)
 
-        fileMenu.addAction('Export Selected To External Editor',
+        export_menu.addAction('Export Selected To External Editor',
                            self.export_selected_to_external_editor)
 
-        fileMenu.addAction('Export Current Tab To External Editor',
+        export_menu.addAction('Export Current Tab To External Editor',
                            self.export_current_tab_to_external_editor)
 
-        fileMenu.addAction('Export All Tabs To External Editor',
+        export_menu.addAction('Export All Tabs To External Editor',
                            self.export_all_tabs_to_external_editor)
 
-        helpMenu.addAction('Reload Python Editor',
+        help_menu.addAction('Reload Python Editor',
                            self.parent.reload_package)
 
-        editMenu.addAction('Preferences',
+        edit_menu.addAction('Preferences',
                            self.show_preferences)
 
-        editMenu.addAction('Shortcuts',
+        edit_menu.addAction('Shortcuts',
                            self.show_shortcuts)
 
-        self.layout().addWidget(menuBar)
+        self.layout().addWidget(menu_bar)
+
+    @property
+    def editor(self):
+        return self.edittabs.currentWidget()
+
+    def save(self):
+        save.save(self.editor)
 
     def save_as(self):
-        cw = self.edittabs.currentWidget()
-        save.save_as(cw)
+        save.save_as(self.editor)
 
     def save_selected_text(self):
-        cw = self.edittabs.currentWidget()
-        save.save_selected_text(cw)
+        save.save_selected_text(self.editor)
 
     def export_selected_to_external_editor(self):
-        cw = self.edittabs.currentWidget()
-        save.export_selected_to_external_editor(cw)
+        save.export_selected_to_external_editor(self.editor)
 
     def export_current_tab_to_external_editor(self):
         save.export_current_tab_to_external_editor(self.edittabs)
