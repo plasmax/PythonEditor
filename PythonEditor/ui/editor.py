@@ -49,6 +49,7 @@ class Editor(QtWidgets.QPlainTextEdit):
     ctrl_w_signal = QtCore.Signal()
     ctrl_enter_signal = QtCore.Signal()
     contents_saved_signal = QtCore.Signal(object)
+    read_only_signal = QtCore.Signal(bool)
 
     relay_clear_output_signal = QtCore.Signal()
     editingFinished = QtCore.Signal()
@@ -132,13 +133,14 @@ class Editor(QtWidgets.QPlainTextEdit):
 
     @read_only.setter
     def read_only(self, state=False):
-        print('Read only set to', self.name, state)
+        # TODO: set an indicator (italic text in sublime)
+        # to denote state
         self._read_only = state
+        self.read_only_signal.emit(state)
 
     @QtCore.Slot(bool)
     def _handle_modificationChanged(self, changed):
         self.read_only = not changed
-        # self.read_only = changed
 
     def _handle_text_changed(self):
         self._changed = True
