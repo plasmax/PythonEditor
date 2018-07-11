@@ -19,6 +19,11 @@ nukescripts.panels.__panels["i.d.e.Python_Editor"]()
 ICON_PATH = constants.NUKE_DIR + '/icons/PythonEditor.png'
 
 
+def setup():
+    menu_setup()
+    nukedock.setup_dock()
+
+
 def menu_setup():
     import nuke
 
@@ -31,7 +36,7 @@ def menu_setup():
         '.ui.nukefeatures.nukeinit.add_to_pane()'
     nuke.menu('Nodes').addCommand('Python Editor',
                                   import_cmd,
-                                  '\\',
+                                  shortcut='\\',
                                   icon=ICON_PATH)
 
 
@@ -71,8 +76,3 @@ def add_to_pane():
                 break
         if not found:
             panels.__panels[PANEL_NAME]()
-
-
-def setup():
-    menu_setup()
-    nukedock.setup_dock()
