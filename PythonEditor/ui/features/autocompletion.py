@@ -139,12 +139,13 @@ class AutoCompleter(QtCore.QObject):
                 _ = {}
                 exec('_obj = '+word_before_dot, _objects, _)
                 _obj = _.get('_obj')
-            except (NameError, SyntaxError):    # we want to handle this
-                                                # silently, except. TODO:
-                                                # SyntaxError avoidance
-                                                # is a lazy way to avoid
-                                                # properly formatting the
-                                                # object.
+            except (NameError, AttributeError, SyntaxError):
+                # we want to handle this
+                # silently, except. TODO:
+                # SyntaxError avoidance
+                # is a lazy way to avoid
+                # properly formatting the
+                # object.
                 return
 
         return _obj
