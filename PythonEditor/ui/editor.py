@@ -180,6 +180,8 @@ class Editor(QtWidgets.QPlainTextEdit):
         that QShortcut cannot override.
         """
         if self.wait_for_autocomplete:
+            # TODO: Connect (in autocomplete) using
+            # QtCore.Qt.DirectConnection to work synchronously
             self.key_pressed_signal.emit(event)
             return
 
