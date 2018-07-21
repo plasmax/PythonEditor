@@ -3,6 +3,7 @@ import __main__
 from functools import partial
 from PythonEditor.ui.Qt import QtWidgets, QtGui, QtCore
 from PythonEditor.core import execute
+from PythonEditor.utils.signals import connect
 
 
 class ShortcutHandler(QtCore.QObject):
@@ -56,44 +57,77 @@ class ShortcutHandler(QtCore.QObject):
             self.connect_signals()
 
     def connect_signals(self):
-        """
-        For shortcuts that cannot be
-        handled directly by QShortcut.
-        TODO: as UniqueConnection appears
-        to create problems, find another
-        connection tracking mechanism.
-        """
+        """ Connects the current editor's signals to this class """
         editor = self.editor
-
-        editor.tab_signal.connect(self.tab_handler)
-        editor.return_signal.connect(self.return_handler)
-        editor.wrap_signal.connect(self.wrap_text)
-        editor.home_key_ctrl_alt_signal.connect(self.move_to_top)
-        editor.end_key_ctrl_alt_signal.connect(self.move_to_bottom)
-        editor.ctrl_x_signal.connect(self.cut_line)
-        editor.home_key_signal.connect(self.jump_to_start)
-        editor.wheel_signal.connect(self.wheel_zoom)
-        editor.ctrl_enter_signal.connect(self.exec_selected_text)
+        pairs = [
+            (editor.tab_signal, self.tab_handler),
+            (editor.return_signal, self.return_handler),
+            (editor.wrap_signal, self.wrap_text),
+            (editor.home_key_ctrl_alt_signal, self.move_to_top),
+            (editor.end_key_ctrl_alt_signal, self.move_to_bottom),
+            (editor.ctrl_x_signal, self.cut_line),
+            (editor.home_key_signal, self.jump_to_start),
+            (editor.wheel_signal, self.wheel_zoom),
+            (editor.ctrl_enter_signal, self.exec_selected_text),
+        ]
+        self._connections = {}
+        for signal, slot in pairs:
+            name, _, handle = connect(editor, signal, slot)
+            self._connections[name] = slot
 
     def disconnect_signals(self):
-        """
-        For shortcuts that cannot be
-        handled directly by QShortcut.
-        """
+        """ Disconnects the current editor's signals from this class """
         if not hasattr(self, 'editor'):
             return
+        cx = self._connections
+        for name, slot in cx.copy().items():
+            for x in range(self.editor.receivers(name)):
+                self.editor.disconnect(name, slot)
+                # print(name, slot)
+            del self._connections[name]
 
-        editor = self.editor
+    # def connect_signals(self):
+    #     """
+    #     For shortcuts that cannot be
+    #     handled directly by QShortcut.
+    #     TODO: as UniqueConnection appears
+    #     to create problems, find another
+    #     connection tracking mechanism.
+    #     """
+    #     editor = self.editor
 
-        editor.tab_signal.disconnect()
-        editor.return_signal.disconnect()
-        editor.wrap_signal.disconnect()
-        editor.home_key_ctrl_alt_signal.disconnect()
-        editor.end_key_ctrl_alt_signal.disconnect()
-        editor.ctrl_x_signal.disconnect()
-        editor.home_key_signal.disconnect()
-        editor.wheel_signal.disconnect()
-        editor.ctrl_enter_signal.disconnect()
+    #     editor.tab_signal.connect(self.tab_handler)
+    #     editor.return_signal.connect(self.return_handler)
+    #     editor.wrap_signal.connect(self.wrap_text)
+    #     editor.home_key_ctrl_alt_signal.connect(self.move_to_top)
+    #     editor.end_key_ctrl_alt_signal.connect(self.move_to_bottom)
+    #     editor.ctrl_x_signal.connect(self.cut_line)
+    #     editor.home_key_signal.connect(self.jump_to_start)
+    #     editor.wheel_signal.connect(self.wheel_zoom)
+    #     editor.ctrl_enter_signal.connect(self.exec_selected_text)
+
+    # def disconnect_signals(self):
+    #     """
+    #     For shortcuts that cannot be
+    #     handled directly by QShortcut.
+    #     """
+    #     if not hasattr(self, 'editor'):
+    #         return
+
+    #     editor = self.editor
+
+    #     ts = editor.tab_signal
+    #     rs = editor.return_signal
+    #     ws = editor.wrap_signal
+    #     ha = editor.home_key_ctrl_alt_signal
+    #     ea = editor.end_key_ctrl_alt_signal
+    #     cx = editor.ctrl_x_signal
+    #     hk = editor.home_key_signal
+    #     wh = editor.wheel_signal
+    #     ce = editor.ctrl_enter_signal
+    #     for sig in ts, rs, ws, ha, ea, cx, hk, wh, ce:
+    #         sig.disconnect()
+    #         # if sig.receivers():
 
     def install_shortcuts(self):
         """
