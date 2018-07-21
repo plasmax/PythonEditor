@@ -72,40 +72,41 @@ class PythonEditor(QtWidgets.QWidget):
             menu_bar.addMenu(menu)
 
         file_menu.addAction('New',
-                           self.new)
+                            self.new)
 
         file_menu.addAction('Open',
-                           self.open)
+                            self.open)
 
         file_menu.addAction('Save',
-                           self.save)
+                            self.save)
 
         file_menu.addAction('Save As',
-                           self.save_as)
+                            self.save_as)
 
         export_menu = QtWidgets.QMenu('Export')
         file_menu.addMenu(export_menu)
+        ex = export_menu.addAction
 
-        export_menu.addAction('Save Selected Text',
-                           self.save_selected_text)
+        ex('Save Selected Text',
+           self.save_selected_text)
 
-        export_menu.addAction('Export Selected To External Editor',
-                           self.export_selected_to_external_editor)
+        ex('Export Selected To External Editor',
+           self.export_selected_to_external_editor)
 
-        export_menu.addAction('Export Current Tab To External Editor',
-                           self.export_current_tab_to_external_editor)
+        ex('Export Current Tab To External Editor',
+           self.export_current_tab_to_external_editor)
 
-        export_menu.addAction('Export All Tabs To External Editor',
-                           self.export_all_tabs_to_external_editor)
+        ex('Export All Tabs To External Editor',
+           self.export_all_tabs_to_external_editor)
 
         help_menu.addAction('Reload Python Editor',
-                           self.parent.reload_package)
+                            self.parent.reload_package)
 
         edit_menu.addAction('Preferences',
-                           self.show_preferences)
+                            self.show_preferences)
 
         edit_menu.addAction('Shortcuts',
-                           self.show_shortcuts)
+                            self.show_shortcuts)
 
         self.layout().addWidget(menu_bar)
 
@@ -169,11 +170,17 @@ class PythonEditor(QtWidgets.QWidget):
         Hack to get rid of margins automatically put in
         place by Nuke Dock Window.
         """
+        def get_parent(obj, level=1):
+            parent = obj
+            for x in range(level):
+                parent = obj.parentWidget()
+            return parent
+
         try:
-            parent = self.parentWidget().parentWidget()
+            parent = get_parent(self, level=2)
             parent.layout().setContentsMargins(0, 0, 0, 0)
 
-            parent = self.parentWidget().parentWidget().parentWidget().parentWidget()
+            parent = get_parent(self, level=4)
             parent.layout().setContentsMargins(0, 0, 0, 0)
         except Exception:
             pass
