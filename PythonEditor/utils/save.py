@@ -51,6 +51,7 @@ def save(editor):
     editor.read_only = True
     print('Saved', editor.path, sep=' ')
     editor.contents_saved_signal.emit(editor)
+    return editor.path
 
 
 def save_as(editor):
