@@ -118,16 +118,19 @@ class PythonEditor(QtWidgets.QWidget):
 
     def open(self):
         """
-        Simple open file
+        Simple open file.
+        TODO: This needs to go into a files.py or files/open.py
         """
         o = QtWidgets.QFileDialog.getOpenFileName
         path, _ = o(self, "Open File")
-        print(path)
         editor = self.edittabs.new_tab(tab_name=os.path.basename(path))
         editor.path = path
-        print('UNSAFE! CHANGES TO THE DOCUMENT WILL BE LOST UNTIL THE EDITOR AUTOMATICALLY SETS READ_ONLY TO FALSE WHEN EDITING STARTS!')
-        print('-- Also needs to save file path to xml')
-        editor.read_only = True # TODO!!!!!!!! SET THIS TO FALSE LATER. 
+
+        # Because the document will be open in read-only mode, the
+        # autosave will not save the editor's contents until the
+        # contents have been modified.
+        editor.read_only = True
+
         with open(path, 'rt') as f:
             editor.setPlainText(f.read())
 
