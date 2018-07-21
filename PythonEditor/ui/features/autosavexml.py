@@ -8,7 +8,6 @@ from xml.etree import cElementTree as ElementTree
 from functools import partial
 
 from PythonEditor.ui.Qt import QtCore, QtWidgets
-from PythonEditor.ui import editor as EDITOR
 from PythonEditor.utils import save
 from PythonEditor.utils.signals import connect
 from PythonEditor.utils.constants import (AUTOSAVE_FILE,
