@@ -8,7 +8,9 @@ from xml.etree import cElementTree as ElementTree
 from functools import partial
 
 from PythonEditor.ui.Qt import QtCore, QtWidgets
+from PythonEditor.ui import editor as EDITOR
 from PythonEditor.utils import save
+from PythonEditor.utils.signals import connect
 from PythonEditor.utils.constants import (AUTOSAVE_FILE,
                                           XML_HEADER,
                                           create_autosave_file)
@@ -143,15 +145,24 @@ class AutoSaveManager(QtCore.QObject):
 
     def connect_signals(self):
         """ Connects the current editor's signals to this class """
-        self.editor.textChanged.connect(self.save_timer)
-        self.editor.focus_in_signal.connect(self.check_document_modified)
+        pairs = [
+            (self.editor.textChanged, self.save_timer),
+            (self.editor.focus_in_signal, self.check_document_modified),
+        ]
+        self._connections = {}
+        for signal, slot in pairs:
+            name, _, handle = connect(self.editor, signal, slot)
+            self._connections[name] = slot
 
     def disconnect_signals(self):
         """ Disconnects the current editor's signals from this class """
         if not hasattr(self, 'editor'):
             return
-        self.editor.textChanged.disconnect()
-        self.editor.focus_in_signal.disconnect()
+        cx = self._connections
+        for name, slot in cx.copy().items():
+            for x in range(self.editor.receivers(name)):
+                self.editor.disconnect(name, slot)
+            del self._connections[name]
 
     def setup_save_timer(self, interval=500):
         """
