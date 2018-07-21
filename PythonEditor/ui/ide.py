@@ -52,11 +52,17 @@ class IDE(QtWidgets.QWidget):
         Hack to get rid of margins automatically put in
         place by Nuke Dock Window.
         """
+        def get_parent(obj, level=1):
+            parent = obj
+            for x in range(level):
+                parent = obj.parentWidget()
+            return parent
+
         try:
-            parent = self.parentWidget().parentWidget()
+            parent = get_parent(self, level=2)
             parent.layout().setContentsMargins(0, 0, 0, 0)
 
-            parent = self.parentWidget().parentWidget().parentWidget().parentWidget()
+            parent = get_parent(self, level=4)
             parent.layout().setContentsMargins(0, 0, 0, 0)
         except Exception:
             pass
