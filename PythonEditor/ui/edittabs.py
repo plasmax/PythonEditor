@@ -16,7 +16,9 @@ class EditTabs(QtWidgets.QTabWidget):
     def __init__(self):
         QtWidgets.QTabWidget.__init__(self)
         self.setTabBar(TabBar(self))
+
         self.setTabsClosable(True)
+        self.user_cancelled_tab_close = False
         self.setTabShape(QtWidgets.QTabWidget.Rounded)
 
         self.tab_count = 0
@@ -89,12 +91,19 @@ class EditTabs(QtWidgets.QTabWidget):
 
     def close_current_tab(self):
         """
-        Closes the active tab.
+        Closes the active tab. Called via shortcut key.
         """
         _index = self.currentIndex()
         self.tabCloseRequested.emit(_index)
 
     def close_tab(self, index):
+        """
+        Remove current tab if tab count is greater than 3 (so that the
+        last tab left open is not the new button tab, although a better
+        solution here is to open a new tab if the only tab left open is
+        the 'new tab' tab). Also emits a close signal which is used by the
+        autosave to determine if an editor's contents need saving.
+        """
         if self.count() < 3:
             return
         _index = self.currentIndex()
@@ -104,6 +113,9 @@ class EditTabs(QtWidgets.QTabWidget):
             return
 
         self.closed_tab_signal.emit(editor)
+        if self.user_cancelled_tab_close:
+            return
+
         editor.deleteLater()
 
         self.removeTab(index)
@@ -124,8 +136,6 @@ class EditTabs(QtWidgets.QTabWidget):
     def widgetChanged(self, index):
         """
         Triggers widget_changed signal with current widget.
-        TODO: Investigate why this sometimes seems to cause
-        signal connection errors in autosavexml and shortcuts.
         """
         tabremoved = self.count() < self.tab_count
         previous = self.current_index
