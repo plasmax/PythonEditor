@@ -114,7 +114,7 @@ class AutoSaveManager(QtCore.QObject):
         rts = tabs.reset_tab_signal
         rts.connect(self.clear_subscripts)
         cts = tabs.closed_tab_signal
-        cts.connect(self.editor_close_handler)
+        cts.connect(self.editor_close_handler, QtCore.Qt.DirectConnection)
         css = tabs.contents_saved_signal
         css.connect(self.handle_document_save)
 
@@ -474,6 +474,9 @@ class AutoSaveManager(QtCore.QObject):
         have been saved (by checking the read_only state of the
         editor), then removes the autosave contents.
         """
+        # reset cancelled status to default
+        self.tabs.user_cancelled_tab_close = False
+
         # check for unsaved contents.
         safe_to_remove = editor.read_only
 
@@ -500,19 +503,8 @@ class AutoSaveManager(QtCore.QObject):
                 if path is None:
                     user_cancelled = True
 
-            # TODO: this is ridiculous.
-            # show the current editor again and
-            # work around the disconnect signals.
             if user_cancelled:
-                # recreate the editor
-                old_editor = editor
-                editor = self.tabs.new_tab(tab_name=old_editor.name)
-                editor.setPlainText(old_editor.toPlainText())
-
-                for attr in ['uid', 'name', 'path', 'read_only']:
-                    if hasattr(old_editor, attr):
-                        setattr(editor, attr, getattr(old_editor, attr))
-
+                self.tabs.user_cancelled_tab_close = True
                 return
 
         # if we arrive here it means one of the following:
