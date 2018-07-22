@@ -1,10 +1,12 @@
 import os
 import sys
 
+
 def cd_up(path, level=1):
     for d in range(level):
         path = os.path.dirname(path)
     return path
+
 
 package_dir = cd_up(__file__, level=3)
 sys.path.insert(0, package_dir)
@@ -42,6 +44,7 @@ class Manager(QtWidgets.QWidget):
         layout = QtWidgets.QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         # self.setup_menu()
+        self.read_only = True
         self.menubar = menubar.MenuBar(self)
 
         left_widget = QtWidgets.QWidget()
@@ -80,6 +83,7 @@ class Manager(QtWidgets.QWidget):
         splitter.setSizes([200, 10, 800])
         self.browser.path_signal.connect(self.read)
         self.editor.textChanged.connect(self.write)
+        self.editor.modificationChanged.connect(self.handle_changed)
 
     def xpand(self):
         """
@@ -119,6 +123,7 @@ class Manager(QtWidgets.QWidget):
         """
         Read from text file.
         """
+        self.read_only = True
         self.path_edit.setText(path)
         if not os.path.isfile(path):
             return
@@ -134,11 +139,16 @@ class Manager(QtWidgets.QWidget):
         """
         Write to text file.
         """
+        if self.read_only:
+            return
 
         path = self.editor.path
 
         with open(path, 'wt') as f:
             f.write(self.editor.toPlainText())
+
+    def handle_changed(self, changed):
+        self.read_only = not changed
 
     def showEvent(self, event):
         """
