@@ -9,6 +9,8 @@ from PythonEditor.ui.features import autosavexml
 from PythonEditor.ui.dialogs import preferences
 from PythonEditor.ui.dialogs import shortcuteditor
 
+__version__ = '0.0.1'
+
 
 class PythonEditor(QtWidgets.QWidget):
     """
@@ -54,14 +56,6 @@ class PythonEditor(QtWidgets.QWidget):
     def setup_menu(self):
         """
         Adds top menu bar and various menu items.
-
-        TODO: Implement the following:
-        # file_menu.addAction('Save') #QtGui.QAction (?)
-
-        # edit_menu.addAction('Copy to External Editor')
-        # edit_menu.addAction('Open in External Editor')
-
-        # help_menu.addAction('About Python Editor')
         """
         menu_bar = QtWidgets.QMenuBar(self)
         file_menu = QtWidgets.QMenu('File')
@@ -101,6 +95,9 @@ class PythonEditor(QtWidgets.QWidget):
 
         help_menu.addAction('Reload Python Editor',
                             self.parent.reload_package)
+
+        help_menu.addAction('About Python Editor',
+                            self.show_about_dialog)
 
         edit_menu.addAction('Preferences',
                             self.show_preferences)
@@ -164,6 +161,17 @@ class PythonEditor(QtWidgets.QWidget):
         Generates a popup dialog listing available preferences.
         """
         self.preferenceseditor.show()
+
+    def show_about_dialog(self):
+        """
+        Shows an about dialog with version information.
+        TODO: Make it a borderless splash screen, centred, nice text,
+        major and minor version numbers set in one place in the
+        project.
+        """
+        msg = 'Python Editor version {0} by Max Last'.format(__version__)
+        self.about_dialog = QtWidgets.QLabel(msg)
+        self.about_dialog.show()
 
     def showEvent(self, event):
         """
