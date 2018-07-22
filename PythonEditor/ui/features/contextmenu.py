@@ -1,5 +1,6 @@
 from __future__ import print_function
 import os
+import sys
 import inspect
 import types
 import __main__
@@ -36,6 +37,7 @@ def openDir(module):
     except AttributeError:
         file = inspect.getfile(module)
         subprocess.Popen(['nautilus', file])
+    print('sublime ', __file__, ':', sys._getframe().f_lineno, sep='')  # TODO: nautilus is not multiplatform!
 
 
 class ContextMenu(QtCore.QObject):

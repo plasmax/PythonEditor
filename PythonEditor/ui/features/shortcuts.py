@@ -3,6 +3,7 @@ import __main__
 from functools import partial
 from PythonEditor.ui.Qt import QtWidgets, QtGui, QtCore
 from PythonEditor.core import execute
+from PythonEditor.utils.signals import connect
 
 
 class ShortcutHandler(QtCore.QObject):
@@ -22,11 +23,11 @@ class ShortcutHandler(QtCore.QObject):
             self.editortabs = parent_widget
             tss = self.editortabs.tab_switched_signal
             tss.connect(self.tab_switch_handler)
-            self.setEditor()
+            self.set_editor()
         else:
             self.editor = parent_widget
-            self.connectSignals()
-        self.installShortcuts()
+            self.connect_signals()
+        self.install_shortcuts()
 
     @QtCore.Slot(int, int, bool)
     def tab_switch_handler(self, previous, current, tabremoved):
@@ -38,11 +39,11 @@ class ShortcutHandler(QtCore.QObject):
         if not tabremoved:  # nothing's been deleted
                             # so we need to disconnect
                             # signals from previous editor
-            self.disconnectSignals()
+            self.disconnect_signals()
 
-        self.setEditor()
+        self.set_editor()
 
-    def setEditor(self):
+    def set_editor(self):
         """
         Sets the current editor
         and connects signals.
@@ -53,58 +54,85 @@ class ShortcutHandler(QtCore.QObject):
         isEditor = editor.objectName() == 'Editor'
         if isEditor and editorChanged:
             self.editor = editor
-            self.connectSignals()
+            self.connect_signals()
 
-    def connectSignals(self):
-        """
-        For shortcuts that cannot be
-        handled directly by QShortcut.
-        TODO: as UniqueConnection appears
-        to create problems, find another
-        connection tracking mechanism.
-        """
-        # try:
-        #     QtCore.Qt.UniqueConnection
-        # except AttributeError as e:
-        #     print(e)
-        #     QtCore.Qt.UniqueConnection = 128
-
+    def connect_signals(self):
+        """ Connects the current editor's signals to this class """
         editor = self.editor
+        pairs = [
+            (editor.tab_signal, self.tab_handler),
+            (editor.return_signal, self.return_handler),
+            (editor.wrap_signal, self.wrap_text),
+            (editor.home_key_ctrl_alt_signal, self.move_to_top),
+            (editor.end_key_ctrl_alt_signal, self.move_to_bottom),
+            (editor.ctrl_x_signal, self.cut_line),
+            (editor.home_key_signal, self.jump_to_start),
+            (editor.wheel_signal, self.wheel_zoom),
+            (editor.ctrl_enter_signal, self.exec_selected_text),
+        ]
+        self._connections = {}
+        for signal, slot in pairs:
+            name, _, handle = connect(editor, signal, slot)
+            self._connections[name] = slot
 
-        editor.tab_signal.connect(self.tab_handler)
-        editor.return_signal.connect(self.return_handler)
-        editor.wrap_signal.connect(self.wrap_text)
-        editor.home_key_ctrl_alt_signal.connect(self.move_to_top)
-        editor.end_key_ctrl_alt_signal.connect(self.move_to_bottom)
-        editor.ctrl_x_signal.connect(self.cut_line)
-        editor.home_key_signal.connect(self.jump_to_start)
-        editor.wheel_signal.connect(self.wheel_zoom)
-        editor.ctrl_enter_signal.connect(self.exec_selected_text)
-
-    def disconnectSignals(self):
-        """
-        For shortcuts that cannot be
-        handled directly by QShortcut.
-        """
+    def disconnect_signals(self):
+        """ Disconnects the current editor's signals from this class """
         if not hasattr(self, 'editor'):
             return
+        cx = self._connections
+        for name, slot in cx.copy().items():
+            for x in range(self.editor.receivers(name)):
+                self.editor.disconnect(name, slot)
+                # print(name, slot)
+            del self._connections[name]
 
-        editor = self.editor
+    # def connect_signals(self):
+    #     """
+    #     For shortcuts that cannot be
+    #     handled directly by QShortcut.
+    #     TODO: as UniqueConnection appears
+    #     to create problems, find another
+    #     connection tracking mechanism.
+    #     """
+    #     editor = self.editor
 
-        editor.tab_signal.disconnect()
-        editor.return_signal.disconnect()
-        editor.wrap_signal.disconnect()
-        editor.home_key_ctrl_alt_signal.disconnect()
-        editor.end_key_ctrl_alt_signal.disconnect()
-        editor.ctrl_x_signal.disconnect()
-        editor.home_key_signal.disconnect()
-        editor.wheel_signal.disconnect()
-        editor.ctrl_enter_signal.disconnect()
+    #     editor.tab_signal.connect(self.tab_handler)
+    #     editor.return_signal.connect(self.return_handler)
+    #     editor.wrap_signal.connect(self.wrap_text)
+    #     editor.home_key_ctrl_alt_signal.connect(self.move_to_top)
+    #     editor.end_key_ctrl_alt_signal.connect(self.move_to_bottom)
+    #     editor.ctrl_x_signal.connect(self.cut_line)
+    #     editor.home_key_signal.connect(self.jump_to_start)
+    #     editor.wheel_signal.connect(self.wheel_zoom)
+    #     editor.ctrl_enter_signal.connect(self.exec_selected_text)
 
-    def installShortcuts(self):
+    # def disconnect_signals(self):
+    #     """
+    #     For shortcuts that cannot be
+    #     handled directly by QShortcut.
+    #     """
+    #     if not hasattr(self, 'editor'):
+    #         return
+
+    #     editor = self.editor
+
+    #     ts = editor.tab_signal
+    #     rs = editor.return_signal
+    #     ws = editor.wrap_signal
+    #     ha = editor.home_key_ctrl_alt_signal
+    #     ea = editor.end_key_ctrl_alt_signal
+    #     cx = editor.ctrl_x_signal
+    #     hk = editor.home_key_signal
+    #     wh = editor.wheel_signal
+    #     ce = editor.ctrl_enter_signal
+    #     for sig in ts, rs, ws, ha, ea, cx, hk, wh, ce:
+    #         sig.disconnect()
+    #         # if sig.receivers():
+
+    def install_shortcuts(self):
         """
-        Set up all shortcuts on
-        the QPlainTextEdit widget.
+        Maps shortcuts on the QPlainTextEdit widget
+        to methods on this class.
         """
         def notimp(msg): return partial(self.notimplemented, msg)
         editor_shortcuts = {
@@ -113,22 +141,24 @@ class ShortcutHandler(QtCore.QObject):
                     'Ctrl+Alt+Return': self.new_line_below,
                     'Ctrl+Backspace': self.clear_output_signal.emit,
                     'Ctrl+Shift+D': self.duplicate_lines,
-                    'Ctrl+H': self.printHelp,
-                    'Ctrl+T': self.printType,
-                    'Ctrl+Shift+F': self.searchInput,
+                    'Ctrl+H': self.print_help,
+                    'Ctrl+T': self.print_type,
+                    'Ctrl+Shift+F': self.search_input,
                     'Ctrl+L': self.select_lines,
                     'Ctrl+J': self.join_lines,
                     'Ctrl+/': self.comment_toggle,
                     'Ctrl+]': self.indent,
                     'Ctrl+[': self.unindent,
                     'Shift+Tab': self.unindent,
-                    'Ctrl+=': self.zoomIn,
-                    'Ctrl++': self.zoomIn,
-                    'Ctrl+-': self.zoomOut,
+                    'Ctrl+Tab': self.next_tab,
+                    'Ctrl+Shift+Tab': self.previous_tab,
+                    'Ctrl+=': self.zoom_in,
+                    'Ctrl++': self.zoom_in,
+                    'Ctrl+-': self.zoom_out,
                     'Ctrl+Shift+K': self.delete_lines,
-                    'Ctrl+D': notimp('select word or next word'),
-                    'Ctrl+M': notimp('jump to nearest bracket'),
-                    'Ctrl+Shift+M': notimp('select between brackets'),
+                    'Ctrl+D': self.select_word,
+                    'Ctrl+M': self.hop_brackets,
+                    'Ctrl+Shift+M': self.select_between_brackets,
                     'Ctrl+Shift+Delete': self.delete_to_eol,
                     'Ctrl+Shift+Backspace': self.delete_to_sol,
                     'Ctrl+Shift+Up': self.move_lines_up,
@@ -225,8 +255,9 @@ class ShortcutHandler(QtCore.QObject):
         """
         Calls exec with either selected text
         or all the text in the edit widget.
-        TODO: in some instances, this can still have the wrong line number in tracebacks!
-        Frustratingly, it seems to right itself after a normal execution (full text) run.
+        TODO: in some instances, this can still have the wrong
+        line number in tracebacks! Frustratingly, it seems to right
+        itself after a normal execution (full text) run.
         """
         textCursor = self.editor.textCursor()
 
@@ -239,7 +270,11 @@ class ShortcutHandler(QtCore.QObject):
 
         self.exec_text_signal.emit()
         whole_text = '\n'+whole_text
-        execute.mainexec(text, whole_text)
+        error_line_numbers = execute.mainexec(text, whole_text)
+        if error_line_numbers is None:
+            return
+        else:
+            self.highlight_errored_lines(error_line_numbers)
 
     def exec_current_line(self):
         """
@@ -253,20 +288,50 @@ class ShortcutHandler(QtCore.QObject):
             return self.exec_selected_text()
 
         textCursor.select(QtGui.QTextCursor.LineUnderCursor)
-        # text = textCursor.selectedText().lstrip()
         text = textCursor.selection().toPlainText().lstrip()
         text = self.offset_for_traceback(text=text)
 
-        # self.editor.setTextCursor(textCursor) #good for testing
         whole_text = '\n'+whole_text
-        execute.mainexec(text, whole_text)
+        error_line_numbers = execute.mainexec(text, whole_text)
+        if error_line_numbers is None:
+            return
+        else:
+            self.highlight_errored_lines(error_line_numbers)
 
-    @QtCore.Slot()
-    def return_handler(self):
+    def highlight_errored_lines(self, error_line_numbers):
+        """
+        Draw a red background on any lines that caused an error.
+        """
+        extraSelections = []
+
+        cursor = self.editor.textCursor()
+        doc = self.editor.document()
+        for lineno in error_line_numbers:
+
+
+            selection = QtWidgets.QTextEdit.ExtraSelection()
+            lineColor = QtGui.QColor.fromRgbF(0.8,
+                                              0.1,
+                                              0,
+                                              0.2)
+
+            selection.format.setBackground(lineColor)
+            selection.format.setProperty(QtGui.QTextFormat.FullWidthSelection,
+                                         True)
+
+            block = doc.findBlockByLineNumber(lineno-1)
+            cursor.setPosition(block.position())
+            selection.cursor = cursor
+            selection.cursor.clearSelection()
+            extraSelections.append(selection)
+        self.editor.setExtraSelections(extraSelections)
+
+    @QtCore.Slot(QtGui.QKeyEvent)
+    def return_handler(self, event):
         """
         New line with auto-indentation.
         """
-        self.indent_next_line()
+        return self.indent_next_line()
 
     def indent_next_line(self):
         """
@@ -289,6 +354,7 @@ class ShortcutHandler(QtCore.QObject):
 
         if not self.editor.wait_for_autocomplete:
             textCursor.insertText(insertion)
+            self.editor.setTextCursor(textCursor)
 
     @QtCore.Slot()
     def cut_line(self):
@@ -371,6 +437,16 @@ class ShortcutHandler(QtCore.QObject):
     def tab_space(self):
         """ Insert spaces instead of tabs """
         self.editor.insertPlainText('    ')
+
+    def next_tab(self):
+        if hasattr(self, 'editortabs'):
+            next_index = self.editortabs.currentIndex()+1
+            if self.editortabs.widget(next_index).objectName() == 'Editor':
+                self.editortabs.setCurrentIndex(next_index)
+
+    def previous_tab(self):
+        if hasattr(self, 'editortabs'):
+            self.editortabs.setCurrentIndex(self.editortabs.currentIndex()-1)
 
     def jump_to_start(self):
         """
@@ -527,7 +603,93 @@ class ShortcutHandler(QtCore.QObject):
 
         textCursor.insertText('')
 
-    def searchInput(self):
+    def select_word(self):
+        """
+        Selects the word under cursor if no selection.
+        If selection, selects next occurence of the same word.
+        TODO: 1 )could optionally highlight all occurences of the word
+        and iterate to the next selection. 2) Would be nice if extra
+        selections could be made editable. 3) Wrap around.
+        """
+        textCursor = self.editor.textCursor()
+        if not textCursor.hasSelection():
+            textCursor.select(QtGui.QTextCursor.WordUnderCursor)
+            return self.editor.setTextCursor(textCursor)
+
+        text = textCursor.selection().toPlainText()
+        start_pos = textCursor.selectionStart()
+        end_pos = textCursor.selectionEnd()
+        word_len = abs(end_pos - start_pos)
+
+        whole_text = self.editor.toPlainText()
+        second_half = whole_text[end_pos:]
+        next_pos = second_half.find(text)
+
+        if next_pos == -1:
+            return
+
+        next_start = next_pos + start_pos + word_len
+        next_end = next_start + word_len
+
+        textCursor.setPosition(next_start, QtGui.QTextCursor.MoveAnchor)
+        textCursor.setPosition(next_end, QtGui.QTextCursor.KeepAnchor)
+        self.editor.setTextCursor(textCursor)
+
+        extraSelections = []
+
+        selection = QtWidgets.QTextEdit.ExtraSelection()
+
+        lineColor = QtGui.QColor.fromRgbF(1, 1, 1, 0.3)
+        selection.format.setBackground(lineColor)
+        selection.cursor = self.editor.textCursor()
+        selection.cursor.setPosition(start_pos, QtGui.QTextCursor.MoveAnchor)
+        selection.cursor.setPosition(end_pos, QtGui.QTextCursor.KeepAnchor)
+        extraSelections.append(selection)
+        self.editor.setExtraSelections(extraSelections)
+
+    def hop_brackets(self):
+        """
+        Jump to closest bracket, starting
+        with closing bracket.
+        """
+        textCursor = self.editor.textCursor()
+        pos = textCursor.position()
+        whole_text = self.editor.toPlainText()
+
+        first_half = whole_text[:pos]
+        second_half = whole_text[pos:]
+        first_pos = first_half.rfind('(')
+        second_pos = second_half.find(')')
+
+        first_pos = first_pos + 1
+        second_pos = second_pos + pos
+
+        new_pos = first_pos if whole_text[pos] == ')' else second_pos
+        textCursor.setPosition(new_pos, QtGui.QTextCursor.MoveAnchor)
+        self.editor.setTextCursor(textCursor)
+
+    def select_between_brackets(self):
+        """
+        Selects text between [] {} ()
+        TODO: implement [] and {}
+        """
+        textCursor = self.editor.textCursor()
+        pos = textCursor.position()
+        whole_text = self.editor.toPlainText()
+
+        first_half = whole_text[:pos]
+        second_half = whole_text[pos:]
+        first_pos = first_half.rfind('(')
+        second_pos = second_half.find(')')
+
+        first_pos = first_pos + 1
+        second_pos = second_pos + pos
+
+        textCursor.setPosition(first_pos, QtGui.QTextCursor.MoveAnchor)
+        textCursor.setPosition(second_pos, QtGui.QTextCursor.KeepAnchor)
+        self.editor.setTextCursor(textCursor)
+
+    def search_input(self):
         """
         Very basic search dialog.
         TODO: Create a QAction/util for this
@@ -587,7 +749,7 @@ class ShortcutHandler(QtCore.QObject):
         textCursor.setPosition(pos, QtGui.QTextCursor.KeepAnchor)
         textCursor.insertText('')
 
-    def printHelp(self):
+    def print_help(self):
         """
         Prints documentation
         for selected object
@@ -599,7 +761,7 @@ class ShortcutHandler(QtCore.QObject):
         else:
             exec('help('+text+')', __main__.__dict__)
 
-    def printType(self):
+    def print_type(self):
         """
         Prints type
         for selected object
@@ -611,7 +773,7 @@ class ShortcutHandler(QtCore.QObject):
         else:
             exec('print(type('+text+'))', __main__.__dict__)
 
-    def zoomIn(self):
+    def zoom_in(self):
         """
         Zooms in by changing the font size.
         """
@@ -621,7 +783,7 @@ class ShortcutHandler(QtCore.QObject):
         font.setPointSize(new_size)
         self.editor.setFont(font)
 
-    def zoomOut(self):
+    def zoom_out(self):
         """
         Zooms out by changing the font size.
         """
@@ -648,6 +810,8 @@ class ShortcutHandler(QtCore.QObject):
     def move_lines_up(self):
         """
         Moves current lines upwards.
+        TODO: Bug fix! Doesn't work with wrapped
+        text (presumably needs correct block)
         """
         restoreSelection = False
         textCursor = self.editor.textCursor()
@@ -693,6 +857,8 @@ class ShortcutHandler(QtCore.QObject):
     def move_lines_down(self):
         """
         Moves current lines downwards.
+        TODO: Bug fix! Doesn't work with wrapped
+        text (presumably needs correct block)
         """
         restoreSelection = False
 

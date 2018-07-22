@@ -1,4 +1,6 @@
+#!/usr/bin/env nuke-python
 """ For testing independently. """
+from __future__ import absolute_import
 import sys
 import os
 import imp
@@ -26,6 +28,7 @@ if __name__ == '__main__':
     ide = PythonEditor.ide.IDE()
     app.setPalette(nukepalette.getNukePalette())
     ide.show()
+    ide.setStyleSheet('font-family:Consolas;font-size:8pt;')
     ide.resize(500, 800)
     plastique = QtWidgets.QStyleFactory.create('Plastique')
     QtWidgets.QApplication.setStyle(plastique)

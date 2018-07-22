@@ -34,7 +34,6 @@ class GenericEventFilter(QtCore.QObject):
             1/0 #cause error
 
     filt = Filt()
-
     """
     def __init__(self, target=None):
         super(GenericEventFilter, self).__init__()

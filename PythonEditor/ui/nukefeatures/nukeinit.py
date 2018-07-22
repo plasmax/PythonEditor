@@ -19,20 +19,24 @@ nukescripts.panels.__panels["i.d.e.Python_Editor"]()
 ICON_PATH = constants.NUKE_DIR + '/icons/PythonEditor.png'
 
 
+def setup():
+    menu_setup()
+    nukedock.setup_dock()
+
+
 def menu_setup():
     import nuke
 
     panelMenu = nuke.menu('Nuke').addMenu('Panels')
     panelMenu.addCommand('Python Editor',
                          RELOAD_CMD,
-                         '\\',
                          icon=ICON_PATH)
 
     import_cmd = '__import__("PythonEditor")'\
         '.ui.nukefeatures.nukeinit.add_to_pane()'
     nuke.menu('Nodes').addCommand('Python Editor',
                                   import_cmd,
-                                  'Alt+z',
+                                  shortcut='\\',
                                   icon=ICON_PATH)
 
 
@@ -60,16 +64,15 @@ def add_to_pane():
     else:
         import nuke
         from nukescripts import panels
+        found = False
         panel = panels.__panels.get(PANEL_NAME).__call__()
         for dock in ['Properties.1',
-                     'DAG.1',
-                     'Viewer.1']:
+                     'Viewer.1',
+                     'DAG.1']:
             pane = nuke.getPaneFor(dock)
             if pane:
                 panel.addToPane(pane)
+                found = True
                 break
-
-
-def setup():
-    menu_setup()
-    nukedock.setup_dock()
+        if not found:
+            panels.__panels[PANEL_NAME]()

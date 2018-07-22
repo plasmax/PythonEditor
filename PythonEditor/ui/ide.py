@@ -6,7 +6,7 @@ from PythonEditor.ui import pythoneditor
 
 class IDE(QtWidgets.QWidget):
     """
-    Container widget that allows the whole 
+    Container widget that allows the whole
     package to be reloaded.
     """
     def __init__(self):
@@ -14,6 +14,7 @@ class IDE(QtWidgets.QWidget):
         self.layout = QtWidgets.QHBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.setObjectName('IDE')
+        self.setWindowTitle('Python Editor')
         self.buildUI()
 
     def buildUI(self):
@@ -22,7 +23,7 @@ class IDE(QtWidgets.QWidget):
 
     def reload_package(self):
         """
-        Reloads the whole package, except for modules 
+        Reloads the whole package, except for modules
         in the not_reloadable list.
         """
         self.pythonEditor.deleteLater()
@@ -51,11 +52,17 @@ class IDE(QtWidgets.QWidget):
         Hack to get rid of margins automatically put in
         place by Nuke Dock Window.
         """
+        def get_parent(obj, level=1):
+            parent = obj
+            for x in range(level):
+                parent = obj.parentWidget()
+            return parent
+
         try:
-            parent = self.parentWidget().parentWidget()
+            parent = get_parent(self, level=2)
             parent.layout().setContentsMargins(0, 0, 0, 0)
 
-            parent = self.parentWidget().parentWidget().parentWidget().parentWidget()
+            parent = get_parent(self, level=4)
             parent.layout().setContentsMargins(0, 0, 0, 0)
         except Exception:
             pass

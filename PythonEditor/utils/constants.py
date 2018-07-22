@@ -14,7 +14,14 @@ if IN_NUKE:
 USER = os.environ.get('USERNAME')
 NUKE_DIR = os.path.join(os.path.expanduser('~'), '.nuke')
 AUTOSAVE_FILE = os.path.join(NUKE_DIR, 'PythonEditorHistory.xml')
-QT_VERSION = pyside + os.pathsep + pyqt
+QT_VERSION = (pyside
+              + os.pathsep
+              + pyqt
+              + os.pathsep
+              + 'PySide2'
+              + os.pathsep
+              + 'PyQt5')
+
 XML_HEADER = '<?xml version="1.0" encoding="UTF-8"?>'
 
 

@@ -1,3 +1,4 @@
+from __future__ import print_function
 import types
 import os
 os.environ['QT_PREFERRED_BINDING'] = 'PySide:PyQt4'
@@ -36,7 +37,10 @@ class VisualDebug(QtWidgets.QWidget):
 
         self.treeview.header().setStretchLastSection(False)
         mode = QtWidgets.QHeaderView.ResizeToContents
-        self.treeview.header().setResizeMode(mode)
+        try:
+            self.treeview.header().setResizeMode(mode)
+        except AttributeError:  # setResizeMode not supported in PyQt
+            pass
 
         rootItem = self.treemodel.invisibleRootItem()
         qApp = QtWidgets.QApplication.instance()
@@ -82,7 +86,7 @@ class WidgetTreeView(QtWidgets.QTreeView):
         self.selectedIndices = self.selectedIndexes()
         if bool(self.selectedIndices):
             self.widget = self.model().data(self.selectedIndices[0], QtCore.Qt.UserRole)
-            print self.widget
+            print(self.widget)
 
         if event.button() == QtCore.Qt.RightButton:
             self.menu = QtWidgets.QMenu()
@@ -124,7 +128,7 @@ class WidgetTreeView(QtWidgets.QTreeView):
                     for key in attr.keys():
                         try:
                             value = attr.get(key)
-                            print attr, value
+                            print(attr, value)
                             self.dictMenu.addAction(', '.join([key, str(value)]), self.dud)
                         except:
                             pass
@@ -166,7 +170,7 @@ class WidgetTreeView(QtWidgets.QTreeView):
             super(self.__class__, self).mousePressEvent(event)
 
     def testWidget(self, method, widget):
-        print method.__call__()
+        print(method.__call__())
 
     def dud(self):
         pass
@@ -193,7 +197,7 @@ class WidgetTreeView(QtWidgets.QTreeView):
 qApp = QtWidgets.QApplication.instance()
 for w in qApp.topLevelWidgets():
     if w.metaObject().className() == 'VisualDebug':
-        print w
+        print(w)
         w.deleteLater()
 
 vdb = VisualDebug()
@@ -202,7 +206,7 @@ vdb.show()
 
 @QtCore.Slot(object)
 def shabam(*args, **kwargs):
-    print args, kwargs, 'SHABAM!'
+    print(args, kwargs, 'SHABAM!')
 
 vdb.destroyed.connect(shabam)
 # vdb.deleteLater()

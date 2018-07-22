@@ -1,11 +1,15 @@
+import os # temporary for self.open until files.py or files/open.py, save.py, autosave.py implemented.
+
 from PythonEditor.ui.Qt import QtWidgets, QtCore
-from PythonEditor.ui import output
-from PythonEditor.ui import shortcuteditor
-from PythonEditor.ui import preferenceseditor
+from PythonEditor.ui import terminal
 from PythonEditor.ui import edittabs
 from PythonEditor.utils import save
 from PythonEditor.ui.features import shortcuts
-from PythonEditor.ui.features import filehandling
+from PythonEditor.ui.features import autosavexml
+from PythonEditor.ui.dialogs import preferences
+from PythonEditor.ui.dialogs import shortcuteditor
+
+__version__ = '0.0.1'
 
 
 class PythonEditor(QtWidgets.QWidget):
@@ -27,13 +31,13 @@ class PythonEditor(QtWidgets.QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
 
         self.edittabs = edittabs.EditTabs()
-        self.output = output.Output()
+        self.terminal = terminal.Terminal()
 
         self.setup_menu()
 
         splitter = QtWidgets.QSplitter(QtCore.Qt.Vertical)
         splitter.setObjectName('PythonEditor_MainVerticalSplitter')
-        splitter.addWidget(self.output)
+        splitter.addWidget(self.terminal)
         splitter.addWidget(self.edittabs)
 
         layout.addWidget(splitter)
@@ -43,65 +47,105 @@ class PythonEditor(QtWidgets.QWidget):
         Connect child widget slots to shortcuts.
         """
         sch = shortcuts.ShortcutHandler(self.edittabs)
-        sch.clear_output_signal.connect(self.output.clear)
+        sch.clear_output_signal.connect(self.terminal.clear)
         self.shortcuteditor = shortcuteditor.ShortcutEditor(sch)
-        self.preferenceseditor = preferenceseditor.PreferencesEditor()
+        self.preferenceseditor = preferences.PreferencesEditor()
 
-        self.filehandler = filehandling.FileHandler(self.edittabs)
+        self.filehandler = autosavexml.AutoSaveManager(self.edittabs)
 
     def setup_menu(self):
         """
         Adds top menu bar and various menu items.
-
-        TODO: Implement the following:
-        # fileMenu.addAction('Save') #QtGui.QAction (?)
-
-        # editMenu.addAction('Copy to External Editor')
-        # editMenu.addAction('Open in External Editor')
-
-        # helpMenu.addAction('About Python Editor')
         """
-        menuBar = QtWidgets.QMenuBar(self)
-        fileMenu = QtWidgets.QMenu('File')
-        helpMenu = QtWidgets.QMenu('Help')
-        editMenu = QtWidgets.QMenu('Edit')
+        menu_bar = QtWidgets.QMenuBar(self)
+        file_menu = QtWidgets.QMenu('File')
+        help_menu = QtWidgets.QMenu('Help')
+        edit_menu = QtWidgets.QMenu('Edit')
 
-        for menu in [fileMenu, editMenu, helpMenu]:
-            menuBar.addMenu(menu)
+        for menu in [file_menu, edit_menu, help_menu]:
+            menu_bar.addMenu(menu)
 
-        fileMenu.addAction('Save As',
-                           self.save_as)
+        file_menu.addAction('New',
+                            self.new)
 
-        fileMenu.addAction('Save Selected Text',
-                           self.save_selected_text)
+        file_menu.addAction('Open',
+                            self.open)
 
-        fileMenu.addAction('Export Selected To External Editor',
-                           self.export_selected_to_external_editor)
+        file_menu.addAction('Save',
+                            self.save)
 
-        fileMenu.addAction('Export All Tabs To External Editor',
-                           self.export_all_tabs_to_external_editor)
+        file_menu.addAction('Save As',
+                            self.save_as)
 
-        editMenu.addAction('Preferences',
-                           self.show_preferences)
-        editMenu.addAction('Shortcuts',
-                           self.show_shortcuts)
+        export_menu = QtWidgets.QMenu('Export')
+        file_menu.addMenu(export_menu)
+        ex = export_menu.addAction
 
-        helpMenu.addAction('Reload Python Editor',
-                           self.parent.reload_package)
+        ex('Save Selected Text',
+           self.save_selected_text)
 
-        self.layout().addWidget(menuBar)
+        ex('Export Selected To External Editor',
+           self.export_selected_to_external_editor)
+
+        ex('Export Current Tab To External Editor',
+           self.export_current_tab_to_external_editor)
+
+        ex('Export All Tabs To External Editor',
+           self.export_all_tabs_to_external_editor)
+
+        help_menu.addAction('Reload Python Editor',
+                            self.parent.reload_package)
+
+        help_menu.addAction('About Python Editor',
+                            self.show_about_dialog)
+
+        edit_menu.addAction('Preferences',
+                            self.show_preferences)
+
+        edit_menu.addAction('Shortcuts',
+                            self.show_shortcuts)
+
+        self.layout().addWidget(menu_bar)
+
+    @property
+    def editor(self):
+        return self.edittabs.currentWidget()
+
+    def new(self):
+        self.edittabs.new_tab()
+
+    def open(self):
+        """
+        Simple open file.
+        TODO: This needs to go into a files.py or files/open.py
+        """
+        o = QtWidgets.QFileDialog.getOpenFileName
+        path, _ = o(self, "Open File")
+        editor = self.edittabs.new_tab(tab_name=os.path.basename(path))
+        editor.path = path
+
+        # Because the document will be open in read-only mode, the
+        # autosave will not save the editor's contents until the
+        # contents have been modified.
+        editor.read_only = True
+
+        with open(path, 'rt') as f:
+            editor.setPlainText(f.read())
+
+    def save(self):
+        save.save(self.editor)
 
     def save_as(self):
-        cw = self.edittabs.currentWidget()
-        save.save_as(cw)
+        save.save_as(self.editor)
 
     def save_selected_text(self):
-        cw = self.edittabs.currentWidget()
-        save.save_selected_text(cw)
+        save.save_selected_text(self.editor)
 
     def export_selected_to_external_editor(self):
-        cw = self.edittabs.currentWidget()
-        save.export_selected_to_external_editor(cw)
+        save.export_selected_to_external_editor(self.editor)
+
+    def export_current_tab_to_external_editor(self):
+        save.export_current_tab_to_external_editor(self.edittabs)
 
     def export_all_tabs_to_external_editor(self):
         save.export_all_tabs_to_external_editor(self.edittabs)
@@ -118,16 +162,33 @@ class PythonEditor(QtWidgets.QWidget):
         """
         self.preferenceseditor.show()
 
+    def show_about_dialog(self):
+        """
+        Shows an about dialog with version information.
+        TODO: Make it a borderless splash screen, centred, nice text,
+        major and minor version numbers set in one place in the
+        project.
+        """
+        msg = 'Python Editor version {0} by Max Last'.format(__version__)
+        self.about_dialog = QtWidgets.QLabel(msg)
+        self.about_dialog.show()
+
     def showEvent(self, event):
         """
         Hack to get rid of margins automatically put in
         place by Nuke Dock Window.
         """
+        def get_parent(obj, level=1):
+            parent = obj
+            for x in range(level):
+                parent = obj.parentWidget()
+            return parent
+
         try:
-            parent = self.parentWidget().parentWidget()
+            parent = get_parent(self, level=2)
             parent.layout().setContentsMargins(0, 0, 0, 0)
 
-            parent = self.parentWidget().parentWidget().parentWidget().parentWidget()
+            parent = get_parent(self, level=4)
             parent.layout().setContentsMargins(0, 0, 0, 0)
         except Exception:
             pass

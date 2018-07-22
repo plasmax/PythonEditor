@@ -52,6 +52,7 @@ class LineNumberArea(QtWidgets.QWidget):
             count /= 10
             digits += 1
         space = 3 + self.editor.fontMetrics().width('9') * digits
+        space = 30 if space < 30 else space
         return space
 
     def updateLineNumberAreaWidth(self, _):

@@ -6,15 +6,19 @@ from PythonEditor.ui.Qt import QtWidgets
 from PythonEditor.utils import constants
 
 
-def save_text(path, text):
-    with open(path, 'w') as f:
+def write_to_file(path, text):
+    """
+    Write text to a file.
+    """
+    with open(path, 'wt') as f:
         f.write(text)
 
 
-def save_text_as(editor, text, title='Save Text As'):
+def get_save_file_name(editor, title='Save Text As'):
     """
-    TODO:
-    Is this better placed in filehandling? It generates a UI
+    Ask user where they would like to save.
+
+    :return: Path user chose to save. None if user cancels.
     """
     path, _ = QtWidgets.QFileDialog.getSaveFileName(
         editor,
@@ -22,20 +26,57 @@ def save_text_as(editor, text, title='Save Text As'):
         constants.NUKE_DIR,
         selectedFilter='*.py')
 
+    if not path:
+        path = None
+
+    return path
+
+
+def save(editor):
+    """
+    Look for a file path property on the editor
+    and save the entire document to that file.
+
+    Sets the read_only status of the editor to True,
+    meaning the autosave will consider it removable
+    if the tab is closed.
+    """
+    if not hasattr(editor, 'path'):
+        path = save_as(editor)
+        if path is None:
+            # User cancelled
+            return
+
+    write_to_file(editor.path, editor.toPlainText())
+    editor.read_only = True
+    print('Saved', editor.path, sep=' ')
+    editor.contents_saved_signal.emit(editor)
+    return editor.path
+
+
+def save_as(editor):
+    """
+    Ask the user where they would like to save the document.
+    """
+    path = get_save_file_name(editor, title='Save As')
     if path:
-        print('Saved', path, sep=' ')
-        save_text(path, text)
+        editor.path = path
+        save(editor)
     return path
 
 
 def save_selected_text(editor):
+    """
+    Export whatever text we have selected to a file. It's only
+    in this case that we don't want to change the autosave or
+    set the editor status to read_only, because we may be saving
+    only part of the document.
+    """
     text = editor.textCursor().selection().toPlainText()
-    return save_text_as(editor, text, title='Save Selected Text')
-
-
-def save_as(editor):
-    text = editor.toPlainText()
-    return save_text_as(editor, text, title='Save As')
+    path = get_save_file_name(editor, title='Save Selected Text')
+    if path:
+        write_to_file(path, text)
+    return path
 
 
 def export_selected_to_external_editor(editor):
@@ -43,6 +84,48 @@ def export_selected_to_external_editor(editor):
     EXTERNAL_EDITOR_PATH = constants.get_external_editor_path()
     if path and EXTERNAL_EDITOR_PATH:
         subprocess.Popen([EXTERNAL_EDITOR_PATH, path])
+    return path
+
+
+def save_editor(folder, name, editor):
+    """
+    Compose a path from folder and editor name.
+    Set the editor path property, then save.
+    """
+    file = name.split('.')[0] + '.py'
+    editor.path = os.path.join(folder, file)
+    save(editor)
+    return editor.path
+
+
+def open_external_editor(path):
+    EXTERNAL_EDITOR_PATH = constants.get_external_editor_path()
+    if path and EXTERNAL_EDITOR_PATH:
+        subprocess.Popen([EXTERNAL_EDITOR_PATH, path])
+
+
+def export_current_tab_to_external_editor(edittabs):
+    widget = edittabs.currentWidget()
+    not_editor = (widget.objectName() != 'Editor')
+    if not_editor:
+        return
+
+    tab_index = edittabs.currentIndex()
+    name = edittabs.tabText(tab_index)
+
+    path, _ = QtWidgets.QFileDialog.getSaveFileName(
+        edittabs,
+        'Choose Directory to save current tab',
+        os.path.join(constants.NUKE_DIR, name),
+        selectedFilter='*.py')
+
+    if not path:
+        return
+
+    editor = widget
+    folder = os.path.dirname(path)
+    save_editor(folder, name, editor)
+    open_external_editor(path)
 
 
 def export_all_tabs_to_external_editor(edittabs):
@@ -68,14 +151,9 @@ def export_all_tabs_to_external_editor(edittabs):
     folder = os.path.dirname(path)
 
     for _, name, editor in editors:
-        text = editor.toPlainText()
-        file = name + '.py'
-        path = os.path.join(folder, file)
-        save_text(path, text)
-    
-    EXTERNAL_EDITOR_PATH = constants.get_external_editor_path()
-    if folder and EXTERNAL_EDITOR_PATH:
-        subprocess.Popen([EXTERNAL_EDITOR_PATH, folder])
+        save_editor(folder, name, editor)
+
+    open_external_editor(folder)
 
     Yes = QtWidgets.QMessageBox.Yes
     No = QtWidgets.QMessageBox.No
@@ -88,5 +166,4 @@ def export_all_tabs_to_external_editor(edittabs):
     if answer == Yes:
         for tab_index, _, editor in editors:
             editor.setPlainText('')
-            edittabs.tabCloseRequested.emit(tab_index) #TODO: rename last tab!
-        # edittabs.new_tab()
+        edittabs.reset_tab_signal.emit()

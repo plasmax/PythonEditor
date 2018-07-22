@@ -1,7 +1,7 @@
 import uuid
 from PythonEditor.ui.Qt import QtWidgets, QtGui, QtCore
 
-from PythonEditor.ui import shortcuteditor
+from PythonEditor.ui.dialogs import shortcuteditor
 from PythonEditor.ui.features import (shortcuts,
                                       linenumberarea,
                                       syntaxhighlighter,
@@ -9,15 +9,23 @@ from PythonEditor.ui.features import (shortcuts,
                                       contextmenu)
 
 CTRL_ALT = QtCore.Qt.ControlModifier | QtCore.Qt.AltModifier
-themes = {
-    'Monokai': 'background:#272822;color:#EEE;',
-    'Monokai Smooth': 'background:rgb(45,42,46);color:rgb(252,252,250);',
-}
+
+# themes = {
+#     'Monokai': 'background:#272822;color:#EEE;',
+#     'Monokai Smooth': 'background:rgb(45,42,46);color:rgb(252,252,250);',
+# }
 
 
 class Editor(QtWidgets.QPlainTextEdit):
     """
-    Code Editor widget.
+    Code Editor widget. Extends QPlainTextEdit to provide:
+    - Line Number Area
+    - Syntax Highlighting
+    - Autocompletion (of Python code)
+    - Shortcuts for code editing
+    - New Context Menu
+    - Signals for connecting the Editor to other UI elements.
+    - Unique identifier to match Editor widget to file storage.
     """
     wrap_types = ['\'', '"',
                   '[', ']',
@@ -26,7 +34,7 @@ class Editor(QtWidgets.QPlainTextEdit):
                   '<', '>']
 
     tab_signal = QtCore.Signal()
-    return_signal = QtCore.Signal()
+    return_signal = QtCore.Signal(QtGui.QKeyEvent)
     wrap_signal = QtCore.Signal(str)
     focus_in_signal = QtCore.Signal(QtGui.QFocusEvent)
     key_pressed_signal = QtCore.Signal(QtGui.QKeyEvent)
@@ -40,6 +48,8 @@ class Editor(QtWidgets.QPlainTextEdit):
     ctrl_n_signal = QtCore.Signal()
     ctrl_w_signal = QtCore.Signal()
     ctrl_enter_signal = QtCore.Signal()
+    contents_saved_signal = QtCore.Signal(object)
+    read_only_signal = QtCore.Signal(bool)
 
     relay_clear_output_signal = QtCore.Signal()
     editingFinished = QtCore.Signal()
@@ -48,8 +58,8 @@ class Editor(QtWidgets.QPlainTextEdit):
         super(Editor, self).__init__()
         self.setObjectName('Editor')
         self.setAcceptDrops(True)
-        font = QtGui.QFont('Consolas')
-        font.setPointSize(9)
+        font = QtGui.QFont('DejaVu Sans Mono')
+        font.setPointSize(10)
         self.setFont(font)
 
         self._changed = False
@@ -58,7 +68,7 @@ class Editor(QtWidgets.QPlainTextEdit):
         linenumberarea.LineNumberArea(self)
         syntaxhighlighter.Highlight(self.document())
         self.contextmenu = contextmenu.ContextMenu(self)
-        self.setStyleSheet(themes['Monokai Smooth'])
+        # self.setStyleSheet(themes['Monokai Smooth'])
 
         self.wait_for_autocomplete = True
         self.autocomplete = autocompletion.AutoCompleter(self)
@@ -68,10 +78,18 @@ class Editor(QtWidgets.QPlainTextEdit):
             sch.clear_output_signal.connect(self.relay_clear_output_signal)
             self.shortcuteditor = shortcuteditor.ShortcutEditor(sch)
 
-        self.uid = str(uuid.uuid4())
+        self._uid = str(uuid.uuid4())
+
+        self.selectionChanged.connect(self.highlight_same_words)
+        self.modificationChanged.connect(self._handle_modificationChanged)
+        self._read_only = False
 
     @property
     def uid(self):
+        """
+        Unique identifier for keeping track of
+        document and editor changes in autosave files.
+        """
         return self._uid
 
     @uid.setter
@@ -80,17 +98,72 @@ class Editor(QtWidgets.QPlainTextEdit):
 
     @property
     def name(self):
+        """
+        The name for the editor document.
+        Generally corresponds to a tab name and/or
+        file name.
+        """
         return self._name
 
     @name.setter
     def name(self, name):
         self._name = name
 
+    @property
+    def path(self):
+        """
+        A path to a file where the document
+        expects to be saved.
+        """
+        return self._path
+
+    @path.setter
+    def path(self, path):
+        self._path = path
+
+    @property
+    def read_only(self):
+        """
+        Returns True or False,
+        detemining whether the editor is in
+        read-only mode or not. Should be disabled
+        when editing has begun.
+        """
+        return self._read_only
+
+    @read_only.setter
+    def read_only(self, state=False):
+        # TODO: set an indicator (italic text in sublime)
+        # to denote state
+        self._read_only = state
+        self.read_only_signal.emit(state)
+
+    @QtCore.Slot(bool)
+    def _handle_modificationChanged(self, changed):
+        self.read_only = not changed
+
     def _handle_text_changed(self):
         self._changed = True
 
     def setTextChanged(self, state=True):
         self._changed = state
+
+    def highlight_same_words(self):
+        """
+        Highlights other matching words in document
+        when full word selected.
+        TODO: implement this!
+        """
+        textCursor = self.textCursor()
+        if not textCursor.hasSelection():
+            return
+
+        # text = textCursor.selection().toPlainText()
+        # textCursor.select(QtGui.QTextCursor.WordUnderCursor)
+        # word = textCursor.selection().toPlainText()
+        # print(text, word)
+        # if text == word:
+            # print(word)
 
     def focusInEvent(self, event):
         self.focus_in_signal.emit(event)
@@ -107,6 +180,8 @@ class Editor(QtWidgets.QPlainTextEdit):
         that QShortcut cannot override.
         """
         if self.wait_for_autocomplete:
+            # TODO: Connect (in autocomplete) using
+            # QtCore.Qt.DirectConnection to work synchronously
             self.key_pressed_signal.emit(event)
             return
 
@@ -114,7 +189,7 @@ class Editor(QtWidgets.QPlainTextEdit):
             if event.key() == QtCore.Qt.Key_Tab:
                 return self.tab_signal.emit()
             if event.key() == QtCore.Qt.Key_Return:
-                return self.return_signal.emit()
+                return self.return_signal.emit(event)
 
         if (event.key() == QtCore.Qt.Key_Return
                 and event.modifiers() == QtCore.Qt.ControlModifier):
@@ -163,10 +238,18 @@ class Editor(QtWidgets.QPlainTextEdit):
         self.context_menu_signal.emit(menu)
 
     def dragEnterEvent(self, e):
-        if e.mimeData().hasUrls:
+        mimeData = e.mimeData()
+        if mimeData.hasUrls:
             e.accept()
         else:
             super(Editor, self).dragEnterEvent(e)
+
+        # let's see what the data contains, at least!
+        # maybe restrict this to non-known formats...
+        for f in mimeData.formats():
+            data = str(mimeData.data(f)).replace(b'\0', b'')
+            data = data.replace(b'\x12', b'')
+            print(f, data)
 
     def dragMoveEvent(self, e):
         if e.mimeData().hasUrls:
@@ -175,6 +258,10 @@ class Editor(QtWidgets.QPlainTextEdit):
             super(Editor, self).dragMoveEvent(e)
 
     def dropEvent(self, e):
+        """
+        TODO: e.ignore() files and send to edittabs to
+        create new tab instead?
+        """
         mimeData = e.mimeData()
         if (mimeData.hasUrls
                 and mimeData.urls()):
@@ -192,8 +279,7 @@ class Editor(QtWidgets.QPlainTextEdit):
 
     def wheelEvent(self, e):
         """
-        Restore focus and emit signal if
-        ctrl held.
+        Restore focus and emit signal if ctrl held.
         """
         self.setFocus(QtCore.Qt.MouseFocusReason)
         if (e.modifiers() == QtCore.Qt.ControlModifier

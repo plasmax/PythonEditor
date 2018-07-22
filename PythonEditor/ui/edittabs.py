@@ -7,15 +7,18 @@ class EditTabs(QtWidgets.QTabWidget):
     """
     QTabWidget containing Editor
     QPlainTextEdit widgets.
-    TODO: Set stylesheet to
-    have tabs the same height as Nuke's.
     """
+    reset_tab_signal = QtCore.Signal()
+    closed_tab_signal = QtCore.Signal(object)
     tab_switched_signal = QtCore.Signal(int, int, bool)
+    contents_saved_signal = QtCore.Signal(object)
 
     def __init__(self):
         QtWidgets.QTabWidget.__init__(self)
         self.setTabBar(TabBar(self))
+
         self.setTabsClosable(True)
+        self.user_cancelled_tab_close = False
         self.setTabShape(QtWidgets.QTabWidget.Rounded)
 
         self.tab_count = 0
@@ -27,6 +30,7 @@ class EditTabs(QtWidgets.QTabWidget):
 
         self.setup_new_tab_btn()
         self.tabCloseRequested.connect(self.close_tab)
+        self.reset_tab_signal.connect(self.reset_tabs)
         self.currentChanged.connect(self.widgetChanged)
         self.setStyleSheet("QTabBar::tab { height: 24px; }")
 
@@ -40,6 +44,9 @@ class EditTabs(QtWidgets.QTabWidget):
             self.tabBar().moveTab(to_index, from_index)
 
     def setup_new_tab_btn(self):
+        """
+        Adds a new tab [+] button to the right of the tabs.
+        """
         widget = QtWidgets.QWidget()
         widget.setObjectName('Tab_Widget_New_Button')
         self.insertTab(0, widget, '')
@@ -74,6 +81,9 @@ class EditTabs(QtWidgets.QTabWidget):
                        )
         self.setCurrentIndex(index)
 
+        # relay the contents saved signal
+        editor.contents_saved_signal.connect(self.contents_saved_signal)
+
         self.tab_count = self.count()
         self.current_index = self.currentIndex()
         editor.setFocus()
@@ -81,33 +91,51 @@ class EditTabs(QtWidgets.QTabWidget):
 
     def close_current_tab(self):
         """
-        Closes the active tab.
+        Closes the active tab. Called via shortcut key.
         """
         _index = self.currentIndex()
         self.tabCloseRequested.emit(_index)
 
     def close_tab(self, index):
+        """
+        Remove current tab if tab count is greater than 3 (so that the
+        last tab left open is not the new button tab, although a better
+        solution here is to open a new tab if the only tab left open is
+        the 'new tab' tab). Also emits a close signal which is used by the
+        autosave to determine if an editor's contents need saving.
+        """
         if self.count() < 3:
             return
         _index = self.currentIndex()
 
-        old_widget = self.widget(index)
-        if old_widget.objectName() == 'Tab_Widget_New_Button':
+        editor = self.widget(index)
+        if editor.objectName() == 'Tab_Widget_New_Button':
             return
 
-        old_widget.deleteLater()
+        self.closed_tab_signal.emit(editor)
+        if self.user_cancelled_tab_close:
+            return
+
+        editor.deleteLater()
 
         self.removeTab(index)
         index = self.count() - 1
         self.setCurrentIndex(_index-1)
         self.tab_count = self.count()
 
+    def reset_tabs(self):
+        for index in reversed(range(self.count())):
+            widget = self.widget(index)
+            if widget is None:
+                continue
+            if widget.objectName() == 'Editor':
+                self.removeTab(index)
+        self.new_tab()
+
     @QtCore.Slot(int)
     def widgetChanged(self, index):
         """
         Triggers widget_changed signal with current widget.
-        TODO: Investigate why this sometimes seems to cause
-        signal connection errors in filehandling and shortcuts.
         """
         tabremoved = self.count() < self.tab_count
         previous = self.current_index
