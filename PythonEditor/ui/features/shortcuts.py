@@ -86,49 +86,6 @@ class ShortcutHandler(QtCore.QObject):
                 # print(name, slot)
             del self._connections[name]
 
-    # def connect_signals(self):
-    #     """
-    #     For shortcuts that cannot be
-    #     handled directly by QShortcut.
-    #     TODO: as UniqueConnection appears
-    #     to create problems, find another
-    #     connection tracking mechanism.
-    #     """
-    #     editor = self.editor
-
-    #     editor.tab_signal.connect(self.tab_handler)
-    #     editor.return_signal.connect(self.return_handler)
-    #     editor.wrap_signal.connect(self.wrap_text)
-    #     editor.home_key_ctrl_alt_signal.connect(self.move_to_top)
-    #     editor.end_key_ctrl_alt_signal.connect(self.move_to_bottom)
-    #     editor.ctrl_x_signal.connect(self.cut_line)
-    #     editor.home_key_signal.connect(self.jump_to_start)
-    #     editor.wheel_signal.connect(self.wheel_zoom)
-    #     editor.ctrl_enter_signal.connect(self.exec_selected_text)
-
-    # def disconnect_signals(self):
-    #     """
-    #     For shortcuts that cannot be
-    #     handled directly by QShortcut.
-    #     """
-    #     if not hasattr(self, 'editor'):
-    #         return
-
-    #     editor = self.editor
-
-    #     ts = editor.tab_signal
-    #     rs = editor.return_signal
-    #     ws = editor.wrap_signal
-    #     ha = editor.home_key_ctrl_alt_signal
-    #     ea = editor.end_key_ctrl_alt_signal
-    #     cx = editor.ctrl_x_signal
-    #     hk = editor.home_key_signal
-    #     wh = editor.wheel_signal
-    #     ce = editor.ctrl_enter_signal
-    #     for sig in ts, rs, ws, ha, ea, cx, hk, wh, ce:
-    #         sig.disconnect()
-    #         # if sig.receivers():
-
     def install_shortcuts(self):
         """
         Maps shortcuts on the QPlainTextEdit widget
