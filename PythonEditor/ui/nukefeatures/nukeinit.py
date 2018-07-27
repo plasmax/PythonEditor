@@ -20,6 +20,12 @@ ICON_PATH = constants.NUKE_DIR + '/icons/PythonEditor.png'
 
 
 def setup():
+    try:
+        import nuke
+        if not nuke.GUI:
+            return
+    except ImportError:
+        pass
     menu_setup()
     nukedock.setup_dock()
 
@@ -67,8 +73,7 @@ def add_to_pane():
         found = False
         panel = panels.__panels.get(PANEL_NAME).__call__()
         for dock in ['Properties.1',
-                     'Viewer.1',
-                     'DAG.1']:
+                     'Viewer.1',  'DAG.1']:
             pane = nuke.getPaneFor(dock)
             if pane:
                 panel.addToPane(pane)
@@ -76,3 +81,5 @@ def add_to_pane():
                 break
         if not found:
             panels.__panels[PANEL_NAME]()
+
+                   
