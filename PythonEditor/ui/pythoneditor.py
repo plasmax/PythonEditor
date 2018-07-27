@@ -20,7 +20,7 @@ class PythonEditor(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super(PythonEditor, self).__init__()
         self.setObjectName('PythonEditor')
-        self.parent = parent
+        self._parent = parent
 
         self.construct_ui()
         self.connect_signals()
@@ -94,7 +94,7 @@ class PythonEditor(QtWidgets.QWidget):
            self.export_all_tabs_to_external_editor)
 
         help_menu.addAction('Reload Python Editor',
-                            self.parent.reload_package)
+                            self._parent.reload_package)
 
         help_menu.addAction('About Python Editor',
                             self.show_about_dialog)
@@ -178,19 +178,12 @@ class PythonEditor(QtWidgets.QWidget):
         Hack to get rid of margins automatically put in
         place by Nuke Dock Window.
         """
-        def get_parent(obj, level=1):
-            parent = obj
-            for x in range(level):
-                parent = obj.parentWidget()
-            return parent
-
         try:
-            parent = get_parent(self, level=2)
-            parent.layout().setContentsMargins(0, 0, 0, 0)
-
-            parent = get_parent(self, level=4)
-            parent.layout().setContentsMargins(0, 0, 0, 0)
-        except Exception:
+            parent = self.parent()
+            for x in range(6):
+                parent.layout().setContentsMargins(0, 0, 0, 0)
+                parent = parent.parent()
+        except AttributeError:
             pass
 
         super(PythonEditor, self).showEvent(event)
