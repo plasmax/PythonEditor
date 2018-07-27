@@ -21,7 +21,6 @@ def mainexec(text, whole_text):
         mode = 'single'
     else:
         mode = 'exec'
-
     try:
         _code = compile(text, FILENAME, mode)
     except SyntaxError:
@@ -37,7 +36,7 @@ def mainexec(text, whole_text):
         error_line_numbers = print_traceback(whole_text, e)
         return error_line_numbers
     else:
-        # try to print new values initialised
+        # try to print new assigned values
         if mode != 'single':
             return
 
@@ -51,15 +50,30 @@ def mainexec(text, whole_text):
             return None
 
         try:
-            for value in __main__.__dict__.values():
-                    if value not in namespace.values():
+            for key, value in __main__.__dict__.items():
+                if value not in namespace.values():
+                    try:
                         print(value)
-        except Exception as e:
-            print('Value retrieval error from __main__.__dict__')
-            print(repr(e))
+                    except Exception:
+                        # if the value throws an error here, 
+                        # try to remove it from globals.
+                        del __main__.__dict__[key]
+        except Exception:
+            # if there's an error in iterating through the 
+            # interpreter globals, restore the globals one
+            # by one until the offending value is removed.
+            __copy = __main__.__dict__.copy()
+            __main__.__dict__.clear()
+            for key, value in __copy.items():
+                try:
+                    __main__.__dict__.update({key:value})
+                except Exception:
+                    print("Couldn't restore ", key, value, "into main globals")
+
             # TODO: do some logging here.
             # sometimes, this causes
             # SystemError: Objects/longobject.c:244:
+            # TypeError('vars() argument must have __dict__ attribute',)
             # bad argument to internal function
             # NotImplementedError, AttributeError, TypeError, SystemError
             return None
