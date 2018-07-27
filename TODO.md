@@ -30,7 +30,7 @@
 - [ ] Would be nice to highlight line on Ctrl+B execution (of single line)
 - [ ] Tabs need QLabels so that they can be italicized when in read_only mode
 - [ ] Tooltip displaying file path when hovering over tabs would be nice. (Easy to implement with QLabels)
-- [ ] When save dialog comes up, the suggested name should be the tab name/editor.name - and i
+- [ ] When save dialog comes up, the suggested name should be the tab name/editor.name - and if there's an editor path, the dialog should open to that path
 
 #### General
 - [ ] Test moving TODO.md to github issues (not so great for local)
