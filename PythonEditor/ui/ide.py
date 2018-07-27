@@ -11,15 +11,15 @@ class IDE(QtWidgets.QWidget):
     """
     def __init__(self):
         super(IDE, self).__init__()
-        self.layout = QtWidgets.QHBoxLayout(self)
-        self.layout.setContentsMargins(0, 0, 0, 0)
+        self._layout = QtWidgets.QHBoxLayout(self)
+        self._layout.setContentsMargins(0, 0, 0, 0)
         self.setObjectName('IDE')
         self.setWindowTitle('Python Editor')
         self.buildUI()
 
     def buildUI(self):
         self.pythonEditor = pythoneditor.PythonEditor(parent=self)
-        self.layout.addWidget(self.pythonEditor)
+        self._layout.addWidget(self.pythonEditor)
 
     def reload_package(self):
         """
@@ -52,19 +52,12 @@ class IDE(QtWidgets.QWidget):
         Hack to get rid of margins automatically put in
         place by Nuke Dock Window.
         """
-        def get_parent(obj, level=1):
-            parent = obj
-            for x in range(level):
-                parent = obj.parentWidget()
-            return parent
-
         try:
-            parent = get_parent(self, level=2)
-            parent.layout().setContentsMargins(0, 0, 0, 0)
-
-            parent = get_parent(self, level=4)
-            parent.layout().setContentsMargins(0, 0, 0, 0)
-        except Exception:
+            parent = self.parent()
+            for x in range(6):
+                parent.layout().setContentsMargins(0, 0, 0, 0)
+                parent = parent.parent()
+        except AttributeError:
             pass
 
         super(IDE, self).showEvent(event)
