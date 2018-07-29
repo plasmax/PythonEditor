@@ -106,22 +106,24 @@ class AutoSaveManager(QtCore.QObject):
 
         # connect tab signals
         tss = tabs.tab_switched_signal
-        tss.connect(self.tab_switch_handler)
+        tss.connect(self.handle_tab_switch)
         tss.connect(self.check_document_modified)
         tcr = tabs.tabCloseRequested
-        tcr.connect(self.tab_close_handler)
+        tcr.connect(self.handle_tab_close)
         rts = tabs.reset_tab_signal
         rts.connect(self.clear_subscripts)
         cts = tabs.closed_tab_signal
         cts.connect(self.editor_close_handler, QtCore.Qt.DirectConnection)
         css = tabs.contents_saved_signal
         css.connect(self.handle_document_save)
+        tmv = tabs.tab_moved_signal
+        tmv.connect(self.handle_tab_moved)
 
         self.set_editor()
         self.readautosave()
 
     @QtCore.Slot(int, int, bool)
-    def tab_switch_handler(self, previous, current, tabremoved):
+    def handle_tab_switch(self, previous, current, tabremoved):
         if not tabremoved:  # nothing's been deleted
                             # so we need to disconnect
                             # signals from previous editor
@@ -393,6 +395,7 @@ class AutoSaveManager(QtCore.QObject):
                     s.text = editor.toPlainText()
 
                 s.attrib['name'] = editor.name
+                s.attrib['tab_index'] = str(editor.tab_index)
                 if hasattr(editor, 'path'):
                     s.attrib['path'] = editor.path
                 found = True
@@ -401,12 +404,17 @@ class AutoSaveManager(QtCore.QObject):
             sub = ElementTree.Element('subscript')
             sub.attrib['uuid'] = editor.uid
             sub.attrib['name'] = editor.name
+            s.attrib['tab_index'] = str(editor.tab_index)
             if hasattr(editor, 'path'):
                 sub.attrib['path'] = editor.path
             if not editor.read_only:
                 sub.text = editor.toPlainText()
             root.append(sub)
 
+        print('autosavexml line 413 implement reorder subscripts by index')
+        # root = sorted(root, key=lambda child: child.attrib.get('tab_index'))
+        # __import__('pprint').pprint(root.items())
+        # print(dir(root))
         self.writexml(root)
 
     @QtCore.Slot(object)
@@ -442,8 +450,12 @@ class AutoSaveManager(QtCore.QObject):
             self.writexml(root)
             print('Document {0} has been emptied'.format(editor.uid))
 
+    @QtCore.Slot(object, int)
+    def handle_tab_moved(self, editor, tab_index):
+        self.autosave(editor=editor)
+
     @QtCore.Slot(int)
-    def tab_close_handler(self, tab_index):
+    def handle_tab_close(self, tab_index):
         """
         Called on tabCloseRequested
         Note: if this slot is called via tabCloseRequested,

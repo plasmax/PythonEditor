@@ -12,6 +12,7 @@ class EditTabs(QtWidgets.QTabWidget):
     closed_tab_signal = QtCore.Signal(object)
     tab_switched_signal = QtCore.Signal(int, int, bool)
     contents_saved_signal = QtCore.Signal(object)
+    tab_moved_signal = QtCore.Signal(object, int)
 
     def __init__(self):
         QtWidgets.QTabWidget.__init__(self)
@@ -26,13 +27,22 @@ class EditTabs(QtWidgets.QTabWidget):
 
         tabBar = self.tabBar()
         tabBar.setMovable(True)
-        tabBar.tabMoved.connect(self.tab_restrict_move)
+        tabBar.tabMoved.connect(self.tab_restrict_move,
+                                QtCore.Qt.DirectConnection)
 
         self.setup_new_tab_btn()
         self.tabCloseRequested.connect(self.close_tab)
         self.reset_tab_signal.connect(self.reset_tabs)
         self.currentChanged.connect(self.widgetChanged)
         self.setStyleSheet("QTabBar::tab { height: 24px; }")
+
+    # def tabInserted(self, index):
+    #     """TODO: Use to manage and trigger re-ordering
+    #     of saved indexes in autosavexml"""
+    #     print(index, 'inserted')
+
+    # def tabRemoved(self, index):
+    #     print(index, 'removed')
 
     @QtCore.Slot(int, int)
     def tab_restrict_move(self, from_index, to_index):
@@ -42,6 +52,14 @@ class EditTabs(QtWidgets.QTabWidget):
         """
         if from_index >= self.count()-1:
             self.tabBar().moveTab(to_index, from_index)
+            return
+
+        for index in from_index, to_index:
+            widget = self.widget(index)
+            widget.tab_index = index
+            if hasattr(widget, 'name'):
+                print(widget.name, widget.tab_index)
+                self.tab_moved_signal.emit(widget, index)
 
     def setup_new_tab_btn(self):
         """
@@ -74,6 +92,7 @@ class EditTabs(QtWidgets.QTabWidget):
             tab_name = 'Tab {0}'.format(index)
 
         editor.name = tab_name
+        editor.tab_index = index
 
         self.insertTab(index,
                        editor,
