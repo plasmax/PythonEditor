@@ -83,7 +83,7 @@ class MenuBar(object):
         TODO: This needs to go into a files.py or files/open.py
         """
         o = QtWidgets.QFileDialog.getOpenFileName
-        path, _ = o(self, "Open File")
+        path, _ = o(self.edittabs, "Open File")
         editor = self.edittabs.new_tab(tab_name=os.path.basename(path))
         editor.path = path
 
