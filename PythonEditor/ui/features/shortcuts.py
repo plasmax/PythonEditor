@@ -120,15 +120,15 @@ class ShortcutHandler(QtCore.QObject):
                     'Ctrl+Shift+Backspace': self.delete_to_sol,
                     'Ctrl+Shift+Up': self.move_lines_up,
                     'Ctrl+Shift+Down': self.move_lines_down,
-                    'Ctrl+Shift+Alt+Up': notimp('duplicate cursor up'),
-                    'Ctrl+Shift+Alt+Down': notimp('duplicate cursor down'),
+                    # 'Ctrl+Shift+Alt+Up': notimp('duplicate cursor up'),
+                    # 'Ctrl+Shift+Alt+Down': notimp('duplicate cursor down'),
                     }
 
         if hasattr(self, 'editortabs'):
             tab_shortcuts = {
                         'Ctrl+Shift+N': self.editortabs.new_tab,
                         'Ctrl+Shift+W': self.editortabs.close_current_tab,
-                        'Ctrl+Shift+T': notimp('reopen previous tab'),
+                        # 'Ctrl+Shift+T': notimp('reopen previous tab'),
                         }
             editor_shortcuts.update(tab_shortcuts)
 
@@ -511,23 +511,26 @@ class ShortcutHandler(QtCore.QObject):
 
         blocks = self.get_selected_blocks(ignoreEmpty=False)
         if len(blocks) > 1:
-            text = textCursor.selectedText().replace(u'\u2029', '')
+            text = textCursor.selectedText()
+            text = ' '.join(ln.strip() for ln in text.splitlines())
             textCursor.insertText(text)
         else:
-            # TODO: lstrip whitespace off next line
-            # leaving only a single space.
-            # doc = self.editor.document()
-            # pos = textCursor.position()
-            # blockno = doc.findBlock(pos).blockNumber()
-            # print(doc.findBlockByNumber(blockno))
-            # print(blockno)
+            block = textCursor.block()
+            text = block.text()
+            next_line = block.next().text().strip()
+            new_text = text + ' ' + next_line
 
+            textCursor.select(QtGui.QTextCursor.LineUnderCursor)
             textCursor.movePosition(QtGui.QTextCursor.EndOfLine)
             new_pos = textCursor.position()+1
             if new_pos >= self.editor.document().characterCount():
                 return
             textCursor.setPosition(new_pos, QtGui.QTextCursor.KeepAnchor)
+
             textCursor.insertText('')
+            textCursor.select(QtGui.QTextCursor.LineUnderCursor)
+            textCursor.insertText(new_text)
+
             self.editor.setTextCursor(textCursor)
 
     def delete_lines(self):
