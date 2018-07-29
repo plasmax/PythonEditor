@@ -113,6 +113,8 @@ class EditTabs(QtWidgets.QTabWidget):
             return
 
         self.closed_tab_signal.emit(editor)
+        # the below attribute may be changed
+        # by a slot connected with DirectConnection
         if self.user_cancelled_tab_close:
             return
 
