@@ -65,7 +65,7 @@ class Highlight(QtGui.QSyntaxHighlighter):
             'raise', 'return', 'try', 'while', 'yield', 'with'
             ]
         self.keywords.extend(dir(__builtins__))
-        
+
         self.instantiators = [
             'def', 'class'
             ]
@@ -152,6 +152,8 @@ class Highlight(QtGui.QSyntaxHighlighter):
 
         rules += [
 
+            # function names
+            ('(?:def |)(\w+)(?:\()', 1, self.styles['function_names']),
             # string formatters
             (r'([rfb])(?:\'|\")', 0, self.styles['formatters']),
             # integers
@@ -160,8 +162,6 @@ class Highlight(QtGui.QSyntaxHighlighter):
             (r'"[^"\\]*(\\.[^"\\]*)*"', 0, self.styles['string']),
             # Single-quoted string, possibly containing escape sequences
             (r"'[^'\\]*(\\.[^'\\]*)*'", 0, self.styles['string']),
-            # function names
-            ('(?:def |)(\w+)(?:\()', 1, self.styles['function_names']),
             # decorators TODO: add this!
             # ('(?:\n@)(\w+)', 1, self.styles['function_names']),
             # function args TODO: find correct regex pattern
