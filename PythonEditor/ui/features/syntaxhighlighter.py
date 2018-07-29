@@ -136,7 +136,12 @@ class Highlight(QtGui.QSyntaxHighlighter):
         # rules
         rules = []
 
-        rules += [('(?:class \w+\()([a-zA-Z\.]+)(?:\))', 1, self.styles['inherited'])]
+        # function args/kwargs TODO: find correct regex pattern for separate
+        # args and kwargs (words) between parentheses
+        # rules += [('(?:def \w+\()([^)]+)', 1, self.styles['args'])]
+
+        class_regex = '(?:class \w+\()([a-zA-Z\.]+)(?:\))'
+        rules += [(class_regex, 1, self.styles['inherited'])]
         rules += [(r'\b%s\b' % i, 0, self.styles['arguments'])
                   for i in self.arguments]
         rules += [(r'\b%s\b' % i, 0, self.styles['keyword'])
@@ -151,9 +156,14 @@ class Highlight(QtGui.QSyntaxHighlighter):
                   for i in self.exceptions]
 
         rules += [
-
             # function names
             ('(?:def |)(\w+)(?:\()', 1, self.styles['function_names']),
+            # class names
+            ('(?:class )(\w+)(?:\()', 1, self.styles['class_names']),
+            # methods
+            ('(?:\.)([a-zA-Z\.]+)(?:\()', 1, self.styles['methods']),
+            # decorators
+            ('(?:@)(\w+)', 1, self.styles['function_names']),
             # string formatters
             (r'([rfb])(?:\'|\")', 0, self.styles['formatters']),
             # integers
@@ -162,16 +172,6 @@ class Highlight(QtGui.QSyntaxHighlighter):
             (r'"[^"\\]*(\\.[^"\\]*)*"', 0, self.styles['string']),
             # Single-quoted string, possibly containing escape sequences
             (r"'[^'\\]*(\\.[^'\\]*)*'", 0, self.styles['string']),
-            # decorators TODO: add this!
-            # ('(?:\n@)(\w+)', 1, self.styles['function_names']),
-            # function args TODO: find correct regex pattern
-            # ('(?:\() )(\w+)(?:\))', 1, self.styles['args']),
-            # # function kwargs TODO: find correct regex pattern
-            # ('(?:\() )(\w+)(?:=)', 1, self.styles['kwargs']),
-            # class names
-            ('(?:class )(\w+)(?:\()', 1, self.styles['class_names']),
-            # methods
-            ('(?:\.)([a-zA-Z\.]+)(?:\()', 1, self.styles['methods']),
             # From '#' until a newline
             (r'#[^\n]*', 0, self.styles['comment']),
             ]
@@ -184,7 +184,6 @@ class Highlight(QtGui.QSyntaxHighlighter):
         """
         Return a QtGui.QTextCharFormat with the given attributes.
         """
-
         color = QtGui.QColor(*rgb)
         textFormat = QtGui.QTextCharFormat()
         textFormat.setForeground(color)
