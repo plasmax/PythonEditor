@@ -12,6 +12,14 @@ def connect(cls, signal, slot):
     __temp_name = 'temp'
 
     def foo(x):
+        try:
+            x = str(x.name())
+        except AttributeError:
+            # PySide2 sends a QtCore.QMetaMethod
+            # object to connectNotify; PySide sends 
+            # just the string name.
+            pass
+
         global __temp_name
         __temp_name = x
 
