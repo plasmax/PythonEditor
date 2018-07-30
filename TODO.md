@@ -26,13 +26,15 @@
 - [ ] Snippet file library
 - [ ] Writing to external files instead of xml. Keeping those files in tab session until closed with a JSON file
 - [x] Check if there's a better way to connect widgets/objects, synchronously (bypassing signal in cases where it's not wanted) - Resolved, starting to use DirectConnection 
-- [ ] Set tab order as a property on the editor and in the autosave
+- [x] Set tab order as a property on the editor and in the autosave
 - [ ] Set up an execution model where stdout, stderr and stdin are temporarily encapsulated within a context managing with statement - is this a good idea? it means output will only be shown when text is executed from PythonEditor. 
 - [ ] Would be nice to highlight line on Ctrl+B execution (of single line)
 - [ ] Tabs need QLabels so that they can be italicized when in read_only mode
 - [ ] Tooltip displaying file path when hovering over tabs would be nice. (Easy to implement with QLabels)
 - [ ] When save dialog comes up, the suggested name should be the tab name/editor.name - and if there's an editor path, the dialog should open to that path
+- [ ] Add menu on the top right corner to select between tabs
 
 #### General
 - [ ] Test moving TODO.md to github issues (not so great for local)
+
 
