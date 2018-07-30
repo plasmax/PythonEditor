@@ -1,4 +1,4 @@
-#!/usr/bin/env nuke-python
+#!/net/homes/mlast/Desktop nuke-tg-python
 """ For testing independently. """
 from __future__ import absolute_import
 import sys
@@ -10,25 +10,25 @@ TESTS_DIR = os.path.dirname(__file__)
 PACKAGE_PATH = os.path.dirname(TESTS_DIR)
 sys.path.append(PACKAGE_PATH)
 
-for m in sys.modules.keys():
-    if 'PythonEditor' in m:
-        del sys.modules[m]
-
-import PythonEditor
-imp.reload(PythonEditor)
-
 if __name__ == '__main__':
     """
     For testing outside of nuke.
     """
-    from PythonEditor.ui.Qt import QtWidgets
-    from PythonEditor.ui.features import nukepalette
+    os.environ['QT_PREFERRED_BINDING'] = 'PySide2:PyQt5:PySide:PyQt4'
 
-    app = QtWidgets.QApplication(sys.argv)
-    ide = PythonEditor.ide.IDE()
+    from PythonEditor.ui.features import nukepalette
+    from PythonEditor.ui import ide
+    from PythonEditor.ui.Qt import QtWidgets
+
+    try:
+        app = QtWidgets.QApplication(sys.argv)
+    except RuntimeError:
+        # for running inside and outside of Nuke
+        app = QtWidgets.QApplication.instance()
+
+    ide = ide.IDE()
     app.setPalette(nukepalette.getNukePalette())
     ide.show()
-    ide.setStyleSheet('font-family:Consolas;font-size:8pt;')
     ide.resize(500, 800)
     plastique = QtWidgets.QStyleFactory.create('Plastique')
     QtWidgets.QApplication.setStyle(plastique)
