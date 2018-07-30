@@ -1,8 +1,10 @@
 import os
-from PythonEditor.utils.constants import QT_VERSION
-os.environ['QT_PREFERRED_BINDING'] = QT_VERSION
+# anti-crash prevention from Nuke 11 to 10.
+os.environ['QT_PREFERRED_BINDING'] = 'PySide2:PySide:PyQt5:PyQt4'
+
 
 from PythonEditor.ui import ide
+
 
 def nuke_menu_setup():
     """
