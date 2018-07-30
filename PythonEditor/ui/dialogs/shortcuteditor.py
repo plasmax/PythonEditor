@@ -22,11 +22,14 @@ class ShortcutEditor(QtWidgets.QTreeView):
             root.appendRow(row)
 
         self.header().setStretchLastSection(False)
+        rtc = QtWidgets.QHeaderView.ResizeToContents
         try:
-            rtc = QtWidgets.QHeaderView.ResizeToContents
             self.header().setResizeMode(rtc)
-        except Exception as e:
-            print(e)
+        except AttributeError:
+            # 'PySide2.QtWidgets.QHeaderView' object has no attribute 'setResizeMode'
+            # TODO: Find compatible way to resize header.
+            pass
+
         self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
         self.setUniformRowHeights(True)
         self.resize(500, 400)
