@@ -150,20 +150,20 @@ class AutoSaveManager(QtCore.QObject):
             (self.editor.textChanged, self.save_timer),
             (self.editor.focus_in_signal, self.check_document_modified),
         ]
-        self._connections = {}
+        self._connections = []
         for signal, slot in pairs:
             name, _, handle = connect(self.editor, signal, slot)
-            self._connections[name] = slot
+            self._connections.append((name, slot))
 
     def disconnect_signals(self):
         """ Disconnects the current editor's signals from this class """
         if not hasattr(self, 'editor'):
             return
         cx = self._connections
-        for name, slot in cx.copy().items():
+        for name, slot in cx:
             for x in range(self.editor.receivers(name)):
                 self.editor.disconnect(name, slot)
-            del self._connections[name]
+        self._connections = []
 
     def setup_save_timer(self, interval=500):
         """
@@ -245,6 +245,7 @@ class AutoSaveManager(QtCore.QObject):
         root, subscripts = parsexml('subscript')
 
         editor_count = 0
+        subscripts = sorted(subscripts, key= lambda s: int(s.attrib.get('tab_index')) )
         for s in subscripts:
 
             if not s.text:
@@ -281,10 +282,23 @@ class AutoSaveManager(QtCore.QObject):
                 self.editor = editor
                 self.readfile(path)
 
+            editor.tab_index = self.tabs.currentIndex()
+
+
+        subscripts = self.update_tab_order(subscripts)
+
         if editor_count == 0:
             self.tabs.new_tab()
 
         self.writexml(root)
+
+    def update_tab_order(self, subscripts):
+        uids = [(i, getattr(self.tabs.widget(i), 'uid', None)) 
+                for i in range(self.tabs.count())]
+        for s in subscripts:
+            for i, uid in uids:
+                if s.attrib.get('uuid') == uid:
+                    s.attrib['tab_index'] = str(i)
 
     def check_document_modified(self):
         """
@@ -292,7 +306,6 @@ class AutoSaveManager(QtCore.QObject):
         to see if there are any differences.
         If there are, prompt the user to see
         if they want to update their tab.
-        TODO: Display text/differences (difflib?)
         """
         if self.timer_waiting:
             return
@@ -341,6 +354,7 @@ class AutoSaveManager(QtCore.QObject):
                 print(uid, name)
 
         for s, editor in not_matching:
+            # TODO: Display text/differences (difflib?)
             Yes = QtWidgets.QMessageBox.Yes
             No = QtWidgets.QMessageBox.No
             msg = 'Document "{0}" not matching'\
@@ -364,7 +378,8 @@ class AutoSaveManager(QtCore.QObject):
                     index = self.tabs.currentIndex()
                     self.tabs.setTabText(index, name)
             else:
-                s.text = self.editor
+                s.text = self.editor.toPlainText()
+                self.writexml(root)
                 self.autosave()
         self.lock = True
 
@@ -411,7 +426,7 @@ class AutoSaveManager(QtCore.QObject):
                 sub.text = editor.toPlainText()
             root.append(sub)
 
-        print('autosavexml line 413 implement reorder subscripts by index')
+        # print('autosavexml line 413 implement reorder subscripts by index')
         # root = sorted(root, key=lambda child: child.attrib.get('tab_index'))
         # __import__('pprint').pprint(root.items())
         # print(dir(root))
