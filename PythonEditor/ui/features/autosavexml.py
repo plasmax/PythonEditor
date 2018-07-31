@@ -426,7 +426,7 @@ class AutoSaveManager(QtCore.QObject):
             sub = ElementTree.Element('subscript')
             sub.attrib['uuid'] = editor.uid
             sub.attrib['name'] = editor.name
-            s.attrib['tab_index'] = str(editor.tab_index)
+            sub.attrib['tab_index'] = str(editor.tab_index)
             if hasattr(editor, 'path'):
                 sub.attrib['path'] = editor.path
             if not editor.read_only:
