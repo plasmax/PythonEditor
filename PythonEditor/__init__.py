@@ -23,6 +23,3 @@ def nuke_menu_setup():
 
     from PythonEditor.ui.nukefeatures import nukeinit
     nukeinit.setup()
-
-
-nuke_menu_setup()
