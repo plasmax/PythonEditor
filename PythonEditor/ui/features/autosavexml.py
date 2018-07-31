@@ -244,8 +244,15 @@ class AutoSaveManager(QtCore.QObject):
         """
         root, subscripts = parsexml('subscript')
 
+        def sort_by_index(subscript):
+            tab_index = subscript.attrib.get('tab_index')
+            try:
+                return int(tab_index)
+            except TypeError:
+                return 1
+
         editor_count = 0
-        subscripts = sorted(subscripts, key= lambda s: int(s.attrib.get('tab_index')) )
+        subscripts = sorted(subscripts, key=sort_by_index)
         for s in subscripts:
 
             if not s.text:
@@ -293,7 +300,7 @@ class AutoSaveManager(QtCore.QObject):
         self.writexml(root)
 
     def update_tab_order(self, subscripts):
-        uids = [(i, getattr(self.tabs.widget(i), 'uid', None)) 
+        uids = [(i, getattr(self.tabs.widget(i), 'uid', None))
                 for i in range(self.tabs.count())]
         for s in subscripts:
             for i, uid in uids:
