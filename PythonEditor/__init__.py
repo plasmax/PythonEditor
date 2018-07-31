@@ -1,7 +1,13 @@
 import os
 # anti-crash prevention from Nuke 11 to 10.
-bindings = 'PySide2', 'PyQt5', 'PySide', 'PyQt4'
-os.environ['QT_PREFERRED_BINDING'] = os.pathsep.join(bindings)
+
+try:
+    import nuke
+    pyside = ('PySide' if (nuke.NUKE_VERSION_MAJOR < 11) else 'PySide2')
+except ImportError:
+    pyside = 'PySide'
+
+os.environ['QT_PREFERRED_BINDING'] = pyside
 
 from PythonEditor.ui import ide
 
