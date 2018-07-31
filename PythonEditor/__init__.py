@@ -1,7 +1,7 @@
 import os
 # anti-crash prevention from Nuke 11 to 10.
-os.environ['QT_PREFERRED_BINDING'] = 'PySide2:PySide:PyQt5:PyQt4'
-
+bindings = 'PySide2', 'PyQt5', 'PySide', 'PyQt4'
+os.environ['QT_PREFERRED_BINDING'] = os.pathsep.join(bindings)
 
 from PythonEditor.ui import ide
 
@@ -17,5 +17,6 @@ def nuke_menu_setup():
 
     from PythonEditor.ui.nukefeatures import nukeinit
     nukeinit.setup()
+
 
 nuke_menu_setup()

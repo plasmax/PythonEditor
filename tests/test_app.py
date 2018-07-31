@@ -14,7 +14,8 @@ if __name__ == '__main__':
     """
     For testing outside of nuke.
     """
-    os.environ['QT_PREFERRED_BINDING'] = 'PySide2:PyQt5:PySide:PyQt4'
+    bindings = 'PySide2', 'PyQt5', 'PySide', 'PyQt4'
+    os.environ['QT_PREFERRED_BINDING'] = os.pathsep.join(bindings)
 
     from PythonEditor.ui.features import nukepalette
     from PythonEditor.ui import ide
