@@ -16,7 +16,7 @@ nukedock.setup_dock()
 nukescripts.panels.__panels["i.d.e.Python_Editor"]()
 """
 
-ICON_PATH = constants.NUKE_DIR + '/icons/PythonEditor.png'
+ICON_PATH = 'PythonEditor.png'
 
 
 def setup():
