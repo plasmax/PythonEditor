@@ -4,8 +4,17 @@ import sys
 import re
 import keyword
 import inspect
+import os
 
 from PythonEditor.ui.Qt import QtGui, QtCore, QtWidgets
+
+def debug(*args, **kwargs):
+    if os.getenv('USER') == 'mlast':
+        f = sys._getframe()
+        print('\nDEBUG:')
+        print(*args, **kwargs)
+        print('sublime '+__file__+':'+str(inspect.getlineno(f.f_back)))
+
 
 KEYWORDS = ['True',
             'False',
@@ -104,6 +113,32 @@ class AutoCompleter(QtCore.QObject):
         word = textCursor.selection().toPlainText()
         return word
 
+    def get_word_after_dot(self, _char):
+        """
+        TODO:
+        This needs a total rethink. Was hacked together.
+        """
+        self.completer.setCompletionPrefix('')
+        textCursor = self.editor.textCursor()
+        document = self.editor.document()
+
+        pos = textCursor.position()
+        block_number = document.findBlock(pos).blockNumber()
+
+        block = document.findBlockByNumber(block_number)
+        block_start = block.position()
+        s = self.editor.toPlainText()[block_start:pos]
+
+        for c in s:
+            if (not c.isalnum()
+                    and c not in ['.', '_']):
+                s = s.replace(c, ' ')
+
+        word_after_dot = s.split(' ')[-1]
+        word_after_dot = word_after_dot.split('.')[-1]
+
+        return word_after_dot
+
     def get_obj_before_char(self, _char):
         """
         Return python object from string.
@@ -172,6 +207,13 @@ class AutoCompleter(QtCore.QObject):
 
         cp = self.completer
         current_word = self.word_under_cursor()
+        all_alpha = all((c.isalnum() or c in '_.') for c in current_word)
+        if not all_alpha:
+            current_word =  self.get_word_after_dot('.') # TODO: won't always be a dot!
+            all_alpha = all((c.isalnum() or c in '_.') for c in current_word)
+            if not all_alpha:
+                cp.popup().hide()
+                return
         cp.setCompletionPrefix(current_word)
         cp.popup().setCurrentIndex(cp.completionModel().index(0, 0))
 
