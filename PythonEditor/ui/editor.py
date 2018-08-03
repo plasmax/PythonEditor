@@ -248,6 +248,8 @@ class Editor(QtWidgets.QPlainTextEdit):
         if app.keyboardModifiers() != QtCore.Qt.AltModifier:
             return
 
+        # let's see what the data contains, at least!
+        # maybe restrict this to non-known formats...
         for f in mimeData.formats():
             data = str(mimeData.data(f)).replace(b'\0', b'')
             data = data.replace(b'\x12', b'')
