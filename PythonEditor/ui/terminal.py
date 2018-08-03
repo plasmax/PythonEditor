@@ -3,6 +3,37 @@ import sys
 
 from PythonEditor.ui.Qt import QtGui, QtWidgets, QtCore
 
+WRITE_TO_SCRIPT_EDITOR = False
+
+
+def outputRedirector(a):
+    """
+    Load the Nuke output redirector and replace this function with it.
+    """
+    try:
+        from _fnpython import outputRedirector
+        global WRITE_TO_SCRIPT_EDITOR
+        WRITE_TO_SCRIPT_EDITOR = True
+        globals()['outputRedirector'] = outputRedirector
+    except ImportError as e:
+        print(e)
+        pass
+
+def stderrRedirector(a):
+    """
+    Load the Nuke error redirector and replace this function with it.
+    """
+    try:
+        from _fnpython import stderrRedirector
+        global WRITE_TO_SCRIPT_EDITOR
+        WRITE_TO_SCRIPT_EDITOR = True
+        globals()['stderrRedirector'] = stderrRedirector
+    except ImportError as e:
+        print(e)
+
+
+sys.modules['hiero.FnRedirect'] = sys  # until I write a fake object
+
 
 class PySingleton(object):
     """
@@ -38,7 +69,8 @@ class SERedirector(object):
                        'write',
                        'writelines',
                        'xreadlines',
-                       '__iter__')
+                       '__iter__',
+                       'name')
 
         for i in fileMethods:
             if not hasattr(self, i) and hasattr(stream, i):
@@ -46,16 +78,6 @@ class SERedirector(object):
 
         self.saved_stream = stream
         self._signal = _signal
-
-    def write(self, text):
-        if self._signal is not None:
-            self._signal.emitter.emit(text)
-        # sys.__stdout__.write(text)
-        self.saved_stream.write(text)  # TODO: should write
-                                       # if not visible, else
-                                       # should emit. not both!
-                                       # set a global variable on
-                                       # terminal visible/invisible.
 
     def close(self):
         self.flush()
@@ -72,13 +94,23 @@ class SESysStdOut(SERedirector, PySingleton):
         sys.stdout = self.saved_stream
         print('reset stream out')
 
+    def write(self, text):
+        if self._signal is not None:
+            self._signal.emitter.emit(text)
+        outputRedirector(text)
+        self.saved_stream.write(text) 
+
 
 class SESysStdErr(SERedirector, PySingleton):
     def reset(self):
         sys.stderr = self.saved_stream
         print('reset stream err')
-    # def write(self, text):  # TODO: Write html links here
-                              # (or do it in a post process)
+
+    def write(self, text):
+        if self._signal is not None:
+            self._signal.emitter.emit(text)
+        stderrRedirector(text)
+        self.saved_stream.write(text)  
 
 
 # TODO: This UI could be separate from the above
@@ -129,7 +161,6 @@ class Terminal(QtWidgets.QPlainTextEdit):
         available to Python Editor even before opening
         the panel.
         """
-
         if hasattr(sys.stdout, '_signal'):
             speaker = sys.stdout._signal
         else:
