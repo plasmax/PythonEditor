@@ -84,6 +84,8 @@ class MenuBar(object):
         """
         o = QtWidgets.QFileDialog.getOpenFileName
         path, _ = o(self.edittabs, "Open File")
+        if not path:
+            return
         editor = self.edittabs.new_tab(tab_name=os.path.basename(path))
         editor.path = path
 
