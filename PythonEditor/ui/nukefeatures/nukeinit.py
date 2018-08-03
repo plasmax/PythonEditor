@@ -49,23 +49,7 @@ def setup(nuke_menu=False, node_menu=False, pane_menu=True):
     if pane_menu:
         nukedock.setup_dock()
 
-
-def menu_setup():
-    import nuke
-
-    panelMenu = nuke.menu('Nuke').addMenu('Panels')
-    panelMenu.addCommand('Python Editor',
-                         RELOAD_CMD,
-                         icon=ICON_PATH)
-
-    import_cmd = '__import__("PythonEditor")'\
-        '.ui.nukefeatures.nukeinit.add_to_pane()'
-    nuke.menu('Nodes').addCommand('Python Editor',
-                                  import_cmd,
-                                  shortcut='\\',
-                                  icon=ICON_PATH)
-
-
+        
 def add_to_pane():
     """
     Locates a panel and adds it to one
