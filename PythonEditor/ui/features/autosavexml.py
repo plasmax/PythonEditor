@@ -217,8 +217,6 @@ class AutoSaveManager(QtCore.QObject):
 
         self.editor.read_only = True
 
-        # register the path on the editor object.
-        # TODO: set this in the xml file!
         self.editor.path = path
         self.editor.setPlainText(text)
 
@@ -433,10 +431,6 @@ class AutoSaveManager(QtCore.QObject):
                 sub.text = editor.toPlainText()
             root.append(sub)
 
-        # print('autosavexml line 413 implement reorder subscripts by index')
-        # root = sorted(root, key=lambda child: child.attrib.get('tab_index'))
-        # __import__('pprint').pprint(root.items())
-        # print(dir(root))
         self.writexml(root)
 
     @QtCore.Slot(object)
