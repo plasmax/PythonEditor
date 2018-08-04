@@ -3,7 +3,7 @@
 from __future__ import absolute_import
 import sys
 import os
-import imp
+
 
 sys.dont_write_bytecode = True
 TESTS_DIR = os.path.dirname(__file__)
