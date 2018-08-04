@@ -3,34 +3,6 @@ import sys
 
 from PythonEditor.ui.Qt import QtGui, QtWidgets, QtCore
 
-WRITE_TO_SCRIPT_EDITOR = False
-
-
-def outputRedirector(a):
-    """
-    Load the Nuke output redirector and replace this function with it.
-    """
-    try:
-        from _fnpython import outputRedirector
-        global WRITE_TO_SCRIPT_EDITOR
-        WRITE_TO_SCRIPT_EDITOR = True
-        globals()['outputRedirector'] = outputRedirector
-    except ImportError as e:
-        print(e)
-        pass
-
-def stderrRedirector(a):
-    """
-    Load the Nuke error redirector and replace this function with it.
-    """
-    try:
-        from _fnpython import stderrRedirector
-        global WRITE_TO_SCRIPT_EDITOR
-        WRITE_TO_SCRIPT_EDITOR = True
-        globals()['stderrRedirector'] = stderrRedirector
-    except ImportError as e:
-        print(e)
-
 
 sys.modules['hiero.FnRedirect'] = sys  # until I write a fake object
 
@@ -94,11 +66,40 @@ class SESysStdOut(SERedirector, PySingleton):
         sys.stdout = self.saved_stream
         print('reset stream out')
 
+    def simple_write(self, text):
+        """
+        use this write if no output
+        redirector found
+        """
+        if self._signal is not None:
+            self._signal.emitter.emit(text)
+        self.saved_stream.write(text)
+
     def write(self, text):
         if self._signal is not None:
             self._signal.emitter.emit(text)
-        outputRedirector(text)
-        self.saved_stream.write(text) 
+        self.saved_stream.write(text)
+
+        # now that we've written our first data,
+        # let's choose our write method
+        try:
+            from _fnpython import outputRedirector
+            self.outputRedirector = outputRedirector
+            self.write = self.nuke_write
+            self.nuke_write(text)
+        except ImportError:
+            self.write = self.simple_write
+            self.simple_write(text)
+
+    def nuke_write(self, text):
+        """
+        use this write if output
+        redirector successfully imported
+        """
+        if self._signal is not None:
+            self._signal.emitter.emit(text)
+        self.outputRedirector(text)
+        self.saved_stream.write(text)
 
 
 class SESysStdErr(SERedirector, PySingleton):
@@ -106,11 +107,40 @@ class SESysStdErr(SERedirector, PySingleton):
         sys.stderr = self.saved_stream
         print('reset stream err')
 
-    def write(self, text):
+    def simple_write(self, text):
+        """
+        use this write if no output
+        redirector found
+        """
+        if self._signal is not None:
+            self._signal.emitter.emit(text)
+        self.saved_stream.write(text)
+
+    def nuke_write(self, text):
+        """
+        use this write if output
+        redirector successfully imported
+        """
         if self._signal is not None:
             self._signal.emitter.emit(text)
         stderrRedirector(text)
-        self.saved_stream.write(text)  
+        self.saved_stream.write(text)
+
+    def write(self, text):
+        if self._signal is not None:
+            self._signal.emitter.emit(text)
+        self.saved_stream.write(text)
+
+        # now that we've written our first data,
+        # let's choose our write method
+        try:
+            from _fnpython import stderrRedirector
+            globals()['stderrRedirector'] = stderrRedirector
+            self.write = self.nuke_write
+            self.nuke_write(text)
+        except ImportError:
+            self.write = self.simple_write
+            self.simple_write(text)
 
 
 # TODO: This UI could be separate from the above
@@ -131,7 +161,7 @@ class Terminal(QtWidgets.QPlainTextEdit):
         font = QtGui.QFont('DejaVu Sans Mono')
         font.setPointSize(10)
         self.setFont(font)
-        
+
     @QtCore.Slot(str)
     def receive(self, text):
         try:
