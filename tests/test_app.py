@@ -32,10 +32,10 @@ if __name__ == '__main__':
         # for running inside and outside of Nuke
         app = QtWidgets.QApplication.instance()
 
-    ide = ide.IDE()
+    _ide = ide.IDE()
     app.setPalette(nukepalette.getNukePalette())
-    ide.show()
-    ide.resize(500, 800)
+    _ide.show()
+    _ide.resize(500, 800)
     plastique = QtWidgets.QStyleFactory.create('Plastique')
     QtWidgets.QApplication.setStyle(plastique)
     sys.exit(app.exec_())
