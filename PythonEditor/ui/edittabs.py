@@ -12,6 +12,7 @@ class EditTabs(QtWidgets.QTabWidget):
     closed_tab_signal = QtCore.Signal(object)
     tab_switched_signal = QtCore.Signal(int, int, bool)
     contents_saved_signal = QtCore.Signal(object)
+    tab_moved_signal = QtCore.Signal(object, int)
 
     def __init__(self):
         QtWidgets.QTabWidget.__init__(self)
@@ -26,7 +27,8 @@ class EditTabs(QtWidgets.QTabWidget):
 
         tabBar = self.tabBar()
         tabBar.setMovable(True)
-        tabBar.tabMoved.connect(self.tab_restrict_move)
+        tabBar.tabMoved.connect(self.tab_restrict_move,
+                                QtCore.Qt.DirectConnection)
 
         self.setup_new_tab_btn()
         self.tabCloseRequested.connect(self.close_tab)
@@ -42,6 +44,13 @@ class EditTabs(QtWidgets.QTabWidget):
         """
         if from_index >= self.count()-1:
             self.tabBar().moveTab(to_index, from_index)
+            return
+
+        for index in from_index, to_index:
+            widget = self.widget(index)
+            widget.tab_index = index
+            if hasattr(widget, 'name'):
+                self.tab_moved_signal.emit(widget, index)
 
     def setup_new_tab_btn(self):
         """
@@ -74,6 +83,7 @@ class EditTabs(QtWidgets.QTabWidget):
             tab_name = 'Tab {0}'.format(index)
 
         editor.name = tab_name
+        editor.tab_index = index
 
         self.insertTab(index,
                        editor,
@@ -113,7 +123,7 @@ class EditTabs(QtWidgets.QTabWidget):
             return
 
         self.closed_tab_signal.emit(editor)
-        # the below attribute may be changed
+        # the below attribute may be altered
         # by a slot connected with DirectConnection
         if self.user_cancelled_tab_close:
             return

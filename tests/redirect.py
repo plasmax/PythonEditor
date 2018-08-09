@@ -11,30 +11,32 @@ sys.path.append(PACKAGE_PATH)
 from PythonEditor.ui.Qt import QtWidgets, QtCore, QtGui
 
 
-# ----- override nuke FnRedirect -----
 class VirtualModule(object):
     pass
 
 
 class Loader(object):
     def load_module(self, name):
-        print name
-        from _fnpython import stderrRedirector, outputRedirector
-        sys.stdout.SERedirect = outputRedirector
-        sys.stderr.SERedirect = stderrRedirector
-        return VirtualModule()
+        try:
+            from _fnpython import stderrRedirector, outputRedirector
+            sys.outputRedirector = outputRedirector
+            sys.stderrRedirector = stderrRedirector
+        finally:
+            # firmly block all imports of the module
+            return VirtualModule()
 
 
 class Finder(object):
+    _deletable = ''
+
     def find_module(self, name, path=''):
         if 'FnRedirect' in name:
             return Loader()
 
 
 sys.meta_path = [i for i in sys.meta_path
-                 if not isinstance(i, Finder)]
+                 if not hasattr(i, '_deletable')]
 sys.meta_path.append(Finder())
-# ----- end override section -----
 
 
 class PySingleton(object):
@@ -48,15 +50,17 @@ class PySingleton(object):
         return cls._the_instance
 
 
+def call(func, *args, **kwargs):
+    func(*args, **kwargs)
+
+
 class Redirect(object):
     def __init__(self, stream):
         self.stream = stream
-        # self.queue = Queue(maxsize=2000)
         self.queue = Queue()
 
+        self.func = lambda x: None
         self.SERedirect = lambda x: None
-
-        self.receivers = []
 
         for a in dir(stream):
             try:
@@ -66,18 +70,11 @@ class Redirect(object):
                 setattr(self, a, attr)
 
     def write(self, text):
-        queue = self.queue
-        receivers = self.receivers
-        if not receivers:
-            queue.put(text)
-        else:
-            if queue.empty():
-                queue = None
-            for func in receivers:
-                func(text=text, queue=queue)
-
         self.stream.write(text)
         self.SERedirect(text)
+
+        self.queue.put(text)
+        self.func(self.queue)
 
 
 class SysOut(Redirect, PySingleton):
@@ -99,12 +96,12 @@ class Terminal(QtWidgets.QPlainTextEdit):
         self.setObjectName('Terminal')
         self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
 
-        sys.stdout.receivers.append(self.get)
-        self.get(queue=sys.stdout.queue)
-        sys.stderr.receivers.append(self.get)
-        self.get(queue=sys.stderr.queue)
+        sys.stdout.func = self.get
+        self.get(sys.stdout.queue)
+        sys.stderr.func = self.get
+        self.get(sys.stderr.queue)
 
-    def get(self, text=None, queue=None):
+    def get(self, queue):
         """
         The get method allows the terminal to pick up
         on output created between the stream object
@@ -115,51 +112,26 @@ class Terminal(QtWidgets.QPlainTextEdit):
         sys.stdout.write = self.insertPlainText
         """
 
-        if queue is not None:
-            while not queue.empty():
-                _text = queue.get()
-                self.receive(_text)
-
-        if text is not None:
+        while not queue.empty():
+            text = queue.get()
             self.receive(text)
 
-        # if receivers is not None:
-        #     receivers.append(self.get)
-
     def receive(self, text):
-        # textCursor = self.textCursor()
+        textCursor = self.textCursor()
         self.moveCursor(QtGui.QTextCursor.End)
         self.insertPlainText(text)
 
     def showEvent(self, event):
         super(Terminal, self).showEvent(event)
-        self.get(queue=sys.stdout.queue)
-        self.get(queue=sys.stderr.queue)
-
-    # def __del__(self):
-    #     print sys.stdout.receivers
-    #     print sys.stderr.receivers
-
-    #     while True:
-    #         try:
-    #             sys.stdout.receivers.remove(self.get)
-    #         except ValueError:
-    #             break
-    #     while True:
-    #         try:
-    #             sys.stderr.receivers.remove(self.get)
-    #         except ValueError:
-    #             break
-
-    #     print sys.stdout.receivers
-    #     print sys.stderr.receivers
+        self.get(sys.stdout.queue)
+        self.get(sys.stderr.queue)
 
 
-if not hasattr(sys.stdout, 'queue'):
+if not hasattr(sys.stdout, 'func'):
     sys.stdout = SysOut(sys.__stdout__)
-if not hasattr(sys.stderr, 'queue'):
+if not hasattr(sys.stderr, 'func'):
     sys.stderr = SysErr(sys.__stderr__)
-if not hasattr(sys.stdin, 'queue'):
+if not hasattr(sys.stdin, 'func'):
     sys.stdin = SysIn(sys.__stdin__)
 
 

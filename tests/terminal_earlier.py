@@ -8,6 +8,8 @@ This module needs to satisfy the following requirements:
 - [ ] Not keep references to destroyed objects
 
 
+# would sys.displayhook be useful in here?
+
 """
 
 
@@ -28,8 +30,6 @@ from PythonEditor.ui.Qt import QtWidgets, QtCore, QtGui
 class VirtualModule(object):
     pass
 
-sys.outputRedirector = lambda x: None
-sys.stderrRedirector = lambda x: None
 
 class Loader(object):
     def load_module(self, name):
@@ -38,6 +38,9 @@ class Loader(object):
             from _fnpython import stderrRedirector, outputRedirector
             sys.outputRedirector = outputRedirector
             sys.stderrRedirector = stderrRedirector
+            # sys.stdout.SERedirect = outputRedirector
+            # sys.stderr.SERedirect = stderrRedirector
+
         finally:
             # firmly block all imports of the module
             return VirtualModule()
@@ -45,6 +48,7 @@ class Loader(object):
 
 class Finder(object):
     _deletable = ''
+
     def find_module(self, name, path=''):
         if 'FnRedirect' in name:
             return Loader()
@@ -56,20 +60,26 @@ sys.meta_path.append(Finder())
 # ----- end override section -----
 
 
-class Relay(QtCore.QObject):
+class Signal(QtCore.QObject):
+    s = QtCore.Signal(str)
+    e = QtCore.Signal()
+    receivers = []
     def customEvent(self, event):
         pass
-        # if event.print_type == '<stdout>':
-        #     sys.outputRedirector(event.text)
-        # elif event.print_type == '<stderr>':
-        #     sys.stderrRedirector(event.text)
-
+        # from _fnpython import stderrRedirector, outputRedirector
+        # try:
+        #     outputRedirector(event.text)
+        # except:
+        #     pass
+        for func in self.receivers:
+            func(text=event.text)
+        # self.e.emit()
+        # self.s.emit(event.text)
 
 class PrintEvent(QtCore.QEvent):
-    def __init__(self, text=None, queue=None, print_type=None):
-        super(PrintEvent, self).__init__(QtCore.QEvent.User)
+    def __init__(self, text):
         self.text = text
-        self.queue = queue
+        super(PrintEvent, self).__init__(QtCore.QEvent.User)
 
 
 class PySingleton(object):
@@ -83,10 +93,22 @@ class PySingleton(object):
         return cls._the_instance
 
 
+def post_out(text):
+    app = QtWidgets.QApplication.instance()
+    app.postEvent(sys.stdout.signal, PrintEvent(text))
+
+def post_err(text):
+    app = QtWidgets.QApplication.instance()
+    app.postEvent(sys.stderr.signal, PrintEvent(text))
+
+
 class Redirect(object):
     def __init__(self, stream, queue=Queue()):
         self.stream = stream
+        self.signal = Signal()
         self.queue = queue
+        self.SERedirect = lambda x: None
+        # self.post_text = lambda x: None
         self.receivers = []
 
         for a in dir(stream):
@@ -96,16 +118,48 @@ class Redirect(object):
                 attr = getattr(stream, a)
                 setattr(self, a, attr)
 
-    def write(self, text):
-        # self.stream.write(text)
+    # def post_text(self, text):
+    #     app = QtWidgets.QApplication.instance()
+    #     app.postEvent(self.signal, PrintEvent(text))
 
-        if not self.receivers:
-            self.queue.put(text)
+    def write(self, text):
 
         app = QtWidgets.QApplication.instance()
-        for receiver in self.receivers:
-            event = PrintEvent(text=text)
-            app.postEvent(receiver, event, -2)
+        event = PrintEvent(text)#, self.SERedirect)
+        app.postEvent(self.signal, event)
+
+        self.stream.write(text)
+        # queue = self.queue
+        # queue.put(text)
+        # self.post_text(text)
+        # try:
+        #     self.post_text(text)
+        # except Exception as e:
+        #     print 'this is why it did not work', e
+        #     self.stream.write('this is why it did not work:\n')
+        #     self.stream.write(e)
+            # self.post_text = lambda x: None
+        # self.signal.s.emit(text)
+
+        # receivers = self.receivers
+        # if not receivers:
+        #     queue.put(text)
+        # else:
+        #     if queue.empty():
+        #         queue = None
+        #     # TODO: at this point, what if we called
+        #     # a relay object that would read the
+        #     # queues and emit signals to various
+        #     # listeners? instead of triggering the receivers
+        #     # one by one here.
+        #     for func in receivers:
+        #         func(text=text, queue=queue)
+
+        # self.stream.write(text)
+
+        # would be nice to have a way to delay this too
+        # as it seems to cause a fair bit of slowdown in Nuke.
+        # self.SERedirect(text)
 
 
 class SysOut(Redirect, PySingleton):
@@ -115,7 +169,6 @@ class SysErr(Redirect, PySingleton):
 class SysIn(Redirect, PySingleton):
     pass
 
-import time
 
 class Terminal(QtWidgets.QPlainTextEdit):
     def __init__(self):
@@ -124,15 +177,13 @@ class Terminal(QtWidgets.QPlainTextEdit):
         self.setObjectName('Terminal')
         self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
 
-        self.queue = Queue()
-        self.timer = QtCore.QTimer()
-        self.timer.timeout.connect(self.check_queue)
-        self.timer.setInterval(10)
-        self.timer.start()
+        # sys.stdout.receivers.append(self.get)
+        # self.get(queue=sys.stdout.queue)
+        # sys.stderr.receivers.append(self.get)
+        # self.get(queue=sys.stderr.queue)
 
-        self.interval = time.time()
-
-    def get(self, text=None, queue=None, name=None):
+    @QtCore.Slot(str)
+    def get(self, text=None, queue=None):
         """
         The get method allows the terminal to pick up
         on output created between the stream object
@@ -145,10 +196,6 @@ class Terminal(QtWidgets.QPlainTextEdit):
         !Warning! Don't print anything in here, it
         will cause an infinite loop.
         """
-
-        if name is not None:
-            self.receive(name)
-
         if queue is not None:
             while not queue.empty():
                 _text = queue.get()
@@ -158,49 +205,38 @@ class Terminal(QtWidgets.QPlainTextEdit):
             self.receive(text)
 
     def receive(self, text):
+        # textCursor = self.textCursor()
         self.moveCursor(QtGui.QTextCursor.End)
         self.insertPlainText(text)
 
-    def customEvent(self, event):
-        if (time.time()-self.interval) < 0.2:
-            self.queue.put(event.text)
-        else:
-            self.receive(event.text)
-        self.interval = time.time()
-
-    @QtCore.Slot()
-    def check_queue(self):
-        chunk = ''
-        n = 0
-        while not self.queue.empty():
-            chunk += self.queue.get()
-            n += 1
-            if n > 10:
-                break
-            if len(chunk) > 3000:
-                break
-            # self.get(queue=self.queue)
-        self.receive(chunk)
-        # self.timer.stop()
-
     def showEvent(self, event):
+        # sys.stdout.signal.s.connect(self.get)
+        # sys.stderr.signal.s.connect(self.get)
+    #     print 'showing'
 
-        sys.stdout.receivers.append(self)
-        sys.stderr.receivers.append(self)
-
-        for stream in sys.stdout, sys.stderr:
+        for stream in sys.stdout.signal, sys.stderr.signal:
+            stream.receivers.append(self.get)
             self.get(queue=stream.queue)
 
-        self.get(queue=self.queue)
         super(Terminal, self).showEvent(event)
+        # sys.stdout.receivers.append(self.get)
+        # sys.stderr.receivers.append(self.get)
+    #     # self.get(queue=sys.stdout.queue)
+    #     # self.get(queue=sys.stderr.queue)
 
     def hideEvent(self, event):
-
-        for r in sys.stdout.receivers, sys.stderr.receivers:
-            while self in r:
-                r.remove(self)
+        # sys.stdout.signal.s.disconnect(self.get)
+        # sys.stderr.signal.s.disconnect(self.get)
+    #     print 'hiding'
+        for stream in sys.stdout.signal, sys.stderr.signal:
+            if self.get in stream.receivers:
+                stream.receivers.remove(self.get)
 
         super(Terminal, self).hideEvent(event)
+
+    def closeEvent(self, event):
+        print 'closing'
+        super(Terminal, self).closeEvent(event)
 
 
 # before we reset stdout and err, try to recover their queues
@@ -221,8 +257,8 @@ sys.stdin = SysIn(sys.__stdin__)
 # re-add the functions to write to Nuke's Script Editor.
 try:
     from _fnpython import stderrRedirector, outputRedirector
-    sys.outputRedirector = outputRedirector
-    sys.stderrRedirector = stderrRedirector
+    sys.stdout.SERedirect = outputRedirector
+    sys.stderr.SERedirect = stderrRedirector
 except ImportError:
     pass
 

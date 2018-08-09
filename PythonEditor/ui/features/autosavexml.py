@@ -106,22 +106,24 @@ class AutoSaveManager(QtCore.QObject):
 
         # connect tab signals
         tss = tabs.tab_switched_signal
-        tss.connect(self.tab_switch_handler)
+        tss.connect(self.handle_tab_switch)
         tss.connect(self.check_document_modified)
         tcr = tabs.tabCloseRequested
-        tcr.connect(self.tab_close_handler)
+        tcr.connect(self.handle_tab_close)
         rts = tabs.reset_tab_signal
         rts.connect(self.clear_subscripts)
         cts = tabs.closed_tab_signal
         cts.connect(self.editor_close_handler, QtCore.Qt.DirectConnection)
         css = tabs.contents_saved_signal
         css.connect(self.handle_document_save)
+        tmv = tabs.tab_moved_signal
+        tmv.connect(self.handle_tab_moved)
 
         self.set_editor()
         self.readautosave()
 
     @QtCore.Slot(int, int, bool)
-    def tab_switch_handler(self, previous, current, tabremoved):
+    def handle_tab_switch(self, previous, current, tabremoved):
         if not tabremoved:  # nothing's been deleted
                             # so we need to disconnect
                             # signals from previous editor
@@ -148,20 +150,20 @@ class AutoSaveManager(QtCore.QObject):
             (self.editor.textChanged, self.save_timer),
             (self.editor.focus_in_signal, self.check_document_modified),
         ]
-        self._connections = {}
+        self._connections = []
         for signal, slot in pairs:
             name, _, handle = connect(self.editor, signal, slot)
-            self._connections[name] = slot
+            self._connections.append((name, slot))
 
     def disconnect_signals(self):
         """ Disconnects the current editor's signals from this class """
         if not hasattr(self, 'editor'):
             return
         cx = self._connections
-        for name, slot in cx.copy().items():
+        for name, slot in cx:
             for x in range(self.editor.receivers(name)):
                 self.editor.disconnect(name, slot)
-            del self._connections[name]
+        self._connections = []
 
     def setup_save_timer(self, interval=500):
         """
@@ -215,8 +217,6 @@ class AutoSaveManager(QtCore.QObject):
 
         self.editor.read_only = True
 
-        # register the path on the editor object.
-        # TODO: set this in the xml file!
         self.editor.path = path
         self.editor.setPlainText(text)
 
@@ -242,7 +242,15 @@ class AutoSaveManager(QtCore.QObject):
         """
         root, subscripts = parsexml('subscript')
 
+        def sort_by_index(subscript):
+            tab_index = subscript.attrib.get('tab_index')
+            try:
+                return int(tab_index)
+            except TypeError:
+                return 1
+
         editor_count = 0
+        subscripts = sorted(subscripts, key=sort_by_index)
         for s in subscripts:
 
             if not s.text:
@@ -279,10 +287,23 @@ class AutoSaveManager(QtCore.QObject):
                 self.editor = editor
                 self.readfile(path)
 
+            editor.tab_index = self.tabs.currentIndex()
+
+
+        subscripts = self.update_tab_order(subscripts)
+
         if editor_count == 0:
             self.tabs.new_tab()
 
         self.writexml(root)
+
+    def update_tab_order(self, subscripts):
+        uids = [(i, getattr(self.tabs.widget(i), 'uid', None))
+                for i in range(self.tabs.count())]
+        for s in subscripts:
+            for i, uid in uids:
+                if s.attrib.get('uuid') == uid:
+                    s.attrib['tab_index'] = str(i)
 
     def check_document_modified(self):
         """
@@ -290,7 +311,6 @@ class AutoSaveManager(QtCore.QObject):
         to see if there are any differences.
         If there are, prompt the user to see
         if they want to update their tab.
-        TODO: Display text/differences (difflib?)
         """
         if self.timer_waiting:
             return
@@ -339,6 +359,7 @@ class AutoSaveManager(QtCore.QObject):
                 print(uid, name)
 
         for s, editor in not_matching:
+            # TODO: Display text/differences (difflib?)
             Yes = QtWidgets.QMessageBox.Yes
             No = QtWidgets.QMessageBox.No
             msg = 'Document "{0}" not matching'\
@@ -362,7 +383,8 @@ class AutoSaveManager(QtCore.QObject):
                     index = self.tabs.currentIndex()
                     self.tabs.setTabText(index, name)
             else:
-                s.text = self.editor
+                s.text = self.editor.toPlainText()
+                self.writexml(root)
                 self.autosave()
         self.lock = True
 
@@ -393,6 +415,7 @@ class AutoSaveManager(QtCore.QObject):
                     s.text = editor.toPlainText()
 
                 s.attrib['name'] = editor.name
+                s.attrib['tab_index'] = str(editor.tab_index)
                 if hasattr(editor, 'path'):
                     s.attrib['path'] = editor.path
                 found = True
@@ -401,6 +424,7 @@ class AutoSaveManager(QtCore.QObject):
             sub = ElementTree.Element('subscript')
             sub.attrib['uuid'] = editor.uid
             sub.attrib['name'] = editor.name
+            sub.attrib['tab_index'] = str(editor.tab_index)
             if hasattr(editor, 'path'):
                 sub.attrib['path'] = editor.path
             if not editor.read_only:
@@ -442,8 +466,12 @@ class AutoSaveManager(QtCore.QObject):
             self.writexml(root)
             print('Document {0} has been emptied'.format(editor.uid))
 
+    @QtCore.Slot(object, int)
+    def handle_tab_moved(self, editor, tab_index):
+        self.autosave(editor=editor)
+
     @QtCore.Slot(int)
-    def tab_close_handler(self, tab_index):
+    def handle_tab_close(self, tab_index):
         """
         Called on tabCloseRequested
         Note: if this slot is called via tabCloseRequested,

@@ -1,3 +1,20 @@
+# an attempt to connect via signals instead of a list of methods, 
+# with the idea that signal connections might not interrupt garbage collection
+
+"""
+This module needs to satisfy the following requirements:
+
+- [ ] Redirect stdout to all Python Editor Terminal QPlainTextEdits
+- [ ] Preserve unread output in Queue objects, which are read when loading the Terminal(s)
+- [ ] Be reloadable without losing stdout connections
+- [ ] Not keep references to destroyed objects
+
+
+# would sys.displayhook be useful in here?
+
+"""
+
+
 import sys
 import os
 from Queue import Queue
@@ -31,9 +48,10 @@ class Finder(object):
             return Loader()
 
 
-sys.meta_path = [i for i in sys.meta_path
-                 if not isinstance(i, Finder)]
-sys.meta_path.append(Finder())
+# sys.meta_path = [i for i in sys.meta_path
+#                  if not isinstance(i, Finder)]
+# sys.meta_path.append(Finder())
+sys.meta_path = [Finder()]
 # ----- end override section -----
 
 
@@ -48,15 +66,14 @@ class PySingleton(object):
         return cls._the_instance
 
 
-class Redirect(object):
+class Redirect(QtCore.QObject):
+    signal = QtCore.Signal(str, object)
     def __init__(self, stream):
+        super(Redirect, self).__init__()
         self.stream = stream
-        # self.queue = Queue(maxsize=2000)
-        self.queue = Queue()
-
+        self.queue = Queue(maxsize=2000)
         self.SERedirect = lambda x: None
-
-        self.receivers = []
+        # self.receivers = []
 
         for a in dir(stream):
             try:
@@ -67,14 +84,15 @@ class Redirect(object):
 
     def write(self, text):
         queue = self.queue
-        receivers = self.receivers
+        receivers = self.receivers('2signal')
         if not receivers:
             queue.put(text)
         else:
-            if queue.empty():
-                queue = None
-            for func in receivers:
-                func(text=text, queue=queue)
+            # if queue.empty():
+            #     queue = None
+            # for func in receivers:
+                # func(text=text, queue=queue)
+            self.signal.emit(text, queue)
 
         self.stream.write(text)
         self.SERedirect(text)
@@ -99,11 +117,14 @@ class Terminal(QtWidgets.QPlainTextEdit):
         self.setObjectName('Terminal')
         self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
 
-        sys.stdout.receivers.append(self.get)
+        # sys.stdout.receivers.append(self.get)
+        sys.stdout.signal.connect(self.get)
         self.get(queue=sys.stdout.queue)
-        sys.stderr.receivers.append(self.get)
+        sys.stderr.signal.connect(self.get)
+        # sys.stderr.receivers.append(self.get)
         self.get(queue=sys.stderr.queue)
 
+    @QtCore.Slot(str, object)
     def get(self, text=None, queue=None):
         """
         The get method allows the terminal to pick up
@@ -114,7 +135,6 @@ class Terminal(QtWidgets.QPlainTextEdit):
         insertPlainText method, e.g.
         sys.stdout.write = self.insertPlainText
         """
-
         if queue is not None:
             while not queue.empty():
                 _text = queue.get()
@@ -122,9 +142,6 @@ class Terminal(QtWidgets.QPlainTextEdit):
 
         if text is not None:
             self.receive(text)
-
-        # if receivers is not None:
-        #     receivers.append(self.get)
 
     def receive(self, text):
         # textCursor = self.textCursor()
@@ -136,56 +153,20 @@ class Terminal(QtWidgets.QPlainTextEdit):
         self.get(queue=sys.stdout.queue)
         self.get(queue=sys.stderr.queue)
 
-    # def __del__(self):
-    #     print sys.stdout.receivers
-    #     print sys.stderr.receivers
-
-    #     while True:
-    #         try:
-    #             sys.stdout.receivers.remove(self.get)
-    #         except ValueError:
-    #             break
-    #     while True:
-    #         try:
-    #             sys.stderr.receivers.remove(self.get)
-    #         except ValueError:
-    #             break
-
-    #     print sys.stdout.receivers
-    #     print sys.stderr.receivers
 
 
-if not hasattr(sys.stdout, 'queue'):
-    sys.stdout = SysOut(sys.__stdout__)
-if not hasattr(sys.stderr, 'queue'):
-    sys.stderr = SysErr(sys.__stderr__)
-if not hasattr(sys.stdin, 'queue'):
-    sys.stdin = SysIn(sys.__stdin__)
+sys.stdout = sys.__stdout__
+sys.stderr = sys.__stderr__
+sys.stdin = sys.__stdin__
 
+sys.stdout = SysOut(sys.__stdout__)
+sys.stderr = SysErr(sys.__stderr__)
+sys.stdin = SysIn(sys.__stdin__)
 
-
-# if __name__ == '__main__':
-#     print "this won't get printed to the terminal"
-
-#     print "this should get printed to the terminal"
-
-#     print sys.stdout is sys.stderr is sys.stdin
-#     print 5, object, type, sys._getframe()
-#     print 'bba\npp'*8
-
-#     print 'pre-app warmup'
-#     app = QtWidgets.QApplication(sys.argv)
-#     t = Terminal()
-#     t.show()
-#     t.receive('some text')
-#     print 'and let the show begin'
-
-#     def printhi():
-#         print 'anus'
-#         raise StopIteration
-
-#     timer = QtCore.QTimer()
-#     timer.timeout.connect(printhi)
-#     timer.setInterval(1000)
-#     timer.start()
-#     sys.exit(app.exec_())
+try:
+    from _fnpython import stderrRedirector, outputRedirector
+    sys.stdout.SERedirect = outputRedirector
+    sys.stderr.SERedirect = stderrRedirector
+except ImportError:
+    pass
+    

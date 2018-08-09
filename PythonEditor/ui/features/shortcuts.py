@@ -70,21 +70,20 @@ class ShortcutHandler(QtCore.QObject):
             (editor.wheel_signal, self.wheel_zoom),
             (editor.ctrl_enter_signal, self.exec_selected_text),
         ]
-        self._connections = {}
+        self._connections = []
         for signal, slot in pairs:
             name, _, handle = connect(editor, signal, slot)
-            self._connections[name] = slot
+            self._connections.append((name, slot))
 
     def disconnect_signals(self):
         """ Disconnects the current editor's signals from this class """
         if not hasattr(self, 'editor'):
             return
         cx = self._connections
-        for name, slot in cx.copy().items():
+        for name, slot in cx:
             for x in range(self.editor.receivers(name)):
                 self.editor.disconnect(name, slot)
-                # print(name, slot)
-            del self._connections[name]
+        self._connections = []
 
     def install_shortcuts(self):
         """
@@ -139,7 +138,7 @@ class ShortcutHandler(QtCore.QObject):
         signal_dict = {
             'Tab': self.tab_handler.__doc__,
             'Return/Enter': self.return_handler.__doc__,
-            '\' " ( ) [ ] \{ \}': self.wrap_text.__doc__,
+            r'\' " ( ) [ ] \{ \}': self.wrap_text.__doc__,
             'Ctrl+Alt+Home': self.move_to_top.__doc__,
             'Ctrl+Alt+End': self.move_to_bottom.__doc__,
             'Ctrl+X': self.cut_line.__doc__,

@@ -243,11 +243,11 @@ class Editor(QtWidgets.QPlainTextEdit):
             e.accept()
         else:
             super(Editor, self).dragEnterEvent(e)
-            
+
         app = QtWidgets.QApplication.instance()
         if app.keyboardModifiers() != QtCore.Qt.AltModifier:
             return
-          
+
         # let's see what the data contains, at least!
         # maybe restrict this to non-known formats...
         for f in mimeData.formats():
