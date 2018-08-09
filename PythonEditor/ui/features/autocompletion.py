@@ -5,15 +5,11 @@ import re
 import keyword
 import inspect
 import os
+import json
 
 from PythonEditor.ui.Qt import QtGui, QtCore, QtWidgets
-
-def debug(*args, **kwargs):
-    if os.getenv('USER') == 'mlast':
-        f = sys._getframe()
-        print('\nDEBUG:')
-        print(*args, **kwargs)
-        print('sublime '+__file__+':'+str(inspect.getlineno(f.f_back)))
+from PythonEditor.utils.debug import debug
+from PythonEditor.utils.constants import NUKE_DIR
 
 
 KEYWORDS = ['True',
@@ -43,6 +39,16 @@ SNIPPETS = {
             'for node all [snippet]': node_all_snippet,
             'n.setSelected(False) [snippet]': node_deselect_snippet,
             }
+
+try:
+    snippet_path = os.path.join(NUKE_DIR, 'PythonEditor_snippets.json')
+    if os.path.isfile(snippet_path):
+        with open(snippet_path, 'r') as f:
+            data = f.read()
+        user_snippets = json.loads(data)
+        SNIPPETS.update(**user_snippets)
+except Exception as e:
+    debug(e)
 
 
 class Completer(QtWidgets.QCompleter):
@@ -339,6 +345,7 @@ class AutoCompleter(QtCore.QObject):
 
             # TODO: border color? can be done with stylesheet?
             # on the main widget?
+            # BUG: This assigns the global tooltip colour
             palette = QtWidgets.QToolTip.palette()
             palette.setColor(QtGui.QPalette.ToolTipText,
                              QtGui.QColor("#F6F6F6"))
