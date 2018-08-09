@@ -11,8 +11,37 @@ from PythonEditor.ui.Qt import QtWidgets, QtGui, QtCore
 from PythonEditor.utils import constants
 
 
+def get_subobject(text):
+    if '.' in text:
+        name = text.split('.')[0]
+        obj = __main__.__dict__.get(name)
+        for name in text.split('.')[1:]:
+            obj = getattr(obj, name)
+    else:
+        obj = __main__.__dict__.get(text)
+
+    return obj
+
+
 def open_module_file(obj):
-    file = inspect.getfile(obj).replace('.pyc', '.py')
+    try:
+        file = inspect.getfile(obj)
+    except TypeError as e:
+        if hasattr(obj, '__class__'):
+            obj = obj.__class__
+            file = inspect.getfile(obj)
+        else:
+            raise TypeError(e)
+
+    if file.endswith('.pyc'):
+        file = file.replace('.pyc', '.py')
+
+    try:
+        lines, lineno = inspect.getsourcelines(obj)
+        file = file+':'+str(lineno)
+    except AttributeError:
+        pass
+
     print(file)
     EXTERNAL_EDITOR_PATH = constants.get_external_editor_path()
     if (EXTERNAL_EDITOR_PATH
@@ -86,18 +115,18 @@ class ContextMenu(QtCore.QObject):
 
     def printHelp(self):
         text = self.selectedText
-        obj = __main__.__dict__.get(text)
+        obj = get_subobject(text)
         if obj is not None:
             print(obj.__doc__)
 
     def _open_module_file(self):
         text = str(self.selectedText)
-        obj = __main__.__dict__.get(text)
+        obj = get_subobject(text)
         open_module_file(obj)
 
     def _open_module_directory(self):
         text = str(self.selectedText)
-        obj = __main__.__dict__.get(text)
+        obj = get_subobject(text)
         open_module_directory(obj)
 
     def initInspectDict(self):
@@ -107,8 +136,11 @@ class ContextMenu(QtCore.QObject):
                                           types.FunctionType)}
 
     def inspectExec(self, func):
+        """
+        TODO: not sure this works...
+        """
         text = str(self.selectedText)
-        obj = __main__.__dict__.get(text)
+        obj = get_subobject(text)
         if obj is None:
             return
         print(self.inspectDict.get(func).__call__(obj))
