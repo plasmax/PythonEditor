@@ -1,15 +1,9 @@
+from __future__ import print_function
 import sys
-import os
-from Queue import Queue
 
-sys.dont_write_bytecode = True
-TESTS_DIR = os.path.dirname(__file__)
-PACKAGE_PATH = os.path.dirname(TESTS_DIR)
-sys.path.append(PACKAGE_PATH)
+from PythonEditor.ui.Qt import QtGui, QtWidgets, QtCore
 
-
-from PythonEditor.ui.Qt import QtWidgets, QtCore, QtGui
-
+WRITE_TO_SCRIPT_EDITOR = False
 
 # ----- override nuke FnRedirect -----
 class VirtualModule(object):
@@ -18,21 +12,25 @@ class VirtualModule(object):
 
 class Loader(object):
     def load_module(self, name):
-        print name
-        from _fnpython import stderrRedirector, outputRedirector
-        sys.stdout.SERedirect = outputRedirector
-        sys.stderr.SERedirect = stderrRedirector
-        return VirtualModule()
+        try:
+            from _fnpython import stderrRedirector, outputRedirector
+            sys.outputRedirector = outputRedirector
+            sys.stderrRedirector = stderrRedirector
+        finally:
+            # firmly block all imports of the module
+            return VirtualModule()
 
 
 class Finder(object):
+    _deletable = ''
+
     def find_module(self, name, path=''):
         if 'FnRedirect' in name:
             return Loader()
 
 
 sys.meta_path = [i for i in sys.meta_path
-                 if not isinstance(i, Finder)]
+                 if not hasattr(i, '_deletable')]
 sys.meta_path.append(Finder())
 # ----- end override section -----
 
@@ -48,144 +46,151 @@ class PySingleton(object):
         return cls._the_instance
 
 
-class Redirect(object):
-    def __init__(self, stream):
-        self.stream = stream
-        # self.queue = Queue(maxsize=2000)
-        self.queue = Queue()
+class Speaker(QtCore.QObject):
+    """
+    Used to relay sys stdout, stderr, stdin
+    """
+    emitter = QtCore.Signal(str)
 
-        self.SERedirect = lambda x: None
 
-        self.receivers = []
+class SERedirector(object):
+    """
+    For encapsulating and replacing a stream object.
+    """
+    def __init__(self, stream, _signal=None):
+        fileMethods = ('fileno',
+                       'flush',
+                       'isatty',
+                       'read',
+                       'readline',
+                       'readlines',
+                       'seek',
+                       'tell',
+                       'write',
+                       'writelines',
+                       'xreadlines',
+                       '__iter__',
+                       'name')
 
-        for a in dir(stream):
-            try:
-                getattr(self, a)
-            except AttributeError:
-                attr = getattr(stream, a)
-                setattr(self, a, attr)
+        for i in fileMethods:
+            if not hasattr(self, i) and hasattr(stream, i):
+                setattr(self, i, getattr(stream, i))
+
+        self.saved_stream = stream
+        self._signal = _signal
+
+    def close(self):
+        self.flush()
+
+    def stream(self):
+        return self.saved_stream
+
+    def __del__(self):
+        self.reset()
+
+
+class SESysStdOut(SERedirector, PySingleton):
+    def reset(self):
+        sys.stdout = self.saved_stream
+        print('reset stream out')
 
     def write(self, text):
-        queue = self.queue
-        receivers = self.receivers
-        if not receivers:
-            queue.put(text)
-        else:
-            if queue.empty():
-                queue = None
-            for func in receivers:
-                func(text=text, queue=queue)
-
-        self.stream.write(text)
-        self.SERedirect(text)
+        if self._signal is not None:
+            self._signal.emitter.emit(text)
+        sys.outputRedirector(text)
+        sys.__stdout__.write(text)
 
 
-class SysOut(Redirect, PySingleton):
-    pass
+class SESysStdErr(SERedirector, PySingleton):
+    def reset(self):
+        sys.stderr = self.saved_stream
+        print('reset stream err')
+
+    def write(self, text):
+        if self._signal is not None:
+            self._signal.emitter.emit(text)
+        sys.stderrRedirector(text)
+        sys.__stderr__.write(text)
 
 
-class SysErr(Redirect, PySingleton):
-    pass
-
-
-class SysIn(Redirect, PySingleton):
-    pass
-
-
+# TODO: This UI could be separate from the above
+# stream wrappers, which could be placed in 'core'
 class Terminal(QtWidgets.QPlainTextEdit):
+    """ Output text display widget """
+    link_activated = QtCore.Signal(str)
+
     def __init__(self):
         super(Terminal, self).__init__()
-        self.setReadOnly(True)
+        # self.setStyleSheet('background:rgb(45,42,46);')
+
         self.setObjectName('Terminal')
         self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
-
-        sys.stdout.receivers.append(self.get)
-        self.get(queue=sys.stdout.queue)
-        sys.stderr.receivers.append(self.get)
-        self.get(queue=sys.stderr.queue)
-
-    def get(self, text=None, queue=None):
-        """
-        The get method allows the terminal to pick up
-        on output created between the stream object
-        encapsulation and the terminal creation.
-
-        This is as opposed to connecting directly to the
-        insertPlainText method, e.g.
-        sys.stdout.write = self.insertPlainText
-        """
-
-        if queue is not None:
-            while not queue.empty():
-                _text = queue.get()
-                self.receive(_text)
-
-        if text is not None:
-            self.receive(text)
-
-        # if receivers is not None:
-        #     receivers.append(self.get)
-
+        self.setReadOnly(True)
+        self.setup()
+        self.destroyed.connect(self.stop)
+        font = QtGui.QFont('DejaVu Sans Mono')
+        font.setPointSize(10)
+        self.setFont(font)
+        
+    @QtCore.Slot(str)
     def receive(self, text):
-        # textCursor = self.textCursor()
-        self.moveCursor(QtGui.QTextCursor.End)
+        try:
+            textCursor = self.textCursor()
+            if bool(textCursor):
+                self.moveCursor(QtGui.QTextCursor.End)
+                # pos = textCursor.position()
+                # self.moveCursor(pos-1)
+        except Exception:
+            pass
         self.insertPlainText(text)
+        # self.appendHtml(text)
 
-    def showEvent(self, event):
-        super(Terminal, self).showEvent(event)
-        self.get(queue=sys.stdout.queue)
-        self.get(queue=sys.stderr.queue)
+    def stop(self):
+        sys.stdout.reset()
+        sys.stderr.reset()
 
-    # def __del__(self):
-    #     print sys.stdout.receivers
-    #     print sys.stderr.receivers
+    def setup(self):
+        """
+        Checks for an existing stream wrapper
+        for sys.stdout and connects to it. If
+        not present, creates a new one.
+        TODO:
+        The FnRedirect sys.stdout is always active.
+        With a singleton object on a thread,
+        that reads off this stream, we can make it
+        available to Python Editor even before opening
+        the panel.
+        """
+        if hasattr(sys.stdout, '_signal'):
+            speaker = sys.stdout._signal
+        else:
+            speaker = Speaker()
+            sys.stdout = SESysStdOut(sys.stdout, speaker)
+            sys.stderr = SESysStdErr(sys.stderr, speaker)
 
-    #     while True:
-    #         try:
-    #             sys.stdout.receivers.remove(self.get)
-    #         except ValueError:
-    #             break
-    #     while True:
-    #         try:
-    #             sys.stderr.receivers.remove(self.get)
-    #         except ValueError:
-    #             break
+        speaker.emitter.connect(self.receive)
 
-    #     print sys.stdout.receivers
-    #     print sys.stderr.receivers
+    def mousePressEvent(self, e):
+        if not hasattr(self, 'anchorAt'):
+            #pyqt doesn't use anchorAt
+            return super(Terminal, self).mousePressEvent(e)
 
-
-if not hasattr(sys.stdout, 'queue'):
-    sys.stdout = SysOut(sys.__stdout__)
-if not hasattr(sys.stderr, 'queue'):
-    sys.stderr = SysErr(sys.__stderr__)
-if not hasattr(sys.stdin, 'queue'):
-    sys.stdin = SysIn(sys.__stdin__)
+        if (e.button() == QtCore.Qt.LeftButton):
+            clickedAnchor = self.anchorAt(e.pos())
+            if clickedAnchor:
+                self.link_activated.emit(clickedAnchor)
+        super(Terminal, self).mousePressEvent(e)
 
 
+# we need these functions to be registered in the sys module
+sys.outputRedirector = lambda x: None
+sys.stderrRedirector = lambda x: None
 
-# if __name__ == '__main__':
-#     print "this won't get printed to the terminal"
-
-#     print "this should get printed to the terminal"
-
-#     print sys.stdout is sys.stderr is sys.stdin
-#     print 5, object, type, sys._getframe()
-#     print 'bba\npp'*8
-
-#     print 'pre-app warmup'
-#     app = QtWidgets.QApplication(sys.argv)
-#     t = Terminal()
-#     t.show()
-#     t.receive('some text')
-#     print 'and let the show begin'
-
-#     def printhi():
-#         print 'anus'
-#         raise StopIteration
-
-#     timer = QtCore.QTimer()
-#     timer.timeout.connect(printhi)
-#     timer.setInterval(1000)
-#     timer.start()
-#     sys.exit(app.exec_())
+# in case we decide to reload the module, we need to
+# re-add the functions to write to Nuke's Script Editor.
+try:
+    from _fnpython import stderrRedirector, outputRedirector
+    sys.outputRedirector = outputRedirector
+    sys.stderrRedirector = stderrRedirector
+except ImportError:
+    pass
