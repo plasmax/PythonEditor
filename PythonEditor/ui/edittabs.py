@@ -1,5 +1,5 @@
 from __future__ import print_function
-from PythonEditor.ui.Qt import QtWidgets, QtCore
+from PythonEditor.ui.Qt import QtWidgets, QtCore, QtGui
 from PythonEditor.ui import editor as EDITOR
 
 
@@ -35,6 +35,28 @@ class EditTabs(QtWidgets.QTabWidget):
         self.reset_tab_signal.connect(self.reset_tabs)
         self.currentChanged.connect(self.widgetChanged)
         self.setStyleSheet("QTabBar::tab { height: 24px; }")
+
+        # add tab list button
+        self.corner_button = QtWidgets.QPushButton(':')
+        self.corner_button.setFixedSize(24, 24)
+        self.corner_button.setStyleSheet("border: 5px solid black")
+        self.corner_button.clicked.connect(self.show_tab_menu)
+        self.setCornerWidget(self.corner_button,
+                             corner=QtCore.Qt.TopRightCorner)
+
+    def show_tab_menu(self):
+        """
+        Show a list of tabs and go to the tab clicked.
+        """
+        menu = QtWidgets.QMenu()
+        from functools import partial
+        for i in range(self.count()):
+            tab_name = self.tabText(i)
+            if not tab_name.strip():
+                continue
+            action = partial(self.setCurrentIndex, i)
+            menu.addAction(tab_name, action)
+        menu.exec_(QtGui.QCursor().pos())
 
     @QtCore.Slot(int, int)
     def tab_restrict_move(self, from_index, to_index):
