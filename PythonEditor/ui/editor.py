@@ -11,11 +11,6 @@ from PythonEditor.ui.features import (shortcuts,
 CTRL = QtCore.Qt.ControlModifier
 CTRL_ALT = QtCore.Qt.ControlModifier | QtCore.Qt.AltModifier
 
-# themes = {
-#     'Monokai': 'background:#272822;color:#EEE;',
-#     'Monokai Smooth': 'background:rgb(45,42,46);color:rgb(252,252,250);',
-# }
-
 
 class Editor(QtWidgets.QPlainTextEdit):
     """
@@ -69,7 +64,6 @@ class Editor(QtWidgets.QPlainTextEdit):
         linenumberarea.LineNumberArea(self)
         syntaxhighlighter.Highlight(self.document())
         self.contextmenu = contextmenu.ContextMenu(self)
-        # self.setStyleSheet(themes['Monokai Smooth'])
 
         self.wait_for_autocomplete = True
         self.autocomplete = autocompletion.AutoCompleter(self)
@@ -126,9 +120,10 @@ class Editor(QtWidgets.QPlainTextEdit):
     def read_only(self):
         """
         Returns True or False,
-        detemining whether the editor is in
+        determining whether the editor is in
         read-only mode or not. Should be disabled
         when editing has begun.
+        TODO: is the existing readOnly property good enough for this?
         """
         return self._read_only
 
@@ -180,6 +175,12 @@ class Editor(QtWidgets.QPlainTextEdit):
         Emit signals for key events
         that QShortcut cannot override.
         """
+        # will this be enough to give focus back to the
+        # script editor or rest of the application?
+        if not self.hasFocus():
+            event.ignore()
+            return
+
         if self.wait_for_autocomplete:
             # TODO: Connect (in autocomplete) using
             # QtCore.Qt.DirectConnection to work synchronously
