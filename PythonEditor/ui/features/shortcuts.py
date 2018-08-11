@@ -1,6 +1,7 @@
 from __future__ import print_function
 import __main__
 from functools import partial
+
 from PythonEditor.ui.Qt import QtWidgets, QtGui, QtCore
 from PythonEditor.core import execute
 from PythonEditor.utils.signals import connect
@@ -49,10 +50,10 @@ class ShortcutHandler(QtCore.QObject):
         and connects signals.
         """
         editor = self.editortabs.currentWidget()
-        editorChanged = (True if not hasattr(self, 'editor')
-                         else self.editor != editor)
-        isEditor = editor.objectName() == 'Editor'
-        if isEditor and editorChanged:
+        editor_changed = (True if not hasattr(self, 'editor')
+                          else self.editor != editor)
+        is_editor = editor.objectName() == 'Editor'
+        if is_editor and editor_changed:
             self.editor = editor
             self.connect_signals()
 
@@ -115,8 +116,8 @@ class ShortcutHandler(QtCore.QObject):
                     'Ctrl+D': self.select_word,
                     'Ctrl+M': self.hop_brackets,
                     'Ctrl+Shift+M': self.select_between_brackets,
-                    'Ctrl+Shift+Delete': self.delete_to_eol,
-                    'Ctrl+Shift+Backspace': self.delete_to_sol,
+                    'Ctrl+Shift+Delete': self.delete_to_end_of_line,
+                    'Ctrl+Shift+Backspace': self.delete_to_start_of_line,
                     'Ctrl+Shift+Up': self.move_lines_up,
                     'Ctrl+Shift+Down': self.move_lines_down,
                     # 'Ctrl+Shift+Alt+Up': notimp('duplicate cursor up'),
@@ -686,7 +687,7 @@ class ShortcutHandler(QtCore.QObject):
             selected_text = textCursor.selectedText()
             textCursor.insertText(selected_text+'\n'+selected_text)
 
-    def delete_to_eol(self):
+    def delete_to_end_of_line(self):
         """
         Deletes characters from cursor
         position to end of line.
@@ -697,7 +698,7 @@ class ShortcutHandler(QtCore.QObject):
         textCursor.setPosition(pos, QtGui.QTextCursor.KeepAnchor)
         textCursor.insertText('')
 
-    def delete_to_sol(self):
+    def delete_to_start_of_line(self):
         """
         Deletes characters from cursor
         position to start of line.
