@@ -8,6 +8,7 @@ from PythonEditor.ui.features import (shortcuts,
                                       autocompletion,
                                       contextmenu)
 
+CTRL = QtCore.Qt.ControlModifier
 CTRL_ALT = QtCore.Qt.ControlModifier | QtCore.Qt.AltModifier
 
 # themes = {
@@ -186,39 +187,49 @@ class Editor(QtWidgets.QPlainTextEdit):
             return
 
         if event.modifiers() == QtCore.Qt.NoModifier:
+            # Tab Key
             if event.key() == QtCore.Qt.Key_Tab:
                 return self.tab_signal.emit()
+            # Enter/Return Key
             if event.key() == QtCore.Qt.Key_Return:
                 return self.return_signal.emit(event)
 
+        # Ctrl+Enter/Return Key
         if (event.key() == QtCore.Qt.Key_Return
-                and event.modifiers() == QtCore.Qt.ControlModifier):
+                and event.modifiers() == CTRL):
             return self.ctrl_enter_signal.emit()
 
+        # Surround selected text in brackets or quotes
         if (event.text() in self.wrap_types
                 and self.textCursor().hasSelection()):
             return self.wrap_signal.emit(event.text())
 
         if event.key() == QtCore.Qt.Key_Home:
+            # Ctrl+Alt+Home
             if event.modifiers() == CTRL_ALT:
                 self.home_key_ctrl_alt_signal.emit()
+            # Home
             elif event.modifiers() == QtCore.Qt.NoModifier:
                 return self.home_key_signal.emit()
 
+        # Ctrl+Alt+End
         if (event.key() == QtCore.Qt.Key_End
                 and event.modifiers() == CTRL_ALT):
             self.end_key_ctrl_alt_signal.emit()
 
+        # Ctrl+X
         if (event.key() == QtCore.Qt.Key_X
-                and event.modifiers() == QtCore.Qt.ControlModifier):
+                and event.modifiers() == CTRL):
             self.ctrl_x_signal.emit()
 
+        # Ctrl+X
         if (event.key() == QtCore.Qt.Key_N
-                and event.modifiers() == QtCore.Qt.ControlModifier):
+                and event.modifiers() == CTRL):
             self.ctrl_n_signal.emit()
 
+        # Ctrl+W
         if (event.key() == QtCore.Qt.Key_W
-                and event.modifiers() == QtCore.Qt.ControlModifier):
+                and event.modifiers() == CTRL):
             self.ctrl_w_signal.emit()
 
         super(Editor, self).keyPressEvent(event)
@@ -286,7 +297,7 @@ class Editor(QtWidgets.QPlainTextEdit):
         Restore focus and emit signal if ctrl held.
         """
         self.setFocus(QtCore.Qt.MouseFocusReason)
-        if (e.modifiers() == QtCore.Qt.ControlModifier
+        if (e.modifiers() == CTRL
                 and e.orientation() == QtCore.Qt.Orientation.Vertical):
             return self.wheel_signal.emit(e)
         super(Editor, self).wheelEvent(e)
