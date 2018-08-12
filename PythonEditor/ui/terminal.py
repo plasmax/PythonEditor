@@ -1,6 +1,7 @@
 from __future__ import print_function
 import sys
 
+from PythonEditor.utils.constants import DEFAULT_FONT
 from PythonEditor.ui.Qt import QtGui, QtWidgets, QtCore
 
 WRITE_TO_SCRIPT_EDITOR = False
@@ -128,7 +129,7 @@ class Terminal(QtWidgets.QPlainTextEdit):
         self.setReadOnly(True)
         self.setup()
         self.destroyed.connect(self.stop)
-        font = QtGui.QFont('DejaVu Sans Mono')
+        font = QtGui.QFont(DEFAULT_FONT)
         font.setPointSize(10)
         self.setFont(font)
         

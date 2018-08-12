@@ -1,4 +1,5 @@
 from PythonEditor.ui.nukefeatures import nukedock
+from PythonEditor.ui.nukefeatures import scripteditorshortcuts
 from PythonEditor.utils import constants
 from PythonEditor.ui.Qt import QtWidgets, QtCore
 

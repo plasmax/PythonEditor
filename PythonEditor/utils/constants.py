@@ -17,7 +17,7 @@ AUTOSAVE_FILE = os.path.join(NUKE_DIR, 'PythonEditorHistory.xml')
 QT_VERSION = os.pathsep.join([pyside, pyqt])
 
 XML_HEADER = '<?xml version="1.0" encoding="UTF-8"?>'
-
+DEFAULT_FONT = 'Courier New' if (os.name == 'nt') else 'DejaVu Sans Mono'
 
 def create_autosave_file():
     if not os.path.isfile(AUTOSAVE_FILE):

@@ -1,6 +1,7 @@
 import uuid
 from PythonEditor.ui.Qt import QtWidgets, QtGui, QtCore
 
+from PythonEditor.utils.constants import DEFAULT_FONT
 from PythonEditor.ui.dialogs import shortcuteditor
 from PythonEditor.ui.features import (shortcuts,
                                       linenumberarea,
@@ -54,7 +55,7 @@ class Editor(QtWidgets.QPlainTextEdit):
         super(Editor, self).__init__()
         self.setObjectName('Editor')
         self.setAcceptDrops(True)
-        font = QtGui.QFont('DejaVu Sans Mono')
+        font = QtGui.QFont(DEFAULT_FONT)
         font.setPointSize(10)
         self.setFont(font)
 
@@ -256,6 +257,7 @@ class Editor(QtWidgets.QPlainTextEdit):
         else:
             super(Editor, self).dragEnterEvent(e)
 
+        # prevent mimedata from being displayed unless alt is held
         app = QtWidgets.QApplication.instance()
         if app.keyboardModifiers() != QtCore.Qt.AltModifier:
             return

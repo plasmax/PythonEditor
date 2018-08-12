@@ -2,6 +2,9 @@ import sys
 import traceback
 from PythonEditor.ui.Qt import QtCore, QtWidgets
 
+qApp = QtWidgets.QApplication.instance
+CTRL = QtCore.Qt.ControlModifier
+
 
 def full_stack():
     """
@@ -28,10 +31,10 @@ class GenericEventFilter(QtCore.QObject):
     and autoquit with full stack trace on error.
 
     example usage:
-    from EventFilters import GenericEventFilter
+    from PythonEditor.utils.eventfilters import GenericEventFilter
     class Filt(GenericEventFilter):
         def event_filter(self, obj, event):
-            1/0 #cause error
+            1/0 # cause error
 
     filt = Filt()
     """
@@ -46,10 +49,10 @@ class GenericEventFilter(QtCore.QObject):
         QtCore.QCoreApplication.installEventFilter(self.target, self)
 
     def eventFilter(self, obj, event):
-        if (event.type() == QtCore.QEvent.KeyPress
-                and event.key() == QtCore.Qt.Key_Escape):
-                self.quit()
-                return True
+        # if (event.type() == QtCore.QEvent.KeyPress
+        #         and event.key() == QtCore.Qt.Key_Escape):
+        #         self.quit()
+        #         return True
         try:
             return self.event_filter(obj, event)
         except Exception:
