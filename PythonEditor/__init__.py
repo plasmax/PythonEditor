@@ -12,6 +12,11 @@ os.environ['QT_PREFERRED_BINDING'] = pyside
 
 from PythonEditor.ui import ide
 
+# for convenience
+from ui import Qt
+import sys
+sys.modules['Qt'] = Qt
+
 
 def nuke_menu_setup(nuke_menu=False, node_menu=False, pane_menu=True):
     """
