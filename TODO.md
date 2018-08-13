@@ -8,11 +8,12 @@
 - [ ] Tooltip colour permanently set in autocompletion
 - [ ] Search causes cursor to go missing
 - [ ] # in string causes rest of line to be greyed out
+- [ ] Double printing to sys.stdout
 
 
 #### Testing
 - [x] Check that tab closing and then cancelling restores the current tab (without causing disconnect/connect issues)
-- [ ] Check that tab renaming is consistent with autosave file
+- [x] Check that tab renaming is consistent with autosave file
 - [ ] Are editor properties correctly kept in sync? Any time a tab name or xml subscript changes, the editor
       should also change. What is the best way to monitor this?
 - [ ] Are all function and method names clear in the API?
@@ -56,7 +57,7 @@
 - [ ] Add reverse ' = '.join(reversed('sys.stdout = backup'.split(' = ')))
 - [ ] GOTO tooltip over selected text
 - [ ] Edit Snippets Dialog (for snippets in /.nuke/)
-- [ ] Improve speed by loading tabs separately
+- [ ] Improve speed by loading tabs separately - (Lazy loading of tabs (or one single Autosave read/load operation instead of read/load/write/read))
 - [ ] Duplicate cursors
 - [ ] Search box at bottom of editor widget
 
