@@ -9,7 +9,7 @@
 - [ ] Search causes cursor to go missing
 - [ ] # in string causes rest of line to be greyed out
 - [ ] Double printing to sys.stdout
-
+- [ ] Override setPlainText to avoid string encoding errors (can this affect copy paste?)
 
 #### Testing
 - [x] Check that tab closing and then cancelling restores the current tab (without causing disconnect/connect issues)
