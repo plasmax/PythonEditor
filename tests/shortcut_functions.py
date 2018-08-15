@@ -334,35 +334,21 @@ def wrap_text(code_edit, key):
     """
     Wrap selected text in brackets
     or quotes of type "key".
+
+    BUG: Curly braces (with Shift held)
+    seem to delete selected text
     """
+    if not key:
+        return
     try:
         key_in, key_out = key_lookup[key]
     except KeyError:
         return
 
-    # if key in ['\'', '"']:
-    #     key_in = key
-    #     key_out = key
-    # elif key in ['[', ']']:
-    #     key_in = '['
-    #     key_out = ']'
-    # elif key in ['(', ')']:
-    #     key_in = '('
-    #     key_out = ')'
-    # elif key in ['{', '}']:
-    #     key_in = '{'
-    #     key_out = '}'
-    # elif key in ['<', '>']:
-    #     key_in = '<'
-    #     key_out = '>'
-    # else:
-    #     return
-
     textCursor = code_edit.textCursor()
 
     text = textCursor.selectedText()
     if text:
-        print text
         text = key_in + text + key_out
     else:
         text = key

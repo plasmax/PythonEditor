@@ -4,79 +4,115 @@ using custom json files that list function names
 paired with key sequences.
 """
 import imp
+import json
+import os
 import shortcut_functions
 
+__folder__ = os.path.dirname(__file__)
+__project__ = os.path.dirname(__folder__)
+# TEMP! This will be your .nuke dir
+__configs__ = __folder__
+shortcut_config_path = os.path.join(__configs__, 'shortcut_config.json')
 
-path = 'C:/Repositories/PythonEditor/PythonEditor/ui/Qt.py'
-Qt = imp.load_source('Qt', path)
+
+qt_path = os.path.join(__project__, 'PythonEditor/ui/Qt.py')
+Qt = imp.load_source('Qt', qt_path)
 QtWidgets, QtGui, QtCore = Qt.QtWidgets, Qt.QtGui, Qt.QtCore
 
-# put this in a config
-# if user config exists, load it and update this dict
-# changing user prefs sets keys
+# BUG: json loads as unicode, this causes problems.
+# with open(shortcut_config_path, 'rt') as f:
+#     SHORTCUT_CONFIG = json.loads(f.read())
+
+
 SHORTCUT_CONFIG = {
-    'editor_shortcuts': {
-                     'exec_current_line': 'Ctrl+B',
-                     'new_line_above': 'Ctrl+Shift+Return',
-                     'new_line_below': 'Ctrl+Alt+Return',
-                     'duplicate_lines': 'Ctrl+Shift+D',
-                     'print_help': 'Ctrl+H',
-                     'print_type': 'Ctrl+T',
-                     'search_input': 'Ctrl+Shift+F',
-                     'select_lines': 'Ctrl+L',
-                     'join_lines': 'Ctrl+J',
-                     'comment_toggle': 'Ctrl+/',
-                     'indent': 'Ctrl+]',
-                     'unindent': ('Ctrl+[', 'Shift+Tab'),
-                     'next_tab': 'Ctrl+Tab',
-                     'previous_tab': 'Ctrl+Shift+Tab',
-                     'zoom_in': ('Ctrl+=', 'Ctrl++'),
-                     'zoom_out': 'Ctrl+-',
-                     'delete_lines': 'Ctrl+Shift+K',
-                     'select_word': 'Ctrl+D',
-                     'hop_brackets': 'Ctrl+M',
-                     'select_between_brackets': 'Ctrl+Shift+M',
-                     'delete_to_end_of_line': 'Ctrl+Shift+Delete',
-                     'delete_to_start_of_line': 'Ctrl+Shift+Backspace',
-                     'move_lines_up': 'Ctrl+Shift+Up',
-                     'move_lines_down': 'Ctrl+Shift+Down',
-                     'wrap_text': ('\'', '"', '(', ')', '[', ']', '\{', '\}'),
-                     'return_handler': ('Return', 'Enter'),
-                     # 'clear_output_signal.emit': 'Ctrl+Backspace',
-                     # 'Ctrl+Shift+Alt+Up': notimp('duplicate cursor up'),
-                     # 'Ctrl+Shift+Alt+Down': notimp('duplicate cursor down'),
-                     },
-    'tab_shortcuts': {
-                     'editortabs.new_tab': 'Ctrl+Shift+N',
-                     'editortabs.close_current_tab': 'Ctrl+Shift+W',
-                     # 'reopen_previous_tab': 'Ctrl+Shift+T',
-                     },
-    'signal_dict': {
-                    'tab_handler': 'Tab',
-                    'return_handler': 'Return/Enter',
-                    # 'wrap_text': r'\' " ( ) [ ] \{ \}',
-                    'wrap_text': ('\'', '"', '(', ')', '[', ']', '\{', '\}'),
-                    'move_to_top': 'Ctrl+Alt+Home',
-                    'move_to_bottom': 'Ctrl+Alt+End',
-                    'cut_line': 'Ctrl+X',
-                    'jump_to_start': 'Home',
-                    'wheel_zoom': 'Ctrl+Mouse Wheel',
-                    'clear_output_signal': 'Ctrl+Backspace',
-                    }
+    "signal_dict": {
+        "return_handler": "Return/Enter",
+        "wheel_zoom": "Ctrl+Mouse Wheel",
+        "move_to_bottom": "Ctrl+Alt+End",
+        "jump_to_start": "Home",
+        "clear_output_signal": "Ctrl+Backspace",
+        "wrap_text": [
+            "'",
+            "\"",
+            "(",
+            ")",
+            "[",
+            "]",
+            "\\{",
+            "\\}"
+        ],
+        "cut_line": "Ctrl+X",
+        "move_to_top": "Ctrl+Alt+Home",
+        "tab_handler": "Tab"
+    },
+    "tab_shortcuts": {
+        "editortabs.new_tab": "Ctrl+Shift+N",
+        "editortabs.close_current_tab": "Ctrl+Shift+W"
+    },
+    "editor_shortcuts": {
+        "previous_tab": "Ctrl+Shift+Tab",
+        "new_line_above": "Ctrl+Shift+Return",
+        "delete_to_start_of_line": "Ctrl+Shift+Backspace",
+        "hop_brackets": "Ctrl+M",
+        "zoom_in": [
+            "Ctrl+=",
+            "Ctrl++"
+        ],
+        "duplicate_lines": "Ctrl+Shift+D",
+        "search_input": "Ctrl+Shift+F",
+        "new_line_below": "Ctrl+Alt+Return",
+        "delete_lines": "Ctrl+Shift+K",
+        "print_help": "Ctrl+H",
+        "return_handler": [
+            "Return",
+            "Enter"
+        ],
+        "zoom_out": "Ctrl+-",
+        "move_lines_up": "Ctrl+Shift+Up",
+        "select_word": "Ctrl+D",
+        "print_type": "Ctrl+T",
+        "comment_toggle": "Ctrl+/",
+        "wrap_text": [
+            "'",
+            "\"",
+            "(",
+            ")",
+            "[",
+            "]",
+            "Shift+{",
+            "Shift+}"
+        ],
+        "delete_to_end_of_line": "Ctrl+Shift+Delete",
+        "unindent": [
+            "Ctrl+[",
+            "Shift+Tab"
+        ],
+        "indent": "Ctrl+]",
+        "select_between_brackets": "Ctrl+Shift+M",
+        "next_tab": "Ctrl+Tab",
+        "exec_current_line": "Ctrl+B",
+        "move_lines_down": "Ctrl+Shift+Down",
+        "join_lines": "Ctrl+J",
+        "select_lines": "Ctrl+L"
+    }
 }
+# print SHORTCUT_CONFIG
+# with open(shortcut_config_path, 'rt') as f:
+
+
+
+# cfg = json.dumps(SHORTCUT_CONFIG, indent=4)
+# with open(shortcut_config_path, 'wt') as f:
+#     f.write(cfg)
 
 event_types = (QtCore.QEvent.KeyPress,
                QtCore.QEvent.KeyRelease,
                QtCore.QEvent.ShortcutOverride)
 
-SHIFT = QtCore.Qt.ShiftModifier
-CTRL = QtCore.Qt.ControlModifier
-ALT = QtCore.Qt.AltModifier
-
 mods = {
-    QtCore.Qt.Key_Control: CTRL,
-    QtCore.Qt.Key_Shift: SHIFT,
-    QtCore.Qt.Key_Alt: ALT,
+    QtCore.Qt.Key_Control: QtCore.Qt.ControlModifier,
+    QtCore.Qt.Key_Shift: QtCore.Qt.ShiftModifier,
+    QtCore.Qt.Key_Alt: QtCore.Qt.AltModifier,
 }
 
 
@@ -148,6 +184,7 @@ class Shortcuts(QtCore.QObject):
             for keyseq, func in self.register:
                 if keyseq == seq:
                     event.accept()
+                    print func
                     try:
                         func(self.widget)
                     except TypeError:
