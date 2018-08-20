@@ -210,7 +210,7 @@ def new_line_below(code_edit):
     textCursor.insertText('\n'+indent)
 
 
-@QtCore.Slot()
+# @QtCore.Slot()
 def tab_handler(code_edit):
     """
     Indents selected text. If no text
@@ -218,9 +218,9 @@ def tab_handler(code_edit):
     """
     textCursor = code_edit.textCursor()
     if textCursor.hasSelection():
-        indent()
+        indent(code_edit)
     else:
-        tab_space()
+        tab_space(code_edit)
 
 
 def indent(code_edit):

@@ -1,72 +1,72 @@
 {
-    "signal_dict": {
-        "return_handler": "Return/Enter", 
-        "wheel_zoom": "Ctrl+Mouse Wheel", 
-        "move_to_bottom": "Ctrl+Alt+End", 
-        "jump_to_start": "Home", 
-        "clear_output_signal": "Ctrl+Backspace", 
-        "wrap_text": [
-            "'", 
-            "\"", 
-            "(", 
-            ")", 
-            "[", 
-            "]", 
-            "\\{", 
-            "\\}"
-        ], 
-        "cut_line": "Ctrl+X", 
-        "move_to_top": "Ctrl+Alt+Home", 
-        "tab_handler": "Tab"
-    }, 
     "tab_shortcuts": {
-        "editortabs.new_tab": "Ctrl+Shift+N", 
+        "editortabs.new_tab": "Ctrl+Shift+N",
         "editortabs.close_current_tab": "Ctrl+Shift+W"
-    }, 
-    "editor_shortcuts": {
-        "previous_tab": "Ctrl+Shift+Tab", 
-        "new_line_above": "Ctrl+Shift+Return", 
-        "delete_to_start_of_line": "Ctrl+Shift+Backspace", 
-        "hop_brackets": "Ctrl+M", 
-        "zoom_in": [
-            "Ctrl+=", 
-            "Ctrl++"
-        ], 
-        "duplicate_lines": "Ctrl+Shift+D", 
-        "search_input": "Ctrl+Shift+F", 
-        "new_line_below": "Ctrl+Alt+Return", 
-        "delete_lines": "Ctrl+Shift+K", 
-        "print_help": "Ctrl+H", 
-        "return_handler": [
-            "Return", 
-            "Enter"
-        ], 
-        "zoom_out": "Ctrl+-", 
-        "move_lines_up": "Ctrl+Shift+Up", 
-        "select_word": "Ctrl+D", 
-        "print_type": "Ctrl+T", 
-        "comment_toggle": "Ctrl+/", 
+    },
+    "signal_dict": {
+        "return_handler": "Return/Enter",
+        "tab_handler": "Tab",
+        "wheel_zoom": "Ctrl+Mouse Wheel",
+        "move_to_bottom": "Ctrl+Alt+End",
+        "jump_to_start": "Home",
         "wrap_text": [
-            "'", 
-            "\"", 
-            "(", 
-            ")", 
-            "[", 
-            "]", 
-            "Shift+{", 
+            "'",
+            "\"",
+            "(",
+            ")",
+            "[",
+            "]",
+            "\\{",
+            "\\}"
+        ],
+        "cut_line": "Ctrl+X",
+        "move_to_top": "Ctrl+Alt+Home",
+        "clear_output_signal": "Ctrl+Backspace"
+    },
+    "editor_shortcuts": {
+        "previous_tab": "Ctrl+Shift+Tab",
+        "new_line_above": "Ctrl+Shift+Return",
+        "delete_to_start_of_line": "Ctrl+Shift+Backspace",
+        "hop_brackets": "Ctrl+M",
+        "zoom_in": [
+            "Ctrl+=",
+            "Ctrl++"
+        ],
+        "duplicate_lines": "Ctrl+Shift+D",
+        "search_input": "Ctrl+Shift+F",
+        "new_line_below": "Ctrl+Alt+Return",
+        "delete_lines": "Ctrl+Shift+K",
+        "print_help": "Ctrl+H",
+        "delete_to_end_of_line": "Ctrl+Shift+Delete",
+        "zoom_out": "Ctrl+-",
+        "move_lines_up": "Ctrl+Shift+Up",
+        "indent": "Ctrl+]",
+        "print_type": "Ctrl+T",
+        "comment_toggle": "Ctrl+/",
+        "wrap_text": [
+            "'",
+            "\"",
+            "(",
+            ")",
+            "[",
+            "]",
+            "Shift+{",
             "Shift+}"
-        ], 
-        "delete_to_end_of_line": "Ctrl+Shift+Delete", 
+        ],
+        "return_handler": [
+            "Return",
+            "Enter"
+        ],
         "unindent": [
-            "Ctrl+[", 
+            "Ctrl+[",
             "Shift+Tab"
-        ], 
-        "indent": "Ctrl+]", 
-        "select_between_brackets": "Ctrl+Shift+M", 
-        "next_tab": "Ctrl+Tab", 
-        "exec_current_line": "Ctrl+B", 
-        "move_lines_down": "Ctrl+Shift+Down", 
-        "join_lines": "Ctrl+J", 
+        ],
+        "select_word": "Ctrl+D",
+        "select_between_brackets": "Ctrl+Shift+M",
+        "next_tab": "Ctrl+Tab",
+        "exec_current_line": "Ctrl+G",
+        "move_lines_down": "Ctrl+Shift+Down",
+        "join_lines": "Ctrl+J",
         "select_lines": "Ctrl+L"
     }
 }
