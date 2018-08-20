@@ -59,7 +59,7 @@
 - [ ] Improve speed by loading tabs separately
 - [ ] Duplicate cursors
 - [ ] Search box at bottom of editor widget
-
+- [ ] Autocomplete 'toNode', node.knob() and node[knob]
 
 #### General
 - [ ] Test moving TODO.md to github issues (not so great for local)
