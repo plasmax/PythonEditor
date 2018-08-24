@@ -54,7 +54,10 @@ class GenericEventFilter(QtCore.QObject):
         #         self.quit()
         #         return True
         try:
-            return self.event_filter(obj, event)
+            result = self.event_filter(obj, event)
+            if result not in [True, False]:
+                raise Exception('result is not True or False')
+            return result
         except Exception:
             self.quit()
             print full_stack()
