@@ -8,6 +8,34 @@
 - [ ] Tooltip colour permanently set in autocompletion
 - [ ] Search causes cursor to go missing
 - [ ] # in string causes rest of line to be greyed out
+- [ ] CRITICAL BUG: In rare cases with network disruption the PythonEditorHistory.xml can be overwritten with 0 contents. PythonEditor will then not load.
+      Add in a pre-check for xml contents in the file (if it exists) and implement some sort of backup procedure (e.g. copy to /tmp/ on script close)
+
+      error:
+ElementTree.ParseError no element found: line 1, column 0
+Removing undesirable control characters:
+Traceback (most recent call last):
+  File "/opt/foundry/nuke-10.0v4/plugins/nukescripts/panels.py", line 153, in makeUI
+    self.widget = self.widgetClass()
+  File "/job/pipeline/dev/sandbox/sandbox_mlast/work/mlast/git/PythonEditor/PythonEditor/ui/ide.py", line 18, in __init__
+    self.buildUI()
+  File "/job/pipeline/dev/sandbox/sandbox_mlast/work/mlast/git/PythonEditor/PythonEditor/ui/ide.py", line 21, in buildUI
+    self.pythonEditor = pythoneditor.PythonEditor(parent=self)
+  File "/job/pipeline/dev/sandbox/sandbox_mlast/work/mlast/git/PythonEditor/PythonEditor/ui/pythoneditor.py", line 22, in __init__
+    self.connect_signals()
+  File "/job/pipeline/dev/sandbox/sandbox_mlast/work/mlast/git/PythonEditor/PythonEditor/ui/pythoneditor.py", line 49, in connect_signals
+    self.filehandler = autosavexml.AutoSaveManager(self.edittabs)
+  File "/job/pipeline/dev/sandbox/sandbox_mlast/work/mlast/git/PythonEditor/PythonEditor/ui/features/autosavexml.py", line 123, in __init__
+    self.readautosave()
+  File "/job/pipeline/dev/sandbox/sandbox_mlast/work/mlast/git/PythonEditor/PythonEditor/ui/features/autosavexml.py", line 243, in readautosave
+    root, subscripts = parsexml('subscript')
+  File "/job/pipeline/dev/sandbox/sandbox_mlast/work/mlast/git/PythonEditor/PythonEditor/ui/features/autosavexml.py", line 42, in parsexml
+    parser = fix_broken_xml(path)
+  File "/job/pipeline/dev/sandbox/sandbox_mlast/work/mlast/git/PythonEditor/PythonEditor/ui/features/autosavexml.py", line 65, in fix_broken_xml
+    parser = ElementTree.parse(path, xmlp)
+  File "<string>", line 62, in parse
+  File "<string>", line 35, in parse
+cElementTree.ParseError: no element found: line 1, column 0
 
 
 #### Testing
