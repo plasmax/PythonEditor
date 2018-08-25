@@ -313,7 +313,7 @@ class ShortcutHandler(QtCore.QObject):
             textCursor.insertText(insertion)
             self.editor.setTextCursor(textCursor)
             
-    return True
+        return True
 
     @QtCore.Slot()
     def cut_line(self):
