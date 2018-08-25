@@ -249,7 +249,7 @@ class ShortcutHandler(QtCore.QObject):
         text = self.offset_for_traceback(text=text)
 
         whole_text = '\n'+whole_text
-        error_line_numbers = execute.mainexec(text, whole_text)
+        error_line_numbers = execute.mainexec(text, whole_text, verbosity=1)
         if error_line_numbers is None:
             return
         else:
@@ -312,6 +312,8 @@ class ShortcutHandler(QtCore.QObject):
         if not self.editor.wait_for_autocomplete:
             textCursor.insertText(insertion)
             self.editor.setTextCursor(textCursor)
+            
+    return True
 
     @QtCore.Slot()
     def cut_line(self):

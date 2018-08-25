@@ -4,9 +4,10 @@ import re
 
 
 FILENAME = '<Python Editor Contents>'
+VERBOSITY_LOW = 0
+VERBOSITY_HIGH = 1
 
-
-def mainexec(text, whole_text):
+def mainexec(text, whole_text, verbosity=VERBOSITY_LOW):
     """
     Code execution in top level namespace.
     Reformats exceptions to remove
@@ -36,6 +37,8 @@ def mainexec(text, whole_text):
         error_line_numbers = print_traceback(whole_text, e)
         return error_line_numbers
     else:
+        if verbosity == VERBOSITY_LOW:
+            return
         # try to print new assigned values
         if mode != 'single':
             return

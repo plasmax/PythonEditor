@@ -26,6 +26,8 @@ function_snippet = 'def <!cursor>():'
 
 method_snippet = 'def <!cursor>(self):'
 
+node_selected = 'node = nuke.selectedNode()'
+nodes_selected = 'nodes = nuke.selectedNodes()'
 node_loop_snippet = 'for node in nuke.selectedNodes():\n    '
 node_all_snippet = 'for node in nuke.allNodes():\n    '
 node_deselect_snippet = 'n.setSelected(False) for n in '\
@@ -38,6 +40,8 @@ SNIPPETS = {
             'for node selected [snippet]': node_loop_snippet,
             'for node all [snippet]': node_all_snippet,
             'n.setSelected(False) [snippet]': node_deselect_snippet,
+            'node [snippet]': node_selected,
+            'nodes [snippet]': nodes_selected,
             }
 
 try:

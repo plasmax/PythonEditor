@@ -36,7 +36,7 @@ class GenericEventFilter(QtCore.QObject):
         def event_filter(self, obj, event):
             1/0 # cause error
 
-    filt = Filt()
+    filt = Filt(target=QtWidgets.QApplication.instance())
     """
     def __init__(self, target=None):
         super(GenericEventFilter, self).__init__()
@@ -54,7 +54,10 @@ class GenericEventFilter(QtCore.QObject):
         #         self.quit()
         #         return True
         try:
-            return self.event_filter(obj, event)
+            result = self.event_filter(obj, event)
+            if result not in [True, False]:
+                raise Exception('result is not True or False')
+            return result
         except Exception:
             self.quit()
             print full_stack()

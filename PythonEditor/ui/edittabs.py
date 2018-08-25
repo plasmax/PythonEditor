@@ -44,6 +44,21 @@ class EditTabs(QtWidgets.QTabWidget):
         self.setCornerWidget(self.corner_button,
                              corner=QtCore.Qt.TopRightCorner)
 
+    # currently not in use
+    @property
+    def editor(self):
+        widget = self.currentWidget()
+        if widget.objectName() != 'Editor':
+            raise Exception('Current Widget is not an Editor')
+        return widget
+
+    # currently not in use
+    @editor.setter
+    def editor(self, widget):
+        if widget.objectName() != 'Editor':
+            raise Exception('Current Widget is not an Editor')
+        self.setCurrentWidget(widget)
+
     def show_tab_menu(self):
         """
         Show a list of tabs and go to the tab clicked.
