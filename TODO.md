@@ -90,6 +90,9 @@ cElementTree.ParseError: no element found: line 1, column 0
 - [ ] Duplicate cursors
 - [ ] Search box at bottom of editor widget
 - [ ] Autocomplete 'toNode', node.knob() and node[knob]
+- [ ] Projects
+- [ ] Goto Links in errors/regular paths in the editor
+
 
 #### General
 - [ ] Test moving TODO.md to github issues (not so great for local)
