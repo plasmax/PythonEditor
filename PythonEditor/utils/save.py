@@ -10,8 +10,11 @@ def write_to_file(path, text):
     """
     Write text to a file.
     """
-    with open(path, 'wt') as f:
-        f.write(text)
+    with open(path, 'w') as f:
+        try:
+            f.write(text)
+        except UnicodeEncodeError:
+            f.write(text.encode('utf-16'))
 
 
 def get_save_file_name(editor, title='Save Text As'):
