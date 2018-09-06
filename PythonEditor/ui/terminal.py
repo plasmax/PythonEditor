@@ -99,7 +99,10 @@ class SESysStdOut(SERedirector, PySingleton):
         if self._signal is not None:
             self._signal.emitter.emit(text)
         sys.outputRedirector(text)
-        sys.__stdout__.write(text)
+        try:
+            sys.__stdout__.write(text)
+        except IOError:
+            pass
 
 
 class SESysStdErr(SERedirector, PySingleton):
@@ -111,8 +114,10 @@ class SESysStdErr(SERedirector, PySingleton):
         if self._signal is not None:
             self._signal.emitter.emit(text)
         sys.stderrRedirector(text)
-        sys.__stderr__.write(text)
-
+        try:
+            sys.__stderr__.write(text)
+        except IOError:
+            pass
 
 # TODO: This UI could be separate from the above
 # stream wrappers, which could be placed in 'core'
