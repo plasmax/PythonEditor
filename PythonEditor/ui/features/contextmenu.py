@@ -80,21 +80,71 @@ class ContextMenu(QtCore.QObject):
     @QtCore.Slot(QtWidgets.QMenu)
     def show_menu(self, menu):
         self.menu = menu
-        self.menuSetup()
+        self.menu_setup()
         menu.exec_(QtGui.QCursor().pos())
 
     def notImplemented(self):
         raise NotImplementedError('not implemented yet')
 
-    def setKnobScript(self, knobName='knobChanged'):
+    def add_knob(self, knob_name='knobChanged'):
+        # TODO: this is only a test feature, the best way to quickly add knobs
+        # would be through autocompletion on the addKnob method
+        import nuke
+        problem_knobs = ('Obsolete_Knob', 'GeoSelect_Knob')
+        add_knobs = {name: knob for name, knob in nuke.__dict__.items()
+                 if '_Knob' in name 
+                 and name not in problem_knobs}
+        for node in nuke.selectedNodes():
+            knob = add_knobs[knob_name].__new__(add_knobs[knob_name], 'name', 'label')
+            node.addKnob(knob)
+
+    def set_knob_value(self, knob_name='knobChanged'):
+        import nuke
         self.textCursor = self.editor.textCursor()
-        text = self.textCursor.selectedText().encode('utf-8')
+        text = self.textCursor.selection().toPlainText()
+        # text = self.textCursor.selectedText().encode('utf-8').splitlines()
+        # if not ''.join(text).strip():
+        if not text.strip():
+            text = self.editor.toPlainText()
+
+        # text = '\n'.join(text)
 
         for node in nuke.selectedNodes():
-            node.knob(knobName).setValue(text)
-            print(node.fullName(), 'set:', knobName)
+            node.knob(knob_name).setValue(text)
+            print(node.fullName(), 'set:', knob_name, '\n', text)
 
-    def searchInput(self):
+    def get_knob_value(self, knob_name='knobChanged'):
+        import nuke
+
+        for node in nuke.selectedNodes():
+            knob = node.knob(knob_name)
+            if knob is not None:
+                description = '# %s.%s\n' % (node.fullName(), knob.name())
+                self.editor.insertPlainText(description)
+                self.editor.insertPlainText(knob.value())
+
+    def clr_knob_value(self, knob_name='knobChanged'):
+        import nuke
+
+        for node in nuke.selectedNodes():
+            knob = node.knob(knob_name)
+            if knob is not None:
+                knob.setValue('')
+
+    def run_knob_value(self, knob_name='knobChanged'):
+        import nuke
+
+        self.textCursor = self.editor.textCursor()
+        text = self.textCursor.selectedText().encode('utf-8')
+        if not text.strip():
+            text = self.editor.toPlainText()
+
+        for node in nuke.selectedNodes():
+            knob = node.knob(knob_name)
+            if knob is not None:
+                nuke.runIn(knob.fullyQualifiedName(), text)
+
+    def search_input(self):
         """
         Very basic search dialog.
         TODO: Create a QAction and store
@@ -207,9 +257,10 @@ class ContextMenu(QtCore.QObject):
             attrs = {attr: getattr(obj, attr) for attr in dir(obj)}
             pprint(attrs)
 
-    def menuSetup(self):
+    def menu_setup(self):
+        import nuke
         self.menu.addAction('Save As', self.notImplemented)
-        self.menu.addAction('Search', self.searchInput)
+        self.menu.addAction('Search', self.search_input)
 
         self.infoMenu = self.menu.addMenu('Info')
 
@@ -231,6 +282,66 @@ class ContextMenu(QtCore.QObject):
             self.snippetMenu.addAction(snippet,
                                        snippet_insert)
 
+
+        self.nodes_menu = self.menu.addMenu('Nodes')
+        self.nodes_add_menu = self.nodes_menu.addMenu('Add knob')
+        self.nodes_set_menu = self.nodes_menu.addMenu('Set')
+        self.nodes_get_menu = self.nodes_menu.addMenu('Get')
+        self.nodes_clr_menu = self.nodes_menu.addMenu('Clear')
+        self.nodes_run_menu = self.nodes_menu.addMenu('Eval in Knob Context')
+
+        # self.nodes_menu.addAction('Run on Selected Nodes',
+        #                          self.notImplemented)
+
+        # TODO: these could be conditional on nodes selected
+        pyknobs = set([
+                   'knobChanged',
+                   'onCreate',
+                   'beforeRender',
+                   'beforeFrameRender',
+                   ])
+
+        knob_types = (nuke.PyCustom_Knob, 
+                      nuke.PythonKnob, 
+                      nuke.PythonCustomKnob, 
+                      nuke.PyScript_Knob)
+        # get common python knobs
+        for node in nuke.selectedNodes():
+            for knob in node.allKnobs():
+                if isinstance(knob, knob_types):
+                    pyknobs.add(knob.name())
+
+        for node in nuke.selectedNodes():
+            for knob_name in pyknobs.copy():
+                if node.knob(knob_name) is None:
+                    pyknobs.remove(knob_name)
+
+        for knob_name in pyknobs:
+            func = partial(self.set_knob_value, knob_name)
+            self.nodes_set_menu.addAction(knob_name, func)
+
+        for knob_name in pyknobs:
+            func = partial(self.get_knob_value, knob_name)
+            self.nodes_get_menu.addAction(knob_name, func)
+
+        for knob_name in pyknobs:
+            func = partial(self.clr_knob_value, knob_name)
+            self.nodes_clr_menu.addAction(knob_name, func)
+
+        for knob_name in pyknobs:
+            func = partial(self.run_knob_value, knob_name)
+            self.nodes_run_menu.addAction(knob_name, func)
+
+        problem_knobs = ('Obsolete_Knob', 'GeoSelect_Knob')
+        add_knobs = {name: knob for name, knob in nuke.__dict__.items()
+                 if '_Knob' in name 
+                 and name not in problem_knobs}
+        #knobs['Boolean_Knob'].__new__(knobs['Boolean_Knob'], 'name', 'label')
+
+        for knob_name in add_knobs:
+            func = partial(self.add_knob, knob_name)
+            self.nodes_add_menu.addAction(knob_name, func)
+
         cursor = self.editor.textCursor()
         self.selectedText = str(cursor.selectedText().encode('utf-8').strip())
 
@@ -241,21 +352,6 @@ class ContextMenu(QtCore.QObject):
                                      info, text=text)
                 self.infoMenu.addAction('Print {0}'.format(info),
                                         print_info)
-
-            # TODO: these could be conditional on nodes selected
-            self.nodesMenu = self.menu.addMenu('Nodes')
-            self.nodesMenu.addAction('Run on All Nodes',
-                                     self.notImplemented)
-            self.nodesMenu.addAction('Run on Selected Nodes',
-                                     self.notImplemented)
-            pyknobs = ['knobChanged',
-                       'onCreate',
-                       'beforeRender',
-                       'beforeFrameRender']
-            for knob in pyknobs:
-                title = 'Copy to Nodes {0}'.format(knob)
-                func = partial(self.setKnobScript, knob)
-                self.nodesMenu.addAction(title, func)
 
             # conditional on text selected and external editor path verified
             self.editorMenu = self.menu.addMenu('External Editor')
