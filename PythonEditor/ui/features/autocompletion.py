@@ -60,7 +60,7 @@ class Completer(QtWidgets.QCompleter):
         super(Completer, self).__init__(stringlist)
 
         self.setCompletionMode(QtWidgets.QCompleter.PopupCompletion)
-        self.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
+        # self.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
 
 
 class AutoCompleter(QtCore.QObject):
