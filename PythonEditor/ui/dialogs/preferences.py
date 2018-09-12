@@ -1,5 +1,6 @@
 import os
 from PythonEditor.ui.Qt import QtWidgets
+from PythonEditor.ui.features import autosavexml
 from PythonEditor.utils import constants
 
 
@@ -48,7 +49,7 @@ class PreferencesEditor(QtWidgets.QDialog):
 
     def set_editor_path(self):
         path = self.edit_path.text()
-        constants.set_external_editor_path(path=path)
+        autosavexml.set_external_editor_path(path=path)
 
     def showEvent(self, event):
         self.show_current_preferences()

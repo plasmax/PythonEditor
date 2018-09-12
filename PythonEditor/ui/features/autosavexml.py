@@ -1,3 +1,12 @@
+"""
+All modifications to the PythonEditor.xml
+file are done through this module.
+
+All the out points of this module:
+- line 62 in init_file_header
+s
+"""
+
 from __future__ import unicode_literals
 from __future__ import print_function
 
@@ -10,14 +19,146 @@ from functools import partial
 from PythonEditor.ui.Qt import QtCore, QtWidgets
 from PythonEditor.utils import save
 from PythonEditor.utils.signals import connect
-from PythonEditor.utils.constants import (AUTOSAVE_FILE,
-                                          XML_HEADER,
-                                          create_autosave_file)
+from PythonEditor.utils.constants import NUKE_DIR
+
+
+AUTOSAVE_FILE = os.path.join(NUKE_DIR, 'PythonEditorHistory.xml')
+XML_HEADER = '<?xml version="1.0" encoding="UTF-8"?>'
+
+
+class CouldNotCreateAutosave(Exception):
+    pass
+
+
+def create_autosave_file():
+    """
+    Create the autosave file into which
+    PythonEditor stores all tab contents.
+    """
+    # look for the autosave
+    if os.path.isfile(AUTOSAVE_FILE):
+
+        # if the autosave file is empty, write header
+        with open(AUTOSAVE_FILE, 'r') as f:
+            is_empty = not bool(f.read().strip())
+        if is_empty:
+            init_file_header()
+    else:
+
+        # if file not found, check if directory exists
+        if not os.path.isdir(NUKE_DIR):
+            msg = 'Directory %s does not exist' % NUKE_DIR
+            raise CouldNotCreateAutosave(msg)
+        else:
+            init_file_header()
+    return True
+
+
+def init_file_header():
+    """
+    Write the default file header into the xml file.
+    Overwrites any existing file.
+    """
+    with open(AUTOSAVE_FILE, 'w') as f:
+        f.write(XML_HEADER+'<script></script>')
+
+
+def get_editor_xml():
+    if not create_autosave_file():
+        return
+    parser = ElementTree.parse(AUTOSAVE_FILE)
+    root = parser.getroot()
+    editor_elements = root.findall('external_editor_path')
+    return root, editor_elements
+
+
+def get_external_editor_path():
+    """
+    Checks the autosave file for an
+    <external_editor_path> element.
+    """
+    editor_path = os.environ.get('EXTERNAL_EDITOR_PATH')
+    if (editor_path is not None
+            and os.path.isdir(os.path.dirname(editor_path))):
+        return editor_path
+
+    root, editor_elements = get_editor_xml()
+
+    if editor_elements:
+        editor_element = editor_elements[0]
+        path = editor_element.text
+        if path and os.path.isdir(os.path.dirname(path)):
+            editor_path = path
+
+    if editor_path:
+        os.environ['EXTERNAL_EDITOR_PATH'] = editor_path
+        return editor_path
+    else:
+        return set_external_editor_path(ask_user=True)
+
+
+def set_external_editor_path(path=None, ask_user=False):
+    """
+    Prompts the user for a new
+    external editor path.
+    TODO: Set temp program if none found.
+    """
+    root, editor_elements = get_editor_xml()
+    for e in editor_elements:
+        root.remove(e)
+
+    if ask_user and not path:
+        from PythonEditor.ui.Qt import QtWidgets
+        dialog = QtWidgets.QInputDialog()
+        args = (dialog,
+                u'Get Editor Path',
+                u'Path to external text editor:')
+        results = QtWidgets.QInputDialog.getText(*args)
+        path, ok = results
+        if not ok:
+            msg = 'Certain features will not work without '\
+                'an external editor. \nYou can add or change '\
+                'an external editor path later in Edit > Preferences.'
+            msgBox = QtWidgets.QMessageBox()
+            msgBox.setText(msg)
+            msgBox.exec_()
+            return None
+
+    if path and os.path.isdir(os.path.dirname(path)):
+        editor_path = path
+        os.environ['EXTERNAL_EDITOR_PATH'] = editor_path
+
+        element = ElementTree.Element('external_editor_path')
+        element.text = path
+        root.append(element)
+
+        writexml(root)
+        return path
+
+    elif ask_user:
+        from PythonEditor.ui.Qt import QtWidgets
+        msg = u'External editor not found. '\
+              'Certain features will not work.'\
+              '\nYou can add or change an external '\
+              'editor path later in Edit > Preferences.'
+        msgBox = QtWidgets.QMessageBox()
+        msgBox.setText(msg)
+        msgBox.exec_()
+        return None
+
+
+def not_ctrl(ch):
+    is_ctrl_char = unicodedata.category(ch) == 'Cc'
+    not_newline = ch != '\n'
+    return (is_ctrl_char and not_newline)
 
 
 def remove_control_characters(s):
-    def notCtrl(ch): return unicodedata.category(ch) == "Cc" and ch != '\n'
-    cc = "".join(ch for ch in s if notCtrl(ch))
+    """
+    Identify and remove any control characters from given string s.
+    """
+
+    cc = ''.join(ch for ch in s if not_ctrl(ch))
     print('Removing undesirable control characters:', cc)
 
     def no_cc(ch):
@@ -27,7 +168,7 @@ def remove_control_characters(s):
             return True
         return False
 
-    return "".join(ch for ch in s if no_cc(ch))
+    return ''.join(ch for ch in s if no_cc(ch))
 
 
 def parsexml(element_name, path=AUTOSAVE_FILE):
@@ -44,6 +185,16 @@ def parsexml(element_name, path=AUTOSAVE_FILE):
     root = parser.getroot()
     elements = root.findall(element_name)
     return root, elements
+
+
+def writexml(root, path=AUTOSAVE_FILE):
+    data = ElementTree.tostring(root)
+    data = data.decode('utf-8')
+    data = data.replace('><subscript', '>\n<subscript')
+    data = data.replace('</subscript><', '</subscript>\n<')
+
+    with io.open(path, 'wt', encoding='utf8', errors='ignore') as f:
+        f.write(XML_HEADER+data)
 
 
 def fix_broken_xml(path=AUTOSAVE_FILE):
@@ -225,15 +376,6 @@ class AutoSaveManager(QtCore.QObject):
         root = parser.getroot()
         self.editor.setPlainText(root.text)
 
-    def writexml(self, root, path=AUTOSAVE_FILE):
-        data = ElementTree.tostring(root)
-        data = data.decode('utf-8')
-        data = data.replace('><subscript', '>\n<subscript')
-        data = data.replace('</subscript><', '</subscript>\n<')
-
-        with io.open(path, 'wt', encoding='utf8', errors='ignore') as f:
-            f.write(XML_HEADER+data)
-
     def readautosave(self):
         """
         Sets editor text content. First checks the
@@ -289,13 +431,12 @@ class AutoSaveManager(QtCore.QObject):
 
             editor.tab_index = self.tabs.currentIndex()
 
-
         subscripts = self.update_tab_order(subscripts)
 
         if editor_count == 0:
             self.tabs.new_tab()
 
-        self.writexml(root)
+        writexml(root)
 
     def update_tab_order(self, subscripts):
         uids = [(i, getattr(self.tabs.widget(i), 'uid', None))
@@ -384,7 +525,7 @@ class AutoSaveManager(QtCore.QObject):
                     self.tabs.setTabText(index, name)
             else:
                 s.text = self.editor.toPlainText()
-                self.writexml(root)
+                writexml(root)
                 self.autosave()
         self.lock = True
 
@@ -431,7 +572,7 @@ class AutoSaveManager(QtCore.QObject):
                 sub.text = editor.toPlainText()
             root.append(sub)
 
-        self.writexml(root)
+        writexml(root)
 
     @QtCore.Slot(object)
     def handle_document_save(self, editor):
@@ -440,6 +581,10 @@ class AutoSaveManager(QtCore.QObject):
         contents if they match the given path file contents as
         these should be loaded from file on next app load
         (if the tab remains open).
+
+        TODO: Instead of removing the saved file contents,
+        it might be better to keep it and diff the file against
+        the contents on tab close.
         """
         root, subscripts = parsexml('subscript')
 
@@ -463,7 +608,7 @@ class AutoSaveManager(QtCore.QObject):
                         print(msg.format(editor.name, editor.path))
 
         if editor_found:
-            self.writexml(root)
+            writexml(root)
             print('Document {0} has been emptied'.format(editor.uid))
 
     @QtCore.Slot(object, int)
@@ -492,7 +637,7 @@ class AutoSaveManager(QtCore.QObject):
             if notext and nopath:
                 root.remove(s)
 
-        self.writexml(root)
+        writexml(root)
 
     @QtCore.Slot(object)
     def editor_close_handler(self, editor):
@@ -537,7 +682,7 @@ class AutoSaveManager(QtCore.QObject):
         # if we arrive here it means one of the following:
         # a) file is not open for editing (read-only)
         # b) we've already saved
-        # c) we've Discarded the document
+        # c) we've discarded the document
         # So it's safe to remove it.
         self.remove_subscript(editor.uid)
 
@@ -557,7 +702,7 @@ class AutoSaveManager(QtCore.QObject):
                 item_removed = True
 
         if item_removed:
-            self.writexml(root)
+            writexml(root)
 
     @QtCore.Slot()
     def clear_subscripts(self):
@@ -566,4 +711,4 @@ class AutoSaveManager(QtCore.QObject):
         for s in subscripts:
             root.remove(s)
 
-        self.writexml(root)
+        writexml(root)
