@@ -3,6 +3,7 @@ import sys
 
 from PythonEditor.utils.constants import DEFAULT_FONT
 from PythonEditor.ui.Qt import QtGui, QtWidgets, QtCore
+from PythonEditor.utils.debug import debug
 
 WRITE_TO_SCRIPT_EDITOR = False
 
@@ -101,8 +102,8 @@ class SESysStdOut(SERedirector, PySingleton):
         sys.outputRedirector(text)
         try:
             sys.__stdout__.write(text)
-        except IOError:
-            pass
+        except IOError as e:
+            debug('PythonEditor Terminal error (line 106). Cannot write to sys.__stdout__:\n%s' % e)
 
 
 class SESysStdErr(SERedirector, PySingleton):
@@ -117,7 +118,8 @@ class SESysStdErr(SERedirector, PySingleton):
         try:
             sys.__stderr__.write(text)
         except IOError:
-            pass
+            debug('PythonEditor Terminal error (line 121). Cannot write to sys.__stderr__:\n%s' % e)
+
 
 # TODO: This UI could be separate from the above
 # stream wrappers, which could be placed in 'core'
@@ -127,7 +129,6 @@ class Terminal(QtWidgets.QPlainTextEdit):
 
     def __init__(self):
         super(Terminal, self).__init__()
-        # self.setStyleSheet('background:rgb(45,42,46);')
 
         self.setObjectName('Terminal')
         self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
@@ -144,12 +145,9 @@ class Terminal(QtWidgets.QPlainTextEdit):
             textCursor = self.textCursor()
             if bool(textCursor):
                 self.moveCursor(QtGui.QTextCursor.End)
-                # pos = textCursor.position()
-                # self.moveCursor(pos-1)
         except Exception:
             pass
         self.insertPlainText(text)
-        # self.appendHtml(text)
 
     def stop(self):
         sys.stdout.reset()
