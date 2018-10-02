@@ -430,7 +430,7 @@ class AutoCompleter(QtCore.QObject):
         elif (cp and cp.popup()
                   and cp.popup().isVisible()
                   and not cp.completionCount() == 0):
-            current_word = self.word_under_cursor()
+            current_word = self.word_under_cursor() + event.text()
 
             cp.setCompletionPrefix(current_word)
             cp.popup().setCurrentIndex(cp.completionModel().index(0, 0))
