@@ -110,5 +110,3 @@ class Completer(QtWidgets.QCompleter):
         
 e = Editor()
 e.show()
-        
-nukeFRenderPub.dialog.menu
