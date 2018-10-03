@@ -123,6 +123,18 @@ class AutoCompleter(QtCore.QObject):
         word = textCursor.selection().toPlainText()
         return word
 
+    def word_before_cursor(self, regex='[\w|\.]+'):
+        """
+        Returns a string with the last word of the block.
+        """
+        textCursor = self.editor.textCursor()
+        textCursor.select(QtGui.QTextCursor.BlockUnderCursor)
+        line_text = textCursor.selection().toPlainText()
+        words = re.findall(regex, line_text)
+        if (len(words) == 0):
+            return ''
+        return words.pop()
+
     def get_word_after_dot(self, _char):
         """
         TODO:
@@ -430,12 +442,14 @@ class AutoCompleter(QtCore.QObject):
         elif (cp and cp.popup()
                   and cp.popup().isVisible()
                   and not cp.completionCount() == 0):
-            current_word = self.word_under_cursor() + event.text()
+
+            current_word = self.word_under_cursor()
+
+            if re.match('[a-zA-Z0-9_]', current_word) is None:
+                current_word = self.word_before_cursor(regex='\w+')
 
             cp.setCompletionPrefix(current_word)
             cp.popup().setCurrentIndex(cp.completionModel().index(0, 0))
-            # TODO: currently lags one character behind. should hide if
-            # completionPrefix not present in completionModel list.
 
         elif event.text().isalnum() or event.text() in ['_']:
             pos = self.editor.textCursor().position()
