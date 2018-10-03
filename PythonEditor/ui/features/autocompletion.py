@@ -30,9 +30,18 @@ node_selected = 'node = nuke.selectedNode()'
 nodes_selected = 'nodes = nuke.selectedNodes()'
 node_loop_snippet = 'for node in nuke.selectedNodes():\n    '
 node_all_snippet = 'for node in nuke.allNodes():\n    '
-node_deselect_snippet = 'n.setSelected(False) for n in '\
-                        'nuke.allNodes(recurseGroups=True)]'
-
+node_deselect_snippet = """
+n.setSelected(False) for n in nuke.allNodes(recurseGroups=True)]
+""".strip()
+custom_widget_snippet = """
+class MyWidget(QtWidgets.QWidget):
+    def __init__(self):
+        super(MyWidget, self).__init__()
+    def makeUI(self):
+        return self
+    def valueChanged(self, value):
+        pass
+""".strip()
 SNIPPETS = {
             'class [snippet]': class_snippet,
             'def [snippet] [func]': function_snippet,
@@ -42,6 +51,7 @@ SNIPPETS = {
             'n.setSelected(False) [snippet]': node_deselect_snippet,
             'node [snippet]': node_selected,
             'nodes [snippet]': nodes_selected,
+            'custom widget [snippet]': custom_widget_snippet,
             }
 
 try:
