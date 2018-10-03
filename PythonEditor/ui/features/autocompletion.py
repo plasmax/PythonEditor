@@ -255,6 +255,10 @@ class AutoCompleter(QtCore.QObject):
         variables = list(set().union(*variables))
         self.set_list(variables)
         word = self.word_under_cursor()
+
+        if re.match('[a-zA-Z0-9_]', word) is None:
+            word = self.word_before_cursor(regex='\w+')
+
         char_len = len(word)
         cp.setCompletionPrefix(word)
         popup = cp.popup()
