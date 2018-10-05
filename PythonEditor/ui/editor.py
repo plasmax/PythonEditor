@@ -276,7 +276,7 @@ class Editor(QtWidgets.QPlainTextEdit):
         if app.keyboardModifiers() != QtCore.Qt.AltModifier:
             super(Editor, self).dragMoveEvent(e)
             return
-          
+
         if e.mimeData().hasUrls:
             e.accept()
         else:
