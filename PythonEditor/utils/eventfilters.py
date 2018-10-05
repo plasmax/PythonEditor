@@ -38,7 +38,7 @@ class Filt(GenericEventFilter):
         1/0 # cause error
         return False # if we have not handled the event
 
-    filt = Filt(target=QtWidgets.QApplication.instance())
+filt = Filt(target=QtWidgets.QApplication.instance())
     """
     def __init__(self, target=None):
         super(GenericEventFilter, self).__init__()
