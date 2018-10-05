@@ -138,7 +138,7 @@ class Terminal(QtWidgets.QPlainTextEdit):
         font = QtGui.QFont(DEFAULT_FONT)
         font.setPointSize(10)
         self.setFont(font)
-        
+
     @QtCore.Slot(str)
     def receive(self, text):
         try:
