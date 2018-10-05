@@ -257,11 +257,18 @@ class AutoCompleter(QtCore.QObject):
         """
         cp = self.completer
         variables = __main__.__dict__.keys()
+
+        # add words except the word under the cursor
+        word = self.word_under_cursor()
+        words = [w for w in re.findall('\w+', self.editor.toPlainText()) if w != word]
+
         variables = [variables
                      + keyword.kwlist
                      + list(SNIPPETS.keys())
                      + dir(__builtins__)
-                     + KEYWORDS]
+                     + KEYWORDS
+                     + words]
+            
         variables = list(set().union(*variables))
         self.set_list(variables)
         word = self.word_under_cursor()
@@ -460,7 +467,8 @@ class AutoCompleter(QtCore.QObject):
             current_word = self.word_under_cursor()
 
             if re.match('[a-zA-Z0-9_]', current_word) is None:
-                current_word = self.word_before_cursor(regex='\w+')
+                if re.match('[a-zA-Z0-9_]', event.text()) is None:
+                    cp.popup().hide()
 
             cp.setCompletionPrefix(current_word)
             cp.popup().setCurrentIndex(cp.completionModel().index(0, 0))
