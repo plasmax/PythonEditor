@@ -93,7 +93,7 @@ class ContextMenu(QtCore.QObject):
         import nuke
         problem_knobs = ('Obsolete_Knob', 'GeoSelect_Knob')
         add_knobs = {name: knob for name, knob in nuke.__dict__.items()
-                 if '_Knob' in name 
+                 if '_Knob' in name
                  and name not in problem_knobs}
         for node in nuke.selectedNodes():
             knob = add_knobs[knob_name].__new__(add_knobs[knob_name], 'name', 'label')
