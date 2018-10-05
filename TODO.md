@@ -8,6 +8,7 @@
 - [ ] Tooltip colour permanently set in autocompletion
 - [ ] Search causes cursor to go missing
 - [ ] # in string causes rest of line to be greyed out
+- [x] Autocomplete doesn't dissappear when parentheses are typed
 - [ ] Double printing to sys.stdout
 - [ ] Override setPlainText to avoid string encoding errors (can this affect copy paste?)
 - [ ] CRITICAL BUG: In rare cases with network disruption the PythonEditorHistory.xml can be overwritten with 0 contents. PythonEditor will then not load.
