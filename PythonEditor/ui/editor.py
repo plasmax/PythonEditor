@@ -67,6 +67,7 @@ class Editor(QtWidgets.QPlainTextEdit):
         self.contextmenu = contextmenu.ContextMenu(self)
 
         self.wait_for_autocomplete = True
+        # TOOD: add a new autocompleter that uses DirectConnection.
         self.autocomplete = autocompletion.AutoCompleter(self)
 
         if handle_shortcuts:
@@ -270,6 +271,12 @@ class Editor(QtWidgets.QPlainTextEdit):
             print(f, data)
 
     def dragMoveEvent(self, e):
+        # prevent mimedata from being displayed unless alt is held
+        app = QtWidgets.QApplication.instance()
+        if app.keyboardModifiers() != QtCore.Qt.AltModifier:
+            super(Editor, self).dragMoveEvent(e)
+            return
+          
         if e.mimeData().hasUrls:
             e.accept()
         else:
