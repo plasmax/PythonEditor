@@ -312,7 +312,7 @@ class ShortcutHandler(QtCore.QObject):
         if not self.editor.wait_for_autocomplete:
             textCursor.insertText(insertion)
             self.editor.setTextCursor(textCursor)
-            
+
         return True
 
     @QtCore.Slot()
