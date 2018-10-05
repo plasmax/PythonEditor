@@ -12,6 +12,7 @@ from PythonEditor.utils import constants
 
 
 def get_subobject(text):
+    text = text.strip()
     if '.' in text:
         name = text.split('.')[0]
         obj = __main__.__dict__.get(name)
@@ -39,7 +40,7 @@ def open_module_file(obj):
     try:
         lines, lineno = inspect.getsourcelines(obj)
         file = file+':'+str(lineno)
-    except AttributeError:
+    except AttributeError, IOError:
         pass
 
     print(file)
@@ -301,9 +302,9 @@ class ContextMenu(QtCore.QObject):
                    'beforeFrameRender',
                    ])
 
-        knob_types = (nuke.PyCustom_Knob, 
-                      nuke.PythonKnob, 
-                      nuke.PythonCustomKnob, 
+        knob_types = (nuke.PyCustom_Knob,
+                      nuke.PythonKnob,
+                      nuke.PythonCustomKnob,
                       nuke.PyScript_Knob)
         # get common python knobs
         for node in nuke.selectedNodes():
@@ -334,7 +335,7 @@ class ContextMenu(QtCore.QObject):
 
         problem_knobs = ('Obsolete_Knob', 'GeoSelect_Knob')
         add_knobs = {name: knob for name, knob in nuke.__dict__.items()
-                 if '_Knob' in name 
+                 if '_Knob' in name
                  and name not in problem_knobs}
         #knobs['Boolean_Knob'].__new__(knobs['Boolean_Knob'], 'name', 'label')
 
