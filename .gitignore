@@ -9,5 +9,4 @@ test_app.bat
 QTDark.stylesheet
 test_code_objects.py
 *tost_code.py
-*.sublime-project
 *.sublime-workspace
