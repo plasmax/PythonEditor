@@ -268,7 +268,7 @@ class AutoCompleter(QtCore.QObject):
                      + dir(__builtins__)
                      + KEYWORDS
                      + words]
-            
+
         variables = list(set().union(*variables))
         self.set_list(variables)
         word = self.word_under_cursor()
@@ -469,6 +469,8 @@ class AutoCompleter(QtCore.QObject):
             if re.match('[a-zA-Z0-9_]', current_word) is None:
                 if re.match('[a-zA-Z0-9_]', event.text()) is None:
                     cp.popup().hide()
+
+                current_word = self.word_before_cursor(regex='\w+')
 
             cp.setCompletionPrefix(current_word)
             cp.popup().setCurrentIndex(cp.completionModel().index(0, 0))
