@@ -33,7 +33,7 @@ class EditTabs(QtWidgets.QTabWidget):
         self.setup_new_tab_btn()
         self.tabCloseRequested.connect(self.close_tab)
         self.reset_tab_signal.connect(self.reset_tabs)
-        self.currentChanged.connect(self.widgetChanged)
+        self.currentChanged.connect(self.widget_changed)
         self.setStyleSheet("QTabBar::tab { height: 24px; }")
 
         # add tab list button
@@ -182,9 +182,9 @@ class EditTabs(QtWidgets.QTabWidget):
         self.new_tab()
 
     @QtCore.Slot(int)
-    def widgetChanged(self, index):
+    def widget_changed(self, index):
         """
-        Triggers widget_changed signal with current widget.
+        Emits tab_switched_signal with current widget.
         """
         tabremoved = self.count() < self.tab_count
         previous = self.current_index
