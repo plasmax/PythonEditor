@@ -4,7 +4,6 @@ file are done through this module.
 
 All the out points of this module:
 - line 62 in init_file_header
-s
 """
 
 from __future__ import unicode_literals
