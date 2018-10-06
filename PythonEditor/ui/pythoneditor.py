@@ -40,13 +40,14 @@ class PythonEditor(QtWidgets.QWidget):
     def connect_signals(self):
         """
         Connect child widget slots to shortcuts.
+        Loading the AutosaveManager will also load all the
+        contents of the autosave into tabs.
         """
+        self.filehandler = autosavexml.AutoSaveManager(self.edittabs)
         sch = shortcuts.ShortcutHandler(self.edittabs)
         sch.clear_output_signal.connect(self.terminal.clear)
         self.shortcuteditor = shortcuteditor.ShortcutEditor(sch)
         self.preferenceseditor = preferences.PreferencesEditor()
-
-        self.filehandler = autosavexml.AutoSaveManager(self.edittabs)
 
     @property
     def editor(self):
