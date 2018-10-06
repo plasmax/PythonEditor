@@ -70,6 +70,8 @@ class Editor(QtWidgets.QPlainTextEdit):
 
         self.textChanged.connect(self._handle_text_changed)
 
+        linenumberarea.LineNumberArea(self)
+
         if init_features:
             self.init_features()
 
@@ -81,7 +83,6 @@ class Editor(QtWidgets.QPlainTextEdit):
             return
         self._features_initialised = True
 
-        linenumberarea.LineNumberArea(self)
         syntaxhighlighter.Highlight(self.document())
         self.contextmenu = contextmenu.ContextMenu(self)
 
