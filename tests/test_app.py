@@ -32,10 +32,15 @@ if __name__ == '__main__':
         # for running inside and outside of Nuke
         app = QtWidgets.QApplication.instance()
 
+    import time
+    start = time.time()
+
     _ide = ide.IDE()
     app.setPalette(nukepalette.getNukePalette())
     _ide.show()
     _ide.resize(500, 800)
     plastique = QtWidgets.QStyleFactory.create('Plastique')
     QtWidgets.QApplication.setStyle(plastique)
+
+    print('PythonEditor startup time: %.04f seconds' % (time.time()-start) )
     sys.exit(app.exec_())
