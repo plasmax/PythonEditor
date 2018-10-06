@@ -66,18 +66,18 @@ class Editor(QtWidgets.QPlainTextEdit):
         syntaxhighlighter.Highlight(self.document())
         self.contextmenu = contextmenu.ContextMenu(self)
 
-        self.wait_for_autocomplete = True
+        if uid is None:
+            uid = str(uuid.uuid4())
+        self._uid = uid
+
         # TOOD: add a new autocompleter that uses DirectConnection.
+        self.wait_for_autocomplete = True
         self.autocomplete = autocompletion.AutoCompleter(self)
 
         if handle_shortcuts:
             sch = shortcuts.ShortcutHandler(self, use_tabs=False)
             sch.clear_output_signal.connect(self.relay_clear_output_signal)
             self.shortcuteditor = shortcuteditor.ShortcutEditor(sch)
-
-        if uid is None:
-            uid = str(uuid.uuid4())
-        self._uid = uid
 
         self.selectionChanged.connect(self.highlight_same_words)
         self.modificationChanged.connect(self._handle_modificationChanged)
