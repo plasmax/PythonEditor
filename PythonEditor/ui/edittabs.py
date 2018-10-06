@@ -107,13 +107,13 @@ class EditTabs(QtWidgets.QTabWidget):
         tabBar.setTabEnabled(0, False)
 
     @QtCore.Slot(str)
-    def new_tab(self, tab_name=None):
+    def new_tab(self, tab_name=None, init_features=True):
         """
         Creates a new tab.
         """
         count = self.count()
         index = 0 if count == 0 else count - 1
-        editor = EDITOR.Editor(handle_shortcuts=False)
+        editor = EDITOR.Editor(handle_shortcuts=False, init_features=init_features)
 
         if (tab_name is None
                 or not tab_name):

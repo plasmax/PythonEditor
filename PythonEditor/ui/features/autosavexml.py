@@ -426,7 +426,7 @@ class AutoSaveManager(QtCore.QObject):
             except KeyError:
                 tab_name = None
 
-            editor = self.tabs.new_tab(tab_name=tab_name)
+            editor = self.tabs.new_tab(tab_name=tab_name, init_features=False)
             if 'uuid' in s.attrib:
                 editor.uid = s.attrib['uuid']
             else:

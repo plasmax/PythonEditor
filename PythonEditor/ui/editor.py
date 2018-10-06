@@ -51,7 +51,7 @@ class Editor(QtWidgets.QPlainTextEdit):
     relay_clear_output_signal = QtCore.Signal()
     editingFinished = QtCore.Signal()
 
-    def __init__(self, handle_shortcuts=True, uid=None):
+    def __init__(self, handle_shortcuts=True, uid=None, init_features=True):
         super(Editor, self).__init__()
         self.setObjectName('Editor')
         self.setAcceptDrops(True)
@@ -59,22 +59,37 @@ class Editor(QtWidgets.QPlainTextEdit):
         font.setPointSize(10)
         self.setFont(font)
 
+        if uid is None:
+            uid = str(uuid.uuid4())
+        self._uid = uid
+
         self._changed = False
+        self.wait_for_autocomplete = False
+        self._handle_shortcuts = handle_shortcuts
+        self._features_initialised = False
+
         self.textChanged.connect(self._handle_text_changed)
+
+        if init_features:
+            self.init_features()
+
+    def init_features(self):
+        """
+        Initialise custom Editor features.
+        """
+        if self._features_initialised:
+            return
+        self._features_initialised = True
 
         linenumberarea.LineNumberArea(self)
         syntaxhighlighter.Highlight(self.document())
         self.contextmenu = contextmenu.ContextMenu(self)
 
-        if uid is None:
-            uid = str(uuid.uuid4())
-        self._uid = uid
-
         # TOOD: add a new autocompleter that uses DirectConnection.
         self.wait_for_autocomplete = True
         self.autocomplete = autocompletion.AutoCompleter(self)
 
-        if handle_shortcuts:
+        if self._handle_shortcuts:
             sch = shortcuts.ShortcutHandler(self, use_tabs=False)
             sch.clear_output_signal.connect(self.relay_clear_output_signal)
             self.shortcuteditor = shortcuteditor.ShortcutEditor(sch)
@@ -313,3 +328,8 @@ class Editor(QtWidgets.QPlainTextEdit):
                 and e.orientation() == QtCore.Qt.Orientation.Vertical):
             return self.wheel_signal.emit(e)
         super(Editor, self).wheelEvent(e)
+
+    def showEvent(self, e):
+        if not self._features_initialised:
+            self.init_features()
+        super(Editor, self).showEvent(e)
