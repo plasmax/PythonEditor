@@ -51,7 +51,7 @@ class Editor(QtWidgets.QPlainTextEdit):
     relay_clear_output_signal = QtCore.Signal()
     editingFinished = QtCore.Signal()
 
-    def __init__(self, handle_shortcuts=True):
+    def __init__(self, handle_shortcuts=True, uid=None):
         super(Editor, self).__init__()
         self.setObjectName('Editor')
         self.setAcceptDrops(True)
@@ -75,7 +75,9 @@ class Editor(QtWidgets.QPlainTextEdit):
             sch.clear_output_signal.connect(self.relay_clear_output_signal)
             self.shortcuteditor = shortcuteditor.ShortcutEditor(sch)
 
-        self._uid = str(uuid.uuid4())
+        if uid is None:
+            uid = str(uuid.uuid4())
+        self._uid = uid
 
         self.selectionChanged.connect(self.highlight_same_words)
         self.modificationChanged.connect(self._handle_modificationChanged)
