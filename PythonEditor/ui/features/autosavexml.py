@@ -403,8 +403,6 @@ class AutoSaveManager(QtCore.QObject):
                     continue
                 s.attrib['name'] = os.path.basename(path)
 
-            editor_count += 1
-
             try:
                 tab_name = s.attrib['name']
             except KeyError:
@@ -429,6 +427,7 @@ class AutoSaveManager(QtCore.QObject):
                 self.readfile(path)
 
             editor.tab_index = self.tabs.currentIndex()
+            editor_count += 1
 
         subscripts = self.update_tab_order(subscripts)
 
