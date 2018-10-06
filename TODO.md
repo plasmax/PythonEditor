@@ -4,7 +4,7 @@
 #### Bug fixes
 - [x] Extra indentation occurs in some other programs - this was due to not using a monospaced font.
 - [ ] Word wrapping and blocks can cause errors, especially in moving text up/down
-- [ ] Greedy shortcuts override Script Editor when Python Editor is open
+- [x] Greedy shortcuts override Script Editor when Python Editor is open
 - [ ] Tooltip colour permanently set in autocompletion
 - [ ] Search causes cursor to go missing
 - [ ] # in string causes rest of line to be greyed out
