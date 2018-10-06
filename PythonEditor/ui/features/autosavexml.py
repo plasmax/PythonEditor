@@ -216,6 +216,25 @@ def fix_broken_xml(path=AUTOSAVE_FILE):
     return parser
 
 
+def remove_empty_autosaves():
+    """
+    Clean autosave file of subscripts with no
+    information (no text and invalid or absent path).
+    """
+    root, subscripts = parsexml('subscript')
+    for s in subscripts:
+        if not s.text:
+            path = s.attrib.get('path')
+            if path is None:
+                root.remove(s)
+                continue
+            if not os.path.isfile(path):
+                root.remove(s)
+                continue
+            s.attrib['name'] = os.path.basename(path)
+    writexml(root)
+
+
 class AutoSaveManager(QtCore.QObject):
     """
     Simple xml text storage.
