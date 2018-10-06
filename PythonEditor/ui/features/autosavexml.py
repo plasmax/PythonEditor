@@ -156,7 +156,6 @@ def remove_control_characters(s):
     """
     Identify and remove any control characters from given string s.
     """
-
     cc = ''.join(ch for ch in s if not_ctrl(ch))
     print('Removing undesirable control characters:', cc)
 
