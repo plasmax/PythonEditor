@@ -218,7 +218,7 @@ class ShortcutHandler(QtCore.QObject):
         """
         textCursor = self.editor.textCursor()
 
-        whole_text = self.editor.toPlainText()
+        whole_text = self.editor.toPlainText().strip()
 
         if textCursor.hasSelection():
             text = self.offset_for_traceback()
@@ -244,7 +244,7 @@ class ShortcutHandler(QtCore.QObject):
         if textCursor.hasSelection():
             return self.exec_selected_text()
 
-        textCursor.select(QtGui.QTextCursor.LineUnderCursor)
+        textCursor.select(QtGui.QTextCursor.BlockUnderCursor)
         text = textCursor.selection().toPlainText().lstrip()
         text = self.offset_for_traceback(text=text)
 
@@ -312,6 +312,8 @@ class ShortcutHandler(QtCore.QObject):
         if not self.editor.wait_for_autocomplete:
             textCursor.insertText(insertion)
             self.editor.setTextCursor(textCursor)
+
+        return True
 
         return True
 
