@@ -418,6 +418,7 @@ class AutoSaveManager(QtCore.QObject):
                     root.remove(s)
                     continue
                 if not os.path.isfile(path):
+                    root.remove(s)
                     continue
                 s.attrib['name'] = os.path.basename(path)
 
