@@ -472,6 +472,8 @@ class AutoCompleter(QtCore.QObject):
 
                 current_word = self.word_before_cursor(regex='\w+')
 
+            # TODO: add a case for "self." completion in here
+
             cp.setCompletionPrefix(current_word)
             cp.popup().setCurrentIndex(cp.completionModel().index(0, 0))
 
