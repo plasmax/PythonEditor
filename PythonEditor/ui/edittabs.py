@@ -68,7 +68,10 @@ class EditTabs(QtWidgets.QTabWidget):
         for i in range(self.count()):
             tab_name = self.tabText(i)
             if not tab_name.strip():
-                continue
+                button = self.tabBar().tabButton(i, QtWidgets.QTabBar.LeftSide)
+                if not isinstance(button, TabButton):
+                    continue
+                tab_name = button.text()
             action = partial(self.setCurrentIndex, i)
             menu.addAction(tab_name, action)
         menu.exec_(QtGui.QCursor().pos())
@@ -167,9 +170,13 @@ class EditTabs(QtWidgets.QTabWidget):
 
         editor.deleteLater()
 
+        tab_on_left = (index < _index)
+        last_tab_before_end = (_index == self.count()-2)
+
         self.removeTab(index)
-        index = self.count() - 1
-        self.setCurrentIndex(_index-1)
+        if tab_on_left or last_tab_before_end:
+            _index -= 1
+        self.setCurrentIndex(_index)
         self.tab_count = self.count()
 
     def reset_tabs(self):
@@ -195,6 +202,79 @@ class EditTabs(QtWidgets.QTabWidget):
         self.current_index = self.currentIndex()
         self.tab_count = self.count()
 
+    def addTab(self, *args):
+        """
+        Insurance override to point to insertTab.
+        args may be:
+        const QString &text
+        const QIcon &icon, const QString &text
+
+        TODO: Needs testing.
+        """
+        debug('Warning. addTab override feature needs testing.')
+        if len(args) == 1:
+            label, = args
+            return self.insertTab(self.count(), None, label)
+        elif len(args) == 2:
+            icon, label = args
+            return self.insertTab(self.count(), None, icon, label)
+        else:
+            return
+
+        super(EditTabs, self).addTab(*args, **kwargs)
+
+    def insertTab(self, *args):
+        """
+        Override overloaded method which can
+        receive the following params:
+
+        int index, QWidget widget, QString label
+        int index, QWidget widget, QIcon icon, QString label
+        """
+        super(EditTabs, self).insertTab(*args)
+
+        if len(args) == 3:
+            index, widget, label = args
+        elif len(args) == 4:
+            index, widget, icon, label = args
+        else:
+            return
+
+        if not isinstance(widget, EDITOR.Editor):
+            return
+
+        if not hasattr(self, 'tab_button_list'):
+            # Note: button removed from set when tab removed.
+            self.tab_button_list = set([])
+
+        button = TabButton(label, widget)
+        self.tab_button_list.add(button)
+        self.setTabText(index, '')
+        self.tabBar().setTabButton(index, QtWidgets.QTabBar.LeftSide, button)
+
+    def removeTab(self, index):
+        """
+        Override QTabWidget method in order to also remove any buttons
+        stored on the class. As this is the sole method for removing tabs
+        uring a session, this should be sufficient to cleanup the
+        list and prevent memory leaks.
+        """
+        button = self.tabBar().tabButton(index, QtWidgets.QTabBar.LeftSide)
+        if button in self.tab_button_list:
+            self.tab_button_list.remove(button)
+        super(EditTabs, self).removeTab(index)
+
+    def setTabText(self, index, label):
+        """
+        Override QTabWidget setTabText so that if the tab
+        has a button, the text will be set on the button
+        instead of the tab.
+        """
+        button = self.tabBar().tabButton(index, QtWidgets.QTabBar.LeftSide)
+        if isinstance(button, TabButton):
+            return button.setText(label)
+        super(EditTabs, self).setTabText(index, label)
+
 
 class TabBar(QtWidgets.QTabBar):
     def __init__(self, edittabs):
@@ -202,7 +282,12 @@ class TabBar(QtWidgets.QTabBar):
         self.edittabs = edittabs
 
     def mouseDoubleClickEvent(self, event):
-        self.show_name_edit()
+        """
+        Initalise tab rename using lineedit
+        on double left click.
+        """
+        if event.button() == QtCore.Qt.MouseButton.LeftButton:
+            self.show_name_edit()
         super(TabBar, self).mouseDoubleClickEvent(event)
 
     def show_name_edit(self):
@@ -217,16 +302,20 @@ class TabBar(QtWidgets.QTabBar):
             return
 
         index = self.currentIndex()
-        title = self.tabText(index)
+        button = self.tabButton(index, QtWidgets.QTabBar.LeftSide)
+        if isinstance(button, TabButton):
+            label = button.text()
+        else:
+            label = self.tabText(index)
 
         self.editor = editor
-        self.tab_text = title
+        self.tab_text = label
         self.tab_index = index
         self.setTabText(index, '')
 
         self.name_edit = QtWidgets.QLineEdit(self)
         self.name_edit.editingFinished.connect(self.rename_tab)
-        self.name_edit.setText(title)
+        self.name_edit.setText(label)
         self.name_edit.selectAll()
 
         self.setTabButton(index,
@@ -237,7 +326,7 @@ class TabBar(QtWidgets.QTabBar):
 
     def rename_tab(self):
         """
-        Sets the title of the current tab, then sets
+        Sets the label of the current tab, then sets
         the editor 'name' property and refreshes the
         editor text to trigger the autosave which
         updates the name in the xml element.
@@ -258,13 +347,51 @@ class TabBar(QtWidgets.QTabBar):
             if self.edittabs.widget(tab_index) == self.editor:
                 self.tab_index = tab_index
 
-        self.setTabText(self.tab_index, text)
-        self.setTabButton(self.tab_index,
-                          QtWidgets.QTabBar.LeftSide,
-                          None)
+        button = self.tabButton(self.tab_index, QtWidgets.QTabBar.LeftSide)
+        if isinstance(button, TabButton):
+            button.setText(text)
+        else:
+            self.setTabText(self.tab_index, text)
+            self.setTabButton(self.tab_index,
+                              QtWidgets.QTabBar.LeftSide,
+                              None)
 
         editor = self.editor
         self.edittabs.setCurrentIndex(self.tab_index)
         if editor.objectName() == 'Editor':
             editor.name = text
-            editor.setPlainText(editor.toPlainText())
+            read_only = editor.read_only
+            editor.setPlainText(editor.toPlainText()) # force a refresh to update autosave with new name
+            editor.read_only = read_only
+
+
+class TabButton(QtWidgets.QLabel):
+    """
+    Labels for tabs that allow read-only
+    state to be displayed as italics, or
+    modified state as a small circle.
+    """
+    def __init__(self, text, editor):
+        super(TabButton, self).__init__(text)
+        self.editor = editor
+        self.editor.read_only_signal.connect(self.set_read_state)
+        self.editor.uid_signal.connect(self.uid_update)
+        self.setStyleSheet('font: italic;')
+        self._uid = None
+
+    @QtCore.Slot(bool)
+    def set_read_state(self, read_only):
+        if read_only:
+            self.setStyleSheet('font: italic;')
+        else:
+            self.setStyleSheet('')
+
+    @QtCore.Slot(str)
+    def uid_update(self, uid):
+        """
+        Note: Not yet using the uid for anything,
+        If this doesn't become useful it's probably
+        best removed.
+        """
+        self._uid = uid
+
