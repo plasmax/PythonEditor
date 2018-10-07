@@ -47,6 +47,7 @@ class Editor(QtWidgets.QPlainTextEdit):
     ctrl_enter_signal = QtCore.Signal()
     contents_saved_signal = QtCore.Signal(object)
     read_only_signal = QtCore.Signal(bool)
+    uid_signal = QtCore.Signal(str)
 
     relay_clear_output_signal = QtCore.Signal()
     editingFinished = QtCore.Signal()
@@ -109,6 +110,7 @@ class Editor(QtWidgets.QPlainTextEdit):
 
     @uid.setter
     def uid(self, uid):
+        self.uid_signal.emit(uid)
         self._uid = uid
 
     @property
