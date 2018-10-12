@@ -84,7 +84,11 @@ def save_selected_text(editor):
 
 def export_selected_to_external_editor(editor):
     path = save_selected_text(editor)
-    EXTERNAL_EDITOR_PATH = constants.get_external_editor_path()
+
+    #TODO: this is a horrible hack to avoid circular imports
+    from PythonEditor.ui.features.autosavexml import get_external_editor_path
+    EXTERNAL_EDITOR_PATH = get_external_editor_path()
+
     if path and EXTERNAL_EDITOR_PATH:
         subprocess.Popen([EXTERNAL_EDITOR_PATH, path])
     return path
@@ -102,7 +106,11 @@ def save_editor(folder, name, editor):
 
 
 def open_external_editor(path):
-    EXTERNAL_EDITOR_PATH = constants.get_external_editor_path()
+
+    #TODO: this is a horrible hack to avoid circular imports
+    from PythonEditor.ui.features.autosavexml import get_external_editor_path
+    EXTERNAL_EDITOR_PATH = get_external_editor_path()
+
     if path and EXTERNAL_EDITOR_PATH:
         subprocess.Popen([EXTERNAL_EDITOR_PATH, path])
 
