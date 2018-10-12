@@ -93,7 +93,8 @@ cElementTree.ParseError: no element found: line 1, column 0
 - [ ] Autocomplete 'toNode', node.knob() and node[knob]
 - [ ] Projects
 - [ ] Goto Links in errors/regular paths in the editor
-
+- [ ] Hover over varibles to get definition goto, type info, short help()
+- [ ] Hover over paths in output window to get goto link
 
 #### General
 - [ ] Test moving TODO.md to github issues (not so great for local)
