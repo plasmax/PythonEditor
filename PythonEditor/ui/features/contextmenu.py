@@ -44,7 +44,11 @@ def open_module_file(obj):
         pass
 
     print(file)
-    EXTERNAL_EDITOR_PATH = constants.get_external_editor_path()
+
+    #TODO: this is a horrible hack to avoid circular imports
+    from PythonEditor.ui.features.autosavexml import get_external_editor_path
+
+    EXTERNAL_EDITOR_PATH = get_external_editor_path()
     if (EXTERNAL_EDITOR_PATH
             and os.path.isdir(os.path.dirname(EXTERNAL_EDITOR_PATH))):
         subprocess.Popen([EXTERNAL_EDITOR_PATH, file])
@@ -54,7 +58,11 @@ def open_module_directory(obj):
     file = inspect.getfile(obj).replace('.pyc', '.py')
     folder = os.path.dirname(file)
     print(folder)
-    EXTERNAL_EDITOR_PATH = constants.get_external_editor_path()
+
+    #TODO: this is a horrible hack to avoid circular imports
+    from PythonEditor.ui.features.autosavexml import get_external_editor_path
+
+    EXTERNAL_EDITOR_PATH = get_external_editor_path()
     if (EXTERNAL_EDITOR_PATH
             and os.path.isdir(os.path.dirname(EXTERNAL_EDITOR_PATH))):
         subprocess.Popen([EXTERNAL_EDITOR_PATH, folder])
