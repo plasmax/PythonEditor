@@ -660,8 +660,8 @@ class ShortcutHandler(QtCore.QObject):
         as it is also accessed through
         the right-click menu.
         """
-        dialog = QtWidgets.QInputDialog.getText(self.editor,
-                                                'Search', '',)
+        getText = QtWidgets.QInputDialog.getText
+        dialog = getText(self.editor, 'Search', '',)
         text, ok = dialog
         if not ok:
             return
@@ -718,7 +718,9 @@ class ShortcutHandler(QtCore.QObject):
         Prints documentation
         for selected object
         """
-        text = self.editor.textCursor().selectedText()
+        cursor = self.editor.textCursor()
+        selection = cursor.selection()
+        text = selection.toPlainText().strip()
         obj = __main__.__dict__.get(text)
         if obj is not None:
             print(obj.__doc__)
@@ -730,7 +732,9 @@ class ShortcutHandler(QtCore.QObject):
         Prints type
         for selected object
         """
-        text = self.editor.textCursor().selectedText()
+        cursor = self.editor.textCursor()
+        selection = cursor.selection()
+        text = selection.toPlainText().strip()
         obj = __main__.__dict__.get(text)
         if obj is not None:
             print(type(obj))
