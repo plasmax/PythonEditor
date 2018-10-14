@@ -9,11 +9,13 @@ then pick it up smoothly with a background thread
 reading the dict data
 """
 
+import time
+start = time.time()
+import os
 from Qt import QtWidgets, QtGui, QtCore
 from PythonEditor.ui.features import autosavexml
-import time
+from PythonEditor.ui.editor import Editor
 
-start = time.time()
 
 """ a nice idea but not sure if i need it yet
 class Tab(object):
@@ -339,12 +341,24 @@ w.setLayout(l)
 l.addWidget(tabs)
 s = QtWidgets.QStackedWidget()
 #s.addWidget('a')
-editor = PythonEditor.ui.editor.Editor()
+#editor = PythonEditor.ui.editor.Editor()
+editor = Editor()
 
 @QtCore.Slot(int)
 def set_editor_contents(index):
     data = tabs.tabData(index)
-    text = data['text'] #
+    text = data['text']
+    
+    if text is None or not text.strip():
+        path = data.get('path')
+        if path is None:
+            raise Exception('editor with no text and no path!')
+        if not os.path.isfile(path):
+            raise Exception('editor with no text and invalid path!')
+        with open(path, 'r') as f:
+            text = f.read()            
+        data['text'] = text
+            
     editor.setPlainText(text)
     editor.name = data['name']
     editor.uid = data['uuid']
@@ -355,8 +369,9 @@ def save_text_in_tab():
         tabs['text'] = editor.toPlainText()
 
 current_index = tabs.currentIndex()
-data = tabs.tabData(current_index)
-editor.setPlainText(data['text'])
+#data = tabs.tabData(current_index)
+#editor.setPlainText(data['text'])
+set_editor_contents(current_index)
 tabs.currentChanged.connect(set_editor_contents)
 
 # this is something we're going to want only 
@@ -369,7 +384,27 @@ w.show()
 from pprint import pprint
 #pprint(tabs[2])
 tabs['text']
+tabs.count()
 #sys.getsizeof(w)
 
 duration = (time.time()-start)
 print '%.3f seconds to launch %s tabs' % (duration, i)
+
+def check_changed():
+    """
+    Check in with our little tab to see if anything's new.
+    """
+    root, subscripts = autosavexml.parsexml('subscript')
+    for s in subscripts:
+        if s.attrib.get('uuid') == tabs['uuid']:
+            if tabs['text'] != s.text: 
+                print 'updated text!'
+                # this is where we'll actually write 
+                # the text to the autosave
+
+timer = QtCore.QTimer()
+timer.timeout.connect(check_changed)
+timer.setInterval(200)
+timer.start()
+timer.stop()
+#import threading
