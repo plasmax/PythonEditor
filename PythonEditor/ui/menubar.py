@@ -12,7 +12,7 @@ class MenuBar(object):
     """
     def __init__(self, widget):
         self.widget = widget
-        for attr in 'edittabs', 'layout', '_parent':
+        for attr in 'tabs', 'layout', '_parent':
             setattr(self, attr, getattr(widget, attr))
         self.setup_menu()
 
@@ -72,10 +72,10 @@ class MenuBar(object):
 
     @property
     def editor(self):
-        return self.edittabs.currentWidget()
+        return self.tabs.editor
 
     def new(self):
-        self.edittabs.new_tab()
+        self.tabs.new_tab()
 
     def open(self):
         """
@@ -83,10 +83,10 @@ class MenuBar(object):
         TODO: This needs to go into a files.py or files/open.py
         """
         o = QtWidgets.QFileDialog.getOpenFileName
-        path, _ = o(self.edittabs, "Open File")
+        path, _ = o(self.tabs, "Open File")
         if not path:
             return
-        editor = self.edittabs.new_tab(tab_name=os.path.basename(path))
+        editor = self.tabs.new_tab(tab_name=os.path.basename(path))
         editor.path = path
 
         # Because the document will be open in read-only mode, the
@@ -110,10 +110,10 @@ class MenuBar(object):
         save.export_selected_to_external_editor(self.editor)
 
     def export_current_tab_to_external_editor(self):
-        save.export_current_tab_to_external_editor(self.edittabs)
+        save.export_current_tab_to_external_editor(self.tabs)
 
     def export_all_tabs_to_external_editor(self):
-        save.export_all_tabs_to_external_editor(self.edittabs)
+        save.export_all_tabs_to_external_editor(self.tabs)
 
     def show_shortcuts(self):
         """

@@ -1,6 +1,6 @@
 from PythonEditor.ui.Qt import QtWidgets, QtCore
 from PythonEditor.ui import terminal
-from PythonEditor.ui import edittabs
+from PythonEditor.ui import tabs
 from PythonEditor.ui import menubar
 from PythonEditor.ui.features import shortcuts
 from PythonEditor.ui.features import autosavexml
@@ -26,14 +26,14 @@ class PythonEditor(QtWidgets.QWidget):
         layout.setObjectName('PythonEditor_MainLayout')
         layout.setContentsMargins(0, 0, 0, 0)
 
-        self.edittabs = edittabs.EditTabs()
+        self.tabs = tabs.TabContainer()
         self.terminal = terminal.Terminal()
         self.menubar = menubar.MenuBar(self)
 
         splitter = QtWidgets.QSplitter(QtCore.Qt.Vertical)
         splitter.setObjectName('PythonEditor_MainVerticalSplitter')
         splitter.addWidget(self.terminal)
-        splitter.addWidget(self.edittabs)
+        splitter.addWidget(self.tabs)
 
         layout.addWidget(splitter)
 
@@ -43,11 +43,11 @@ class PythonEditor(QtWidgets.QWidget):
         Loading the AutosaveManager will also load all the
         contents of the autosave into tabs.
         """
-        sch = shortcuts.ShortcutHandler(self.edittabs)
+        sch = shortcuts.ShortcutHandler(self.tabs)
         sch.clear_output_signal.connect(self.terminal.clear)
         self.shortcuteditor = shortcuteditor.ShortcutEditor(sch)
         self.preferenceseditor = preferences.PreferencesEditor()
-        self.filehandler = autosavexml.AutoSaveManager(self.edittabs)
+        self.filehandler = autosavexml.AutoSaveManager(self.tabs)
 
     @property
     def editor(self):

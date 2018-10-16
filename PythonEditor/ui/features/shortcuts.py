@@ -21,9 +21,9 @@ class ShortcutHandler(QtCore.QObject):
         self.parent_widget = parent_widget
 
         if use_tabs:
-            self.editortabs = parent_widget
-            tss = self.editortabs.tab_switched_signal
-            tss.connect(self.tab_switch_handler)
+            self.tabs = parent_widget
+            # tss = self.tabs.tab_switched_signal
+            # tss.connect(self.tab_switch_handler)
             self.set_editor()
         else:
             self.editor = parent_widget
@@ -49,7 +49,8 @@ class ShortcutHandler(QtCore.QObject):
         Sets the current editor
         and connects signals.
         """
-        editor = self.editortabs.currentWidget()
+        # editor = self.tabs.currentWidget()
+        editor = self.tabs.editor
         editor_changed = (True if not hasattr(self, 'editor')
                           else self.editor != editor)
         is_editor = editor.objectName() == 'Editor'
@@ -124,10 +125,10 @@ class ShortcutHandler(QtCore.QObject):
                     # 'Ctrl+Shift+Alt+Down': notimp('duplicate cursor down'),
                     }
 
-        if hasattr(self, 'editortabs'):
+        if hasattr(self, 'tabs'):
             tab_shortcuts = {
-                        'Ctrl+Shift+N': self.editortabs.new_tab,
-                        'Ctrl+Shift+W': self.editortabs.close_current_tab,
+                        'Ctrl+Shift+N': self.tabs.new_tab,
+                        'Ctrl+Shift+W': self.tabs.close_current_tab,
                         # 'Ctrl+Shift+T': notimp('reopen previous tab'),
                         }
             editor_shortcuts.update(tab_shortcuts)
@@ -400,14 +401,14 @@ class ShortcutHandler(QtCore.QObject):
         self.editor.insertPlainText('    ')
 
     def next_tab(self):
-        if hasattr(self, 'editortabs'):
-            next_index = self.editortabs.currentIndex()+1
-            if self.editortabs.widget(next_index).objectName() == 'Editor':
-                self.editortabs.setCurrentIndex(next_index)
+        if hasattr(self, 'tabs'):
+            next_index = self.tabs.currentIndex()+1
+            if self.tabs.widget(next_index).objectName() == 'Editor':
+                self.tabs.setCurrentIndex(next_index)
 
     def previous_tab(self):
-        if hasattr(self, 'editortabs'):
-            self.editortabs.setCurrentIndex(self.editortabs.currentIndex()-1)
+        if hasattr(self, 'tabs'):
+            self.tabs.setCurrentIndex(self.tabs.currentIndex()-1)
 
     def jump_to_start(self):
         """

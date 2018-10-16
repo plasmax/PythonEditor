@@ -267,12 +267,14 @@ class AutoSaveManager(QtCore.QObject):
         self.setObjectName('AutoSaveManager')
         create_autosave_file()
         self.timer_waiting = False
-        self.setup_save_timer(interval=1000)
+        # self.setup_save_timer(interval=1000) # TODO: hook this up
 
-        self.tabs = tabs
+        self.tab_container = tabs
+        self.tabs = tabs.tabs
         self.setParent(tabs)
 
         # connect tab signals
+        """
         tss = tabs.tab_switched_signal
         tss.connect(self.handle_tab_switch)
         tss.connect(self.check_document_modified)
@@ -286,8 +288,9 @@ class AutoSaveManager(QtCore.QObject):
         css.connect(self.handle_document_save)
         tmv = tabs.tab_moved_signal
         tmv.connect(self.handle_tab_moved)
+        """
 
-        self.set_editor()
+        # self.set_editor()
         self.readautosave()
 
     @QtCore.Slot(int, int, bool)
@@ -304,7 +307,7 @@ class AutoSaveManager(QtCore.QObject):
         Sets the current editor
         and connects signals.
         """
-        editor = self.tabs.currentWidget()
+        editor = self.tabs.editor
         hasedit = hasattr(self, 'editor')
         editorChanged = True if not hasedit else self.editor != editor
         isEditor = editor.objectName() == 'Editor'
@@ -408,52 +411,82 @@ class AutoSaveManager(QtCore.QObject):
             except TypeError:
                 return 1
 
-        editor_count = 0
-        subscripts = sorted(subscripts, key=sort_by_index)
+        # -------------------- AUTOSAVEXML ------------------ #
+        # loading the autosave
+        root, subscripts = parsexml('subscript')
+
+        autosaves = []
+        i = 0
         for s in subscripts:
+            name = s.attrib.get('name')
+            if name is None:
+                continue
+            autosaves.append((i, s))
+            i += 1
 
-            if not s.text:
-                path = s.attrib.get('path')
-                if path is None:
-                    root.remove(s)
-                    continue
-                if not os.path.isfile(path):
-                    root.remove(s)
-                    continue
-                s.attrib['name'] = os.path.basename(path)
+        # storing autosave into new tabs
+        for i, s in autosaves:
+            name = s.attrib.get('name')
+            data = s.attrib.copy()
+            tab_name = name+' '*5
+            # self.tabs.addTab(tab_name) # hax for enough space for close button :'(
+            self.tabs.new_tab(tab_name=tab_name)
+            path = data.get('path')
+            if path is not None:
+                self.tabs.setTabToolTip(i, path) # and if this changes?
+            data['text'] = s.text # we might need to fetch the text from a file
+            self.tabs.setTabData(i, data)
 
-            try:
-                tab_name = s.attrib['name']
-            except KeyError:
-                tab_name = None
+        # set the self.tabs to the last loaded
+        self.tabs.setCurrentIndex(i)
+        self.tab_container.post_init_load_contents()
 
-            editor = self.tabs.new_tab(tab_name=tab_name, init_features=False)
-            if 'uuid' in s.attrib:
-                editor.uid = s.attrib['uuid']
-            else:
-                s.attrib['uuid'] = editor.uid
+        # editor_count = 0
+        # subscripts = sorted(subscripts, key=sort_by_index)
+        # for s in subscripts:
 
-            if 'path' in s.attrib:
-                editor.path = s.attrib['path']
-            elif hasattr(editor, 'path'):
-                s.attrib['path'] = editor.path
+        #     if not s.text:
+        #         path = s.attrib.get('path')
+        #         if path is None:
+        #             root.remove(s)
+        #             continue
+        #         if not os.path.isfile(path):
+        #             root.remove(s)
+        #             continue
+        #         s.attrib['name'] = os.path.basename(path)
 
-            if s.text:
-                editor.setPlainText(s.text)
-                editor.read_only = False
-            else:
-                self.editor = editor
-                self.readfile(path)
+        #     try:
+        #         tab_name = s.attrib['name']
+        #     except KeyError:
+        #         tab_name = None
 
-            editor.tab_index = self.tabs.currentIndex()
-            editor_count += 1
+        #     editor = self.tabs.new_tab(tab_name=tab_name, init_features=False)
+        #     if 'uuid' in s.attrib:
+        #         editor.uid = s.attrib['uuid']
+        #     else:
+        #         s.attrib['uuid'] = editor.uid
 
-        subscripts = self.update_tab_order(subscripts)
+        #     if 'path' in s.attrib:
+        #         editor.path = s.attrib['path']
+        #     elif hasattr(editor, 'path'):
+        #         s.attrib['path'] = editor.path
 
-        if editor_count == 0:
-            self.tabs.new_tab()
+        #     if s.text:
+        #         editor.setPlainText(s.text)
+        #         editor.read_only = False
+        #     else:
+        #         self.editor = editor
+        #         self.readfile(path)
 
-        writexml(root)
+        #     editor.tab_index = self.tabs.currentIndex()
+        #     editor_count += 1
+
+        # subscripts = self.update_tab_order(subscripts)
+
+        # if editor_count == 0:
+        #     self.tabs.new_tab()
+
+        # writexml(root)
 
     def update_tab_order(self, subscripts):
         uids = [(i, getattr(self.tabs.widget(i), 'uid', None))
