@@ -1,6 +1,6 @@
 """
-A nice solution using a single editor and 
-a subclassed QTabBar with 
+A nice solution using a single editor and
+a subclassed QTabBar with
 
 need my new tab button!!!!
 
@@ -26,16 +26,16 @@ class Tab(object):
     date = ''
     def __setitem__(self, name, value):
         setattr(self, name, value)
-    
+
     def __getitem__(self, name):
         return getattr(self, name)
-    
+
     def __repr__(self):
         s = '<Tab>'
-        for 
-        s += 
-"""        
-    
+        for
+        s +=
+"""
+
 
 class Tabs(QtWidgets.QTabBar):
     pen = QtGui.QPen()
@@ -49,7 +49,7 @@ class Tabs(QtWidgets.QTabBar):
         elif isinstance(index, str):
             i = self.currentIndex()
             return self.tabData(i)[index]
-        
+
     def __setitem__(self, index, data):
         if isinstance(index, int):
             return self.setTabData(index, data)
@@ -58,7 +58,7 @@ class Tabs(QtWidgets.QTabBar):
             tab_data = self.tabData(i)
             tab_data[index] = data
             return self.setTabData(i, tab_data)
-        
+
     def tab_close_button_rect(self, i):
         rect = self.tabRect(i)
         rqt = QtCore.QRect(rect)
@@ -66,17 +66,17 @@ class Tabs(QtWidgets.QTabBar):
         o = 5
         rqt.adjust(w-25+o, 5, -15+o, -5)
         return rqt
-        
+
     def event(self, e):
         """
-        Trigger button highlighting if 
+        Trigger button highlighting if
         hovering over (x) close buttons
         """
         if e.type() == QtCore.QEvent.Type.HoverMove: # does the cover tablet?
             pt = e.pos()
             for i in range(self.count()):
                 rect = self.tabRect(i)
-                
+
                 if not self.rect().contains(rect):
                     continue # would be nice to optimise
 
@@ -91,15 +91,15 @@ class Tabs(QtWidgets.QTabBar):
                         self.over_button = -1
                         self.repaint()
         return super(Tabs, self).event(e)
-        
+
     def paint_close_button(self):
         """
         Let's draw a tiny little x on the right
         that's our new close button. It's just two little lines! x
-        
-        Notes: 
+
+        Notes:
         - it's probably faster if we only iterate over visible tabs.
-        - How can this be used to write italic text? 
+        - How can this be used to write italic text?
         - we could change the x to a o like sublime
         - ANTIALIASING PLEASEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
         """
@@ -110,7 +110,7 @@ class Tabs(QtWidgets.QTabBar):
 
         for i in range(self.count()):
             rect = self.tabRect(i)
-            
+
             if not self.rect().contains(rect):
                 continue # would be nice to optimise
 
@@ -122,7 +122,7 @@ class Tabs(QtWidgets.QTabBar):
             #rqt = QtCore.QRect(x+(r/2),y,r+1,t+1)
             rqt = self.tab_close_button_rect(i)
             #QtCore.QRect.right()
-            
+
             #QtCore.QRect.adjust()
             #print 'rt side:', rqt
             #print e.region()
@@ -137,7 +137,7 @@ class Tabs(QtWidgets.QTabBar):
             p.setPen(None)
             p.setRenderHint(QtGui.QPainter.Antialiasing)
             #p.drawEllipse(rqt)
-                    
+
             p.setPen(self.pen)
             self.pen.setWidth(2)
             if i == self.over_button:
@@ -158,19 +158,20 @@ class Tabs(QtWidgets.QTabBar):
             #bl = rqt.bottomLeft()
             #tr = rqt.topRight()
             #p.drawLine(bl, tr)
-            
+
             a = 2
 
             rqt.adjust(a,a,-a,-a)
             p.drawLine(rqt.bottomLeft(), rqt.topRight())
             p.drawLine(rqt.topLeft(), rqt.bottomRight())
             #p.restore()
+            # print rqt
             p.end()
-            
+
     def paintEvent(self, e):
         super(Tabs, self).paintEvent(e)
-        self.paint_close_button()        
-        
+        self.paint_close_button()
+
     def mousePressEvent(self, e):
         """
         If clicking on close buttons
@@ -187,21 +188,21 @@ class Tabs(QtWidgets.QTabBar):
                             self.rename_tab()
                 except RuntimeError: # likely that the lineedit has been deleted
                     del self.name_edit
-                    
+
             # handle clicking on close button
             for i in range(self.count()):
                 rect = self.tabRect(i)
-            
+
                 if rect.contains(pt):
                     rqt = self.tab_close_button_rect(i)
                     if rqt.contains(pt):
                         print 'clicked close on tab %s %s' % (i, self.tabText(i))
                         self.removeTab(i) # this should emit a close signal like the current tabwidget
                         return
-                        
+
         # if not returned, handle clicking on tab
         return super(Tabs, self).mousePressEvent(e)
-        
+
     def mouseDoubleClickEvent(self, e):
         if e.button() == QtCore.Qt.LeftButton:
             self.show_name_edit()
@@ -217,7 +218,7 @@ class Tabs(QtWidgets.QTabBar):
         except RuntimeError: # likely that the lineedit has been deleted
             del self.name_edit
             return
-            
+
         index = self.currentIndex()
         button = self.tabButton(index, QtWidgets.QTabBar.LeftSide)
         label = self.tabText(index)
@@ -225,9 +226,9 @@ class Tabs(QtWidgets.QTabBar):
         self.tab_text = label
         self.tab_index = index
         self.setTabText(index, '')
-        
+
         self.name_edit = QtWidgets.QLineEdit(self)
-        rect = self.tabRect(index)        
+        rect = self.tabRect(index)
         self.name_edit.resize(self.name_edit.width(), rect.height()-7)
         self.name_edit.tab_index = index
         self.name_edit.editingFinished.connect(self.rename_tab)
@@ -316,7 +317,7 @@ for s in subscripts:
         continue
     autosaves.append((i, s))
     i += 1
-    
+
 for i, s in autosaves:
     name = s.attrib.get('name')
     data = s.attrib.copy()
@@ -326,7 +327,7 @@ for i, s in autosaves:
         tabs.setTabToolTip(i, path) # and if this changes?
     data['text'] = s.text # we might need to fetch the text from a file
     tabs.setTabData(i, data)
-    
+
 """
 tab = Tab()
 for key, value in data.items():
@@ -343,12 +344,13 @@ s = QtWidgets.QStackedWidget()
 #s.addWidget('a')
 #editor = PythonEditor.ui.editor.Editor()
 editor = Editor()
+editor = QtWidgets.QPlainTextEdit()
 
 @QtCore.Slot(int)
 def set_editor_contents(index):
     data = tabs.tabData(index)
     text = data['text']
-    
+
     if text is None or not text.strip():
         path = data.get('path')
         if path is None:
@@ -356,14 +358,14 @@ def set_editor_contents(index):
         if not os.path.isfile(path):
             raise Exception('editor with no text and invalid path!')
         with open(path, 'r') as f:
-            text = f.read()            
+            text = f.read()
         data['text'] = text
-            
+
     editor.setPlainText(text)
     editor.name = data['name']
     editor.uid = data['uuid']
     editor.path = data.get('path')
-    
+
 def save_text_in_tab():
     if editor.uid == tabs['uuid']:
         tabs['text'] = editor.toPlainText()
@@ -374,9 +376,9 @@ current_index = tabs.currentIndex()
 set_editor_contents(current_index)
 tabs.currentChanged.connect(set_editor_contents)
 
-# this is something we're going to want only 
+# this is something we're going to want only
 # when tab already set (and not when switching)
-editor.textChanged.connect(save_text_in_tab) 
+editor.textChanged.connect(save_text_in_tab)
 
 l.addWidget(editor)
 w.show()
@@ -397,9 +399,9 @@ def check_changed():
     root, subscripts = autosavexml.parsexml('subscript')
     for s in subscripts:
         if s.attrib.get('uuid') == tabs['uuid']:
-            if tabs['text'] != s.text: 
+            if tabs['text'] != s.text:
                 print 'updated text!'
-                # this is where we'll actually write 
+                # this is where we'll actually write
                 # the text to the autosave
 
 timer = QtCore.QTimer()
