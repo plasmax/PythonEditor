@@ -58,7 +58,7 @@ class LineNumberArea(QtWidgets.QWidget):
     def updateLineNumberAreaWidth(self, _):
         self.editor.setViewportMargins(self.lineNumberAreaWidth(), 0, 0, 0)
 
-    def updateLineNumberArea(self, rect, dy):
+    def updateLineNumberArea(self, rect, dy): # BUG: causes flickering on scroll!
         if dy:
             self.editor.scroll(0, dy)
         else:
@@ -68,7 +68,7 @@ class LineNumberArea(QtWidgets.QWidget):
         if rect.contains(self.editor.viewport().rect()):
             self.updateLineNumberAreaWidth(0)
 
-    def highlightCurrentLine(self):
+    def highlightCurrentLine(self): # TODO: higlight linenumberarea
         extraSelections = []
 
         if not self.editor.isReadOnly():
