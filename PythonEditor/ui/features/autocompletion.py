@@ -42,6 +42,7 @@ class MyWidget(QtWidgets.QWidget):
     def valueChanged(self, value):
         pass
 """.strip()
+qt_import_snippet = 'from Qt import QtWidgets, QtGui, QtCore'
 SNIPPETS = {
             'class [snippet]': class_snippet,
             'def [snippet] [func]': function_snippet,
