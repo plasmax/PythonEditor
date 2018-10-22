@@ -52,6 +52,7 @@ SNIPPETS = {
             'node [snippet]': node_selected,
             'nodes [snippet]': nodes_selected,
             'custom widget [snippet]': custom_widget_snippet,
+            'Qt [snippet]': qt_import_snippet,
             }
 
 try:
