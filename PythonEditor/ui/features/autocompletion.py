@@ -201,12 +201,21 @@ class AutoCompleter(QtCore.QObject):
                 or not word_before_dot[-1].isalnum()):
             return
 
-        _objects = __main__.__dict__.copy()
-        _obj = _objects.get(word_before_dot)
+        if word_before_dot in ['self', 'cls']:
+            text = self.editor.toPlainText()[:pos]
+            class_pos = text.rfind('class')
+            text = text[class_pos:]
+            search = re.findall(r'(?:\()([a-zA-Z0-9_\.]+)', text)
+            if search:
+                class_name = search[0]
+                word_before_dot = class_name
+
+        app_namespace = __main__.__dict__.copy()
+        _obj = app_namespace.get(word_before_dot)
         if _obj is None:
             try:
                 _ = {}
-                exec('_obj = '+word_before_dot, _objects, _)
+                exec('_obj = '+word_before_dot, app_namespace, _)
                 _obj = _.get('_obj')
             except (NameError, AttributeError, SyntaxError):
                 # we want to handle this
