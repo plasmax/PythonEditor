@@ -13,6 +13,14 @@ class LineNumberArea(QtWidgets.QWidget):
         self.editor = editor
         self.setupLineNumbers()
 
+    def setupLineNumbers(self):
+        self.editor.blockCountChanged.connect(self.updateLineNumberAreaWidth)
+        self.editor.updateRequest.connect(self.updateLineNumberArea, QtCore.Qt.DirectConnection)
+        self.editor.updateRequest.connect(self.resizeLineNo, QtCore.Qt.DirectConnection)
+        self.editor.cursorPositionChanged.connect(self.highlightCurrentLine)
+        self.updateLineNumberAreaWidth(0)
+        self.highlightCurrentLine()
+
     def sizeHint(self):
         return QtCore.QSize(self.lineNumberAreaWidth(), 0)
 
@@ -37,13 +45,6 @@ class LineNumberArea(QtWidgets.QWidget):
             top = bottom
             bottom = top + self.editor.blockBoundingRect(block).height()
             blockNumber += 1
-
-    def setupLineNumbers(self):
-        self.editor.blockCountChanged.connect(self.updateLineNumberAreaWidth)
-        self.editor.updateRequest.connect(self.updateLineNumberArea)
-        self.editor.updateRequest.connect(self.resizeLineNo)
-        self.editor.cursorPositionChanged.connect(self.highlightCurrentLine)
-        self.updateLineNumberAreaWidth(0)
 
     def lineNumberAreaWidth(self):
         digits = 1
