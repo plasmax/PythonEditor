@@ -67,6 +67,7 @@ class LineNumberArea(QtWidgets.QWidget):
 
         if rect.contains(self.editor.viewport().rect()):
             self.updateLineNumberAreaWidth(0)
+        self.editor.repaint()
 
     def highlightCurrentLine(self): # TODO: higlight linenumberarea
         extraSelections = []
