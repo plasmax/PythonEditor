@@ -439,6 +439,7 @@ class AutoSaveManager(QtCore.QObject):
 
         # set the self.tabs to the last loaded
         self.tabs.setCurrentIndex(i)
+        # now that data is loaded, connect signals and load tab contents.
         self.tab_container.post_init_load_contents()
 
         # editor_count = 0
