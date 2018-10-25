@@ -87,7 +87,6 @@ class Tabs(QtWidgets.QTabBar):
         super(Tabs, self).__init__(*args)
         self.setStyleSheet(TAB_STYLESHEET)
         self.setMovable(True)
-        self.setDrawBase(True) # yeah not sure I need this
 
         self.setup_new_tab_btn()
 
@@ -140,11 +139,17 @@ class Tabs(QtWidgets.QTabBar):
 
     def __getitem__(self, name):
         """
-        Allow easy indexed access to
+        Allow easy lookup for
         the current tab's data.
         """
         index = self.currentIndex()
         return self.tabData(index)[name]
+
+    def get(self, name):
+        try:
+            return self[name]
+        except KeyError:
+            return None
 
     def __setitem__(self, name, value):
         """
@@ -219,31 +224,31 @@ class Tabs(QtWidgets.QTabBar):
         - it's probably faster if we only iterate over visible tabs.
         - How can this be used to write italic text?
         - we could change the x to a o like sublime
-        - ANTIALIASING PLEASEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
         """
         for i in range(self.count()-1):
             rect = self.tabRect(i)
 
-            if not self.rect().contains(rect):
+            rqt = self.tab_close_button_rect(i)
+            if not self.rect().contains(rqt):
                 # would be nice to optimise by setting
-                # a visible start-end
+                # a visible start-end at which to break
                 #        v        v
-                # -------[--------]--
+                # -------[-------]-------
                 continue
 
             x,y,r,t = rect.getCoords()
-            rqt = self.tab_close_button_rect(i)
 
             p = QtGui.QPainter()
             p.begin(self)
             p.setBrush(self.brush)
+            mouse_over = False
             if i == self.over_button:
                 if self.mouse_over_rect:
+                    mouse_over = True
                     brush = QtGui.QBrush(QtCore.Qt.gray)
                     p.setBrush(brush)
             p.setPen(None)
             p.setRenderHint(QtGui.QPainter.Antialiasing)
-            #p.drawEllipse(rqt)
 
             p.setPen(self.pen)
             self.pen.setWidth(2)
@@ -253,11 +258,24 @@ class Tabs(QtWidgets.QTabBar):
                     pen.setWidth(2)
                     p.setPen(pen)
 
-            a = 2
+            a = 3
+            # rqt.adjust(a,a,-a,-a)
+            rqt.adjust(0,3,0,-3)
 
-            rqt.adjust(a,a,-a,-a)
-            p.drawLine(rqt.bottomLeft(), rqt.topRight())
-            p.drawLine(rqt.topLeft(), rqt.bottomRight())
+            # make the shape square:
+            w = rqt.width()
+            h = rqt.height()
+            if w > h:
+                rqt.adjust(0,0, -abs(w-h), 0)
+            elif h > w:
+                rqt.adjust(0,0, 0, -abs(w-h))
+
+            saved = self.tabData(i).get('state') != 'not_saved'
+            if not saved and not mouse_over:
+                p.drawEllipse(rqt)
+            else:
+                p.drawLine(rqt.bottomLeft(), rqt.topRight())
+                p.drawLine(rqt.topLeft(), rqt.bottomRight())
             p.end()
 
     def paintEvent(self, e):
@@ -289,7 +307,7 @@ class Tabs(QtWidgets.QTabBar):
                     rqt = self.tab_close_button_rect(i)
                     if rqt.contains(pt):
                         print 'clicked close on tab %s %s' % (i, self.tabText(i))
-                        self.removeTab(i) # this should emit a close signal like the current tabwidget
+                        self.safe_remove_tab(i)
                         # if i >= self.count():
                         #     print 'this should '
                         #     self.setCurrentIndex(i-2)
@@ -364,6 +382,43 @@ class Tabs(QtWidgets.QTabBar):
                           QtWidgets.QTabBar.LeftSide,
                           None)
 
+    def safe_remove_tab(self, index):
+        """
+        Remove current tab if tab count is greater than 3 (so that the
+        last tab left open is not the new button tab, although a better
+        solution here is to open a new tab if the only tab left open is
+        the 'new tab' tab). Also emits a close signal which is used by the
+        autosave to determine if an editor's contents need saving.
+        """
+        if self.tabData(index).get('state') == 'not_saved':
+            raise NotImplementedError('ask if tab should be saved')
+            return
+
+        if self.count() < 3:
+            return
+        _index = self.currentIndex()
+
+        if self.tabData(index).get('new_tab') == True:
+            return # it's the [+] new tab button
+
+        """
+        # safeguard - this is where the user is asked if they want to save
+        # TODO: could be done via tab state instead, or put the dialog in here
+        self.closed_tab_signal.emit(editor)
+        # the below attribute may be altered
+        # by a slot connected with DirectConnection
+        if self.user_cancelled_tab_close:
+            return
+        """
+
+        tab_on_left = (index < _index)
+        last_tab_before_end = (_index == self.count()-2)
+
+        self.removeTab(index) # this should emit a close signal like the current tabwidget
+        if tab_on_left or last_tab_before_end:
+            _index -= 1
+        self.setCurrentIndex(_index)
+        self.tab_count = self.count()
 
 
 class TabContainer(QtWidgets.QWidget):
@@ -373,7 +428,7 @@ class TabContainer(QtWidgets.QWidget):
     """
     # for autosave purposes:
     reset_tab_signal = QtCore.Signal()
-    closed_tab_signal = QtCore.Signal(object)
+    closed_tab_signal = QtCore.Signal(object) # in case we receive a ctrl+shift+w signal to close the tab
     tab_switched_signal = QtCore.Signal(int, int, bool)
     contents_saved_signal = QtCore.Signal(object)
     tab_moved_signal = QtCore.Signal(object, int)
@@ -383,13 +438,28 @@ class TabContainer(QtWidgets.QWidget):
         self._layout = QtWidgets.QVBoxLayout(self)
         self.setLayout(self._layout)
 
+        self.tab_widget = QtWidgets.QWidget()
+        self.tab_widget_layout = QtWidgets.QHBoxLayout(self.tab_widget)
+        self.tab_widget_layout.setContentsMargins(0,0,0,0)
         self.tabs = Tabs()
+        self.tab_widget_layout.addWidget(self.tabs)
+        # add tab list button
+        self.corner_button = QtWidgets.QPushButton(':')
+        self.corner_button.setFixedSize(24, 24)
+        self.corner_button.setStyleSheet("border: 5px solid black")
+        self.tab_widget_layout.addWidget(self.corner_button)
+
         self.editor = editor.Editor(handle_shortcuts=False)
 
-        for widget in self.tabs, self.editor:
+        for widget in self.tab_widget, self.editor:
             self.layout().addWidget(widget)
 
     def post_init_load_contents(self):
+        """
+        Separate connecting Signals until after all tab data
+        is loaded in order to speed up initial loading.
+        Also setup editor with first tab text contents.
+        """
         self.tabs.setCurrentIndex(self.tabs.count())
         current_index = self.tabs.currentIndex()
         self.set_editor_contents(current_index)
@@ -403,10 +473,30 @@ class TabContainer(QtWidgets.QWidget):
 
         # this is something we're going to want only
         # when tab already set (and not when switching)
-        self.editor.modificationChanged.connect(self.save_text_in_tab)
+        # self.editor.modificationChanged.connect(self.save_text_in_tab)
         # self.editor.textChanged.connect(self.save_text_in_tab)
+        self.editor.post_key_pressed_signal.connect(self.save_text_in_tab)
         self.tabs.tabMoved.connect(self.tab_restrict_move,
                                 QtCore.Qt.DirectConnection)
+        self.corner_button.clicked.connect(self.show_tab_menu)
+
+    def show_tab_menu(self):
+        """
+        Show a list of tabs and go to the tab clicked.
+        """
+        menu = QtWidgets.QMenu()
+        from functools import partial
+        for i in range(self.tabs.count()):
+            tab_name = self.tabs.tabText(i)
+            if not tab_name.strip():
+                continue
+                # button = self.tabs.tabButton(i, QtWidgets.QTabBar.LeftSide)
+                # if not isinstance(button, TabButton):
+                #     continue
+                # tab_name = button.text()
+            action = partial(self.tabs.setCurrentIndex, i)
+            menu.addAction(tab_name, action)
+        menu.exec_(QtGui.QCursor().pos())
 
     def new_tab(self):
         pass
@@ -446,10 +536,13 @@ class TabContainer(QtWidgets.QWidget):
         Store the editor's current text
         in the current tab
         """
-        print 'changed'
+        print 'changed, saving text in tab. we want this to be the user entering text only!'
 
         if self.editor.uid == self.tabs['uuid']:
             self.tabs['text'] = self.editor.toPlainText()
+            if self.tabs.get('state') != 'not_saved':
+                self.tabs['state'] = 'not_saved'
+                self.tabs.repaint()
 
     @QtCore.Slot(int, int)
     def tab_restrict_move(self, from_index, to_index):
