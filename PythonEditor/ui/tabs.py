@@ -530,19 +530,31 @@ class TabContainer(QtWidgets.QWidget):
         self.editor.name = data['name']
         self.editor.uid = data['uuid']
         self.editor.path = data.get('path')
+        if self.tabs.get('cursor_pos') is not None:
+            cursor = self.editor.textCursor()
+            pos = self.tabs['cursor_pos']
+            cursor.setPosition(pos)
+            self.editor.setTextCursor(cursor)
 
     def save_text_in_tab(self):
         """
         Store the editor's current text
         in the current tab
         """
-        print 'changed, saving text in tab. we want this to be the user entering text only!'
+        # print 'changed, saving text in tab. we want this to be the user entering text only!'
 
         if self.editor.uid == self.tabs['uuid']:
-            self.tabs['text'] = self.editor.toPlainText()
             if self.tabs.get('state') != 'not_saved':
+                self.tabs['old_text'] = self.tabs['text']
                 self.tabs['state'] = 'not_saved'
                 self.tabs.repaint()
+            elif self.tabs.get('old_text') is not None:
+                if self.tabs['old_text'] == self.editor.toPlainText():
+                    self.tabs['state'] = 'saved'
+                    self.tabs.repaint()
+
+            self.tabs['text'] = self.editor.toPlainText()
+            self.tabs['cursor_pos'] = self.editor.textCursor().position()
 
     @QtCore.Slot(int, int)
     def tab_restrict_move(self, from_index, to_index):
