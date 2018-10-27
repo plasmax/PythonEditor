@@ -13,6 +13,14 @@ class LineNumberArea(QtWidgets.QWidget):
         self.editor = editor
         self.setupLineNumbers()
 
+    def setupLineNumbers(self):
+        self.editor.blockCountChanged.connect(self.updateLineNumberAreaWidth)
+        self.editor.updateRequest.connect(self.updateLineNumberArea, QtCore.Qt.DirectConnection)
+        self.editor.updateRequest.connect(self.resizeLineNo, QtCore.Qt.DirectConnection)
+        self.editor.cursorPositionChanged.connect(self.highlightCurrentLine)
+        self.updateLineNumberAreaWidth(0)
+        self.highlightCurrentLine()
+
     def sizeHint(self):
         return QtCore.QSize(self.lineNumberAreaWidth(), 0)
 
@@ -29,7 +37,14 @@ class LineNumberArea(QtWidgets.QWidget):
         while block.isValid() and (top <= event.rect().bottom()):
             if block.isVisible() and (bottom >= event.rect().top()):
                 number = str(blockNumber + 1)
-                mypainter.setPen(QtCore.Qt.darkGray)
+                colour = QtCore.Qt.darkGray
+                font = self.font()
+                if blockNumber == self.current_block:
+                    colour = QtCore.Qt.yellow
+                    font = QtGui.QFont(font)
+                    font.setBold(True)
+                mypainter.setFont(font)
+                mypainter.setPen(colour)
                 mypainter.drawText(0, top, self.width(), height,
                                    QtCore.Qt.AlignRight, number)
 
@@ -37,13 +52,6 @@ class LineNumberArea(QtWidgets.QWidget):
             top = bottom
             bottom = top + self.editor.blockBoundingRect(block).height()
             blockNumber += 1
-
-    def setupLineNumbers(self):
-        self.editor.blockCountChanged.connect(self.updateLineNumberAreaWidth)
-        self.editor.updateRequest.connect(self.updateLineNumberArea)
-        self.editor.updateRequest.connect(self.resizeLineNo)
-        self.editor.cursorPositionChanged.connect(self.highlightCurrentLine)
-        self.updateLineNumberAreaWidth(0)
 
     def lineNumberAreaWidth(self):
         digits = 1
@@ -58,7 +66,7 @@ class LineNumberArea(QtWidgets.QWidget):
     def updateLineNumberAreaWidth(self, _):
         self.editor.setViewportMargins(self.lineNumberAreaWidth(), 0, 0, 0)
 
-    def updateLineNumberArea(self, rect, dy): # BUG: causes flickering on scroll!
+    def updateLineNumberArea(self, rect, dy):
         if dy:
             self.editor.scroll(0, dy)
         else:
@@ -67,9 +75,8 @@ class LineNumberArea(QtWidgets.QWidget):
 
         if rect.contains(self.editor.viewport().rect()):
             self.updateLineNumberAreaWidth(0)
-        self.editor.repaint()
 
-    def highlightCurrentLine(self): # TODO: higlight linenumberarea
+    def highlightCurrentLine(self):
         extraSelections = []
 
         if not self.editor.isReadOnly():
@@ -90,6 +97,11 @@ class LineNumberArea(QtWidgets.QWidget):
             selection.cursor = self.editor.textCursor()
             selection.cursor.clearSelection()
             extraSelections.append(selection)
+
+            p = selection.cursor.position()
+            doc = self.editor.document()
+            self.current_block = doc.findBlock(p).blockNumber()
+
         self.editor.setExtraSelections(extraSelections)
 
     def resizeLineNo(self):
