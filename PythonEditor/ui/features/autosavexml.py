@@ -430,7 +430,7 @@ class AutoSaveManager(QtCore.QObject):
             data = s.attrib.copy()
             tab_name = name+' '*5
             # self.tabs.addTab(tab_name) # hax for enough space for close button :'(
-            self.tabs.new_tab(tab_name=tab_name)
+            self.tabs.new_tab(tab_name=' '*len(tab_name))
             path = data.get('path')
             if path is not None:
                 self.tabs.setTabToolTip(i, path) # and if this changes?
