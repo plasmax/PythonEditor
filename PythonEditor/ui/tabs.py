@@ -66,7 +66,7 @@ class Tabs(QtWidgets.QTabBar):
         self.setTabEnabled(0, False)
 
     @QtCore.Slot(str)
-    def new_tab(self, tab_name=None):
+    def new_tab(self, tab_name=None, tab_data={}):
         """
         Creates a new tab.
         """
@@ -79,12 +79,14 @@ class Tabs(QtWidgets.QTabBar):
 
         self.insertTab(index, tab_name)
         data = {
-            'uuid' : None,
-            'name' : tab_name,
-            'text' : '',
-            'path' : '',
-            'date' : '',
+            'uuid'  : None,
+            'name'  : tab_name,
+            'text'  : '',
+            'path'  : '',
+            'date'  : '',
+            'saved' : True,
         }
+        data.update(**tab_data)
 
         self.setTabData(index, data)
         self.setCurrentIndex(index)
@@ -151,7 +153,6 @@ class Tabs(QtWidgets.QTabBar):
                     self.mouse_over_rect = False
                     self.over_button = -1
                     self.repaint()
-
         return super(Tabs, self).event(event)
 
     def paint_close_button(self, event):
@@ -273,9 +274,10 @@ class Tabs(QtWidgets.QTabBar):
             if not saved and not mouse_over:
                 p.drawEllipse(rqt)
             else:
-                # p.drawLine(rqt.bottomLeft(), rqt.topRight())
-                # p.drawLine(rqt.topLeft(), rqt.bottomRight())
+                p.drawLine(rqt.bottomLeft(), rqt.topRight())
+                p.drawLine(rqt.topLeft(), rqt.bottomRight())
 
+                """ # haven't yet figured out close button positioning.
                 tc = QtWidgets.QStyle.PE_IndicatorTabClose
                 opt = QtWidgets.QStyleOption()
                 opt.initFrom(self)
@@ -290,12 +292,14 @@ class Tabs(QtWidgets.QTabBar):
                 opt.rect = rect
                 s = self.style()
                 s.drawPrimitive(tc, opt, p)
+                """
 
         p.end()
 
-    def ipaintEvent(self, e):
+    def paintEvent(self, e):
         super(Tabs, self).paintEvent(e)
         self.paint_close_button(e)
+        return # not currently painting own text
         rect = e.rect()
         visible_tabs = []
         for i in range(self.count()):
@@ -433,7 +437,7 @@ class Tabs(QtWidgets.QTabBar):
         """
         If clicking on close buttons
         """
-        if e.button() == QtCore.Qt.LeftButton:
+        if e.button() == QtCore.Qt.LeftButton: # this doesn't cover wacom...
             self.tab_pressed = True
             pt = e.pos()
             i = self.tabAt(pt)
@@ -473,7 +477,15 @@ class Tabs(QtWidgets.QTabBar):
             if self.pressedIndex != self.currentIndex():
                 self.pressedIndex = self.currentIndex()
             data = self.tabData(self.pressedIndex)
-            start_pos = data['dragStartPosition']
+
+            # when closing a tab, if the mouse is already pressed (e.g. in a tablet event)
+            # we'll need to reinstate the dragStartPosition.
+            try:
+                start_pos = data['dragStartPosition']
+            except KeyError:
+                data['dragStartPosition'] = event.pos()
+                start_pos = data['dragStartPosition']
+
             dragDistance = (event.pos().x() - start_pos.x())
             data['dragDistance'] = dragDistance
             self.setTabData(self.pressedIndex, data)
@@ -556,9 +568,10 @@ class Tabs(QtWidgets.QTabBar):
         the 'new tab' tab). Also emits a close signal which is used by the
         autosave to determine if an editor's contents need saving.
         """
-        if self.tabData(index).get('saved'):
+
+        if not self.tabData(index).get('saved'): # this is saved in tab, not autosaved (that will happen independently on a separate thread)
             raise NotImplementedError('ask if tab should be saved')
-            return
+            pass
 
         if self.count() < 3:
             return
@@ -611,6 +624,7 @@ class TabContainer(QtWidgets.QWidget):
         self.tab_widget_layout.addWidget(self.tabs)
         # add tab list button
         self.corner_button = QtWidgets.QPushButton(':')
+        self.corner_button.setContentsMargins(0,0,0,0)
         self.corner_button.setFixedSize(24, 24)
         self.corner_button.setStyleSheet("border: 5px solid black")
         self.tab_widget_layout.addWidget(self.corner_button)
