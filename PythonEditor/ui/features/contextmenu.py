@@ -265,6 +265,8 @@ class ContextMenu(QtCore.QObject):
         elif keyword == 'getattr':
             attrs = {attr: getattr(obj, attr) for attr in dir(obj)}
             pprint(attrs)
+        elif keyword == 'pprint':
+            print(obj)
 
     def menu_setup(self):
         import nuke
