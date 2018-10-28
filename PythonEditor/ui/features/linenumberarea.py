@@ -19,7 +19,7 @@ class LineNumberArea(QtWidgets.QWidget):
         self.editor.updateRequest.connect(self.resizeLineNo, QtCore.Qt.DirectConnection)
         self.editor.cursorPositionChanged.connect(self.highlightCurrentLine)
         self.updateLineNumberAreaWidth(0)
-        self.highlightCurrentLine()
+        # self.highlightCurrentLine()
 
     def sizeHint(self):
         return QtCore.QSize(self.lineNumberAreaWidth(), 0)
@@ -33,13 +33,17 @@ class LineNumberArea(QtWidgets.QWidget):
         top = blockGeo.translated(self.editor.contentOffset()).top()
         bottom = top + self.editor.blockBoundingRect(block).height()
 
+        p = self.editor.textCursor().position()
+        doc = self.editor.document()
+        current_block = doc.findBlock(p).blockNumber()
+
         height = self.editor.fontMetrics().height()
         while block.isValid() and (top <= event.rect().bottom()):
             if block.isVisible() and (bottom >= event.rect().top()):
                 number = str(blockNumber + 1)
                 colour = QtCore.Qt.darkGray
                 font = self.font()
-                if blockNumber == self.current_block:
+                if blockNumber == current_block:
                     colour = QtCore.Qt.yellow
                     font = QtGui.QFont(font)
                     font.setBold(True)
@@ -97,10 +101,6 @@ class LineNumberArea(QtWidgets.QWidget):
             selection.cursor = self.editor.textCursor()
             selection.cursor.clearSelection()
             extraSelections.append(selection)
-
-            p = selection.cursor.position()
-            doc = self.editor.document()
-            self.current_block = doc.findBlock(p).blockNumber()
 
         self.editor.setExtraSelections(extraSelections)
 
