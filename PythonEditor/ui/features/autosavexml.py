@@ -424,13 +424,23 @@ class AutoSaveManager(QtCore.QObject):
             autosaves.append((i, s))
             i += 1
 
+        standard_tabs = True
+        draw_own_close_btn = False
+        draw_own_tab = False
         # storing autosave into new tabs
         for i, s in autosaves:
             name = s.attrib.get('name')
             data = s.attrib.copy()
-            tab_name = name+' '*5
-            # self.tabs.addTab(tab_name) # hax for enough space for close button :'(
-            self.tabs.new_tab(tab_name=' '*len(tab_name))
+
+            if standard_tabs:
+                self.tabs.new_tab(tab_name=name)
+            elif draw_own_close_btn:
+                tab_name = name+' '*5
+                self.tabs.new_tab(tab_name=tab_name) # hax for enough space for close button :'(
+            elif draw_own_tab:
+                tab_name = name+' '*5
+                self.tabs.new_tab(tab_name=' '*len(tab_name))
+
             path = data.get('path')
             if path is not None:
                 self.tabs.setTabToolTip(i, path) # and if this changes?
@@ -441,6 +451,8 @@ class AutoSaveManager(QtCore.QObject):
         self.tabs.setCurrentIndex(i)
         # now that data is loaded, connect signals and load tab contents.
         self.tab_container.post_init_load_contents()
+        if standard_tabs:
+            self.tabs.setTabsClosable(True)
 
         # editor_count = 0
         # subscripts = sorted(subscripts, key=sort_by_index)
