@@ -33,11 +33,22 @@ class LineNumberArea(QtWidgets.QWidget):
         top = blockGeo.translated(self.editor.contentOffset()).top()
         bottom = top + self.editor.blockBoundingRect(block).height()
 
+        p = self.editor.textCursor().position()
+        doc = self.editor.document()
+        current_block = doc.findBlock(p).blockNumber()
+
         height = self.editor.fontMetrics().height()
         while block.isValid() and (top <= event.rect().bottom()):
             if block.isVisible() and (bottom >= event.rect().top()):
                 number = str(blockNumber + 1)
-                mypainter.setPen(QtCore.Qt.darkGray)
+                colour = QtCore.Qt.darkGray
+                font = self.font()
+                if blockNumber == current_block:
+                    colour = QtCore.Qt.yellow
+                    font = QtGui.QFont(font)
+                    font.setBold(True)
+                mypainter.setFont(font)
+                mypainter.setPen(colour)
                 mypainter.drawText(0, top, self.width(), height,
                                    QtCore.Qt.AlignRight, number)
 
@@ -90,6 +101,7 @@ class LineNumberArea(QtWidgets.QWidget):
             selection.cursor = self.editor.textCursor()
             selection.cursor.clearSelection()
             extraSelections.append(selection)
+
         self.editor.setExtraSelections(extraSelections)
 
     def resizeLineNo(self):
