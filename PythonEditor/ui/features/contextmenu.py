@@ -357,7 +357,7 @@ class ContextMenu(QtCore.QObject):
         self.selectedText = str(cursor.selectedText().encode('utf-8').strip())
 
         if self.selectedText != '':
-            for info in ['help', 'type', 'dir', 'len', 'getattr']:
+            for info in ['help', 'type', 'dir', 'len', 'getattr', 'pprint']:
                 text = self.selectedText
                 print_info = partial(self.printInfo,
                                      info, text=text)
