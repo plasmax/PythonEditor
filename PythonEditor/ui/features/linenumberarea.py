@@ -19,7 +19,7 @@ class LineNumberArea(QtWidgets.QWidget):
         self.editor.updateRequest.connect(self.resizeLineNo, QtCore.Qt.DirectConnection)
         self.editor.cursorPositionChanged.connect(self.highlightCurrentLine)
         self.updateLineNumberAreaWidth(0)
-        # self.highlightCurrentLine()
+        self.highlightCurrentLine()
 
     def sizeHint(self):
         return QtCore.QSize(self.lineNumberAreaWidth(), 0)
