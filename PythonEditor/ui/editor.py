@@ -336,3 +336,32 @@ class Editor(QtWidgets.QPlainTextEdit):
         if not self._features_initialised:
             self.init_features()
         super(Editor, self).showEvent(e)
+
+    def setPlainText(self, text):
+        """
+        Override original method to prevent
+        textChanged signal being emitted.
+        WARNING: textCursor can still be used
+        to setPlainText.
+        """
+        self.blockSignals(True)
+        super(Editor, self).setPlainText(text)
+        self.blockSignals(False)
+
+    def insertPlainText(self, text):
+        """
+        Override original method to prevent
+        textChanged signal being emitted.
+        """
+        self.blockSignals(True)
+        super(Editor, self).insertPlainText(text)
+        self.blockSignals(False)
+
+    def appendPlainText(self, text):
+        """
+        Override original method to prevent
+        textChanged signal being emitted.
+        """
+        self.blockSignals(True)
+        super(Editor, self).appendPlainText(text)
+        self.blockSignals(False)
