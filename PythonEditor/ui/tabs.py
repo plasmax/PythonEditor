@@ -9,6 +9,7 @@ TODO:
 
 import time
 import os
+import hashlib
 from Qt import QtWidgets, QtGui, QtCore
 from PythonEditor.ui.features import autosavexml
 from PythonEditor.ui import editor
@@ -153,7 +154,7 @@ class Tabs(QtWidgets.QTabBar):
 
         return super(Tabs, self).event(event)
 
-    def paint_close_button(self):
+    def paint_close_button(self, event):
         """
         Let's draw a tiny little x on the right
         that's our new close button. It's just two little lines! x
@@ -203,35 +204,43 @@ class Tabs(QtWidgets.QTabBar):
             style()->drawPrimitive(QStyle::PE_IndicatorTabClose, &opt, &p, this);
 
         """
+        rect = event.rect()
+        visible_tabs = []
         for i in range(self.count()-1):
+            if rect.intersects(self.tabRect(i)): # needs to look for left and right bounds
+                visible_tabs.append(i)
+
+        # for i in range(self.count()-1):
+        #     rect = self.tabRect(i)
+
+        #     """
+        #     # TODO: make buttons follow the tabs properly
+        #     # when moving. This should also take into account
+        #     # the tab that moves underneath
+        #     if self.tab_pressed and i == self.pressedIndex:
+        #         data = self.tabData(i)
+        #         if data.get('dragDistance') is not None:
+        #             dist = data['dragDistance']
+        #             mv = rect.x()+dist
+        #             rect.moveLeft(mv)
+        #     """
+
+        #     rqt = self.tab_close_button_rect(rect)
+        #     if not self.rect().contains(rqt):
+        #         # would be nice to optimise by setting
+        #         # a visible start-end at which to break
+        #         #        v       v
+        #         # -------[-------]-------
+        #         continue
+
+
+
+        p = QtGui.QPainter()
+        p.begin(self)
+        p.setBrush(self.brush)
+        for i in visible_tabs:
             rect = self.tabRect(i)
-
-            """
-            # TODO: make buttons follow the tabs properly
-            # when moving. This should also take into account
-            # the tab that moves underneath
-            if self.tab_pressed and i == self.pressedIndex:
-                data = self.tabData(i)
-                if data.get('dragDistance') is not None:
-                    dist = data['dragDistance']
-                    mv = rect.x()+dist
-                    rect.moveLeft(mv)
-            """
-
             rqt = self.tab_close_button_rect(rect)
-            if not self.rect().contains(rqt):
-                # would be nice to optimise by setting
-                # a visible start-end at which to break
-                #        v       v
-                # -------[-------]-------
-                continue
-
-
-            # x,y,r,t = rect.getCoords()
-
-            p = QtGui.QPainter()
-            p.begin(self)
-            p.setBrush(self.brush)
             mouse_over = False
             if i == self.over_button:
                 if self.mouse_over_rect:
@@ -260,35 +269,54 @@ class Tabs(QtWidgets.QTabBar):
             elif h > w:
                 rqt.adjust(0,0, 0, -abs(w-h))
 
-            saved = self.tabData(i).get('state') != 'not_saved'
+            saved = self.tabData(i).get('saved')
             if not saved and not mouse_over:
                 p.drawEllipse(rqt)
             else:
-                p.drawLine(rqt.bottomLeft(), rqt.topRight())
-                p.drawLine(rqt.topLeft(), rqt.bottomRight())
-            p.end()
+                # p.drawLine(rqt.bottomLeft(), rqt.topRight())
+                # p.drawLine(rqt.topLeft(), rqt.bottomRight())
 
-    def paintEvent(self, e):
+                tc = QtWidgets.QStyle.PE_IndicatorTabClose
+                opt = QtWidgets.QStyleOption()
+                opt.initFrom(self)
+                w = rect.width()
+                h = rect.height()
+                x,y,r,t = rect.getCoords()
+                # x,y,r,t = rect.getRect()
+                rect.setWidth(h)
+                rect.moveRight(x)
+                # rect.adjust(0,0,0,0)
+                # print rect
+                opt.rect = rect
+                s = self.style()
+                s.drawPrimitive(tc, opt, p)
+
+        p.end()
+
+    def ipaintEvent(self, e):
         super(Tabs, self).paintEvent(e)
-        self.paint_close_button()
+        self.paint_close_button(e)
         rect = e.rect()
         visible_tabs = []
         for i in range(self.count()):
-            if rect.contains(self.tabRect(i)):
+            if rect.intersects(self.tabRect(i)): # TODO: should get right or left extreme of tab
                 visible_tabs.append(i)
 
         p = QtGui.QPainter(self)
+        # p.begin(self)
         p.setPen(self.pen)
         p.setBrush(self.brush)
         for i in visible_tabs:
-            text = self.tabData(i)['name']
+            data = self.tabData(i)
+            text = data.get('name')
+            if text is None:
+                p.end()
+                return
             tab_rect = self.tabRect(i)
+            # font.setItalic() ?
+            # p.setFont()
             p.drawText(tab_rect, text)
-    #     print rect
-    #     i = self.tabAt(rect.center())
-    #     text = self.tabText(i)
-    #     # p.begin(self)
-    #     # p.end()
+        p.end()
 
     """
     # TEMP init values
@@ -528,7 +556,7 @@ class Tabs(QtWidgets.QTabBar):
         the 'new tab' tab). Also emits a close signal which is used by the
         autosave to determine if an editor's contents need saving.
         """
-        if self.tabData(index).get('state') == 'not_saved':
+        if self.tabData(index).get('saved'):
             raise NotImplementedError('ask if tab should be saved')
             return
 
@@ -608,12 +636,14 @@ class TabContainer(QtWidgets.QWidget):
         We probably want to run this after tabs are loaded.
         """
         self.tabs.currentChanged.connect(self.set_editor_contents)
+        self.editor.cursorPositionChanged.connect(self.store_cursor_position)
+        self.editor.selectionChanged.connect(self.store_selection)
 
         # this is something we're going to want only
         # when tab already set (and not when switching)
         # self.editor.modificationChanged.connect(self.save_text_in_tab)
-        # self.editor.textChanged.connect(self.save_text_in_tab)
-        self.editor.post_key_pressed_signal.connect(self.save_text_in_tab)
+        self.editor.textChanged.connect(self.save_text_in_tab)
+        # self.editor.post_key_pressed_signal.connect(self.save_text_in_tab)
         self.tabs.tabMoved.connect(self.tab_restrict_move,
                                 QtCore.Qt.DirectConnection)
         self.corner_button.clicked.connect(self.show_tab_menu)
@@ -664,31 +694,59 @@ class TabContainer(QtWidgets.QWidget):
         self.editor.name = data['name']
         self.editor.uid = data['uuid']
         self.editor.path = data.get('path')
+
         if self.tabs.get('cursor_pos') is not None:
             cursor = self.editor.textCursor()
             pos = self.tabs['cursor_pos']
             cursor.setPosition(pos)
             self.editor.setTextCursor(cursor)
 
+        if self.tabs.get('selection') is not None:
+            # TODO: this won't restore a selection that
+            # starts from below and selects upwards :( (yet)
+            has, start, end = self.tabs['selection']
+            if not has:
+                return
+            cursor = self.editor.textCursor()
+            cursor.setPosition(start, QtGui.QTextCursor.MoveAnchor)
+            cursor.setPosition(end, QtGui.QTextCursor.KeepAnchor)
+            self.editor.setTextCursor(cursor)
+
+    def store_cursor_position(self):
+        self.tabs['cursor_pos'] = self.editor.textCursor().position()
+
+    def store_selection(self):
+        tc = self.editor.textCursor()
+        self.tabs['selection'] = (tc.hasSelection(),
+                                  tc.selectionStart(),
+                                  tc.selectionEnd())
+
     def save_text_in_tab(self):
         """
         Store the editor's current text
-        in the current tab
+        in the current tab.
+        Strangely appears to be called twice on current editor's textChanged and
+        backspace key...
         """
         # print 'changed, saving text in tab. we want this to be the user entering text only!'
 
         if self.editor.uid == self.tabs['uuid']:
-            if self.tabs.get('state') != 'not_saved':
-                self.tabs['old_text'] = self.tabs['text']
-                self.tabs['state'] = 'not_saved'
+            if self.tabs.get('saved'):
+                # keep original text in case revert is required
+                self.tabs['original_text'] = self.tabs['text']
+                self.tabs['saved'] = False
                 self.tabs.repaint()
-            elif self.tabs.get('old_text') is not None:
-                if self.tabs['old_text'] == self.editor.toPlainText():
-                    self.tabs['state'] = 'saved'
+            elif self.tabs.get('original_text') is not None:
+                if self.tabs['original_text'] == self.editor.toPlainText():
+                    self.tabs['saved'] = True
                     self.tabs.repaint()
 
             self.tabs['text'] = self.editor.toPlainText()
-            self.tabs['cursor_pos'] = self.editor.textCursor().position()
+
+            # fun but currently unused
+            text = self.tabs['text']
+            self.tabs['hash'] = hashlib.sha1(text).hexdigest()
+            # print self.tabs['hash']
 
     @QtCore.Slot(int, int)
     def tab_restrict_move(self, from_index, to_index):
@@ -725,13 +783,6 @@ timer.setInterval(200)
 timer.start()
 timer.stop()
 """
-
-
-if __name__ == '__main__':
-    #testing!
-    tc = TabContainer()
-
-
 
 
     # # -------------------- AUTOSAVEXML ------------------ #
