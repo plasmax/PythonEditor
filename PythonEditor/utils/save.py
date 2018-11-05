@@ -17,14 +17,14 @@ def write_to_file(path, text):
             f.write(text.encode('utf-16'))
 
 
-def get_save_file_name(editor, title='Save Text As'):
+def get_save_file_name(title='Save Text As'):
     """
     Ask user where they would like to save.
 
     :return: Path user chose to save. None if user cancels.
     """
     path, _ = QtWidgets.QFileDialog.getSaveFileName(
-        editor,
+        None,
         title,
         constants.NUKE_DIR,
         selectedFilter='*.py')
@@ -35,36 +35,28 @@ def get_save_file_name(editor, title='Save Text As'):
     return path
 
 
-def save(editor):
+def save(text, path=None):
     """
-    Look for a file path property on the editor
-    and save the entire document to that file.
+    """
+    if path is None or not path.strip():
+        path = save_as(text)
 
-    Sets the read_only status of the editor to True,
-    meaning the autosave will consider it removable
-    if the tab is closed.
-    """
-    if not hasattr(editor, 'path'):
-        path = save_as(editor)
         if path is None:
             # User cancelled
             return
 
-    write_to_file(editor.path, editor.toPlainText())
-    editor.read_only = True
-    print('Saved', editor.path, sep=' ')
-    editor.contents_saved_signal.emit(editor)
-    return editor.path
+    write_to_file(path, text)
+    print('Saved', path, sep=' ')
+    return path
 
 
-def save_as(editor):
+def save_as(text):
     """
     Ask the user where they would like to save the document.
     """
-    path = get_save_file_name(editor, title='Save As')
+    path = get_save_file_name(title='Save As')
     if path:
-        editor.path = path
-        save(editor)
+        save(text, path)
     return path
 
 

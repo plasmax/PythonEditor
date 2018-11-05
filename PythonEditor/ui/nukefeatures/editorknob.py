@@ -8,7 +8,7 @@ class EditorKnob(Editor):
     """
     def __init__(self, node=None):
         super(EditorKnob, self).__init__(self)
-        self.textChanged.connect(self.valueChanged)
+        self.text_changed_signal.connect(self.valueChanged)
         self.node = node
         self.read()
 

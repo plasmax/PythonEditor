@@ -11,26 +11,25 @@ class IDE(QtWidgets.QWidget):
     """
     def __init__(self):
         super(IDE, self).__init__()
-        self._layout = QtWidgets.QHBoxLayout(self)
-        self._layout.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(QtWidgets.QHBoxLayout(self))
+        self.layout().setContentsMargins(0, 0, 0, 0)
         self.setObjectName('IDE')
         self.setWindowTitle('Python Editor')
         self.buildUI()
 
     def buildUI(self):
         self.pythonEditor = pythoneditor.PythonEditor(parent=self)
-        self._layout.addWidget(self.pythonEditor)
+        self.layout().addWidget(self.pythonEditor)
 
     def reload_package(self):
         """
-        Reloads the whole package, except for modules
-        in the not_reloadable list.
+        Reloads the whole package (except for this module),
+        in an order that does not cause errors.
         """
         self.pythonEditor.deleteLater()
         del self.pythonEditor
 
         not_reloadable = [
-                            'PythonEditor.ui.idetabs',
                             'PythonEditor.ui.pythoneditor',
                             'PythonEditor.ui.ide',
                             '__main__'

@@ -39,6 +39,7 @@ Traceback (most recent call last):
   File "<string>", line 62, in parse
   File "<string>", line 35, in parse
 cElementTree.ParseError: no element found: line 1, column 0
+- [x] Don't set QT_PREFERRED_BINDING if present.
 
 
 #### Testing
@@ -51,6 +52,7 @@ cElementTree.ParseError: no element found: line 1, column 0
 - [ ] Thoroughly test that documents in autosave are not updating other documents
 - [/] Autocomplete bug when typing inside list comprehension e.g. [nuke.selectedNodes] - partially fixed, doesn't
       autocomplete all names (and only completes every other character!)
+
 
 #### Features - parity
 - [x] Highlight line with error
@@ -95,6 +97,7 @@ cElementTree.ParseError: no element found: line 1, column 0
 - [ ] Goto Links in errors/regular paths in the editor
 - [ ] Hover over varibles to get definition goto, type info, short help()
 - [ ] Hover over paths in output window to get goto link
+
 
 #### General
 - [ ] Test moving TODO.md to github issues (not so great for local)

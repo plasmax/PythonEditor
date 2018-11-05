@@ -43,11 +43,15 @@ class PythonEditor(QtWidgets.QWidget):
         Loading the AutosaveManager will also load all the
         contents of the autosave into tabs.
         """
+        import time
+        start = time.time()
+
         sch = shortcuts.ShortcutHandler(self.tabs)
         sch.clear_output_signal.connect(self.terminal.clear)
         self.shortcuteditor = shortcuteditor.ShortcutEditor(sch)
         self.preferenceseditor = preferences.PreferencesEditor()
         self.filehandler = autosavexml.AutoSaveManager(self.tabs)
+        print('tabs loaded in %.3f seconds' % (time.time()-start))
 
     @property
     def editor(self):

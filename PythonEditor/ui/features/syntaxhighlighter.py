@@ -44,8 +44,8 @@ class Highlight(QtGui.QSyntaxHighlighter):
     """
 
     def __init__(self, document):
-
         super(Highlight, self).__init__(document)
+
         self.setObjectName('Highlight')
 
         theme = themes['Monokai Smooth']

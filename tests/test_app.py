@@ -26,8 +26,12 @@ if __name__ == '__main__':
     from PythonEditor.ui import ide
     from PythonEditor.ui.Qt import QtWidgets
 
+    # app = QtWidgets.QApplication.instance()
+    # print(app)
+    # print('aPLSDFSFOAISDFJ')
     try:
         app = QtWidgets.QApplication(sys.argv)
+        print(app)
     except RuntimeError:
         # for running inside and outside of Nuke
         app = QtWidgets.QApplication.instance()

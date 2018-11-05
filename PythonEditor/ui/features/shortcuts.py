@@ -21,42 +21,13 @@ class ShortcutHandler(QtCore.QObject):
         self.parent_widget = parent_widget
 
         if use_tabs:
-            self.tabs = parent_widget
-            # tss = self.tabs.tab_switched_signal
-            # tss.connect(self.tab_switch_handler)
-            self.set_editor()
+            self.tabs = parent_widget.tabs
+            self.editor = parent_widget.editor
         else:
             self.editor = parent_widget
-            self.connect_signals()
+
+        self.connect_signals()
         self.install_shortcuts()
-
-    @QtCore.Slot(int, int, bool)
-    def tab_switch_handler(self, previous, current, tabremoved):
-        """
-        On tab switch, disconnects previous
-        tab's signals before connecting the
-        new tab.
-        """
-        if not tabremoved:  # nothing's been deleted
-                            # so we need to disconnect
-                            # signals from previous editor
-            self.disconnect_signals()
-
-        self.set_editor()
-
-    def set_editor(self):
-        """
-        Sets the current editor
-        and connects signals.
-        """
-        # editor = self.tabs.currentWidget()
-        editor = self.tabs.editor
-        editor_changed = (True if not hasattr(self, 'editor')
-                          else self.editor != editor)
-        is_editor = editor.objectName() == 'Editor'
-        if is_editor and editor_changed:
-            self.editor = editor
-            self.connect_signals()
 
     def connect_signals(self):
         """ Connects the current editor's signals to this class """
@@ -76,16 +47,6 @@ class ShortcutHandler(QtCore.QObject):
         for signal, slot in pairs:
             name, _, handle = connect(editor, signal, slot)
             self._connections.append((name, slot))
-
-    def disconnect_signals(self):
-        """ Disconnects the current editor's signals from this class """
-        if not hasattr(self, 'editor'):
-            return
-        cx = self._connections
-        for name, slot in cx:
-            for x in range(self.editor.receivers(name)):
-                self.editor.disconnect(name, slot)
-        self._connections = []
 
     def install_shortcuts(self):
         """
@@ -128,7 +89,7 @@ class ShortcutHandler(QtCore.QObject):
         if hasattr(self, 'tabs'):
             tab_shortcuts = {
                         'Ctrl+Shift+N': self.tabs.new_tab,
-                        'Ctrl+Shift+W': self.tabs.close_current_tab,
+                        'Ctrl+Shift+W': self.tabs.remove_current_tab,
                         # 'Ctrl+Shift+T': notimp('reopen previous tab'),
                         }
             editor_shortcuts.update(tab_shortcuts)
@@ -401,12 +362,18 @@ class ShortcutHandler(QtCore.QObject):
         self.editor.insertPlainText('    ')
 
     def next_tab(self):
+        """
+        Switch to the next tab.
+        """
         if hasattr(self, 'tabs'):
             next_index = self.tabs.currentIndex()+1
-            if self.tabs.widget(next_index).objectName() == 'Editor':
+            if next_index <= self.tabs.count():
                 self.tabs.setCurrentIndex(next_index)
 
     def previous_tab(self):
+        """
+        Switch to the next tab.
+        """
         if hasattr(self, 'tabs'):
             self.tabs.setCurrentIndex(self.tabs.currentIndex()-1)
 

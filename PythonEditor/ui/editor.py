@@ -47,10 +47,11 @@ class Editor(QtWidgets.QPlainTextEdit):
     ctrl_enter_signal = QtCore.Signal()
     contents_saved_signal = QtCore.Signal(object)
     read_only_signal = QtCore.Signal(bool)
-    uid_signal = QtCore.Signal(str)
+    uuid_signal = QtCore.Signal(str)
 
     relay_clear_output_signal = QtCore.Signal()
     editingFinished = QtCore.Signal()
+    text_changed_signal = QtCore.Signal()
 
     def __init__(self, handle_shortcuts=True, uid=None, init_features=True):
         super(Editor, self).__init__()
@@ -62,14 +63,15 @@ class Editor(QtWidgets.QPlainTextEdit):
 
         if uid is None:
             uid = str(uuid.uuid4())
-        self._uid = uid
+        self._uuid = uid
 
         self._changed = False
         self.wait_for_autocomplete = False
         self._handle_shortcuts = handle_shortcuts
         self._features_initialised = False
 
-        self.textChanged.connect(self._handle_text_changed)
+        self.emit_text_changed = True
+        self.textChanged.connect(self._handle_textChanged)
 
         linenumberarea.LineNumberArea(self)
 
@@ -84,7 +86,14 @@ class Editor(QtWidgets.QPlainTextEdit):
             return
         self._features_initialised = True
 
+        # QSyntaxHighlighter causes textChanged to be emitted, which we don't want.
+        self.emit_text_changed = False
         syntaxhighlighter.Highlight(self.document())
+        def set_text_changed_enabled():
+            self.emit_text_changed = True
+        QtCore.QTimer.singleShot(0, set_text_changed_enabled)
+
+        # self.emit_text_changed = True
         self.contextmenu = contextmenu.ContextMenu(self)
 
         # TOOD: add a new autocompleter that uses DirectConnection.
@@ -97,71 +106,13 @@ class Editor(QtWidgets.QPlainTextEdit):
             self.shortcuteditor = shortcuteditor.ShortcutEditor(sch)
 
         self.selectionChanged.connect(self.highlight_same_words)
-        self.modificationChanged.connect(self._handle_modificationChanged)
-        self._read_only = False
 
-    @property
-    def uid(self):
-        """
-        Unique identifier for keeping track of
-        document and editor changes in autosave files.
-        """
-        return self._uid
-
-    @uid.setter
-    def uid(self, uid):
-        self.uid_signal.emit(uid)
-        self._uid = uid
-
-    @property
-    def name(self):
-        """
-        The name for the editor document.
-        Generally corresponds to a tab name and/or
-        file name.
-        """
-        return self._name
-
-    @name.setter
-    def name(self, name):
-        self._name = name
-
-    @property
-    def path(self):
-        """
-        A path to a file where the document
-        expects to be saved.
-        """
-        return self._path
-
-    @path.setter
-    def path(self, path):
-        self._path = path
-
-    @property
-    def read_only(self):
-        """
-        Returns True or False,
-        determining whether the editor is in
-        read-only mode or not. Should be disabled
-        when editing has begun.
-        TODO: is the existing readOnly property good enough for this?
-        """
-        return self._read_only
-
-    @read_only.setter
-    def read_only(self, state=False):
-        # TODO: set an indicator (italic text in sublime)
-        # to denote state
-        self._read_only = state
-        self.read_only_signal.emit(state)
-
-    @QtCore.Slot(bool)
-    def _handle_modificationChanged(self, changed):
-        self.read_only = not changed
-
-    def _handle_text_changed(self):
+    def _handle_textChanged(self):
         self._changed = True
+
+        # emit custom textChanged when desired.
+        if self.emit_text_changed:
+            self.text_changed_signal.emit()
 
     def setTextChanged(self, state=True):
         self._changed = state
@@ -332,11 +283,6 @@ class Editor(QtWidgets.QPlainTextEdit):
             return self.wheel_signal.emit(e)
         super(Editor, self).wheelEvent(e)
 
-    def showEvent(self, e):
-        if not self._features_initialised:
-            self.init_features()
-        super(Editor, self).showEvent(e)
-
     def setPlainText(self, text):
         """
         Override original method to prevent
@@ -344,24 +290,30 @@ class Editor(QtWidgets.QPlainTextEdit):
         WARNING: textCursor can still be used
         to setPlainText.
         """
-        self.blockSignals(True)
+        # self.blockSignals(True)
+        self.emit_text_changed = False
         super(Editor, self).setPlainText(text)
-        self.blockSignals(False)
+        self.emit_text_changed = True
+        # self.blockSignals(False)
 
     def insertPlainText(self, text):
         """
         Override original method to prevent
         textChanged signal being emitted.
         """
-        self.blockSignals(True)
+        # self.blockSignals(True)
+        self.emit_text_changed = False
         super(Editor, self).insertPlainText(text)
-        self.blockSignals(False)
+        self.emit_text_changed = True
+        # self.blockSignals(False)
 
     def appendPlainText(self, text):
         """
         Override original method to prevent
         textChanged signal being emitted.
         """
-        self.blockSignals(True)
+        # self.blockSignals(True)
+        self.emit_text_changed = False
         super(Editor, self).appendPlainText(text)
-        self.blockSignals(False)
+        self.emit_text_changed = True
+        # self.blockSignals(False)
