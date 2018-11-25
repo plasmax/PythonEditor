@@ -174,6 +174,10 @@ def remove_control_characters(s):
 
 
 def parsexml(element_name, path=AUTOSAVE_FILE):
+    """
+    Retrieve the root and a list of <element_name>
+    elements from a given xml file.
+    """
     if not create_autosave_file():
         return
 
@@ -238,6 +242,14 @@ def remove_empty_autosaves():
     writexml(root)
 
 
+def sort_by_index(subscript):
+    tab_index = subscript.attrib.get('tab_index')
+    try:
+        return int(tab_index)
+    except TypeError, ValueError:
+        return 1
+
+
 class AutoSaveManager(QtCore.QObject):
     """
     Simple xml text storage.
@@ -276,7 +288,7 @@ class AutoSaveManager(QtCore.QObject):
             return None
 
         self.setObjectName('AutoSaveManager')
-        self.timer_waiting = False
+        self.autosave_timer_waiting = False
         self.setup_save_timer(interval=1000) # TODO: hook this up
 
         self.tab_container = tabs
@@ -303,6 +315,12 @@ class AutoSaveManager(QtCore.QObject):
         cts.connect(self.remove_subscript)
         trs = tabs.tab_renamed_signal
         trs.connect(self.save_by_uuid)
+        tmv = tabs.tab_repositioned_signal
+        tmv.connect(self.update_tab_index)
+        tcc = tabs.currentChanged
+        tcc.connect(self.store_current_index)
+        # tmv = tabs.tabMoved
+        # tmv.connect(self.handle_tab_moved)
 
         # connect tab signals
         """
@@ -312,8 +330,6 @@ class AutoSaveManager(QtCore.QObject):
         rts.connect(self.clear_subscripts)
         css = tabs.contents_saved_signal
         css.connect(self.handle_document_save)
-        tmv = tabs.tab_moved_signal
-        tmv.connect(self.handle_tab_moved)
         """
 
     def setup_save_timer(self, interval=500):
@@ -322,9 +338,9 @@ class AutoSaveManager(QtCore.QObject):
         :param interval: autosave interval in milliseconds
         :type interval: int
         """
-        self.timer = QtCore.QTimer()
-        self.timer.setSingleShot(True)
-        self.timer.setInterval(interval)
+        self.autosave_timer = QtCore.QTimer()
+        self.autosave_timer.setSingleShot(True)
+        self.autosave_timer.setInterval(interval)
 
     def save_timer(self):
         """
@@ -335,19 +351,19 @@ class AutoSaveManager(QtCore.QObject):
         if not self.editor.toPlainText().strip():
             return self.autosave()
 
-        self.timer_waiting = True
-        if self.timer.isActive():
-            self.timer.stop()
+        self.autosave_timer_waiting = True
+        if self.autosave_timer.isActive():
+            self.autosave_timer.stop()
 
         self.setup_save_timer()
-        self.timer.timeout.connect(self.autosave_handler)
-        self.timer.start()
+        self.autosave_timer.timeout.connect(self.autosave_handler)
+        self.autosave_timer.start()
 
     def autosave_handler(self):
         """
         Autosave timeout triggers this.
         """
-        self.timer_waiting = False
+        self.autosave_timer_waiting = False
         self.autosave()
 
     def readfile(self, path):
@@ -387,14 +403,6 @@ class AutoSaveManager(QtCore.QObject):
         root, subscripts = parsexml('subscript')
         if len(subscripts) == 0:
             return
-
-        def sort_by_index(subscript):
-            tab_index = subscript.attrib.get('tab_index')
-            try:
-                return int(tab_index)
-            except TypeError, ValueError:
-                return 1
-
         subscripts = sorted(subscripts, key=sort_by_index)
 
         autosaves = []
@@ -419,7 +427,8 @@ class AutoSaveManager(QtCore.QObject):
             if standard_tabs:
                 self.tabs.new_tab(tab_name=name)
             elif draw_own_close_btn:
-                tab_name = name+' '*5
+                # tab_name = name+' '*5
+                tab_name = name
                 self.tabs.new_tab(tab_name=tab_name, tab_data=data) # hax for enough space for close button :'(
             elif draw_own_tab:
                 tab_name = name+' '*5
@@ -428,74 +437,15 @@ class AutoSaveManager(QtCore.QObject):
             path = data.get('path')
             if path is not None:
                 self.tabs.setTabToolTip(i, path) # and if this changes?
-            # tab_data = self.tabs.tabData(i)
-            # data = tab_data.update(**data)
-            # print(data['text'])
 
-            # self.tabs.setTabData(i, data)
+        root, index_elements = parsexml('current_index')
+        for index_element in index_elements:
+            index = int(index_element.text)
+            self.tabs.setCurrentIndex(index)
+            self.tab_container.set_editor_contents(index)
+            break
 
-        # set the self.tabs to the last loaded
-        self.tabs.setCurrentIndex(i)
-        # now that data is loaded, connect signals and load tab contents.
-        # self.tab_container.post_init_load_contents()
-        # if standard_tabs:
-        #     self.tabs.setTabsClosable(True)
-
-        # editor_count = 0
-        # subscripts = sorted(subscripts, key=sort_by_index)
-        # for s in subscripts:
-
-        #     if not s.text:
-        #         path = s.attrib.get('path')
-        #         if path is None:
-        #             root.remove(s)
-        #             continue
-        #         if not os.path.isfile(path):
-        #             root.remove(s)
-        #             continue
-        #         s.attrib['name'] = os.path.basename(path)
-
-        #     try:
-        #         tab_name = s.attrib['name']
-        #     except KeyError:
-        #         tab_name = None
-
-        #     editor = self.tabs.new_tab(tab_name=tab_name, init_features=False)
-        #     if 'uuid' in s.attrib:
-        #         editor.uuid = s.attrib['uuid']
-        #     else:
-        #         s.attrib['uuid'] = editor.uuid
-
-        #     if 'path' in s.attrib:
-        #         editor.path = s.attrib['path']
-        #     elif hasattr(editor, 'path'):
-        #         s.attrib['path'] = editor.path
-
-        #     if s.text:
-        #         editor.setPlainText(s.text)
-        #         editor.read_only = False
-        #     else:
-        #         self.editor = editor
-        #         self.readfile(path)
-
-        #     editor.tab_index = self.tabs.currentIndex()
-        #     editor_count += 1
-
-        # subscripts = self.update_tab_order(subscripts)
-
-        # if editor_count == 0:
-        #     self.tabs.new_tab()
-
-        # writexml(root)
-
-    def update_tab_order(self, subscripts):
-        uids = [(i, getattr(self.tabs.widget(i), 'uuid', None))
-                for i in range(self.tabs.count())]
-        for s in subscripts:
-            for i, uid in uids:
-                if s.attrib.get('uuid') == uid:
-                    s.attrib['tab_index'] = str(i)
-
+    lock = False
     def check_document_modified(self):
         """
         On focus in event, check the xml
@@ -503,27 +453,35 @@ class AutoSaveManager(QtCore.QObject):
         If there are, prompt the user to see
         if they want to update their tab.
         """
-        if self.timer_waiting:
+        return # this is too annoying. FIX! pops up on autocomplete :(
+        if self.lock:
+            # don't allow this to be called again before
+            # autosave is complete.
             return
 
         root, subscripts = parsexml('subscript')
 
         tabs = self.tabs
+        tab_uid = tabs['uuid']
+        editor_text = self.editor.toPlainText()
+
+        # find all subscripts with a
+        # matching uid for our current tab
         all_match = True
         not_matching = []
         for s in subscripts:
             if s.text is None:
                 continue
-
             uid = s.attrib.get('uuid')
-            if uid == tabs['uuid']:
-                editor_text = self.editor.toPlainText()
-                text_match = (s.text == editor_text)
-                name_match = (s.attrib.get('name') == tabs['name'])
+            if uid != tab_uid:
+                continue
 
-                if not all([text_match, name_match]):
-                    all_match = False
-                    not_matching.append((s, uid))
+            text_match = (s.text == editor_text)
+            name_match = (s.attrib.get('name') == tabs['name'])
+
+            if not all([text_match, name_match]):
+                all_match = False
+                not_matching.append((s, uid))
 
         if all_match:
             return
@@ -550,31 +508,45 @@ class AutoSaveManager(QtCore.QObject):
 
             name = s.attrib.get('name')
             msg = msg.format(tabs['name'], str(name))
-            question = QtWidgets.QMessageBox.question
-            reply = question(self.editor,
-                             'Document Mismatch Warning',
-                             msg,
-                             Yes,
-                             No)
-
+            ask = QtWidgets.QMessageBox.question
+            title = 'Load Autosave?'
+            reply = ask(self.editor, title, msg, Yes, No)
             if reply == Yes:
                 self.editor.setPlainText(s.text)
+                self.tabs['text'] == s.text
                 if name is not None:
                     index = self.tabs.currentIndex()
                     self.tabs.setTabText(index, name)
-            else:
-                s.text = self.editor.toPlainText()
-                writexml(root)
+            elif reply == No:
+                text = self.editor.toPlainText()
+                s.text = text
+                self.tabs['text'] == text
                 self.autosave()
-        self.lock = True
 
+        # give the autosave 500ms to complete
+        # before allowing comparison checks again
         self._timer = QtCore.QTimer()
-        self._timer.setInterval(500)
+        self._timer.setInterval(1500)
         self._timer.setSingleShot(True)
 
         def unlock(): self.lock = False
         self._timer.timeout.connect(unlock)
         self._timer.start()
+
+    def sync_tab_indices(self):
+        """
+        Synchronise the tab_index saved in <subscript>
+        elements and the tab indices of all tabs in the QTabBar.
+        """
+        root, subscripts = parsexml('subscript')
+        for i in range(self.tabs.count()):
+            data = self.tabs.tabData(i)
+            for s in subscripts:
+                if s.attrib.get('uuid') != data['uuid']:
+                    continue
+                s.attrib['tab_index'] = str(i)
+                break
+        writexml(root)
 
     @QtCore.Slot()
     def autosave(self):
@@ -591,30 +563,7 @@ class AutoSaveManager(QtCore.QObject):
             str(tabs.currentIndex()),
             tabs.get('path')
             )
-
-        # tabs = self.tabs
-
-        # root, subscripts = parsexml('subscript')
-
-        # found = False
-        # for s in subscripts:
-        #     if s.attrib.get('uuid') == tabs['uuid']:
-        #         found = True
-        #         sub = s
-        #         break
-        # else:
-        #     sub = ElementTree.Element('subscript')
-        #     root.append(sub)
-
-        # sub.attrib['uuid'] = tabs['uuid']
-        # sub.attrib['name'] = tabs['name']
-        # sub.text = tabs['text']
-        # sub.attrib['tab_index'] = str(tabs.currentIndex())
-
-        # if tabs.get('path'):
-        #     sub.attrib['path'] = tabs['path']
-
-        # writexml(root)
+        self.sync_tab_indices()
 
     @QtCore.Slot(str, str, str, str, object)
     def save_by_uuid(self, uid, name, text, index, path=None):
@@ -642,6 +591,37 @@ class AutoSaveManager(QtCore.QObject):
             sub.attrib['path'] = path
 
         writexml(root)
+
+    def store_current_index(self):
+        """
+        TODO: store a <currentindex> element
+        and then set the currentindex on readautosave (if present! backwards compat).
+        """
+        root, index_elements = parsexml('current_index')
+        if len(index_elements) == 0:
+            ci = ElementTree.Element('current_index')
+            root.append(ci)
+        else:
+            ci = index_elements[0]
+        ci.text = str(self.tabs.currentIndex())
+        writexml(root)
+
+    @QtCore.Slot(int, int)
+    def update_tab_index(self, from_index, to_index):
+        # return # I want to do this threaded.
+        for i in from_index, to_index:
+            data = self.tabs.tabData(i)
+            data['tab_index'] = i
+            self.tabs.setTabData(i, data) # don't like that we'e modifying tabdata here...
+            self.save_by_uuid(
+                data['uuid'],
+                data['name'],
+                data['text'],
+                str(i),
+                data.get('path')
+                )
+        self.store_current_index()
+        self.sync_tab_indices()
 
     @QtCore.Slot(object)
     def handle_document_save(self, editor):

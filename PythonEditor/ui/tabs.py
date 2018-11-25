@@ -28,10 +28,18 @@ from PythonEditor.ui import editor
 TAB_STYLESHEET = """
 QTabBar::tab {
     height: 24px;
-
-    //border-top-right-radius: -15px;
+    min-width: 100px;
 }
 /*
+    background-position: left;
+    min-width: 30ex;
+    border-top-right-radius: 15px;
+    padding-right: 24ex;
+    width: 120px;
+    width: 100px;
+    width: 500px;
+    //margin: 15px;
+    //border-top-right-radius: -15px;
 QTabBar::tab:selected {
     padding-right: 14px;
 }
@@ -39,13 +47,102 @@ QTabBar::tab:selected {
 """
 
 
+class CloseButton(QtWidgets.QAbstractButton):
+    close_clicked_signal = QtCore.Signal(QtCore.QPoint)
+    def __init__(self, parent=None):
+        super(CloseButton, self).__init__(parent=parent)
+        self.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.setToolTip('Close Tab')
+        self.resize(self.sizeHint())
+        self.tab_saved = False
+
+    def sizeHint(self):
+        self.ensurePolished()
+        width = self.style().pixelMetric(
+            QtWidgets.QStyle.PM_TabCloseIndicatorWidth, None, self)
+        height = self.style().pixelMetric(
+            QtWidgets.QStyle.PM_TabCloseIndicatorHeight, None, self)
+        return QtCore.QSize(width, height)
+
+    def enterEvent(self, event):
+        if self.isEnabled():
+            self.update()
+        super(CloseButton, self).enterEvent(event)
+
+    def leaveEvent(self, event):
+        if self.isEnabled():
+            self.update()
+        super(CloseButton, self).leaveEvent(event)
+
+    def mousePressEvent(self, event):
+        super(CloseButton, self).mousePressEvent(event)
+        parent_pos = self.mapToParent(event.pos())
+        self.close_clicked_signal.emit(parent_pos)
+
+    def paintEvent(self, event):
+        """
+        Adapted from qttabbar.cpp
+        """
+        p = QtGui.QPainter(self)
+        opt = QtWidgets.QStyleOption()
+        opt.initFrom(self)
+        opt.state |= QtWidgets.QStyle.State_AutoRaise
+        hovered = False
+        if self.isEnabled() and self.underMouse() and (not self.isChecked()) and (not self.isDown()):
+            hovered = True
+            opt.state |= QtWidgets.QStyle.State_Raised
+        if self.isChecked():
+            opt.state |= QtWidgets.QStyle.State_On
+        if self.isDown():
+            opt.state |= QtWidgets.QStyle.State_Sunken
+
+        if isinstance(self.parent(), QtWidgets.QTabBar):
+            tb = self.parent()
+            index = tb.currentIndex()
+            position = QtWidgets.QTabBar.ButtonPosition(
+                tb.style().styleHint(
+                QtWidgets.QStyle.SH_TabBar_CloseButtonPosition, opt, tb))
+            if (self == tb.tabButton(index, position)):
+                opt.state |= QtWidgets.QStyle.State_Selected
+
+        if self.tab_saved or hovered:
+            self.style().drawPrimitive(
+            QtWidgets.QStyle.PE_IndicatorTabClose, opt, p, self)
+        else:
+            font = p.font()
+            font.setPointSize(11)
+            p.setFont(font)
+            rect = self.rect()
+            rect.adjust(0,-1,0,0)
+
+            palette = self.palette()
+            """
+            brush = QtGui.QBrush(
+                QtGui.QColor(0.1, 0.1, 0.1, 1),
+                QtCore.Qt.SolidPattern
+                )
+            palette.setBrush(
+                QtGui.QPalette.ColorRole.Text,
+                brush
+                )
+            palette.setBrush(
+                QtGui.QPalette.ColorRole.BrightText,
+                brush
+                )
+            """
+
+            # set colour to darker (maybe adjust palette)
+            self.style().drawItemText(p, rect, 0, palette, True, unicode(' '+chr(7)))
+
+
+
 class Tabs(QtWidgets.QTabBar):
     """
     Make tabs fast by overriding the
     paintEvent to draw close buttons.
 
-    Tabs are also more useful, storing more data
-    which can be easily reached through this class.
+    Current tab data can be easily
+    indexed out of this class via Tabs[key].
     """
     pen = QtGui.QPen()
     brush = QtGui.QBrush()
@@ -53,18 +150,24 @@ class Tabs(QtWidgets.QTabBar):
     over_button = -1
 
     # for autosave purposes:
-    reset_tab_signal = QtCore.Signal()
+    # reset_tab_signal = QtCore.Signal()
     tab_close_signal = QtCore.Signal(str) # in case we receive a ctrl+shift+w signal to close the tab
-    tab_switched_signal = QtCore.Signal(int, int, bool)
-    contents_saved_signal = QtCore.Signal(object)
-    tab_moved_signal = QtCore.Signal(object, int)
+    # tab_switched_signal = QtCore.Signal(int, int, bool)
+    # contents_saved_signal = QtCore.Signal(object)
+    # tab_moved_signal = QtCore.Signal(object, int)
     tab_renamed_signal = QtCore.Signal(str, str, str, str, object)
+    tab_repositioned_signal = QtCore.Signal(int, int)
 
     def __init__(self, *args):
         super(Tabs, self).__init__(*args)
         self.tab_pressed = False
         self.setStyleSheet(TAB_STYLESHEET)
         self.setMovable(True)
+        self.setExpanding(False)
+
+        self.tab_close_button = close_button = CloseButton(self)
+        close_button.hide()
+        close_button.close_clicked_signal.connect(self.clicked_close)
 
     @QtCore.Slot(str)
     def new_tab(self, tab_name=None, tab_data={}):
@@ -75,16 +178,16 @@ class Tabs(QtWidgets.QTabBar):
 
         if (tab_name is None
                 or not tab_name):
-            tab_name = 'Tab {0}     '.format(index)
+            tab_name = 'Tab {0}'.format(index)
 
         self.insertTab(index, tab_name)
         data = {
-            'uuid'  :  str(uuid.uuid4()),
-            'name'  :  tab_name,
-            'text'  :  '',
-            'path'  :  '',
-            'date'  :  '',
-            'saved' :  False,
+            'uuid'  : str(uuid.uuid4()),
+            'name'  : tab_name,
+            'text'  : '',
+            'path'  : '',
+            'date'  : '',
+            'saved' : False,
         }
         data.update(**tab_data)
         self.setTabData(index, data)
@@ -122,332 +225,126 @@ class Tabs(QtWidgets.QTabBar):
         tab_data[name] = value
         return self.setTabData(index, tab_data)
 
-    def tab_close_button_rect(self, tab_rect):
+    def tab_only_rect(self):
         """
-        Return a rectangle for the tab close
-        button.
+        self.rect() without the <> buttons.
         """
-        # tab_rect = self.tabRect(i)
-        button_rect = QtCore.QRect(tab_rect)
-        w = tab_rect.right()-tab_rect.left()
-        o = 5
-        button_rect.adjust(w-25+o, 5, -15+o, -5)
-        # could force it to be always square here...
-        return button_rect
+        rect = self.rect()
+        lB, rB = [c for c in self.children() if isinstance(c, QtWidgets.QToolButton)]
+        side_button_width = lB.width()+rB.width()+15
+        rect.adjust(0,0, -side_button_width, 0)
+        return rect
 
-    def event(self, event):
-        """
-        Trigger button highlighting if
-        hovering over (x) close buttons
-        """
-        if event.type() == QtCore.QEvent.Type.HoverMove:
-            pt = event.pos()
-            i = self.tabAt(pt)
-            rect = self.tabRect(i)
+    def event(self, e):
+        try:
+            QE = QtCore.QEvent
+        except AttributeError:
+            return True
 
-            if rect.contains(pt):
-                rqt = self.tab_close_button_rect(rect)
-                if rqt.contains(pt):
-                    self.mouse_over_rect = True
-                    self.over_button = i
-                    self.repaint()
-                else:
-                    self.mouse_over_rect = False
-                    self.over_button = -1
-                    self.repaint()
-        return super(Tabs, self).event(event)
+        if e.type() in [QE.HoverEnter, QE.HoverMove, QE.HoverLeave, QE.Paint]:
+            self.handle_close_button_display(e)
 
-    def paint_close_button(self, event):
-        """
-        Let's draw a tiny little x on the right
-        that's our new close button. It's just two little lines! x
+        elif e.type() == QtCore.QEvent.ToolTip:
+            pos = self.mapFromGlobal(self.cursor().pos())
+            if self.rect().contains(pos):
+                i = self.tabAt(pos)
+                data = self.tabData(i)
+                if data is not None:
+                    path = data.get('path')
+                    if path:
+                        self.setTabToolTip(i, path)
+                    else:
+                        self.setTabToolTip(i, data.get('name'))
 
-        Notes:
-        - it's probably faster if we only iterate over visible tabs.
-        - How can this be used to write italic text?
+        return super(Tabs, self).event(e)
 
+    def handle_close_button_display(self, e):
 
-        # paint a real close button!
-        from Qt import QtCore, QtGui, QtWidgets
+        if self.tab_pressed:
+            if self.tab_close_button.isVisible():
+                self.tab_close_button.hide()
+            return
 
-        tc = QtWidgets.QStyle.PE_IndicatorTabClose
-        class W(QtWidgets.QWidget):
-            def paintEvent(self, event):
-                opt = QtWidgets.QStyleOption()
-                opt.initFrom(self)
-                p = QtGui.QPainter(self)
-                s = self.style()
-                s.drawPrimitive(tc, opt, p, self)
+        if e.type() == QtCore.QEvent.HoverEnter:
+            pos = e.pos()
+            self._hovered_index = i = self.tabAt(pos)
 
-        w = W()
-        w.show()
+            self.tab_close_button.show()
+            self.tab_close_button.raise_()
+            self.move_tab_close_button(pos)
 
-        from qtabbar.cpp:
-
-        def CloseButton::paintEvent(QPaintEvent *)
-
-            QPainter p(this);
-            QStyleOption opt;
-            opt.init(this);
-            opt.state |= QStyle::State_AutoRaise;
-            if (isEnabled() && underMouse() && !isChecked() && !isDown())
-                opt.state |= QStyle::State_Raised;
-            if (isChecked())
-                opt.state |= QStyle::State_On;
-            if (isDown())
-                opt.state |= QStyle::State_Sunken;
-
-            if (const QTabBar *tb = qobject_cast<const QTabBar *>(parent()))
-                int index = tb->currentIndex();
-                QTabBar::ButtonPosition position = (QTabBar::ButtonPosition)style()->styleHint(QStyle::SH_TabBar_CloseButtonPosition, 0, tb);
-                if (tb->tabButton(index, position) == this)
-                    opt.state |= QStyle::State_Selected;
-
-
-            style()->drawPrimitive(QStyle::PE_IndicatorTabClose, &opt, &p, this);
-
-        """
-        rect = event.rect()
-        visible_tabs = []
-        for i in range(self.count()):
-            if rect.intersects(self.tabRect(i)): # needs to look for left and right bounds
-                visible_tabs.append(i)
-
-        # for i in range(self.count()-1):
-        #     rect = self.tabRect(i)
-
-        #     """
-        #     # TODO: make buttons follow the tabs properly
-        #     # when moving. This should also take into account
-        #     # the tab that moves underneath
-        #     if self.tab_pressed and i == self.pressedIndex:
-        #         data = self.tabData(i)
-        #         if data.get('dragDistance') is not None:
-        #             dist = data['dragDistance']
-        #             mv = rect.x()+dist
-        #             rect.moveLeft(mv)
-        #     """
-
-        #     rqt = self.tab_close_button_rect(rect)
-        #     if not self.rect().contains(rqt):
-        #         # would be nice to optimise by setting
-        #         # a visible start-end at which to break
-        #         #        v       v
-        #         # -------[-------]-------
-        #         continue
-
-
-
-        p = QtGui.QPainter()
-        p.begin(self)
-        p.setBrush(self.brush)
-        for i in visible_tabs:
-            rect = self.tabRect(i)
-            rqt = self.tab_close_button_rect(rect)
-            mouse_over = False
-            if i == self.over_button:
-                if self.mouse_over_rect:
-                    mouse_over = True
-                    brush = QtGui.QBrush(QtCore.Qt.gray)
-                    p.setBrush(brush)
-            p.setPen(None)
-            p.setRenderHint(QtGui.QPainter.Antialiasing)
-
-            p.setPen(self.pen)
-            self.pen.setWidth(2)
-            if i == self.over_button:
-                if self.mouse_over_rect:
-                    pen = QtGui.QPen(QtCore.Qt.white)
-                    pen.setWidth(2)
-                    p.setPen(pen)
-
-            a = 3
-            rqt.adjust(0,a,0,-a)
-
-            # make the shape square:
-            w = rqt.width()
-            h = rqt.height()
-            if w > h:
-                rqt.adjust(0,0, -abs(w-h), 0)
-            elif h > w:
-                rqt.adjust(0,0, 0, -abs(w-h))
-
-            saved = self.tabData(i).get('saved')
-            if not saved and not mouse_over:
-                p.drawEllipse(rqt)
-            else:
-                # """
-                p.drawLine(rqt.bottomLeft(), rqt.topRight())
-                p.drawLine(rqt.topLeft(), rqt.bottomRight())
-                # """
-                """ # haven't yet figured out close button positioning.
-                tc = QtWidgets.QStyle.PE_IndicatorTabClose
-                opt = QtWidgets.QStyleOption()
-                opt.initFrom(self)
-                w = rect.width()
-                h = rect.height()
-                x,y,r,t = rect.getCoords()
-                # x,y,r,t = rect.getRect()
-                rect.setWidth(h)
-                rect.moveRight(x)
-                # rect.adjust(0,0,0,0)
-                # print rect
-                opt.rect = rect
-                s = self.style()
-                s.drawPrimitive(tc, opt, p)
-                """
-
-        p.end()
-
-    def paintEvent(self, e):
-        super(Tabs, self).paintEvent(e)
-        self.paint_close_button(e)
-        return # not currently painting own text
-        rect = e.rect()
-        visible_tabs = []
-        for i in range(self.count()):
-            if rect.intersects(self.tabRect(i)): # TODO: should get right or left extreme of tab
-                visible_tabs.append(i)
-
-        p = QtGui.QPainter(self)
-        # p.begin(self)
-        p.setPen(self.pen)
-        p.setBrush(self.brush)
-        for i in visible_tabs:
             data = self.tabData(i)
-            text = data.get('name')
-            if text is None:
-                p.end()
+            if data is not None:
+                tab_saved = data.get('saved')
+                self.tab_close_button.tab_saved = tab_saved
+
+        elif e.type() == QtCore.QEvent.HoverMove:
+            pos = e.pos()
+            i = self.tabAt(pos)
+            if i != self._hovered_index:
+                self.tab_close_button.show()
+                self.move_tab_close_button(pos)
+                self._hovered_index = i
+
+                data = self.tabData(i)
+                if data is not None:
+                    tab_saved = data.get('saved')
+                    self.tab_close_button.tab_saved = tab_saved
+
+        elif e.type() == QtCore.QEvent.HoverLeave:
+            self.tab_close_button.hide()
+
+        elif e.type() == QtCore.QEvent.Paint:
+
+            pos = self.mapFromGlobal(self.cursor().pos())
+
+            if not self.rect().contains(pos):
                 return
-            tab_rect = self.tabRect(i)
-            # font.setItalic() ?
-            # p.setFont()
-            p.drawText(tab_rect, text)
-        p.end()
 
-    """
-    # TEMP init values
-    paintWithOffsets = False
-    dragInProgress = False
-    tabList = []
-    verticalTabs = lambda shape: pass
-    """
-    def cpppaintEvent(self, e):
+            if not self.tab_only_rect().contains(pos):
+                return
+
+            i = self.tabAt(pos)
+            if (i != self._hovered_index):
+                self.move_tab_close_button(pos)
+                self._hovered_index = i
+
+            if self.tab_close_button.isVisible():
+                data = self.tabData(i)
+                if data is not None:
+                    tab_saved = data.get('saved')
+                    self.tab_close_button.tab_saved = tab_saved
+
+    def move_tab_close_button(self, pos):
+        i = self.tabAt(pos)
+        rect = self.tabRect(i)
+        btn = self.tab_close_button
+        x = rect.right()-btn.width()-2
+        y = rect.center().y()-(btn.height()/2)
+        if i != self.currentIndex():
+            y += 2
+        btn_pos = QtCore.QPoint(x, y)
+
+        btn.move(btn_pos)
+        btn.raise_()
+
+        if not self.tab_only_rect().contains(btn_pos):
+            btn.hide()
+        elif not self.tab_pressed:
+            btn.show()
+
+
+    def mousePressEvent(self, event):
         """
-        Pure reimplementation of
-        QTabBar::paintEvent from qtabbar.cpp
         """
-        # Q_D(QTabBar); # no idea
-        optTabBase = QtWidgets.QStyleOptionTabBarBase()
-        # no access to QTabBarPrivate
-        # QTabBarPrivate::initStyleBaseOption(&optTabBase, this, size());
-        p = QtWidgets.QStylePainter(self)
-
-        # initialise some values:
-        selected = -1
-        cutLeft = -1
-        cutRight = -1
-        vertical = False # TEMP
-
-        vertical = verticalTabs(self.shape()); # no verticalTabs
-        cutTabLeft = QtWidgets.QStyleOptionTab()
-        cutTabRight = QtWidgets.QStyleOptionTab()
-        selected = self.currentIndex()
-
-        if self.dragInProgress:
-            selected = self.pressedIndex
-        scrollRect = self.normalizedScrollRect()
-
-        for i in range(self.count()):
-            optTabBase.tabBarRect |= self.tabRect(i)
-
-        optTabBase.selectedTabRect = self.tabRect(selected)
-
-        if self.drawBase():
-            p.drawPrimitive(QtWidgets.QStyle.PE_FrameTabBarBase, optTabBase)
-
-        for i in range(self.count()):
-            tab = QtWidgets.QStyleOptionTab()
-            self.initStyleOption(tab, i)
-            if self.paintWithOffsets and self.tabList[i].dragOffset != 0:
-                if vertical:
-                    tab.rect.moveTop(tab.rect.y() + self.tabList[i].dragOffset)
-                else:
-                    tab.rect.moveLeft(tab.rect.x() + self.tabList[i].dragOffset)
-            if not tab.state and QtWidgets.QStyle.State_Enabled:
-                tab.palette.setCurrentColorGroup(QtGui.QPalette.Disabled);
-
-            # If this tab is partially obscured, make a note of it so that we can pass the information
-            # along when we draw the tear.
-            tabRect = self.tabList[i].rect
-            tabStart = tabRect.top() if vertical else tabRect.left()
-            tabEnd =  tabRect.bottom() if vertical else tabRect.right()
-            if tabStart < (scrollRect.left() + self.scrollOffset):
-                cutLeft = i
-                cutTabLeft = tab
-            elif tabEnd > (scrollRect.right() + self.scrollOffset):
-                cutRight = i
-                cutTabRight = tab
-
-            # Don't bother drawing a tab if the entire tab is outside of the visible tab bar.
-            out_of_width_bounds = not vertical and (tab.rect.right() < 0
-                                  or tab.rect.left() > self.width())
-            out_of_height_bounds = vertical and (tab.rect.bottom() < 0
-                                   or tab.rect.top() > self.height())
-            if out_of_width_bounds or out_of_height_bounds:
-                continue
-
-            optTabBase.tabBarRect |= tab.rect
-            if i == selected:
-                continue
-
-            p.drawControl(QtWidgets.QStyle.CE_TabBarTab, tab)
-
-        # Draw the selected tab last to get it "on top"
-        if selected >= 0:
-            tab = QtWidgets.QStyleOptionTab()
-            self.initStyleOption(tab, selected)
-            if self.paintWithOffsets and self.tabList[selected].dragOffset != 0:
-                if vertical:
-                    tab.rect.moveTop(tab.rect.y() + self.tabList[selected].dragOffset)
-                else:
-                    tab.rect.moveLeft(tab.rect.x() + self.tabList[selected].dragOffset)
-            if not self.dragInProgress:
-                p.drawControl(QtWidgets.QStyle.CE_TabBarTab, tab)
-            else:
-                taboverlap = self.style().pixelMetric(QtWidgets.QStyle.PM_TabBarTabOverlap, 0, self)
-                if self.verticalTabs(self.shape()):
-                    self.movingTab.setGeometry(tab.rect.adjusted(0, -taboverlap, 0, taboverlap))
-                else:
-                    self.movingTab.setGeometry(tab.rect.adjusted(-taboverlap, 0, taboverlap, 0))
-
-        # Only draw the tear indicator if necessary. Most of the time we don't need too.
-        if self.leftB.isVisible() and cutLeft >= 0:
-            cutTabLeft.rect = self.rect()
-            cutTabLeft.rect = self.style().subElementRect(QtWidgets.QStyle.SE_TabBarTearIndicatorLeft, cutTabLeft, self)
-            p.drawPrimitive(QtWidgets.QStyle.PE_IndicatorTabTearLeft, cutTabLeft)
-
-        if self.rightB.isVisible() and cutRight >= 0:
-            cutTabRight.rect = self.rect()
-            cutTabRight.rect = self.style().subElementRect(QtWidgets.QStyle.SE_TabBarTearIndicatorRight, cutTabRight, self)
-            p.drawPrimitive(QtWidgets.QStyle.PE_IndicatorTabTearRight, cutTabRight)
-
-    def mouseReleaseEvent(self, e):
-        self.tab_pressed = False
-        super(Tabs, self).mouseReleaseEvent(e)
-
-    def mousePressEvent(self, e):
-        """
-        If clicking on close buttons
-        """
-        if e.button() == QtCore.Qt.LeftButton: # this doesn't cover wacom...
+        if event.button() == QtCore.Qt.LeftButton: # this doesn't cover wacom... might need tabletPressEvent
             self.tab_pressed = True
-            pt = e.pos()
-            i = self.tabAt(pt)
+            pt = event.pos()
+            i = self.pressedIndex = self.start_move_index = self.tabAt(pt)
             data = self.tabData(i)
-            data['dragStartPosition'] = pt
-            self.setTabData(i, data)
-            self.pressedIndex = i
+            self.pressed_uid = data['uuid']
+            self.dragStartPosition = pt
+            # self.setTabData(i, data)
 
             # handle name edit still being visible
             if hasattr(self, 'name_edit'):
@@ -458,18 +355,8 @@ class Tabs(QtWidgets.QTabBar):
                 except RuntimeError: # likely that the lineedit has been deleted
                     del self.name_edit
 
-            # handle clicking on close button
-            for i in range(self.count()):
-                rect = self.tabRect(i)
-
-                if rect.contains(pt):
-                    rqt = self.tab_close_button_rect(rect)
-                    if rqt.contains(pt):
-                        self.removeTab(i)
-                        return
-
         # if not returned, handle clicking on tab
-        return super(Tabs, self).mousePressEvent(e)
+        return super(Tabs, self).mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
         """
@@ -478,32 +365,37 @@ class Tabs(QtWidgets.QTabBar):
         if self.count() == 0:
             return
         if event.buttons() == QtCore.Qt.LeftButton:
-            if self.pressedIndex != self.currentIndex():
+            if (not hasattr(self, 'pressedIndex')
+                or self.pressedIndex != self.currentIndex()):
                 self.pressedIndex = self.currentIndex()
             data = self.tabData(self.pressedIndex)
+            if data['uuid'] != self.pressed_uid:
+                print 'wrong tab!'
 
-            # when closing a tab, if the mouse is already pressed (e.g. in a tablet event)
-            # we'll need to reinstate the dragStartPosition.
-            try:
-                start_pos = data['dragStartPosition']
-            except KeyError:
-                data['dragStartPosition'] = event.pos()
-                start_pos = data['dragStartPosition']
+            # self.setTabData(self.pressedIndex, data)
 
-            dragDistance = (event.pos().x() - start_pos.x())
-            data['dragDistance'] = dragDistance
-            self.setTabData(self.pressedIndex, data)
-            # print(dragDistance)
-            # print self.pressedIndex
-            # print('WARNING: HAVE WE UPDATED self.pressedIndex?')
         super(Tabs, self).mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        self.tab_pressed = False
+        if event.button() == QtCore.Qt.LeftButton:
+            i = self.tabAt(event.pos())
+            if i == -1:
+                i = self.currentIndex()
+            if (i != self.start_move_index):
+                self.tab_repositioned_signal.emit(i, self.start_move_index)
+
+        elif event.button() == QtCore.Qt.RightButton:
+            print 'show close/save menu'
+
+        super(Tabs, self).mouseReleaseEvent(event)
 
     def mouseDoubleClickEvent(self, e):
         if e.button() == QtCore.Qt.LeftButton:
-            self.show_name_edit()
+            self.show_name_edit(e)
         return super(Tabs, self).mouseDoubleClickEvent(e)
 
-    def show_name_edit(self):
+    def show_name_edit(self, event):
         """
         Shows a QLineEdit widget where the tab
         text is, allowing renaming of tabs.
@@ -514,26 +406,34 @@ class Tabs(QtWidgets.QTabBar):
             del self.name_edit
             return
 
-        index = self.currentIndex()
-        button = self.tabButton(index, QtWidgets.QTabBar.LeftSide)
+        index = self.tabAt(event.pos())
+        rect = self.tabRect(index)
+
+        # index = self.currentIndex()
+        # button = self.tabButton(index, QtWidgets.QTabBar.LeftSide)
         label = self.tabText(index)
+        print label
 
         self.tab_text = label
         self.tab_index = index
-        self.setTabText(index, '')
+        # self.setTabText(index, '')
 
         self.name_edit = QtWidgets.QLineEdit(self)
-        rect = self.tabRect(index)
-        self.name_edit.resize(self.name_edit.width(), rect.height()-7)
+        # self.name_edit.resize(self.name_edit.width(), rect.height()-7)
+        self.name_edit.resize(rect.width(), rect.height()-7)
         self.name_edit.tab_index = index
         self.name_edit.tab_text = label
         self.name_edit.editingFinished.connect(self.rename_tab)
         self.name_edit.setText(label.strip())
         self.name_edit.selectAll()
+        self.name_edit.show()
+        self.name_edit.raise_()
+        p = rect.topLeft()
+        self.name_edit.move(p.x(), p.y()+5)
 
-        self.setTabButton(index,
-                          QtWidgets.QTabBar.LeftSide,
-                          self.name_edit)
+        # self.setTabButton(index,
+        #                   QtWidgets.QTabBar.LeftSide,
+        #                   self.name_edit)
 
         self.name_edit.setFocus(QtCore.Qt.MouseFocusReason)
 
@@ -555,7 +455,7 @@ class Tabs(QtWidgets.QTabBar):
         index = self.name_edit.tab_index
         button = self.tabButton(index, QtWidgets.QTabBar.LeftSide)
 
-        self.setTabText(index, label+' '*5)
+        self.setTabText(index, label)
         self.setTabButton(index,
                           QtWidgets.QTabBar.LeftSide,
                           None)
@@ -575,6 +475,15 @@ class Tabs(QtWidgets.QTabBar):
     @QtCore.Slot()
     def remove_current_tab(self):
         self.removeTab(self.currentIndex())
+
+    @QtCore.Slot(QtCore.QPoint)
+    def clicked_close(self, pos):
+        for i in range(self.count()):
+            rect = self.tabRect(i)
+            if rect.contains(pos):
+                label = self.tabText(i)
+                self.removeTab(i)
+                # print('removing tab %s' % label)
 
     def removeTab(self, index):
         """
@@ -653,14 +562,17 @@ class Tabs(QtWidgets.QTabBar):
         return True
 
 
-class TabContainer(QtWidgets.QWidget):
+class TabEditor(QtWidgets.QWidget):
     """
-    Replacement QTabWidget
-    Contains a QTabBar and a single Editor.
+    A psuedo-QTabWidget that contains
+    a QTabBar and a single Editor.
     """
+    # trigger_autosave_signal = QtCore.Signal(str)
 
-    def __init__(self):
-        super(TabContainer, self).__init__()
+    def __init__(self, parent=None):
+        super(TabEditor, self).__init__(parent)
+        if parent is not None:
+            self.setParent(parent)
 
         self.setLayout(QtWidgets.QVBoxLayout(self))
         self.layout().setContentsMargins(0,0,0,0)
@@ -672,8 +584,8 @@ class TabContainer(QtWidgets.QWidget):
         self.tab_widget_layout.addWidget(self.tabs)
 
         # add corner buttons
-        tb = self.tab_list_button = QtWidgets.QToolButton() # want ascii v down arrow
-        tb.setText('v') # you could set an icon instead of text
+        tb = self.tab_list_button = QtWidgets.QToolButton()
+        tb.setArrowType(QtCore.Qt.DownArrow)
         tb.setToolTip('Click for a list of tabs.')
         tb.setAutoRaise(True)
         tb.setFixedSize(24, 24)
@@ -698,21 +610,7 @@ class TabContainer(QtWidgets.QWidget):
         Give the autosave a chance to load all tabs
         before connecting signals between tabs and editor.
         """
-        QtCore.QTimer.singleShot(0, self.post_init_load_contents)
-
-    @QtCore.Slot()
-    def post_init_load_contents(self):
-        """
-        Separate connecting Signals until after all tab data
-        is loaded in order to speed up initial loading.
-        Also setup editor with first tab text contents.
-        """
-        count = self.tabs.count()
-        self.tabs.setCurrentIndex(count)
-        current_index = self.tabs.currentIndex()
-        if current_index != -1:
-            self.set_editor_contents(current_index)
-        self.connect_signals()
+        QtCore.QTimer.singleShot(0, self.connect_signals)
 
     def connect_signals(self):
         """
@@ -720,6 +618,7 @@ class TabContainer(QtWidgets.QWidget):
         """
         self.tabs.currentChanged.connect(self.set_editor_contents)
         self.tabs.tab_close_signal.connect(self.empty_if_last_tab_closed)
+
         self.editor.cursorPositionChanged.connect(self.store_cursor_position)
         self.editor.selectionChanged.connect(self.store_selection)
 
@@ -732,13 +631,20 @@ class TabContainer(QtWidgets.QWidget):
         Show a list of tabs and go to the tab clicked.
         """
         menu = QtWidgets.QMenu()
+        current_index = self.tabs.currentIndex()
         from functools import partial
         for i in range(self.tabs.count()):
             tab_name = self.tabs.tabText(i)
             if not tab_name.strip():
                 continue
-            action = partial(self.tabs.setCurrentIndex, i)
-            menu.addAction(tab_name, action)
+            func = partial(self.tabs.setCurrentIndex, i)
+            action = menu.addAction(tab_name, func) # TODO: highlight this tab!
+            if i == current_index:
+                font = action.font()
+                font.setBold(True)
+                font.setUnderline(True)
+                action.setFont(font)
+                menu.setActiveAction(action)
         menu.exec_(QtGui.QCursor().pos())
 
     def new_tab(self, tab_name=None, tab_data={}):
@@ -769,10 +675,8 @@ class TabContainer(QtWidgets.QWidget):
             path = data.get('path')
             if path is None:
                 text = ''
-                # raise Exception('editor with no text and no path!')
             elif not os.path.isfile(path):
                 text = ''
-                # raise Exception('editor with no text and invalid path!')
             else:
                 with open(path, 'r') as f:
                     text = f.read()
@@ -802,9 +706,10 @@ class TabContainer(QtWidgets.QWidget):
 
     def store_selection(self):
         tc = self.editor.textCursor()
-        self.tabs['selection'] = (tc.hasSelection(),
-                                  tc.selectionStart(),
-                                  tc.selectionEnd())
+        status = (tc.hasSelection(),
+                  tc.selectionStart(),
+                  tc.selectionEnd())
+        self.tabs['selection'] = status
 
     def save_text_in_tab(self):
         """
@@ -835,48 +740,195 @@ class TabContainer(QtWidgets.QWidget):
         # print self.tabs['hash']
 
 
-"""
-def check_changed():
-    # Check in with our little tab to see if anything's new.
-    root, subscripts = autosavexml.parsexml('subscript')
-    for s in subscripts:
-        if s.attrib.get('uuid') == tabs['uuid']:
-            if tabs['text'] != s.text:
-                print 'updated text!'
-                # this is where we'll actually write
-                # the text to the autosave
 
-timer = QtCore.QTimer()
-timer.timeout.connect(check_changed)
-timer.setInterval(200)
-timer.start()
-timer.stop()
+
+"""
+# QTabBar:tab{padding-right:50px;}
 """
 
+"""
+# QTabBar
+# {
+#     font: bold 9pt;
+# }
 
-    # # -------------------- AUTOSAVEXML ------------------ #
-    # # loading the autosave
-    # root, subscripts = autosavexml.parsexml('subscript')
+#  QTabBar::tab
+#  {
 
-    # autosaves = []
-    # i = 0
-    # for s in subscripts:
-    #     name = s.attrib.get('name')
-    #     if name is None:
-    #         continue
-    #     autosaves.append((i, s))
-    #     i += 1
+#     background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0,
+#                             stop: 0 #2A2A2A, stop: 0.4 #E1E1E1,
+#                             stop: 0.5 #E1E1E1, stop: 1.0 #2A2A2A);
+#     background-image: url(:/metal_toolbar);
+#     border-left: 1px solid #9B9B9B;
+#     border-right: 1px solid #9B9B9B;
+#     border-bottom: 1px solid #9B9B9B;
+#     border-top-color: #5A5A5A;
+#     min-width: 20ex;
+#     padding: 2px;
+#  }
+"""
 
-    # # storing autosave into new tabs
-    # for i, s in autosaves:
-    #     name = s.attrib.get('name')
-    #     data = s.attrib.copy()
-    #     tc.tabs.addTab(name+' '*5) # hax for enough space for close button :'(
-    #     path = data.get('path')
-    #     if path is not None:
-    #         tc.tabs.setTabToolTip(i, path) # and if this changes?
-    #     data['text'] = s.text # we might need to fetch the text from a file
-    #     tc.tabs.setTabData(i, data)
+"""
 
-    # # set the tc.tabs to the last loaded
-    # tc.tabs.setCurrentIndex(i)
+
+ QTabWidget::pane { /* The tab widget frame */
+     border-top: 2px solid #C2C7CB;
+ }
+
+ QTabWidget::tab-bar {
+     left: 5px; /* move to the right by 5px */
+ }
+
+ /* Style the tab using the tab sub-control. Note that
+     it reads QTabBar _not_ QTabWidget */
+ QTabBar::tab {
+     background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                 stop: 0 #E1E1E1, stop: 0.4 #DDDDDD,
+                                 stop: 0.5 #D8D8D8, stop: 1.0 #D3D3D3);
+     border: 2px solid #C4C4C3;
+     border-bottom-color: #C2C7CB; /* same as the pane color */
+     border-top-left-radius: 4px;
+     border-top-right-radius: 4px;
+     min-width: 8ex;
+     padding-right: 25px;
+ }
+
+ QTabBar::tab:selected, QTabBar::tab:hover {
+     background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                 stop: 0 #fafafa, stop: 0.4 #f4f4f4,
+                                 stop: 0.5 #e7e7e7, stop: 1.0 #fafafa);
+ }
+
+ QTabBar::tab:selected {
+     border-color: #9B9B9B;
+     border-bottom-color: #C2C7CB; /* same as pane color */
+ }
+
+ QTabBar::tab:!selected {
+     margin-top: 2px; /* make non-selected tabs look smaller */
+ }
+
+""".strip()
+
+ss = """
+ QTabWidget::pane { /* The tab widget frame */
+     border-top: 2px solid #C2C7CB;
+ }
+
+ QTabWidget::tab-bar {
+     left: 5px; /* move to the right by 5px */
+ }
+
+ /* Style the tab using the tab sub-control. Note that
+     it reads QTabBar _not_ QTabWidget */
+ QTabBar::tab {
+     background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                 stop: 0 #E1E1E1, stop: 0.4 #DDDDDD,
+                                 stop: 0.5 #D8D8D8, stop: 1.0 #D3D3D3);
+     border: 2px solid #C4C4C3;
+     border-bottom-color: #C2C7CB; /* same as the pane color */
+     border-top-left-radius: 4px;
+     border-top-right-radius: 4px;
+     min-width: 8ex;
+     padding-right: 25px;
+ }
+
+ QTabBar::tab:selected, QTabBar::tab:hover {
+     background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                 stop: 0 #fafafa, stop: 0.4 #f4f4f4,
+                                 stop: 0.5 #e7e7e7, stop: 1.0 #fafafa);
+ }
+
+ QTabBar::tab:selected {
+     border-color: #9B9B9B;
+     border-bottom-color: #C2C7CB; /* same as pane color */
+ }
+
+ QTabBar::tab:!selected {
+     margin-top: 2px; /* make non-selected tabs look smaller */
+ }
+
+""".strip()
+
+ss = """
+ QTabWidget::pane { /* The tab widget frame */
+     border-top: 2px solid #C2C7CB;
+ }
+
+ QTabWidget::tab-bar {
+     left: 5px; /* move to the right by 5px */
+ }
+
+ /* Style the tab using the tab sub-control. Note that
+     it reads QTabBar _not_ QTabWidget */
+ QTabBar::tab {
+     /*
+     background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                 stop: 0 #E1E1E1, stop: 0.4 #DDDDDD,
+                                 stop: 0.5 #D8D8D8, stop: 1.0 #D3D3D3);
+     */
+     border: 2px solid #C4C4C3;
+     border-bottom-color: #C2C7CB; /* same as the pane color */
+     border-top-left-radius: 4px;
+     border-top-right-radius: 4px;
+     min-width: 8ex;
+     padding-right: 25px;
+ }
+/*
+ QTabBar::tab:selected, QTabBar::tab:hover {
+     background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                 stop: 0 #fafafa, stop: 0.4 #f4f4f4,
+                                 stop: 0.5 #e7e7e7, stop: 1.0 #fafafa);
+ }
+*/
+ QTabBar::tab:selected {
+     border-color: #9B9B9B;
+     border-bottom-color: #C2C7CB; /* same as pane color */
+ }
+
+ QTabBar::tab:!selected {
+     margin-top: 2px; /* make non-selected tabs look smaller */
+ }
+
+ /* make use of negative margins for overlapping tabs */
+ QTabBar::tab:selected {
+     /* expand/overlap to the left and right by 4px */
+     margin-left: -4px;
+     margin-right: -4px;
+ }
+
+ QTabBar::tab:first:selected {
+     margin-left: 0; /* the first selected tab has nothing to overlap with on the left */
+ }
+
+ QTabBar::tab:last:selected {
+     margin-right: 0; /* the last selected tab has nothing to overlap with on the right */
+ }
+
+ QTabBar::tab:only-one {
+     margin: 0; /* if there is only one tab, we don't want overlapping margins */
+ }
+
+
+ QTabBar::tear {
+     image: url(tear_indicator.png);
+ }
+
+ QTabBar::scroller { /* the width of the scroll buttons */
+     width: 20px;
+ }
+
+ QTabBar QToolButton { /* the scroll buttons are tool buttons */
+     border-image: url(scrollbutton.png) 2;
+     border-width: 2px;
+ }
+
+ QTabBar QToolButton::right-arrow { /* the arrow mark in the tool buttons */
+     image: url(rightarrow.png);
+ }
+
+ QTabBar QToolButton::left-arrow {
+     image: url(leftarrow.png);
+ }
+
+""".strip()

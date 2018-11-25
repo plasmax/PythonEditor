@@ -1,5 +1,5 @@
 """
-Executed on Nuke startup to load PythonEditor.
+Can be executed on Nuke startup to load PythonEditor.
 """
 import sys
 import os

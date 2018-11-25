@@ -71,363 +71,351 @@
 #include <private/qt_mac_p.h>
 #include <private/qt_cocoa_helpers_mac_p.h>
 #endif
-from Qt.QtWidgets import QWidget
+# from Qt.QtWidgets import QWidget
+from Qt.QtWidgets import *
+from Qt.QtGui import *
+from Qt.QtCore import *
 
 class QMovableTabWidget(QWidget):
     def __init__(self, parent):
         super(QMovableTabWidget, self).__init__(parent)
 
     def setPixmap(self, pixmap):
-        m_pixmap = pixmap;
-        update();
+        m_pixmap = pixmap
+        self.update()
 
     def paintEvent(self, e):
-        Q_UNUSED(e);
-        QPainter p(this);
-        p.drawPixmap(0, 0, m_pixmap);
+        p = QPainter(self)
+        p.drawPixmap(0, 0, m_pixmap)
 
 
-def verticalTabs(shape): #QTabBar::Shape
+def verticalTabs(shape): # -> QTabBar::Shape
     return (shape == QTabBar.RoundedWest
            || shape == QTabBar.RoundedEast
            || shape == QTabBar.TriangularWest
            || shape == QTabBar.TriangularEast)
 
 
-def QTabBarPrivate::updateMacBorderMetrics()
+class QTabBarPrivate(): # should this be a QWidget or a QTabbar? what does QTabBarPrivate inherit from in c++ src?
 
-#if defined(Q_OS_OSX)
-    Q_Q(QTabBar);
-    # Extend the unified title and toolbar area to cover the tab bar iff
-    # 1) the tab bar is in document mode
-    # 2) the tab bar is directly below an "unified" area.
-    # The extending itself is done in the Cocoa platform plugin and Mac style,
-    # this function registers geometry and visibility state for the tab bar.
+    def updateMacBorderMetrics()
+        """
+        Extend the unified title and toolbar area to cover the tab bar iff
+        1) the tab bar is in document mode
+        2) the tab bar is directly below an "unified" area.
+        The extending itself is done in the Cocoa platform plugin and Mac style,
+        this function registers geometry and visibility state for the tab bar.
+        """
 
-    # Calculate geometry
-    int upper, lower;
-    if (documentMode)
-        QPoint windowPos = q->mapTo(q->window(), QPoint(0,0));
-        upper = windowPos.y();
-        int tabStripHeight = q->tabSizeHint(0).height();
-        int pixelTweak = -3;
-        lower = upper + tabStripHeight + pixelTweak;
-     else
-        upper = 0;
-        lower = 0;
+        # Calculate geometry
+        upper, lower = 0,0
 
-
-    QPlatformNativeInterface *nativeInterface = QGuiApplication::platformNativeInterface();
-    quintptr identifier = reinterpret_cast<quintptr>(q);
-
-    # Set geometry
-    QPlatformNativeInterface::NativeResourceForIntegrationFunction function =
-        nativeInterface->nativeResourceFunctionForIntegration("registerContentBorderArea");
-    if (!function)
-        return; # Not Cocoa platform plugin.
-    typedef def (*RegisterContentBorderAreaFunction)(QWindow *window, quintptr identifier, int upper, int lower);
-    (reinterpret_cast<RegisterContentBorderAreaFunction>(function))(q->window()->windowHandle(), identifier, upper, lower);
-
-    # Set visibility state
-    function = nativeInterface->nativeResourceFunctionForIntegration("setContentBorderAreaEnabled");
-    if (!function)
-        return;
-    typedef def (*SetContentBorderAreaEnabledFunction)(QWindow *window, quintptr identifier, bool enable);
-    (reinterpret_cast<SetContentBorderAreaEnabledFunction>(function))(q->window()->windowHandle(), identifier, q->isVisible());
-#endif
+        if self.documentMode:
+            windowPos = QPoint(self.mapTo(self.window(), QPoint(0,0)))
+            upper = windowPos.y()
+            tabStripHeight = self.tabSizeHint(0).height()
+            pixelTweak = -3
+            lower = upper + tabStripHeight + pixelTweak
+        else:
+            upper = 0
+            lower = 0
 
 
-r"""!
-    \internal
-    This is basically QTabBar::initStyleOption() but
-    without the expensive QFontMetrics::elidedText() call.
-r"""
+        QPlatformNativeInterface *nativeInterface = QGuiApplication.platformNativeInterface()
+        quintptr identifier = reinterpret_cast<quintptr>(q)
 
-def QTabBarPrivate::initBasicStyleOption(QStyleOptionTab *option, int tabIndex) const
+        # Set geometry
+        QPlatformNativeInterface::NativeResourceForIntegrationFunction function =
+            nativeInterface->nativeResourceFunctionForIntegration("registerContentBorderArea");
+        if (!function)
+            return; # Not Cocoa platform plugin.
+        typedef def (*RegisterContentBorderAreaFunction)(QWindow *window, quintptr identifier, int upper, int lower);
+        (reinterpret_cast<RegisterContentBorderAreaFunction>(function))(q->window()->windowHandle(), identifier, upper, lower);
 
-    Q_Q(const QTabBar);
-    const int totalTabs = tabList.size();
+        # Set visibility state
+        function = nativeInterface->nativeResourceFunctionForIntegration("setContentBorderAreaEnabled");
+        if (!function)
+            return;
+        typedef def (*SetContentBorderAreaEnabledFunction)(QWindow *window, quintptr identifier, bool enable);
+        (reinterpret_cast<SetContentBorderAreaEnabledFunction>(function))(q->window()->windowHandle(), identifier, q->isVisible());
+    #endif
 
-    if (!option || (tabIndex < 0 || tabIndex >= totalTabs))
-        return;
 
-    const QTabBarPrivate::Tab &tab = tabList.at(tabIndex);
-    option->initFrom(q);
-    option->state &= ~(QStyle::State_HasFocus | QStyle::State_MouseOver);
-    option->rect = q->tabRect(tabIndex);
-    const bool isCurrent = tabIndex == currentIndex;
-    option->row = 0;
-    if (tabIndex == pressedIndex)
-        option->state |= QStyle::State_Sunken;
-    if (isCurrent)
-        option->state |= QStyle::State_Selected;
-    if (isCurrent && q->hasFocus())
-        option->state |= QStyle::State_HasFocus;
-    if (!tab.enabled)
-        option->state &= ~QStyle::State_Enabled;
-    if (q->isActiveWindow())
-        option->state |= QStyle::State_Active;
-    if (!dragInProgress && option->rect == hoverRect)
-        option->state |= QStyle::State_MouseOver;
-    option->shape = shape;
-    option->text = tab.text;
+    r"""!
+        \internal
+        This is basically QTabBar::initStyleOption() but
+        without the expensive QFontMetrics::elidedText() call.
+    r"""
 
-    if (tab.textColor.isValid())
-        option->palette.setColor(q->foregroundRole(), tab.textColor);
-    option->icon = tab.icon;
-    option->iconSize = q->iconSize();  # Will get the default value then.
+    def initBasicStyleOption(QStyleOptionTab *option, int tabIndex) const
 
-    option->leftButtonSize = tab.leftWidget ? tab.leftWidget->size() : QSize();
-    option->rightButtonSize = tab.rightWidget ? tab.rightWidget->size() : QSize();
-    option->documentMode = documentMode;
+        Q_Q(const QTabBar);
+        const int totalTabs = tabList.size();
 
-    if (tabIndex > 0 && tabIndex - 1 == currentIndex)
-        option->selectedPosition = QStyleOptionTab::PreviousIsSelected;
-    else if (tabIndex + 1 < totalTabs && tabIndex + 1 == currentIndex)
-        option->selectedPosition = QStyleOptionTab::NextIsSelected;
-    else
-        option->selectedPosition = QStyleOptionTab::NotAdjacent;
+        if (!option || (tabIndex < 0 || tabIndex >= totalTabs))
+            return;
 
-    const bool paintBeginning = (tabIndex == 0) || (dragInProgress && tabIndex == pressedIndex + 1);
-    const bool paintEnd = (tabIndex == totalTabs - 1) || (dragInProgress && tabIndex == pressedIndex - 1);
-    if (paintBeginning)
-        if (paintEnd)
-            option->position = QStyleOptionTab::OnlyOneTab;
+        const QTabBarPrivate::Tab &tab = tabList.at(tabIndex);
+        option->initFrom(q);
+        option->state &= ~(QStyle::State_HasFocus | QStyle::State_MouseOver);
+        option->rect = q->tabRect(tabIndex);
+        const bool isCurrent = tabIndex == currentIndex;
+        option->row = 0;
+        if (tabIndex == pressedIndex)
+            option->state |= QStyle::State_Sunken;
+        if (isCurrent)
+            option->state |= QStyle::State_Selected;
+        if (isCurrent && q->hasFocus())
+            option->state |= QStyle::State_HasFocus;
+        if (!tab.enabled)
+            option->state &= ~QStyle::State_Enabled;
+        if (q->isActiveWindow())
+            option->state |= QStyle::State_Active;
+        if (!dragInProgress && option->rect == hoverRect)
+            option->state |= QStyle::State_MouseOver;
+        option->shape = shape;
+        option->text = tab.text;
+
+        if (tab.textColor.isValid())
+            option->palette.setColor(q->foregroundRole(), tab.textColor);
+        option->icon = tab.icon;
+        option->iconSize = q->iconSize();  # Will get the default value then.
+
+        option->leftButtonSize = tab.leftWidget ? tab.leftWidget->size() : QSize();
+        option->rightButtonSize = tab.rightWidget ? tab.rightWidget->size() : QSize();
+        option->documentMode = documentMode;
+
+        if (tabIndex > 0 && tabIndex - 1 == currentIndex)
+            option->selectedPosition = QStyleOptionTab::PreviousIsSelected;
+        else if (tabIndex + 1 < totalTabs && tabIndex + 1 == currentIndex)
+            option->selectedPosition = QStyleOptionTab::NextIsSelected;
         else
-            option->position = QStyleOptionTab::Beginning;
-     else if (paintEnd)
-        option->position = QStyleOptionTab::End;
-     else
-        option->position = QStyleOptionTab::Middle;
+            option->selectedPosition = QStyleOptionTab::NotAdjacent;
+
+        const bool paintBeginning = (tabIndex == 0) || (dragInProgress && tabIndex == pressedIndex + 1);
+        const bool paintEnd = (tabIndex == totalTabs - 1) || (dragInProgress && tabIndex == pressedIndex - 1);
+        if (paintBeginning)
+            if (paintEnd)
+                option->position = QStyleOptionTab::OnlyOneTab;
+            else
+                option->position = QStyleOptionTab::Beginning;
+         else if (paintEnd)
+            option->position = QStyleOptionTab::End;
+         else
+            option->position = QStyleOptionTab::Middle;
 
 
-#if QT_CONFIG(tabwidget)
-    if (const QTabWidget *tw = qobject_cast<const QTabWidget *>(q->parentWidget()))
-        option->features |= QStyleOptionTab::HasFrame;
-        if (tw->cornerWidget(Qt::TopLeftCorner) || tw->cornerWidget(Qt::BottomLeftCorner))
-            option->cornerWidgets |= QStyleOptionTab::LeftCornerWidget;
-        if (tw->cornerWidget(Qt::TopRightCorner) || tw->cornerWidget(Qt::BottomRightCorner))
-            option->cornerWidgets |= QStyleOptionTab::RightCornerWidget;
+    #if QT_CONFIG(tabwidget)
+        if (const QTabWidget *tw = qobject_cast<const QTabWidget *>(q->parentWidget()))
+            option->features |= QStyleOptionTab::HasFrame;
+            if (tw->cornerWidget(Qt::TopLeftCorner) || tw->cornerWidget(Qt::BottomLeftCorner))
+                option->cornerWidgets |= QStyleOptionTab::LeftCornerWidget;
+            if (tw->cornerWidget(Qt::TopRightCorner) || tw->cornerWidget(Qt::BottomRightCorner))
+                option->cornerWidgets |= QStyleOptionTab::RightCornerWidget;
 
-#endif
-
-
-r"""!
-    Initialize \a option with the values from the tab at \a tabIndex. This method
-    is useful for subclasses when they need a QStyleOptionTab,
-    but don't want to fill in all the information themselves.
-
-    \sa QStyleOption::initFrom(), QTabWidget::initStyleOption()
-r"""
-def QTabBar::initStyleOption(QStyleOptionTab *option, int tabIndex) const
-
-    Q_D(const QTabBar);
-    d->initBasicStyleOption(option, tabIndex);
-
-    QRect textRect = style()->subElementRect(QStyle::SE_TabBarTabText, option, this);
-    option->text = fontMetrics().elidedText(option->text, d->elideMode, textRect.width(),
-                        Qt::TextShowMnemonic);
+    #endif
 
 
-r"""!
-    \class QTabBar
-    \brief The QTabBar class provides a tab bar, e.g. for use in tabbed dialogs.
+class QTabBar(QWidget):
+    r"""!
+        \class QTabBar
+        \brief The QTabBar class provides a tab bar, e.g. for use in tabbed dialogs.
 
-    \ingroup basicwidgets
-    \inmodule QtWidgets
+        \ingroup basicwidgets
+        \inmodule QtWidgets
 
-    QTabBar is straightforward to use; it draws the tabs using one of
-    the predefined \lQTabBar::Shapeshapes, and emits a
-    signal when a tab is selected. It can be subclassed to tailor the
-    look and feel. Qt also provides a ready-made \lQTabWidget.
+        QTabBar is straightforward to use; it draws the tabs using one of
+        the predefined \lQTabBar::Shapeshapes, and emits a
+        signal when a tab is selected. It can be subclassed to tailor the
+        look and feel. Qt also provides a ready-made \lQTabWidget.
 
-    Each tab has a tabText(), an optional tabIcon(), an optional
-    tabToolTip(), optional tabWhatsThis() and optional tabData().
-    The tabs's attributes can be changed with setTabText(), setTabIcon(),
-    setTabToolTip(), setTabWhatsThis and setTabData(). Each tabs can be
-    enabled or disabled individually with setTabEnabled().
+        Each tab has a tabText(), an optional tabIcon(), an optional
+        tabToolTip(), optional tabWhatsThis() and optional tabData().
+        The tabs's attributes can be changed with setTabText(), setTabIcon(),
+        setTabToolTip(), setTabWhatsThis and setTabData(). Each tabs can be
+        enabled or disabled individually with setTabEnabled().
 
-    Each tab can display text in a distinct color. The current text color
-    for a tab can be found with the tabTextColor() function. Set the text
-    color for a particular tab with setTabTextColor().
+        Each tab can display text in a distinct color. The current text color
+        for a tab can be found with the tabTextColor() function. Set the text
+        color for a particular tab with setTabTextColor().
 
-    Tabs are added using addTab(), or inserted at particular positions
-    using insertTab(). The total number of tabs is given by
-    count(). Tabs can be removed from the tab bar with
-    removeTab(). Combining removeTab() and insertTab() allows you to
-    move tabs to different positions.
+        Tabs are added using addTab(), or inserted at particular positions
+        using insertTab(). The total number of tabs is given by
+        count(). Tabs can be removed from the tab bar with
+        removeTab(). Combining removeTab() and insertTab() allows you to
+        move tabs to different positions.
 
-    The \l shape property defines the tabs' appearance. The choice of
-    shape is a matter of taste, although tab dialogs (for preferences
-    and similar) invariably use \l RoundedNorth.
-    Tab controls in windows other than dialogs almost
-    always use either \l RoundedSouth or \l TriangularSouth. Many
-    spreadsheets and other tab controls in which all the pages are
-    essentially similar use \l TriangularSouth, whereas \l
-    RoundedSouth is used mostly when the pages are different (e.g. a
-    multi-page tool palette). The default in QTabBar is \l
-    RoundedNorth.
+        The \l shape property defines the tabs' appearance. The choice of
+        shape is a matter of taste, although tab dialogs (for preferences
+        and similar) invariably use \l RoundedNorth.
+        Tab controls in windows other than dialogs almost
+        always use either \l RoundedSouth or \l TriangularSouth. Many
+        spreadsheets and other tab controls in which all the pages are
+        essentially similar use \l TriangularSouth, whereas \l
+        RoundedSouth is used mostly when the pages are different (e.g. a
+        multi-page tool palette). The default in QTabBar is \l
+        RoundedNorth.
 
-    The most important part of QTabBar's API is the currentChanged()
-    signal.  This is emitted whenever the current tab changes (even at
-    startup, when the current tab changes from 'none'). There is also
-    a slot, setCurrentIndex(), which can be used to select a tab
-    programmatically. The function currentIndex() returns the index of
-    the current tab, \l count holds the number of tabs.
+        The most important part of QTabBar's API is the currentChanged()
+        signal.  This is emitted whenever the current tab changes (even at
+        startup, when the current tab changes from 'none'). There is also
+        a slot, setCurrentIndex(), which can be used to select a tab
+        programmatically. The function currentIndex() returns the index of
+        the current tab, \l count holds the number of tabs.
 
-    QTabBar creates automatic mnemonic keys in the manner of QAbstractButton;
-    e.g. if a tab's label is "\&Graphics", Alt+G becomes a shortcut
-    key for switching to that tab.
+        QTabBar creates automatic mnemonic keys in the manner of QAbstractButton;
+        e.g. if a tab's label is "\&Graphics", Alt+G becomes a shortcut
+        key for switching to that tab.
 
-    The following virtual functions may need to be reimplemented in
-    order to tailor the look and feel or store extra data with each
-    tab:
+        The following virtual functions may need to be reimplemented in
+        order to tailor the look and feel or store extra data with each
+        tab:
 
-    \list
-    \li tabSizeHint() calcuates the size of a tab.
-    \li tabInserted() notifies that a new tab was added.
-    \li tabRemoved() notifies that a tab was removed.
-    \li tabLayoutChange() notifies that the tabs have been re-laid out.
-    \li paintEvent() paints all tabs.
-    \endlist
+        \list
+        \li tabSizeHint() calcuates the size of a tab.
+        \li tabInserted() notifies that a new tab was added.
+        \li tabRemoved() notifies that a tab was removed.
+        \li tabLayoutChange() notifies that the tabs have been re-laid out.
+        \li paintEvent() paints all tabs.
+        \endlist
 
-    For subclasses, you might also need the tabRect() functions which
-    returns the visual geometry of a single tab.
+        For subclasses, you might also need the tabRect() functions which
+        returns the visual geometry of a single tab.
 
-    \table 100%
-    \row \li \inlineimage fusion-tabbar.png Screenshot of a Fusion style tab bar
-         \li A tab bar shown in the \lQt Widget GalleryFusion widget style.
-    \row \li \inlineimage fusion-tabbar-truncated.png Screenshot of a truncated Fusion tab bar
-         \li A truncated tab bar shown in the Fusion widget style.
-    \endtable
+        \table 100%
+        \row \li \inlineimage fusion-tabbar.png Screenshot of a Fusion style tab bar
+             \li A tab bar shown in the \lQt Widget GalleryFusion widget style.
+        \row \li \inlineimage fusion-tabbar-truncated.png Screenshot of a truncated Fusion tab bar
+             \li A truncated tab bar shown in the Fusion widget style.
+        \endtable
 
-    \sa QTabWidget
-r"""
+        \sa QTabWidget
+    r"""
 
-r"""!
-    \enum QTabBar::Shape
+    r"""!
+        \enum QTabBar::Shape
 
-    This enum type lists the built-in shapes supported by QTabBar. Treat these
-    as hints as some styles may not render some of the shapes. However,
-    position should be honored.
+        This enum type lists the built-in shapes supported by QTabBar. Treat these
+        as hints as some styles may not render some of the shapes. However,
+        position should be honored.
 
-    \value RoundedNorth  The normal rounded look above the pages
+        \value RoundedNorth  The normal rounded look above the pages
 
-    \value RoundedSouth  The normal rounded look below the pages
+        \value RoundedSouth  The normal rounded look below the pages
 
-    \value RoundedWest  The normal rounded look on the left side of the pages
+        \value RoundedWest  The normal rounded look on the left side of the pages
 
-    \value RoundedEast  The normal rounded look on the right side the pages
+        \value RoundedEast  The normal rounded look on the right side the pages
 
-    \value TriangularNorth  Triangular tabs above the pages.
+        \value TriangularNorth  Triangular tabs above the pages.
 
-    \value TriangularSouth  Triangular tabs similar to those used in
-    the Excel spreadsheet, for example
+        \value TriangularSouth  Triangular tabs similar to those used in
+        the Excel spreadsheet, for example
 
-    \value TriangularWest  Triangular tabs on the left of the pages.
+        \value TriangularWest  Triangular tabs on the left of the pages.
 
-    \value TriangularEast  Triangular tabs on the right of the pages.
-r"""
+        \value TriangularEast  Triangular tabs on the right of the pages.
+    r"""
 
-r"""!
-    \fn def QTabBar::currentChanged(int index)
+    r"""!
+        \fn def QTabBar::currentChanged(int index)
 
-    This signal is emitted when the tab bar's current tab changes. The
-    new current has the given \a index, or -1 if there isn't a new one
-    (for example, if there are no tab in the QTabBar)
-r"""
+        This signal is emitted when the tab bar's current tab changes. The
+        new current has the given \a index, or -1 if there isn't a new one
+        (for example, if there are no tab in the QTabBar)
+    r"""
 
-r"""!
-    \fn def QTabBar::tabCloseRequested(int index)
-    \since 4.5
+    r"""!
+        \fn def QTabBar::tabCloseRequested(int index)
+        \since 4.5
 
-    This signal is emitted when the close button on a tab is clicked.
-    The \a index is the index that should be removed.
+        This signal is emitted when the close button on a tab is clicked.
+        The \a index is the index that should be removed.
 
-    \sa setTabsClosable()
-r"""
+        \sa setTabsClosable()
+    r"""
 
-r"""!
-    \fn def QTabBar::tabMoved(int from, int to)
-    \since 4.5
+    r"""!
+        \fn def QTabBar::tabMoved(int from, int to)
+        \since 4.5
 
-    This signal is emitted when the tab has moved the tab
-    at index position \a from to index position \a to.
+        This signal is emitted when the tab has moved the tab
+        at index position \a from to index position \a to.
 
-    note: QTabWidget will automatically move the page when
-    this signal is emitted from its tab bar.
+        note: QTabWidget will automatically move the page when
+        this signal is emitted from its tab bar.
 
-    \sa moveTab()
-r"""
+        \sa moveTab()
+    r"""
 
-r"""!
-    \fn def QTabBar::tabBarClicked(int index)
+    r"""!
+        \fn def QTabBar::tabBarClicked(int index)
 
-    This signal is emitted when user clicks on a tab at an \a index.
+        This signal is emitted when user clicks on a tab at an \a index.
 
-    \a index is the index of a clicked tab, or -1 if no tab is under the cursor.
+        \a index is the index of a clicked tab, or -1 if no tab is under the cursor.
 
-    \since 5.2
-r"""
+        \since 5.2
+    r"""
 
-r"""!
-    \fn def QTabBar::tabBarDoubleClicked(int index)
+    r"""!
+        \fn def QTabBar::tabBarDoubleClicked(int index)
 
-    This signal is emitted when the user double clicks on a tab at \a index.
+        This signal is emitted when the user double clicks on a tab at \a index.
 
-    \a index refers to the tab clicked, or -1 if no tab is under the cursor.
+        \a index refers to the tab clicked, or -1 if no tab is under the cursor.
 
-    \since 5.2
-r"""
+        \since 5.2
+    r"""
 
-def QTabBarPrivate::init()
+    def __init__(self, parent=None):
+        super(QTabBar, self).__init__(parent=parent)
 
-    Q_Q(QTabBar);
-    leftB = new QToolButton(q);
-    leftB->setAutoRepeat(true);
-    QObject::connect(leftB, SIGNAL(clicked()), q, SLOT(_q_scrollTabs()));
-    leftB->hide();
-    rightB = new QToolButton(q);
-    rightB->setAutoRepeat(true);
-    QObject::connect(rightB, SIGNAL(clicked()), q, SLOT(_q_scrollTabs()));
-    rightB->hide();
-#ifdef QT_KEYPAD_NAVIGATION
-    if (QApplication::keypadNavigationEnabled())
-        leftB->setFocusPolicy(Qt::NoFocus);
-        rightB->setFocusPolicy(Qt::NoFocus);
-        q->setFocusPolicy(Qt::NoFocus);
-     else
-#endif
-        q->setFocusPolicy(Qt::TabFocus);
+        leftB = QToolButton(self)
+        leftB.setAutoRepeat(True)
+        QObject.connect(leftB, SIGNAL(clicked()), self, SLOT(_q_scrollTabs()))
+        leftB.hide()
+        rightB = QToolButton(self)
+        rightB.setAutoRepeat(True)
+        QObject.connect(rightB, SIGNAL(clicked()), self, SLOT(_q_scrollTabs()))
+        rightB.hide()
 
-#ifndef QT_NO_ACCESSIBILITY
-    leftB->setAccessibleName(QTabBar::tr("Scroll Left"));
-    rightB->setAccessibleName(QTabBar::tr("Scroll Right"));
-#endif
-    q->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
-    elideMode = Qt::TextElideMode(q->style()->styleHint(QStyle::SH_TabBar_ElideMode, 0, q));
-    useScrollButtons = !q->style()->styleHint(QStyle::SH_TabBar_PreferNoArrows, 0, q);
+        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        self.elideMode = Qt.TextElideMode(self.style().styleHint(QStyle.SH_TabBar_ElideMode, 0, self))
+        self.useScrollButtons = not self.style().styleHint(QStyle.SH_TabBar_PreferNoArrows, 0, self)
 
 
-QTabBarPrivate::Tab *QTabBarPrivate::at(int index)
+    def initStyleOption(QStyleOptionTab *option, int tabIndex) const
+        r"""!
+            Initialize \a option with the values from the tab at \a tabIndex. This method
+            is useful for subclasses when they need a QStyleOptionTab,
+            but don't want to fill in all the information themselves.
 
-    return validIndex(index)?&tabList[index]:0;
+            \sa QStyleOption::initFrom(), QTabWidget::initStyleOption()
+        r"""
 
+        Q_D(const QTabBar);
+        d->initBasicStyleOption(option, tabIndex);
 
-const QTabBarPrivate::Tab *QTabBarPrivate::at(int index) const
+        QRect textRect = style()->subElementRect(QStyle::SE_TabBarTabText, option, this);
+        option->text = fontMetrics().elidedText(option->text, d->elideMode, textRect.width(),
+                            Qt::TextShowMnemonic);
 
-    return validIndex(index)?&tabList[index]:0;
+    def at(self, index):
+        try:
+            return self.tabList[index]
+        except IndexError:
+            return 0
 
+    int QTabBarPrivate::indexAtPos(const QPoint &p) const
 
-int QTabBarPrivate::indexAtPos(const QPoint &p) const
-
-    Q_Q(const QTabBar);
-    if (q->tabRect(currentIndex).contains(p))
-        return currentIndex;
-    for (int i = 0; i < tabList.count(); ++i)
-        if (tabList.at(i).enabled && q->tabRect(i).contains(p))
-            return i;
-    return -1;
+        Q_Q(const QTabBar);
+        if (q->tabRect(currentIndex).contains(p))
+            return currentIndex;
+        for (int i = 0; i < tabList.count(); ++i)
+            if (tabList.at(i).enabled && q->tabRect(i).contains(p))
+                return i;
+        return -1;
 
 
 def QTabBarPrivate::layoutTabs()

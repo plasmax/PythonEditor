@@ -1,60 +1,137 @@
 from PythonEditor.ui.nukefeatures import nukedock
-from PythonEditor.ui.nukefeatures import scripteditorshortcuts
 from PythonEditor.utils import constants
 from PythonEditor.ui.Qt import QtWidgets, QtCore
 
+IN_NUKE_GUI_MODE = True
+try:
+    import nuke
+    if not nuke.GUI:
+        IN_NUKE_GUI_MODE = False
+except ImportError:
+    IN_NUKE_GUI_MODE = False
+
+
 PANEL_NAME = 'i.d.e.Python_Editor'
 
+"""
+The purpose of this command is to fully re-initiliase the
+PythonEditor module for two purposes:
+1) to speed up development
+2) to act as a "repair" command in the event PythonEditor
+stops working.
+
+# TODO: could this be in a function? Do I want it to be?
+Also, this should close the Python Editor before reloading/restoring
+"""
 RELOAD_CMD = """
+# Remove PythonEditor Panel
+# ------------------------------------------
+from Qt import QtWidgets, QtGui, QtCore
+
+def remove_panel(PANEL_NAME):
+    for stack in QtWidgets.QApplication.instance().allWidgets():
+        if not isinstance(stack, QtWidgets.QStackedWidget):
+            continue
+        for child in stack.children():
+            if child.objectName() == PANEL_NAME:
+                child.deleteLater()
+
+remove_panel('i.d.e.Python_Editor')
+
+# Reset standard and error outputs
+# ------------------------------------------
+sys.stdout.reset()
+sys.stderr.reset()
+
+# # Remove any Event Filters
+# # ------------------------------------------
+# PythonEditor.ui.nukefeatures.scripteditorshortcuts._filter.quit()
+
+# Remove all Python Editor modules
+# ------------------------------------------
 for m in sys.modules.keys():
     if 'PythonEditor' in m:
         del sys.modules[m]
+
+# Reload main module
+# ------------------------------------------
 import PythonEditor
 reload(PythonEditor)
+
+# Rerun menu setup
+# ------------------------------------------
 from PythonEditor.ui.nukefeatures import nukedock
 reload(nukedock)
 nukedock.setup_dock()
-nukescripts.panels.__panels["i.d.e.Python_Editor"]()
+
 from PythonEditor.ui.nukefeatures import nukeinit
 reload(nukeinit)
+
+# Re-launch panel
+# ------------------------------------------
+dock = nuke.thisPane()
+candidates = ['Properties.1', 'Viewer.1',  'DAG.1']
+
+for tab_name in candidates:
+    pane = nuke.getPaneFor(tab_name)
+    if pane is not None:
+        dock = pane # to set order of preference
+        break # the current pane was a candidate. done!
+
+nukescripts.panels.__panels["i.d.e.Python_Editor"].__call__(pane=dock)
 """
+
+IMPORT_CMD = '__import__("PythonEditor")'\
+    '.ui.nukefeatures.nukeinit.add_to_pane()'
 
 ICON_PATH = 'PythonEditor.png'
 
 
 def setup(nuke_menu=False, node_menu=False, pane_menu=True):
     """
+    PythonEditor requires the pane menu to be setup in order to
+    be accessible to the user (without launching the panel
+    programmatically). The nuke_menu and node_menu exist as optional
+    extras.
+
     TODO:
     Set this up automatically based on Preferences.
     """
-    try:
-        import nuke
-        if not nuke.GUI:
-            return
-    except ImportError:
-        pass
-
-    import_cmd = '__import__("PythonEditor")'\
-        '.ui.nukefeatures.nukeinit.add_to_pane()'
+    if not IN_NUKE_GUI_MODE:
+        return
 
     if nuke_menu:
-        panelMenu = nuke.menu('Nuke').addMenu('Panels')
-        panelMenu.addCommand('Python Editor',
-                             import_cmd,
-                             icon=ICON_PATH)
-
-        panelMenu.addCommand('Fully Reload Python Editor',
-                             RELOAD_CMD,
-                             icon=ICON_PATH)
+        add_nuke_menu()
 
     if node_menu:
-        nuke.menu('Nodes').addCommand('Python Editor',
-                                      import_cmd,
-                                      shortcut='\\',
-                                      icon=ICON_PATH)
+        add_node_menu()
 
     if pane_menu:
         nukedock.setup_dock()
+
+
+def add_nuke_menu():
+    """
+    Adds a "Panels" menu to the Nuke menubar.
+    """
+    panelMenu = nuke.menu('Nuke').addMenu('Panels')
+    panelMenu.addCommand('Python Editor',
+                         IMPORT_CMD,
+                         icon=ICON_PATH)
+
+    panelMenu.addCommand('[dev] Fully Reload Python Editor',
+                         RELOAD_CMD,
+                         icon=ICON_PATH)
+
+
+def add_node_menu():
+    """
+    Adds a menu item to the Node Menu.
+    """
+    nuke.menu('Nodes').addCommand('Python Editor',
+                              IMPORT_CMD,
+                              shortcut='\\',
+                              icon=ICON_PATH)
 
 
 def capture_ui_state():
@@ -87,32 +164,35 @@ def add_to_pane():
     Locates a panel and adds it to one
     of the main dock windows in order
     of preference.
+
+    BUG: This now seems to disagree greatly with the "Reload Package"
+    feature, causing many segfault.
     """
     ui_state = capture_ui_state()
     if focus_on_panel(ui_state):
+        # the Python Editor tab exists, switch to it. (this should ideally be in focus_on_panel)
+        for tabbar in QtWidgets.QApplication.instance().allWidgets():
+            if isinstance(tabbar, QtWidgets.QTabBar):
+                for i in range(tabbar.count()):
+                    if tabbar.tabText(i) == 'Python Editor':
+                        if tabbar.currentIndex() != i:
+                            tabbar.setCurrentIndex(i)
+                        break
         return
 
     import nuke
     from nukescripts import panels
     found = False
 
-    # this will create the PythonEditor panel and add it to the active pane
-    nuke_panel = panels.__panels.get(PANEL_NAME).__call__()
+    # is the active pane one of the ones we want to add Python Editor to?
+    dock = nuke.thisPane()
+    candidates = ['Properties.1', 'Viewer.1',  'DAG.1']
 
-    # reset Nuke ui to how it was.
-    for stack, widget in ui_state.items():
-        stack.setCurrentWidget(widget)
-
-    for dock in ['Properties.1',
-                 'Viewer.1',  'DAG.1']:
-        pane = nuke.getPaneFor(dock)
+    for tab_name in candidates:
+        pane = nuke.getPaneFor(tab_name)
         if pane is not None:
-            nuke_panel.addToPane(pane)
-            break
+            dock = pane # to set order of preference
+            break # the current pane was a candidate. done!
 
-    focus_on_panel(capture_ui_state())
-    for tabbar in QtWidgets.QApplication.instance().allWidgets():
-        if isinstance(tabbar, QtWidgets.QTabBar):
-            for i in range(tabbar.count()):
-                if tabbar.tabText(i) == 'Python Editor':
-                    tabbar.setCurrentIndex(i)
+    # this will create the PythonEditor panel and add it to the active pane
+    nuke_panel = panels.__panels.get(PANEL_NAME).__call__(pane=dock)

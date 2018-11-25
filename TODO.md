@@ -2,6 +2,8 @@
 
 
 #### Bug fixes
+- [ ] CRITICAL BUG: Currently not fully reloadable (error with redirector)
+- [ ] After saving, close button appears stuck on saved symbol
 - [x] Extra indentation occurs in some other programs - this was due to not using a monospaced font.
 - [ ] Word wrapping and blocks can cause errors, especially in moving text up/down
 - [x] Greedy shortcuts override Script Editor when Python Editor is open
@@ -9,7 +11,7 @@
 - [ ] Search causes cursor to go missing
 - [ ] # in string causes rest of line to be greyed out
 - [x] Autocomplete doesn't dissappear when parentheses are typed
-- [ ] Double printing to sys.stdout
+- [x] Double printing to sys.stdout (was running nuke_menu_setup() twice)
 - [ ] Override setPlainText to avoid string encoding errors (can this affect copy paste?)
 - [ ] CRITICAL BUG: In rare cases with network disruption the PythonEditorHistory.xml can be overwritten with 0 contents. PythonEditor will then not load.
       Add in a pre-check for xml contents in the file (if it exists) and implement some sort of backup procedure (e.g. copy to /tmp/ on script close)

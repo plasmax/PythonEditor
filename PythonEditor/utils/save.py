@@ -37,6 +37,11 @@ def get_save_file_name(title='Save Text As'):
 
 def save(text, path=None):
     """
+    Ctrl+S. Save text to the given path.
+    If there is no path, prompt the user
+    for one.
+
+    :return: Path user chose to save. None if user cancels.
     """
     if path is None or not path.strip():
         path = save_as(text)

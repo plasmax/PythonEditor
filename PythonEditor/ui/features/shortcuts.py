@@ -15,10 +15,17 @@ class ShortcutHandler(QtCore.QObject):
     exec_text_signal = QtCore.Signal()
 
     def __init__(self, parent_widget, use_tabs=True):
+        """
+        :param use_tabs:
+        If False, the parent_widget is the QPlainTextEdit (Editor)
+        widget. If True, apply shortcuts to the QTabBar as well as
+        the Editor.
+        """
         super(ShortcutHandler, self).__init__()
         self.setObjectName('ShortcutHandler')
         self.setParent(parent_widget)
         self.parent_widget = parent_widget
+        self.use_tabs = use_tabs
 
         if use_tabs:
             self.tabs = parent_widget.tabs
@@ -58,10 +65,9 @@ class ShortcutHandler(QtCore.QObject):
                     'Ctrl+B': self.exec_current_line,
                     'Ctrl+Shift+Return': self.new_line_above,
                     'Ctrl+Alt+Return': self.new_line_below,
-                    'Ctrl+Backspace': self.clear_output_signal.emit,
                     'Ctrl+Shift+D': self.duplicate_lines,
                     'Ctrl+H': self.print_help,
-                    'Ctrl+T': self.print_type,
+                    'Ctrl+Shift+T': self.print_type,
                     'Ctrl+Shift+F': self.search_input,
                     'Ctrl+L': self.select_lines,
                     'Ctrl+J': self.join_lines,
@@ -86,8 +92,14 @@ class ShortcutHandler(QtCore.QObject):
                     # 'Ctrl+Shift+Alt+Down': notimp('duplicate cursor down'),
                     }
 
-        if hasattr(self, 'tabs'):
+        terminal_shortcuts = {
+                    'Ctrl+Backspace': self.clear_output_signal.emit,
+                    }
+        editor_shortcuts.update(terminal_shortcuts)
+
+        if self.use_tabs:
             tab_shortcuts = {
+                        'Ctrl+T': self.tabs.new_tab,
                         'Ctrl+Shift+N': self.tabs.new_tab,
                         'Ctrl+Shift+W': self.tabs.remove_current_tab,
                         # 'Ctrl+Shift+T': notimp('reopen previous tab'),
@@ -112,15 +124,25 @@ class ShortcutHandler(QtCore.QObject):
 
         self.shortcut_dict.update(signal_dict)
 
-        context = QtCore.Qt.WidgetShortcut
+        def add_action(widget, shortcut, func):
+            a = QtWidgets.QAction(widget)
+            key_seq = QtGui.QKeySequence(shortcut)
+            a.setShortcut(key_seq)
+            a.setShortcutContext(
+                QtCore.Qt.WidgetShortcut)
+            a.triggered.connect(func)
+            widget.addAction(a)
+
         for shortcut, func in editor_shortcuts.items():
-            keySequence = QtGui.QKeySequence(shortcut)
-            qshortcut = QtWidgets.QShortcut(
-                                            keySequence,
-                                            self.parent_widget,
-                                            func,
-                                            context=context)
-            qshortcut.setObjectName(shortcut)
+            add_action(self.editor, shortcut, func)
+
+        terminal = self.parent_widget.parent().parent().terminal
+        for shortcut, func in terminal_shortcuts.items():
+            add_action(terminal, shortcut, func)
+
+        if self.use_tabs:
+            for shortcut, func in tab_shortcuts.items():
+                add_action(self.tabs, shortcut, func)
 
     def notimplemented(self, text):
         """ Development reminders to implement features """
@@ -635,10 +657,16 @@ class ShortcutHandler(QtCore.QObject):
             return
 
         textCursor = self.editor.textCursor()
+        original_pos = textCursor.position()
+
+        # start the search from the beginning of the document
+        textCursor.setPosition(0, QtGui.QTextCursor.MoveAnchor)
         document = self.editor.document()
         cursor = document.find(text, textCursor)
         pos = cursor.position()
-        self.editor.setTextCursor(cursor)
+        if pos != -1:
+            self.editor.setTextCursor(cursor)
+
 
     def duplicate_lines(self):
         """
@@ -689,6 +717,8 @@ class ShortcutHandler(QtCore.QObject):
         cursor = self.editor.textCursor()
         selection = cursor.selection()
         text = selection.toPlainText().strip()
+        if not text:
+            return
         obj = __main__.__dict__.get(text)
         if obj is not None:
             print(obj.__doc__)
@@ -703,6 +733,8 @@ class ShortcutHandler(QtCore.QObject):
         cursor = self.editor.textCursor()
         selection = cursor.selection()
         text = selection.toPlainText().strip()
+        if not text:
+            return
         obj = __main__.__dict__.get(text)
         if obj is not None:
             print(type(obj))

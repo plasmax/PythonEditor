@@ -35,6 +35,10 @@ sys.modules['Qt'] = Qt
 def nuke_menu_setup(nuke_menu=False, node_menu=False, pane_menu=True):
     """
     If in Nuke, setup menu.
+
+    :param nuke_menu: Add menu items to the main Nuke menu.
+    :param node_menu: Add menu item to the Node menu.
+    :param pane_menu: Add menu item to the Pane menu.
     """
     try:
         import nuke

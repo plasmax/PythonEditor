@@ -43,7 +43,6 @@ class IDE(QtWidgets.QWidget):
                 imp.reload(mod)
 
         imp.reload(pythoneditor)
-
         self.buildUI()
 
     def showEvent(self, event):

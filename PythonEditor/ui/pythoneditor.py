@@ -26,14 +26,15 @@ class PythonEditor(QtWidgets.QWidget):
         layout.setObjectName('PythonEditor_MainLayout')
         layout.setContentsMargins(0, 0, 0, 0)
 
-        self.tabs = tabs.TabContainer()
+        self.tabeditor = tabs.TabEditor(self)
+        self.editor = self.tabeditor.editor
         self.terminal = terminal.Terminal()
         self.menubar = menubar.MenuBar(self)
 
         splitter = QtWidgets.QSplitter(QtCore.Qt.Vertical)
         splitter.setObjectName('PythonEditor_MainVerticalSplitter')
         splitter.addWidget(self.terminal)
-        splitter.addWidget(self.tabs)
+        splitter.addWidget(self.tabeditor)
 
         layout.addWidget(splitter)
 
@@ -43,16 +44,8 @@ class PythonEditor(QtWidgets.QWidget):
         Loading the AutosaveManager will also load all the
         contents of the autosave into tabs.
         """
-        import time
-        start = time.time()
-
-        sch = shortcuts.ShortcutHandler(self.tabs)
+        sch = shortcuts.ShortcutHandler(self.tabeditor, use_tabs=True)
         sch.clear_output_signal.connect(self.terminal.clear)
         self.shortcuteditor = shortcuteditor.ShortcutEditor(sch)
         self.preferenceseditor = preferences.PreferencesEditor()
-        self.filehandler = autosavexml.AutoSaveManager(self.tabs)
-        print('tabs loaded in %.3f seconds' % (time.time()-start))
-
-    @property
-    def editor(self):
-        return self.edittabs.currentWidget()
+        self.filehandler = autosavexml.AutoSaveManager(self.tabeditor)

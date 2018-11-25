@@ -127,15 +127,60 @@ class Editor(QtWidgets.QPlainTextEdit):
         if not textCursor.hasSelection():
             return
 
-        # text = textCursor.selection().toPlainText()
-        # textCursor.select(QtGui.QTextCursor.WordUnderCursor)
-        # word = textCursor.selection().toPlainText()
-        # print(text, word)
-        # if text == word:
-            # print(word)
+        """
+        text = textCursor.selection().toPlainText()
+        textCursor.select(QtGui.QTextCursor.WordUnderCursor)
+        word = textCursor.selection().toPlainText()
+        print(text, word)
+        if text == word:
+            print(word)
+        """
+
+    def setPlainText(self, text):
+        """
+        Override original method to prevent
+        textChanged signal being emitted.
+        WARNING: textCursor can still be used
+        to setPlainText.
+        """
+        self.emit_text_changed = False
+        super(Editor, self).setPlainText(text)
+        self.emit_text_changed = True
+
+    def insertPlainText(self, text):
+        """
+        Override original method to prevent
+        textChanged signal being emitted.
+        """
+        self.emit_text_changed = False
+        super(Editor, self).insertPlainText(text)
+        self.emit_text_changed = True
+
+    def appendPlainText(self, text):
+        """
+        Override original method to prevent
+        textChanged signal being emitted.
+        """
+        self.emit_text_changed = False
+        super(Editor, self).appendPlainText(text)
+        self.emit_text_changed = True
 
     def focusInEvent(self, event):
-        self.focus_in_signal.emit(event)
+        """
+        Emit a signal when focusing in a window.
+        When there used to be an editor per tab,
+        this would work well to check that the tab's
+        contents had not been changed. Now, we'll also
+        want to signal from the tab switched signal.
+        """
+        FR = QtCore.Qt.FocusReason
+        # FR.ActiveWindowFocusReason
+        ignored_reasons = [
+            FR.PopupFocusReason,
+            FR.MouseFocusReason
+        ]
+        if event.reason() not in ignored_reasons:
+            self.focus_in_signal.emit(event)
         super(Editor, self).focusInEvent(event)
 
     def focusOutEvent(self, event):
@@ -275,45 +320,10 @@ class Editor(QtWidgets.QPlainTextEdit):
 
     def wheelEvent(self, e):
         """
-        Restore focus and emit signal if ctrl held.
+        Restore focus and, if ctrl held, emit signal
         """
         self.setFocus(QtCore.Qt.MouseFocusReason)
         if (e.modifiers() == CTRL
                 and e.orientation() == QtCore.Qt.Orientation.Vertical):
             return self.wheel_signal.emit(e)
         super(Editor, self).wheelEvent(e)
-
-    def setPlainText(self, text):
-        """
-        Override original method to prevent
-        textChanged signal being emitted.
-        WARNING: textCursor can still be used
-        to setPlainText.
-        """
-        # self.blockSignals(True)
-        self.emit_text_changed = False
-        super(Editor, self).setPlainText(text)
-        self.emit_text_changed = True
-        # self.blockSignals(False)
-
-    def insertPlainText(self, text):
-        """
-        Override original method to prevent
-        textChanged signal being emitted.
-        """
-        # self.blockSignals(True)
-        self.emit_text_changed = False
-        super(Editor, self).insertPlainText(text)
-        self.emit_text_changed = True
-        # self.blockSignals(False)
-
-    def appendPlainText(self, text):
-        """
-        Override original method to prevent
-        textChanged signal being emitted.
-        """
-        # self.blockSignals(True)
-        self.emit_text_changed = False
-        super(Editor, self).appendPlainText(text)
-        self.emit_text_changed = True
-        # self.blockSignals(False)
