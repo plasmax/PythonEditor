@@ -132,7 +132,7 @@ class CloseButton(QtWidgets.QAbstractButton):
             """
 
             # set colour to darker (maybe adjust palette)
-            self.style().drawItemText(p, rect, 0, palette, True, unicode(' '+chr(7)))
+            self.style().drawItemText(p, rect, 0, palette, True, unicode(' o'))
 
 
 
