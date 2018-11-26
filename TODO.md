@@ -2,8 +2,11 @@
 
 
 #### Bug fixes
-- [ ] CRITICAL BUG: Currently not fully reloadable (error with redirector)
-- [ ] After saving, close button appears stuck on saved symbol
+- [ ] Clicking on a tab to the right of the QLineEdit when editing a tab name causes a jump, and the wrong tab to be selected.
+- [ ] Save functions need to be amended to work with new single editor
+- [ ] On first open (if not pinned to layout), tab may not display contents
+- [x] CRITICAL BUG: Currently not fully reloadable (error with redirector)
+- [x] After saving, close button appears stuck on saved symbol
 - [x] Extra indentation occurs in some other programs - this was due to not using a monospaced font.
 - [ ] Word wrapping and blocks can cause errors, especially in moving text up/down
 - [x] Greedy shortcuts override Script Editor when Python Editor is open
