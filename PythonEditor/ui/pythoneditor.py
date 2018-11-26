@@ -14,9 +14,11 @@ class PythonEditor(QtWidgets.QWidget):
     and connects some signals.
     """
     def __init__(self, parent=None):
-        super(PythonEditor, self).__init__()
+        super(PythonEditor, self).__init__(parent=parent)
         self.setObjectName('PythonEditor')
         self._parent = parent
+        if parent is not None:
+            self.setParent(parent)
 
         self.construct_ui()
         self.connect_signals()
