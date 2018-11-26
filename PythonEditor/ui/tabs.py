@@ -384,8 +384,8 @@ class Tabs(QtWidgets.QTabBar):
 
     def mouseReleaseEvent(self, event):
         self.tab_pressed = False
+        i = self.tabAt(event.pos())
         if event.button() == QtCore.Qt.LeftButton:
-            i = self.tabAt(event.pos())
             if i == -1:
                 i = self.currentIndex()
             if (i != self.start_move_index):
@@ -393,6 +393,10 @@ class Tabs(QtWidgets.QTabBar):
 
         elif event.button() == QtCore.Qt.RightButton:
             print 'show close/save menu'
+
+        elif event.button() == QtCore.Qt.MiddleButton:
+            if i != -1:
+                self.removeTab(i)
 
         super(Tabs, self).mouseReleaseEvent(event)
 
@@ -415,17 +419,12 @@ class Tabs(QtWidgets.QTabBar):
         index = self.tabAt(event.pos())
         rect = self.tabRect(index)
 
-        # index = self.currentIndex()
-        # button = self.tabButton(index, QtWidgets.QTabBar.LeftSide)
-        label = self.tabText(index)
-        print label
+        self.renaming_label = label = self.tabText(index)
 
         self.tab_text = label
         self.tab_index = index
-        # self.setTabText(index, '')
 
         self.name_edit = QtWidgets.QLineEdit(self)
-        # self.name_edit.resize(self.name_edit.width(), rect.height()-7)
         self.name_edit.resize(rect.width(), rect.height()-7)
         self.name_edit.tab_index = index
         self.name_edit.tab_text = label
@@ -436,10 +435,6 @@ class Tabs(QtWidgets.QTabBar):
         self.name_edit.raise_()
         p = rect.topLeft()
         self.name_edit.move(p.x(), p.y()+5)
-
-        # self.setTabButton(index,
-        #                   QtWidgets.QTabBar.LeftSide,
-        #                   self.name_edit)
 
         self.name_edit.setFocus(QtCore.Qt.MouseFocusReason)
 
@@ -459,13 +454,14 @@ class Tabs(QtWidgets.QTabBar):
             label = self.name_edit.tab_text
 
         index = self.name_edit.tab_index
-        button = self.tabButton(index, QtWidgets.QTabBar.LeftSide)
 
+        if self.renaming_label == label:
+            return
+
+        # FIXME: if the tab is not
+        # positioned to the right,
+        # this can cause a jump.
         self.setTabText(index, label)
-        self.setTabButton(index,
-                          QtWidgets.QTabBar.LeftSide,
-                          None)
-
 
         data = self.tabData(index)
         data['name'] = label
