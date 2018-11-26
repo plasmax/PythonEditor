@@ -89,6 +89,7 @@ class ShortcutHandler(QtCore.QObject):
                     'Ctrl+Shift+Up': self.move_lines_up,
                     'Ctrl+Shift+Down': self.move_lines_down,
                     'Ctrl+S': notimp('save'),
+                    QtCore.Qt.Key_F5: self.parent_widget.parent().parent().parent().reload_package,
                     # 'Ctrl+Shift+Alt+Up': notimp('duplicate cursor up'),
                     # 'Ctrl+Shift+Alt+Down': notimp('duplicate cursor down'),
                     }
