@@ -105,34 +105,41 @@ class CloseButton(QtWidgets.QAbstractButton):
             if (self == tb.tabButton(index, position)):
                 opt.state |= QtWidgets.QStyle.State_Selected
 
+
+        self.style().drawPrimitive(
+            QtWidgets.QStyle.PE_IndicatorTabClose, opt, p, self)
+
+        # this is all good, but wait until 'saved'
+        # status is properly locked down.
+        """
         if self.tab_saved or hovered:
             self.style().drawPrimitive(
             QtWidgets.QStyle.PE_IndicatorTabClose, opt, p, self)
         else:
             font = p.font()
-            font.setPointSize(11)
+            font.setPointSize(9)
+            font.setBold(True)
             p.setFont(font)
             rect = self.rect()
             rect.adjust(0,-1,0,0)
 
             palette = self.palette()
-            """
-            brush = QtGui.QBrush(
-                QtGui.QColor(0.1, 0.1, 0.1, 1),
-                QtCore.Qt.SolidPattern
-                )
-            palette.setBrush(
-                QtGui.QPalette.ColorRole.Text,
-                brush
-                )
-            palette.setBrush(
-                QtGui.QPalette.ColorRole.BrightText,
-                brush
-                )
-            """
+            # brush = QtGui.QBrush(
+            #     QtGui.QColor(0.1, 0.1, 0.1, 1),
+            #     QtCore.Qt.SolidPattern
+            #     )
+            # palette.setBrush(
+            #     QtGui.QPalette.ColorRole.Text,
+            #     brush
+            #     )
+            # palette.setBrush(
+            #     QtGui.QPalette.ColorRole.BrightText,
+            #     brush
+            #     )
 
             # set colour to darker (maybe adjust palette)
             self.style().drawItemText(p, rect, 0, palette, True, unicode(' o'))
+        """
 
 
 
@@ -152,7 +159,6 @@ class Tabs(QtWidgets.QTabBar):
     # for autosave purposes:
     # reset_tab_signal = QtCore.Signal()
     tab_close_signal = QtCore.Signal(str) # in case we receive a ctrl+shift+w signal to close the tab
-    # tab_switched_signal = QtCore.Signal(int, int, bool)
     # contents_saved_signal = QtCore.Signal(object)
     # tab_moved_signal = QtCore.Signal(object, int)
     tab_renamed_signal = QtCore.Signal(str, str, str, str, object)
@@ -568,6 +574,7 @@ class TabEditor(QtWidgets.QWidget):
     a QTabBar and a single Editor.
     """
     # trigger_autosave_signal = QtCore.Signal(str)
+    tab_switched_signal = QtCore.Signal()
 
     def __init__(self, parent=None):
         super(TabEditor, self).__init__(parent)
@@ -700,6 +707,9 @@ class TabEditor(QtWidgets.QWidget):
             cursor.setPosition(start, QtGui.QTextCursor.MoveAnchor)
             cursor.setPosition(end, QtGui.QTextCursor.KeepAnchor)
             self.editor.setTextCursor(cursor)
+
+        # for the autosave check_document_modified
+        self.tab_switched_signal.emit()
 
     def store_cursor_position(self):
         self.tabs['cursor_pos'] = self.editor.textCursor().position()

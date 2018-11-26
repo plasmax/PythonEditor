@@ -1,7 +1,8 @@
 import os
 from __main__ import __dict__
 
-os.environ['QT_PREFERRED_BINDING'] = 'PySide:PyQt4'
+if not os.environ.get('QT_PREFERRED_BINDING'):
+    os.environ['QT_PREFERRED_BINDING'] = 'PySide'
 
 from PythonEditor.ui.Qt import QtWidgets, QtCore, QtGui
 

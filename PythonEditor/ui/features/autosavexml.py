@@ -291,7 +291,7 @@ class AutoSaveManager(QtCore.QObject):
         self.autosave_timer_waiting = False
         self.setup_save_timer(interval=1000) # TODO: hook this up
 
-        self.tab_container = tabs
+        self.tabeditor = tabs
         self.editor = tabs.editor
         self.tabs = tabs.tabs
         self.setParent(tabs)
@@ -310,6 +310,7 @@ class AutoSaveManager(QtCore.QObject):
             name, _, handle = connect(self.editor, signal, slot)
             self._connections.append((name, slot))
 
+        # connect tab signals
         tabs = self.tabs
         cts = tabs.tab_close_signal
         cts.connect(self.remove_subscript)
@@ -319,13 +320,10 @@ class AutoSaveManager(QtCore.QObject):
         tmv.connect(self.update_tab_index)
         tcc = tabs.currentChanged
         tcc.connect(self.store_current_index)
-        # tmv = tabs.tabMoved
-        # tmv.connect(self.handle_tab_moved)
-
-        # connect tab signals
-        """
-        tss = tabs.tab_switched_signal
+        tss = self.tabeditor.tab_switched_signal
         tss.connect(self.check_document_modified)
+
+        """
         rts = tabs.reset_tab_signal
         rts.connect(self.clear_subscripts)
         css = tabs.contents_saved_signal
@@ -442,18 +440,18 @@ class AutoSaveManager(QtCore.QObject):
         for index_element in index_elements:
             index = int(index_element.text)
             self.tabs.setCurrentIndex(index)
-            self.tab_container.set_editor_contents(index)
+            self.tabeditor.set_editor_contents(index)
             break
 
     lock = False
-    def check_document_modified(self):
+    def check_document_modified(self, index=-1):
         """
         On focus in event, check the xml
         to see if there are any differences.
         If there are, prompt the user to see
         if they want to update their tab.
         """
-        return # this is too annoying. FIX! pops up on autocomplete :(
+        # return # this is too annoying. FIX! pops up on autocomplete :(
         if self.lock:
             # don't allow this to be called again before
             # autosave is complete.
@@ -513,14 +511,14 @@ class AutoSaveManager(QtCore.QObject):
             reply = ask(self.editor, title, msg, Yes, No)
             if reply == Yes:
                 self.editor.setPlainText(s.text)
-                self.tabs['text'] == s.text
+                self.tabs['text'] = s.text
                 if name is not None:
                     index = self.tabs.currentIndex()
                     self.tabs.setTabText(index, name)
             elif reply == No:
                 text = self.editor.toPlainText()
                 s.text = text
-                self.tabs['text'] == text
+                self.tabs['text'] = text
                 self.autosave()
 
         # give the autosave 500ms to complete

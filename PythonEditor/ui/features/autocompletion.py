@@ -362,48 +362,6 @@ class AutoCompleter(QtCore.QObject):
 
         self.editor.setTextCursor(textCursor)
 
-    def show_function_help(self, text):
-        """
-        Shows a tooltip with function documentation
-        and input arguments if available.
-        TODO: failing return __doc__,
-        try to get me the function code!
-        """
-        _ = {}
-        name = text[:-1].split(' ')[-1]
-        cmd = '__ret = ' + name
-        try:
-            cmd = compile(cmd, '<Python Editor Tooltip>', 'exec')
-            exec(cmd, __main__.__dict__.copy(), _)
-        except (SyntaxError, NameError):
-            return
-        _obj = _.get('__ret')
-        if _obj and _obj.__doc__:
-            info = 'help(' + name + ')\n' + _obj.__doc__
-            if len(info) > 500:
-                info = info[:500]+'...'
-
-            if (inspect.isfunction(_obj)
-                    or inspect.ismethod(_obj)):
-                args = str(inspect.getargspec(_obj))
-                info = args + '\n'*2 + info
-
-            center_cursor_rect = self.editor.cursorRect().center()
-            global_rect = self.editor.mapToGlobal(center_cursor_rect)
-
-            # TODO: border color? can be done with stylesheet?
-            # on the main widget?
-            # BUG: This assigns the global tooltip colour
-            palette = QtWidgets.QToolTip.palette()
-            palette.setColor(QtGui.QPalette.ToolTipText,
-                             QtGui.QColor("#F6F6F6"))
-            palette.setColor(QtGui.QPalette.ToolTipBase,
-                             QtGui.QColor(45, 42, 46))
-            QtWidgets.QToolTip.setPalette(palette)
-
-            # TODO: Scrollable! Does QToolTip have this?
-            QtWidgets.QToolTip.showText(global_rect, info)
-
     @QtCore.Slot(QtGui.QKeyEvent)
     def _pre_keyPressEvent(self, event):
         """
@@ -446,11 +404,11 @@ class AutoCompleter(QtCore.QObject):
                     # assuming this should be here too but untested
                     self.editor.wait_for_autocomplete = True
                     return True
-                elif selectedText.endswith('('):
-                    self.show_function_help(selectedText)
-                    # assuming this should be here too but untested
-                    self.editor.wait_for_autocomplete = True
-                    return True
+                # elif selectedText.endswith('('):
+                #     self.show_function_help(selectedText)
+                #     # assuming this should be here too but untested
+                #     self.editor.wait_for_autocomplete = True
+                #     return True
 
         self.editor.wait_for_autocomplete = False
         self.editor.keyPressEvent(event)

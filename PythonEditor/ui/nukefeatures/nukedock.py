@@ -58,9 +58,9 @@ def setup_dock():
       else:
         return None
 
-    if nukescripts.panels.__panels.get('i.d.e.Python_Editor') is not None:
-        del nukescripts.panels.__panels['i.d.e.Python_Editor']
+    if nukescripts.panels.__panels.get('Python.Editor') is not None:
+        del nukescripts.panels.__panels['Python.Editor']
 
     registerWidgetAsPanel('__import__("PythonEditor").ide.IDE',
                           "Python Editor",
-                          'i.d.e.Python_Editor')
+                          'Python.Editor')

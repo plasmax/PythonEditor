@@ -11,7 +11,7 @@ except ImportError:
     IN_NUKE_GUI_MODE = False
 
 
-PANEL_NAME = 'i.d.e.Python_Editor'
+PANEL_NAME = 'Python.Editor'
 
 """
 The purpose of this command is to fully re-initiliase the
@@ -36,16 +36,15 @@ def remove_panel(PANEL_NAME):
             if child.objectName() == PANEL_NAME:
                 child.deleteLater()
 
-remove_panel('i.d.e.Python_Editor')
+remove_panel('Python.Editor')
 
 # Reset standard and error outputs
 # ------------------------------------------
-sys.stdout.reset()
-sys.stderr.reset()
-
-# # Remove any Event Filters
-# # ------------------------------------------
-# PythonEditor.ui.nukefeatures.scripteditorshortcuts._filter.quit()
+try:
+    sys.stdout.reset()
+    sys.stderr.reset()
+except Exception as e:
+    print(e)
 
 # Remove all Python Editor modules
 # ------------------------------------------
@@ -78,7 +77,7 @@ for tab_name in candidates:
         dock = pane # to set order of preference
         break # the current pane was a candidate. done!
 
-nukescripts.panels.__panels["i.d.e.Python_Editor"].__call__(pane=dock)
+nukescripts.panels.__panels["Python.Editor"].__call__(pane=dock)
 """
 
 IMPORT_CMD = '__import__("PythonEditor")'\

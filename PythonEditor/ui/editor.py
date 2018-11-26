@@ -1,4 +1,5 @@
 import uuid
+import __main__
 from PythonEditor.ui.Qt import QtWidgets, QtGui, QtCore
 
 from PythonEditor.utils.constants import DEFAULT_FONT
@@ -60,6 +61,13 @@ class Editor(QtWidgets.QPlainTextEdit):
         font = QtGui.QFont(DEFAULT_FONT)
         font.setPointSize(10)
         self.setFont(font)
+        self.setMouseTracking(True)
+        self.setStyleSheet("""
+        QToolTip {
+        color: #F6F6F6;
+        background-color: rgb(45, 42, 46);
+        }
+        """)
 
         if uid is None:
             uid = str(uuid.uuid4())
@@ -174,7 +182,6 @@ class Editor(QtWidgets.QPlainTextEdit):
         want to signal from the tab switched signal.
         """
         FR = QtCore.Qt.FocusReason
-        # FR.ActiveWindowFocusReason
         ignored_reasons = [
             FR.PopupFocusReason,
             FR.MouseFocusReason
@@ -318,12 +325,99 @@ class Editor(QtWidgets.QPlainTextEdit):
         else:
             super(Editor, self).dropEvent(e)
 
-    def wheelEvent(self, e):
+    def wheelEvent(self, event):
         """
         Restore focus and, if ctrl held, emit signal
         """
         self.setFocus(QtCore.Qt.MouseFocusReason)
-        if (e.modifiers() == CTRL
-                and e.orientation() == QtCore.Qt.Orientation.Vertical):
-            return self.wheel_signal.emit(e)
-        super(Editor, self).wheelEvent(e)
+        vertical = QtCore.Qt.Orientation.Vertical
+        is_vertical = (event.orientation() == vertical)
+        is_ctrl = (event.modifiers() == CTRL)
+        if is_ctrl and is_vertical:
+            return self.wheel_signal.emit(event)
+        super(Editor, self).wheelEvent(event)
+
+    """ # Great idea, needs testing
+    variable = ''
+    def mouseMoveEvent(self, event):
+        super(Editor, self).mouseMoveEvent(event)
+
+        cursor = self.cursorForPosition(event.pos())
+        selection = cursor.select(QtGui.QTextCursor.WordUnderCursor)
+        word = cursor.selection().toPlainText()
+        if not word.strip():
+            return
+
+        variable = word
+        start = cursor.selectionStart()
+        end = cursor.selectionEnd()
+        text = self.toPlainText()
+        pretext = text[:start]
+        postext = text[end:]
+
+        for letter in reversed(pretext):
+            if not (letter.isalnum() or letter in ['_','.']):
+                break
+            else:
+                variable = letter + variable
+
+        for letter in postext:
+            if not (letter.isalnum() or letter in ['_','.']):
+                break
+            variable += letter
+
+        if self.variable == variable:
+            return
+
+        self.variable = variable
+        obj = __main__.__dict__.get(variable)
+        if obj is None:
+            return
+
+        print obj
+        if hasattr(obj, '__doc__'):
+            print obj.__doc__
+
+    """
+
+    # def show_function_help(self, text):
+    #     """
+    #     Shows a tooltip with function documentation
+    #     and input arguments if available.
+    #     TODO: failing return __doc__,
+    #     try to get me the function code!
+    #     """
+    #     _ = {}
+    #     name = text[:-1].split(' ')[-1]
+    #     cmd = '__ret = ' + name
+    #     try:
+    #         cmd = compile(cmd, '<Python Editor Tooltip>', 'exec')
+    #         exec(cmd, __main__.__dict__.copy(), _)
+    #     except (SyntaxError, NameError):
+    #         return
+    #     _obj = _.get('__ret')
+    #     if _obj and _obj.__doc__:
+    #         info = 'help(' + name + ')\n' + _obj.__doc__
+    #         if len(info) > 500:
+    #             info = info[:500]+'...'
+
+    #         if (inspect.isfunction(_obj)
+    #                 or inspect.ismethod(_obj)):
+    #             args = str(inspect.getargspec(_obj))
+    #             info = args + '\n'*2 + info
+
+    #         center_cursor_rect = self.cursorRect().center()
+    #         global_rect = self.mapToGlobal(center_cursor_rect)
+
+    #         # TODO: border color? can be done with stylesheet?
+    #         # on the main widget?
+    #         # BUG: This assigns the global tooltip colour
+    #         palette = QtWidgets.QToolTip.palette()
+    #         palette.setColor(QtGui.QPalette.ToolTipText,
+    #                          QtGui.QColor("#F6F6F6"))
+    #         palette.setColor(QtGui.QPalette.ToolTipBase,
+    #                          QtGui.QColor(45, 42, 46))
+    #         QtWidgets.QToolTip.setPalette(palette)
+
+    #         # TODO: Scrollable! Does QToolTip have this?
+    #         QtWidgets.QToolTip.showText(global_rect, info)

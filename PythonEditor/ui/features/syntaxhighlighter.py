@@ -168,12 +168,12 @@ class Highlight(QtGui.QSyntaxHighlighter):
             (r'([rfb])(?:\'|\")', 0, self.styles['formatters']),
             # integers
             (r'\b[0-9]+\b', 0, self.styles['numbers']),
+            # From # until a newline or end of a double quote
+            (r'#[^\n\'\"]*', 0, self.styles['comment']),
             # Double-quoted string, possibly containing escape sequences
             (r'"[^"\\]*(\\.[^"\\]*)*"', 0, self.styles['string']),
             # Single-quoted string, possibly containing escape sequences
             (r"'[^'\\]*(\\.[^'\\]*)*'", 0, self.styles['string']),
-            # From '#' until a newline
-            (r'#[^\n]*', 0, self.styles['comment']),
             ]
 
         # Build a QRegExp for each pattern
