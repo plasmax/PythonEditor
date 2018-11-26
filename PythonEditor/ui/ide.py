@@ -9,8 +9,8 @@ class IDE(QtWidgets.QWidget):
     Container widget that allows the whole
     package to be reloaded.
     """
-    def __init__(self):
-        super(IDE, self).__init__()
+    def __init__(self, parent=None):
+        super(IDE, self).__init__(parent)
         self.setLayout(QtWidgets.QHBoxLayout(self))
         self.layout().setContentsMargins(0, 0, 0, 0)
         self.setObjectName('IDE')
