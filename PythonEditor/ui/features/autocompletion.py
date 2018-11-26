@@ -22,6 +22,16 @@ class_snippet = """class <!cursor>():
         super(, self).__init__()
 """
 
+context_manager_snippet = """class <!cursor>():
+    def __init__(self):
+        super(, self).__init__()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exception_type, exception_value, traceback):
+"""
+
 function_snippet = 'def <!cursor>():'
 
 method_snippet = 'def <!cursor>(self):'
@@ -45,6 +55,7 @@ class MyWidget(QtWidgets.QWidget):
 qt_import_snippet = 'from Qt import QtWidgets, QtGui, QtCore'
 SNIPPETS = {
             'class [snippet]': class_snippet,
+            'contextmanager [snippet]': context_manager_snippet,
             'def [snippet] [func]': function_snippet,
             'def [snippet] [method]': method_snippet,
             'for node selected [snippet]': node_loop_snippet,
@@ -56,15 +67,24 @@ SNIPPETS = {
             'Qt [snippet]': qt_import_snippet,
             }
 
-try:
-    snippet_path = os.path.join(NUKE_DIR, 'PythonEditor_snippets.json')
-    if os.path.isfile(snippet_path):
-        with open(snippet_path, 'r') as f:
-            data = f.read()
-        user_snippets = json.loads(data)
-        SNIPPETS.update(**user_snippets)
-except Exception as e:
-    debug(e)
+
+def locate_snippet_file():
+    """
+    Look for a file called PythonEditor_snippets.json
+    in the local user .nuke directory.
+    If found and its contents read, add them to
+    the global SNIPPETS dictionary.
+    """
+    global SNIPPETS
+    try:
+        snippet_path = os.path.join(NUKE_DIR, 'PythonEditor_snippets.json')
+        if os.path.isfile(snippet_path):
+            with open(snippet_path, 'r') as f:
+                data = f.read()
+            user_snippets = json.loads(data)
+            SNIPPETS.update(**user_snippets)
+    except Exception as e:
+        debug(e)
 
 
 class Completer(QtWidgets.QCompleter):
@@ -83,6 +103,8 @@ class AutoCompleter(QtCore.QObject):
     """
     def __init__(self, editor):
         super(AutoCompleter, self).__init__()
+        self.setParent(editor)
+        locate_snippet_file()
 
         self.loadedModules = sys.modules.keys()
         self._completer = None
@@ -135,7 +157,7 @@ class AutoCompleter(QtCore.QObject):
         word = textCursor.selection().toPlainText()
         return word
 
-    def word_before_cursor(self, regex='[\w|\.]+'):
+    def word_before_cursor(self, regex=r'[\w|\.]+'):
         """
         Returns a string with the last word of the block.
         """
