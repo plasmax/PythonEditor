@@ -49,7 +49,6 @@ class Highlight(QtGui.QSyntaxHighlighter):
         self.setObjectName('Highlight')
 
         theme = themes['Monokai Smooth']
-        # theme = themes['Monokai']
         self.styles = {feature: self.format(*style)
                        for feature, style in theme.items()}
 
@@ -64,7 +63,6 @@ class Highlight(QtGui.QSyntaxHighlighter):
             'is', 'lambda', 'not', 'or', 'pass', 'print',
             'raise', 'return', 'try', 'while', 'yield', 'with'
             ]
-        self.keywords.extend(dir(__builtins__))
 
         self.instantiators = [
             'def', 'class'
@@ -168,8 +166,8 @@ class Highlight(QtGui.QSyntaxHighlighter):
             (r'([rfb])(?:\'|\")', 0, self.styles['formatters']),
             # integers
             (r'\b[0-9]+\b', 0, self.styles['numbers']),
-            # From # until a newline or end of a double quote
-            (r'#[^\n\'\"]*', 0, self.styles['comment']),
+            # From # until a newline unless inside a quote
+            (r'#[^\n]*', 0, self.styles['comment']),
             # Double-quoted string, possibly containing escape sequences
             (r'"[^"\\]*(\\.[^"\\]*)*"', 0, self.styles['string']),
             # Single-quoted string, possibly containing escape sequences
