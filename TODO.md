@@ -61,7 +61,7 @@ cElementTree.ParseError: no element found: line 1, column 0
 
 #### Features - parity
 - [x] Highlight line with error
-- [ ] Read stdout/stderr on open (redirect stdout to Queue)
+- [x] Read stdout/stderr on open
 - [ ] Add Script Editor buttons to Menu bar
 
 
@@ -70,12 +70,13 @@ cElementTree.ParseError: no element found: line 1, column 0
 - [ ] File Browser with connected file path
 - [ ] Recent Files List
 - [ ] Implement events or signals to redirect Script Editor stream (for speed)
-- [x] Snippet file library
+- [x] Snippet file library (currently reads from a file called PythonEditor_snippets.json in .nuke dir if found.)
+- [ ] Snippet save functions - write to PythonEditor_snippets.json
 - [ ] Writing to external files instead of xml. Keeping those files in tab session until closed with a JSON file
 - [x] Check if there's a better way to connect widgets/objects, synchronously
       (bypassing signal in cases where it's not wanted) - Resolved, starting to use DirectConnection
 - [x] Set tab order as a property on the editor and in the autosave
-- [ ] Set up an execution model where stdout, stderr and stdin are temporarily encapsulated within a context managing with
+- [/] Set up an execution model where stdout, stderr and stdin are temporarily encapsulated within a context managing with
       statement - is this a good idea? it means output will only be shown when text is executed from PythonEditor.
 - [ ] Would be nice to highlight line on Ctrl+B execution (of single line)
 - [ ] Tabs need QLabels so that they can be italicized when in read_only mode
@@ -84,7 +85,7 @@ cElementTree.ParseError: no element found: line 1, column 0
       editor path, the dialog should open to that path
 - [ ] Add menu on the top right corner to select between tabs
 - [ ] Preferences - colour
-- [ ] Preferences - shortcuts
+- [ ] Preferences - shortcuts - this has been at least partially acconplished on another branch
 - [ ] Preferences - indentation (backspace deletes single space or tab)
 - [ ] Preferences - disable autocompletion in comments
 - [ ] Warn if file has changed on disk (as with autosave when regaining tab focus)
