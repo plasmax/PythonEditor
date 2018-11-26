@@ -12,15 +12,23 @@ from PythonEditor.utils import constants
 
 
 def get_subobject(text):
+    """
+    Walk down an object's hierarchy to retrieve
+    the object at the end of the chain.
+    """
     text = text.strip()
-    if '.' in text:
-        name = text.split('.')[0]
-        obj = __main__.__dict__.get(name)
-        for name in text.split('.')[1:]:
-            obj = getattr(obj, name)
-    else:
-        obj = __main__.__dict__.get(text)
+    if '.' not in text:
+        return __main__.__dict__.get(text)
 
+    name = text.split('.')[0]
+    obj = __main__.__dict__.get(name)
+    if obj is None:
+        return
+
+    for name in text.split('.')[1:]:
+        obj = getattr(obj, name)
+        if obj is None:
+            return
     return obj
 
 
@@ -116,8 +124,6 @@ class ContextMenu(QtCore.QObject):
         if not text.strip():
             text = self.editor.toPlainText()
 
-        # text = '\n'.join(text)
-
         for node in nuke.selectedNodes():
             node.knob(knob_name).setValue(text)
             print(node.fullName(), 'set:', knob_name, '\n', text)
@@ -189,6 +195,10 @@ class ContextMenu(QtCore.QObject):
         open_module_directory(obj)
 
     def initInspectDict(self):
+        """
+        Creates a dictionary of functions
+        from the inspect module.
+        """
         self.inspectDict = {func: getattr(inspect, func)
                             for func in dir(inspect)
                             if isinstance(getattr(inspect, func),
@@ -196,9 +206,15 @@ class ContextMenu(QtCore.QObject):
 
     def inspectExec(self, func):
         """
-        TODO: not sure this works...
+        Call a function from the inspect
+        module using the selected text as the
+        input parameter and print the result.
         """
-        text = str(self.selectedText)
+        cursor = self.editor.textCursor()
+        selection = cursor.selection()
+        text = selection.toPlainText()
+        if not text.strip():
+            return
         obj = get_subobject(text)
         if obj is None:
             return
@@ -269,7 +285,6 @@ class ContextMenu(QtCore.QObject):
             print(obj)
 
     def menu_setup(self):
-        import nuke
         self.menu.addAction('Save As', self.notImplemented)
         self.menu.addAction('Search', self.search_input)
 
@@ -293,14 +308,51 @@ class ContextMenu(QtCore.QObject):
             self.snippetMenu.addAction(snippet,
                                        snippet_insert)
 
+        self.add_nuke_specific_menu_items()
 
-        self.nodes_menu = self.menu.addMenu('Nodes')
-        self.nodes_add_menu = self.nodes_menu.addMenu('Add knob')
-        self.nodes_set_menu = self.nodes_menu.addMenu('Set')
-        self.nodes_get_menu = self.nodes_menu.addMenu('Get')
-        self.nodes_clr_menu = self.nodes_menu.addMenu('Clear')
-        self.nodes_run_menu = self.nodes_menu.addMenu('Eval in Knob Context')
+        cursor = self.editor.textCursor()
+        self.selectedText = str(cursor.selectedText().encode('utf-8').strip())
 
+        if self.selectedText != '':
+            for info in ['help', 'type', 'dir', 'len', 'getattr', 'pprint']:
+                text = self.selectedText
+                print_info = partial(self.printInfo,
+                                     info, text=text)
+                self.infoMenu.addAction('Print {0}'.format(info),
+                                        print_info)
+
+            # conditional on text selected and external editor path verified
+            self.editorMenu = self.menu.addMenu('External Editor')
+            self.editorMenu.addAction('Open Module File',
+                                      self._open_module_file)
+            self.editorMenu.addAction('Open Module Directory',
+                                      self._open_module_directory)
+            self.editorMenu.addAction('Copy to External Editor',
+                                      self.notImplemented)
+
+            # conditional on text selected and inspect.isModule
+            self.inspectMenu = self.menu.addMenu('Inspect')
+            self.inspectIsMenu = self.inspectMenu.addMenu('is')
+            self.inspectGetMenu = self.inspectMenu.addMenu('get')
+            # self.inspectMenu.addAction('Inspect', print(self.inspectDict))
+            for attr in self.inspectDict.keys():
+                func = partial(self.inspectExec, attr)
+                if attr.startswith('is'):
+                    self.inspectIsMenu.addAction(attr, func)
+                elif attr.startswith('get'):
+                    self.inspectGetMenu.addAction(attr, func)
+                else:
+                    self.inspectMenu.addAction(attr, func)
+
+            # http://doc.qt.io/archives/qt-4.8/qrubberband.html
+            # http://doc.qt.io/archives/qt-4.8/classes.html
+            self.menu.addAction('Open Qt Docs', self.notImplemented)
+
+    def add_nuke_specific_menu_items(self):
+        try:
+            import nuke
+        except ImportError:
+            return
         # self.nodes_menu.addAction('Run on Selected Nodes',
         #                          self.notImplemented)
 
@@ -353,40 +405,9 @@ class ContextMenu(QtCore.QObject):
             func = partial(self.add_knob, knob_name)
             self.nodes_add_menu.addAction(knob_name, func)
 
-        cursor = self.editor.textCursor()
-        self.selectedText = str(cursor.selectedText().encode('utf-8').strip())
-
-        if self.selectedText != '':
-            for info in ['help', 'type', 'dir', 'len', 'getattr', 'pprint']:
-                text = self.selectedText
-                print_info = partial(self.printInfo,
-                                     info, text=text)
-                self.infoMenu.addAction('Print {0}'.format(info),
-                                        print_info)
-
-            # conditional on text selected and external editor path verified
-            self.editorMenu = self.menu.addMenu('External Editor')
-            self.editorMenu.addAction('Open Module File',
-                                      self._open_module_file)
-            self.editorMenu.addAction('Open Module Directory',
-                                      self._open_module_directory)
-            self.editorMenu.addAction('Copy to External Editor',
-                                      self.notImplemented)
-
-            # conditional on text selected and inspect.isModule
-            self.inspectMenu = self.menu.addMenu('Inspect')
-            self.inspectIsMenu = self.inspectMenu.addMenu('is')
-            self.inspectGetMenu = self.inspectMenu.addMenu('get')
-            # self.inspectMenu.addAction('Inspect', print(self.inspectDict))
-            for attr in self.inspectDict.keys():
-                func = partial(self.inspectExec, attr)
-                if attr.startswith('is'):
-                    self.inspectIsMenu.addAction(attr, func)
-                elif attr.startswith('get'):
-                    self.inspectGetMenu.addAction(attr, func)
-                else:
-                    self.inspectMenu.addAction(attr, func)
-
-            # http://doc.qt.io/archives/qt-4.8/qrubberband.html
-            # http://doc.qt.io/archives/qt-4.8/classes.html
-            self.menu.addAction('Open Qt Docs', self.notImplemented)
+        self.nodes_menu = self.menu.addMenu('Nodes')
+        self.nodes_add_menu = self.nodes_menu.addMenu('Add knob')
+        self.nodes_set_menu = self.nodes_menu.addMenu('Set')
+        self.nodes_get_menu = self.nodes_menu.addMenu('Get')
+        self.nodes_clr_menu = self.nodes_menu.addMenu('Clear')
+        self.nodes_run_menu = self.nodes_menu.addMenu('Eval in Knob Context')
