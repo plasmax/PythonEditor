@@ -71,9 +71,9 @@ SNIPPETS = {
 def locate_snippet_file():
     """
     Look for a file called PythonEditor_snippets.json
-    in the local user .nuke directory.
-    If found and its contents read, add them to
-    the global SNIPPETS dictionary.
+    in the local user .nuke directory. If found and
+    its contents read, add them to the global SNIPPETS
+    dictionary.
     """
     global SNIPPETS
     try:
