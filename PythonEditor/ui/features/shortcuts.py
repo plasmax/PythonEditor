@@ -724,7 +724,7 @@ class ShortcutHandler(QtCore.QObject):
         obj = __main__.__dict__.get(text)
         if obj is not None:
             print(obj.__doc__)
-        else:
+        elif text:
             exec('help('+text+')', __main__.__dict__)
 
     def print_type(self):
