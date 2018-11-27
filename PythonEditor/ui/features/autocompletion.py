@@ -22,6 +22,16 @@ class_snippet = """class <!cursor>():
         super(, self).__init__()
 """
 
+context_manager_snippet = """class <!cursor>():
+    def __init__(self):
+        super(, self).__init__()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exception_type, exception_value, traceback):
+"""
+
 function_snippet = 'def <!cursor>():'
 
 method_snippet = 'def <!cursor>(self):'
@@ -45,6 +55,7 @@ class MyWidget(QtWidgets.QWidget):
 qt_import_snippet = 'from Qt import QtWidgets, QtGui, QtCore'
 SNIPPETS = {
             'class [snippet]': class_snippet,
+            'contextmanager [snippet]': context_manager_snippet,
             'def [snippet] [func]': function_snippet,
             'def [snippet] [method]': method_snippet,
             'for node selected [snippet]': node_loop_snippet,
@@ -56,15 +67,24 @@ SNIPPETS = {
             'Qt [snippet]': qt_import_snippet,
             }
 
-try:
-    snippet_path = os.path.join(NUKE_DIR, 'PythonEditor_snippets.json')
-    if os.path.isfile(snippet_path):
-        with open(snippet_path, 'r') as f:
-            data = f.read()
-        user_snippets = json.loads(data)
-        SNIPPETS.update(**user_snippets)
-except Exception as e:
-    debug(e)
+
+def locate_snippet_file():
+    """
+    Look for a file called PythonEditor_snippets.json
+    in the local user .nuke directory. If found and
+    its contents read, add them to the global SNIPPETS
+    dictionary.
+    """
+    global SNIPPETS
+    try:
+        snippet_path = os.path.join(NUKE_DIR, 'PythonEditor_snippets.json')
+        if os.path.isfile(snippet_path):
+            with open(snippet_path, 'r') as f:
+                data = f.read()
+            user_snippets = json.loads(data)
+            SNIPPETS.update(**user_snippets)
+    except Exception as e:
+        debug(e)
 
 
 class Completer(QtWidgets.QCompleter):
@@ -83,6 +103,8 @@ class AutoCompleter(QtCore.QObject):
     """
     def __init__(self, editor):
         super(AutoCompleter, self).__init__()
+        self.setParent(editor)
+        locate_snippet_file()
 
         self.loadedModules = sys.modules.keys()
         self._completer = None
@@ -135,7 +157,7 @@ class AutoCompleter(QtCore.QObject):
         word = textCursor.selection().toPlainText()
         return word
 
-    def word_before_cursor(self, regex='[\w|\.]+'):
+    def word_before_cursor(self, regex=r'[\w|\.]+'):
         """
         Returns a string with the last word of the block.
         """
@@ -362,48 +384,6 @@ class AutoCompleter(QtCore.QObject):
 
         self.editor.setTextCursor(textCursor)
 
-    def show_function_help(self, text):
-        """
-        Shows a tooltip with function documentation
-        and input arguments if available.
-        TODO: failing return __doc__,
-        try to get me the function code!
-        """
-        _ = {}
-        name = text[:-1].split(' ')[-1]
-        cmd = '__ret = ' + name
-        try:
-            cmd = compile(cmd, '<Python Editor Tooltip>', 'exec')
-            exec(cmd, __main__.__dict__.copy(), _)
-        except (SyntaxError, NameError):
-            return
-        _obj = _.get('__ret')
-        if _obj and _obj.__doc__:
-            info = 'help(' + name + ')\n' + _obj.__doc__
-            if len(info) > 500:
-                info = info[:500]+'...'
-
-            if (inspect.isfunction(_obj)
-                    or inspect.ismethod(_obj)):
-                args = str(inspect.getargspec(_obj))
-                info = args + '\n'*2 + info
-
-            center_cursor_rect = self.editor.cursorRect().center()
-            global_rect = self.editor.mapToGlobal(center_cursor_rect)
-
-            # TODO: border color? can be done with stylesheet?
-            # on the main widget?
-            # BUG: This assigns the global tooltip colour
-            palette = QtWidgets.QToolTip.palette()
-            palette.setColor(QtGui.QPalette.ToolTipText,
-                             QtGui.QColor("#F6F6F6"))
-            palette.setColor(QtGui.QPalette.ToolTipBase,
-                             QtGui.QColor(45, 42, 46))
-            QtWidgets.QToolTip.setPalette(palette)
-
-            # TODO: Scrollable! Does QToolTip have this?
-            QtWidgets.QToolTip.showText(global_rect, info)
-
     @QtCore.Slot(QtGui.QKeyEvent)
     def _pre_keyPressEvent(self, event):
         """
@@ -446,11 +426,11 @@ class AutoCompleter(QtCore.QObject):
                     # assuming this should be here too but untested
                     self.editor.wait_for_autocomplete = True
                     return True
-                elif selectedText.endswith('('):
-                    self.show_function_help(selectedText)
-                    # assuming this should be here too but untested
-                    self.editor.wait_for_autocomplete = True
-                    return True
+                # elif selectedText.endswith('('):
+                #     self.show_function_help(selectedText)
+                #     # assuming this should be here too but untested
+                #     self.editor.wait_for_autocomplete = True
+                #     return True
 
         self.editor.wait_for_autocomplete = False
         self.editor.keyPressEvent(event)

@@ -32,7 +32,7 @@ class PyKnobEdit(editor.Editor):
     def __init__(self, knob):
         super(PyKnobEdit, self).__init__()
         self._knob = knob
-        self.textChanged.connect(self.updateValue)
+        self.text_changed_signal.connect(self.updateValue)
         self.editingFinished.connect(self.updateKnobChanged)
 
     def updateValue(self):

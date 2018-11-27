@@ -1,3 +1,11 @@
+"""
+The purpose of this module is to replace Nuke's default standard
+output and error stream redirectors with ones that emit streamed
+text through a signal which can be connected to an output terminal.
+The redirectors also output to Nuke's original outputRedirector
+and stderrRedirector which display text in the native Script Editor.
+"""
+
 from __future__ import print_function
 import sys
 
@@ -7,12 +15,18 @@ from PythonEditor.utils.debug import debug
 
 WRITE_TO_SCRIPT_EDITOR = False
 
-# ----- override nuke FnRedirect -----
-class VirtualModule(object):
+# ----- override Nuke hiero.FnRedirect -----
+class MockModule(object):
     pass
 
 
 class Loader(object):
+    """
+    When the Finder object on sys.meta_path returns
+    this object, attempt to load Nuke's default
+    redirectors and store them in the sys module.
+    Afterwards, always return the Mock module.
+    """
     def load_module(self, name):
         try:
             from _fnpython import stderrRedirector, outputRedirector
@@ -20,7 +34,7 @@ class Loader(object):
             sys.stderrRedirector = stderrRedirector
         finally:
             # firmly block all imports of the module
-            return VirtualModule()
+            return MockModule()
 
 
 class Finder(object):
@@ -99,11 +113,15 @@ class SESysStdOut(SERedirector, PySingleton):
     def write(self, text):
         if self._signal is not None:
             self._signal.emitter.emit(text)
-        sys.outputRedirector(text)
+        try:
+            sys.outputRedirector(text)
+        except Exception as e:
+            debug('PythonEditor Terminal error (line 105). Cannot write to outputRedirector:\n%s' % e)
+
         try:
             sys.__stdout__.write(text)
         except IOError as e:
-            debug('PythonEditor Terminal error (line 106). Cannot write to sys.__stdout__:\n%s' % e)
+            debug('PythonEditor Terminal error (line 110). Cannot write to sys.__stdout__:\n%s' % e)
 
 
 class SESysStdErr(SERedirector, PySingleton):
@@ -114,11 +132,15 @@ class SESysStdErr(SERedirector, PySingleton):
     def write(self, text):
         if self._signal is not None:
             self._signal.emitter.emit(text)
-        sys.stderrRedirector(text)
+        try:
+            sys.stderrRedirector(text)
+        except Exception as e:
+            debug('PythonEditor Terminal error (line 124). Cannot write to stderrRedirector:\n%s' % e)
+
         try:
             sys.__stderr__.write(text)
-        except IOError:
-            debug('PythonEditor Terminal error (line 121). Cannot write to sys.__stderr__:\n%s' % e)
+        except IOError as e:
+            debug('PythonEditor Terminal error (line 129). Cannot write to sys.__stderr__:\n%s' % e)
 
 
 # TODO: This UI could be separate from the above
@@ -187,9 +209,11 @@ class Terminal(QtWidgets.QPlainTextEdit):
 
 
 # we need these functions to be registered in the sys module
-sys.outputRedirector = lambda x: None
-sys.stderrRedirector = lambda x: None
-
+try:
+    sys.outputRedirector = lambda x: None
+    sys.stderrRedirector = lambda x: None
+except Exception:
+    pass
 # in case we decide to reload the module, we need to
 # re-add the functions to write to Nuke's Script Editor.
 try:

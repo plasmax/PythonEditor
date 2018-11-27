@@ -15,47 +15,26 @@ class ShortcutHandler(QtCore.QObject):
     exec_text_signal = QtCore.Signal()
 
     def __init__(self, parent_widget, use_tabs=True):
+        """
+        :param use_tabs:
+        If False, the parent_widget is the QPlainTextEdit (Editor)
+        widget. If True, apply shortcuts to the QTabBar as well as
+        the Editor.
+        """
         super(ShortcutHandler, self).__init__()
         self.setObjectName('ShortcutHandler')
         self.setParent(parent_widget)
         self.parent_widget = parent_widget
+        self.use_tabs = use_tabs
 
         if use_tabs:
-            self.editortabs = parent_widget
-            tss = self.editortabs.tab_switched_signal
-            tss.connect(self.tab_switch_handler)
-            self.set_editor()
+            self.tabs = parent_widget.tabs
+            self.editor = parent_widget.editor
         else:
             self.editor = parent_widget
-            self.connect_signals()
+
+        self.connect_signals()
         self.install_shortcuts()
-
-    @QtCore.Slot(int, int, bool)
-    def tab_switch_handler(self, previous, current, tabremoved):
-        """
-        On tab switch, disconnects previous
-        tab's signals before connecting the
-        new tab.
-        """
-        if not tabremoved:  # nothing's been deleted
-                            # so we need to disconnect
-                            # signals from previous editor
-            self.disconnect_signals()
-
-        self.set_editor()
-
-    def set_editor(self):
-        """
-        Sets the current editor
-        and connects signals.
-        """
-        editor = self.editortabs.currentWidget()
-        editor_changed = (True if not hasattr(self, 'editor')
-                          else self.editor != editor)
-        is_editor = editor.objectName() == 'Editor'
-        if is_editor and editor_changed:
-            self.editor = editor
-            self.connect_signals()
 
     def connect_signals(self):
         """ Connects the current editor's signals to this class """
@@ -76,16 +55,6 @@ class ShortcutHandler(QtCore.QObject):
             name, _, handle = connect(editor, signal, slot)
             self._connections.append((name, slot))
 
-    def disconnect_signals(self):
-        """ Disconnects the current editor's signals from this class """
-        if not hasattr(self, 'editor'):
-            return
-        cx = self._connections
-        for name, slot in cx:
-            for x in range(self.editor.receivers(name)):
-                self.editor.disconnect(name, slot)
-        self._connections = []
-
     def install_shortcuts(self):
         """
         Maps shortcuts on the QPlainTextEdit widget
@@ -96,10 +65,9 @@ class ShortcutHandler(QtCore.QObject):
                     'Ctrl+B': self.exec_current_line,
                     'Ctrl+Shift+Return': self.new_line_above,
                     'Ctrl+Alt+Return': self.new_line_below,
-                    'Ctrl+Backspace': self.clear_output_signal.emit,
                     'Ctrl+Shift+D': self.duplicate_lines,
                     'Ctrl+H': self.print_help,
-                    'Ctrl+T': self.print_type,
+                    'Ctrl+Shift+T': self.print_type,
                     'Ctrl+Shift+F': self.search_input,
                     'Ctrl+L': self.select_lines,
                     'Ctrl+J': self.join_lines,
@@ -120,14 +88,22 @@ class ShortcutHandler(QtCore.QObject):
                     'Ctrl+Shift+Backspace': self.delete_to_start_of_line,
                     'Ctrl+Shift+Up': self.move_lines_up,
                     'Ctrl+Shift+Down': self.move_lines_down,
+                    'Ctrl+S': notimp('save'),
+                    QtCore.Qt.Key_F5: self.parent_widget.parent().parent().parent().reload_package,
                     # 'Ctrl+Shift+Alt+Up': notimp('duplicate cursor up'),
                     # 'Ctrl+Shift+Alt+Down': notimp('duplicate cursor down'),
                     }
 
-        if hasattr(self, 'editortabs'):
+        terminal_shortcuts = {
+                    'Ctrl+Backspace': self.clear_output_signal.emit,
+                    }
+        editor_shortcuts.update(terminal_shortcuts)
+
+        if self.use_tabs:
             tab_shortcuts = {
-                        'Ctrl+Shift+N': self.editortabs.new_tab,
-                        'Ctrl+Shift+W': self.editortabs.close_current_tab,
+                        'Ctrl+T': self.tabs.new_tab,
+                        'Ctrl+Shift+N': self.tabs.new_tab,
+                        'Ctrl+Shift+W': self.tabs.remove_current_tab,
                         # 'Ctrl+Shift+T': notimp('reopen previous tab'),
                         }
             editor_shortcuts.update(tab_shortcuts)
@@ -150,15 +126,25 @@ class ShortcutHandler(QtCore.QObject):
 
         self.shortcut_dict.update(signal_dict)
 
-        context = QtCore.Qt.WidgetShortcut
+        def add_action(widget, shortcut, func):
+            a = QtWidgets.QAction(widget)
+            key_seq = QtGui.QKeySequence(shortcut)
+            a.setShortcut(key_seq)
+            a.setShortcutContext(
+                QtCore.Qt.WidgetShortcut)
+            a.triggered.connect(func)
+            widget.addAction(a)
+
         for shortcut, func in editor_shortcuts.items():
-            keySequence = QtGui.QKeySequence(shortcut)
-            qshortcut = QtWidgets.QShortcut(
-                                            keySequence,
-                                            self.parent_widget,
-                                            func,
-                                            context=context)
-            qshortcut.setObjectName(shortcut)
+            add_action(self.editor, shortcut, func)
+
+        terminal = self.parent_widget.parent().parent().terminal
+        for shortcut, func in terminal_shortcuts.items():
+            add_action(terminal, shortcut, func)
+
+        if self.use_tabs:
+            for shortcut, func in tab_shortcuts.items():
+                add_action(self.tabs, shortcut, func)
 
     def notimplemented(self, text):
         """ Development reminders to implement features """
@@ -400,14 +386,20 @@ class ShortcutHandler(QtCore.QObject):
         self.editor.insertPlainText('    ')
 
     def next_tab(self):
-        if hasattr(self, 'editortabs'):
-            next_index = self.editortabs.currentIndex()+1
-            if self.editortabs.widget(next_index).objectName() == 'Editor':
-                self.editortabs.setCurrentIndex(next_index)
+        """
+        Switch to the next tab.
+        """
+        if hasattr(self, 'tabs'):
+            next_index = self.tabs.currentIndex()+1
+            if next_index <= self.tabs.count():
+                self.tabs.setCurrentIndex(next_index)
 
     def previous_tab(self):
-        if hasattr(self, 'editortabs'):
-            self.editortabs.setCurrentIndex(self.editortabs.currentIndex()-1)
+        """
+        Switch to the next tab.
+        """
+        if hasattr(self, 'tabs'):
+            self.tabs.setCurrentIndex(self.tabs.currentIndex()-1)
 
     def jump_to_start(self):
         """
@@ -667,10 +659,16 @@ class ShortcutHandler(QtCore.QObject):
             return
 
         textCursor = self.editor.textCursor()
+        original_pos = textCursor.position()
+
+        # start the search from the beginning of the document
+        textCursor.setPosition(0, QtGui.QTextCursor.MoveAnchor)
         document = self.editor.document()
         cursor = document.find(text, textCursor)
         pos = cursor.position()
-        self.editor.setTextCursor(cursor)
+        if pos != -1:
+            self.editor.setTextCursor(cursor)
+
 
     def duplicate_lines(self):
         """
@@ -721,6 +719,8 @@ class ShortcutHandler(QtCore.QObject):
         cursor = self.editor.textCursor()
         selection = cursor.selection()
         text = selection.toPlainText().strip()
+        if not text:
+            return
         obj = __main__.__dict__.get(text)
         if obj is not None:
             print(obj.__doc__)
@@ -735,6 +735,8 @@ class ShortcutHandler(QtCore.QObject):
         cursor = self.editor.textCursor()
         selection = cursor.selection()
         text = selection.toPlainText().strip()
+        if not text:
+            return
         obj = __main__.__dict__.get(text)
         if obj is not None:
             print(type(obj))

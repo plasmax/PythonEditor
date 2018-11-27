@@ -14,6 +14,9 @@ if __name__ == '__main__':
     """
     For testing outside of nuke.
     """
+    import time
+    start = time.time()
+
     try:
         import nuke
         pyside = ('PySide' if (nuke.NUKE_VERSION_MAJOR < 11) else 'PySide2')
@@ -28,12 +31,10 @@ if __name__ == '__main__':
 
     try:
         app = QtWidgets.QApplication(sys.argv)
+        print(app)
     except RuntimeError:
         # for running inside and outside of Nuke
         app = QtWidgets.QApplication.instance()
-
-    import time
-    start = time.time()
 
     _ide = ide.IDE()
     app.setPalette(nukepalette.getNukePalette())

@@ -1,5 +1,6 @@
-import os # temporary for self.open until files.py or files/open.py, save.py, autosave.py implemented.
 
+import os # temporary for self.open until files.py or files/open.py, save.py, autosave.py implemented.
+import uuid
 from PythonEditor.ui.Qt import QtWidgets
 from PythonEditor.utils import save
 
@@ -12,8 +13,8 @@ class MenuBar(object):
     """
     def __init__(self, widget):
         self.widget = widget
-        for attr in 'edittabs', 'layout', '_parent':
-            setattr(self, attr, getattr(widget, attr))
+        self.tabeditor = widget.tabeditor
+        self.editor = widget.tabeditor.editor
         self.setup_menu()
 
     def setup_menu(self):
@@ -57,7 +58,7 @@ class MenuBar(object):
            self.export_all_tabs_to_external_editor)
 
         help_menu.addAction('Reload Python Editor',
-                            self._parent.reload_package)
+                            self.widget._parent.reload_package)
 
         help_menu.addAction('About Python Editor',
                             self.show_about_dialog)
@@ -68,14 +69,14 @@ class MenuBar(object):
         edit_menu.addAction('Shortcuts',
                             self.show_shortcuts)
 
-        self.layout().addWidget(menu_bar)
+        self.widget.layout().addWidget(menu_bar)
 
-    @property
-    def editor(self):
-        return self.edittabs.currentWidget()
+    # @property
+    # def editor(self):
+    #     return self.tabeditor.editor
 
     def new(self):
-        self.edittabs.new_tab()
+        self.tabeditor.tabs.new_tab()
 
     def open(self):
         """
@@ -83,22 +84,51 @@ class MenuBar(object):
         TODO: This needs to go into a files.py or files/open.py
         """
         o = QtWidgets.QFileDialog.getOpenFileName
-        path, _ = o(self.edittabs, "Open File")
+        path, _ = o(self.tabeditor, "Open File")
         if not path:
             return
-        editor = self.edittabs.new_tab(tab_name=os.path.basename(path))
-        editor.path = path
-
-        # Because the document will be open in read-only mode, the
-        # autosave will not save the editor's contents until the
-        # contents have been modified.
-        editor.read_only = True
 
         with open(path, 'rt') as f:
-            editor.setPlainText(f.read())
+            text = f.read()
+
+        tabs = self.tabeditor.tabs
+        for index in range(tabs.count()):
+            data = tabs.tabData(index)
+            if data is None:
+                continue
+
+            if data.get('path') != path:
+                continue
+
+            # try to avoid more costly 2nd comparison
+            if data.get('text') == text:
+                tabs.setCurrentIndex(index)
+                return
+
+        tab_name = os.path.basename(path)
+
+        # Because the document will be open in read-only mode, the
+        # autosave should not save the editor's contents until the
+        # contents have been modified.
+        data = {
+            'uuid'  : str(uuid.uuid4()),
+            'name'  : tab_name,
+            'text'  : '',
+            'path'  : path,
+            'date'  : '', # need the file's date
+            'saved' : True, # read-only
+        }
+
+        tabs.new_tab(tab_name=tab_name)
+        self.tabeditor.editor.setPlainText(text)
+
+    # TODO
+    # The below methods and their counterparts in utils.save
+    # need to have the API updated to reflect the new single editor.
 
     def save(self):
-        save.save(self.editor)
+        save.save(self.editor.toPlainText())
+        # TODO! works but needs to set data['saved'] on current tab
 
     def save_as(self):
         save.save_as(self.editor)
@@ -110,10 +140,10 @@ class MenuBar(object):
         save.export_selected_to_external_editor(self.editor)
 
     def export_current_tab_to_external_editor(self):
-        save.export_current_tab_to_external_editor(self.edittabs)
+        save.export_current_tab_to_external_editor(self.tabs)
 
     def export_all_tabs_to_external_editor(self):
-        save.export_all_tabs_to_external_editor(self.edittabs)
+        save.export_all_tabs_to_external_editor(self.tabs)
 
     def show_shortcuts(self):
         """

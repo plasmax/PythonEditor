@@ -8,14 +8,14 @@ class PyKnobEdit(editor.Editor):
     def __init__(self, node=None, knob=None):
         super(PyKnobEdit, self).__init__()
         self.node = node
-        
+
         knob = node.knob('py_btn') if knob is None else knob
         if knob is None:
             return
         self.knob = knob
-        
+
         self.read()
-        self.textChanged.connect(self.write)
+        self.text_changed_signal.connect(self.write)
 
     def makeUI(self):
         return self
@@ -25,7 +25,7 @@ class PyKnobEdit(editor.Editor):
 
     def write(self):
         self.knob.setValue(self.toPlainText())
-        
+
 
 def create_jupyter_node(exec_cmd=''):
     noop = nuke.nodes.NoOp(name='Jupyter_Node')
@@ -39,7 +39,7 @@ def create_jupyter_node(exec_cmd=''):
 
     userknob = noop.knob('User')
     userknob.setLabel('Python')
-    
+
 exec_tree = """# exec connected jupyter nodes
 def node_tree(node):
     nodes = []
@@ -47,12 +47,12 @@ def node_tree(node):
         if node.knob('py_btn'):
             nodes.append(node)
         node = node.input(0)
-    return reversed(nodes)    
+    return reversed(nodes)
 
 def exec_tree_btns():
     for node in node_tree(nuke.thisNode()):
         node.knob('py_btn').execute()
-    
+
 exec_tree_btns()
 """
 

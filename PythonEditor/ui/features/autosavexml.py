@@ -12,11 +12,12 @@ from __future__ import print_function
 import os
 import io
 import unicodedata
+import warnings
+import tempfile
 from xml.etree import cElementTree as ElementTree
-from functools import partial
 
 from PythonEditor.ui.Qt import QtCore, QtWidgets
-from PythonEditor.utils import save
+# from PythonEditor.utils import save
 from PythonEditor.utils.signals import connect
 from PythonEditor.utils.constants import NUKE_DIR
 
@@ -46,7 +47,10 @@ def create_autosave_file():
 
         # if file not found, check if directory exists
         if not os.path.isdir(NUKE_DIR):
+            # filehandle, filepath = tempfile.mkstemp()
+            # msg = 'Directory %s does not exist, saving to %s' % (NUKE_DIR, filepath)
             msg = 'Directory %s does not exist' % NUKE_DIR
+            # NUKE_DIR = filepath
             raise CouldNotCreateAutosave(msg)
         else:
             init_file_header()
@@ -170,6 +174,10 @@ def remove_control_characters(s):
 
 
 def parsexml(element_name, path=AUTOSAVE_FILE):
+    """
+    Retrieve the root and a list of <element_name>
+    elements from a given xml file.
+    """
     if not create_autosave_file():
         return
 
@@ -234,6 +242,14 @@ def remove_empty_autosaves():
     writexml(root)
 
 
+def sort_by_index(subscript):
+    tab_index = subscript.attrib.get('tab_index')
+    try:
+        return int(tab_index)
+    except TypeError, ValueError:
+        return 1
+
+
 class AutoSaveManager(QtCore.QObject):
     """
     Simple xml text storage.
@@ -264,58 +280,29 @@ class AutoSaveManager(QtCore.QObject):
     """
     def __init__(self, tabs, tab_index=None):
         super(AutoSaveManager, self).__init__()
-        self.setObjectName('AutoSaveManager')
-        create_autosave_file()
-        self.timer_waiting = False
-        self.setup_save_timer(interval=1000)
 
-        self.tabs = tabs
+        try:
+            create_autosave_file()
+        except CouldNotCreateAutosave:
+            warnings.warn('Could not create autosave.')
+            return None
+
+        self.setObjectName('AutoSaveManager')
+        self.autosave_timer_waiting = False
+        self.setup_save_timer(interval=1000) # TODO: hook this up
+
+        self.tabeditor = tabs
+        self.editor = tabs.editor
+        self.tabs = tabs.tabs
         self.setParent(tabs)
 
-        # connect tab signals
-        tss = tabs.tab_switched_signal
-        tss.connect(self.handle_tab_switch)
-        tss.connect(self.check_document_modified)
-        tcr = tabs.tabCloseRequested
-        tcr.connect(self.handle_tab_close)
-        rts = tabs.reset_tab_signal
-        rts.connect(self.clear_subscripts)
-        cts = tabs.closed_tab_signal
-        cts.connect(self.editor_close_handler, QtCore.Qt.DirectConnection)
-        css = tabs.contents_saved_signal
-        css.connect(self.handle_document_save)
-        tmv = tabs.tab_moved_signal
-        tmv.connect(self.handle_tab_moved)
-
-        self.set_editor()
         self.readautosave()
-
-    @QtCore.Slot(int, int, bool)
-    def handle_tab_switch(self, previous, current, tabremoved):
-        if not tabremoved:  # nothing's been deleted
-                            # so we need to disconnect
-                            # signals from previous editor
-            self.disconnect_signals()
-
-        self.set_editor()
-
-    def set_editor(self):
-        """
-        Sets the current editor
-        and connects signals.
-        """
-        editor = self.tabs.currentWidget()
-        hasedit = hasattr(self, 'editor')
-        editorChanged = True if not hasedit else self.editor != editor
-        isEditor = editor.objectName() == 'Editor'
-        if isEditor and editorChanged:
-            self.editor = editor
-            self.connect_signals()
+        self.connect_signals()
 
     def connect_signals(self):
-        """ Connects the current editor's signals to this class """
+        """ Connects the editor and tab signals to this class """
         pairs = [
-            (self.editor.textChanged, self.save_timer),
+            (self.editor.text_changed_signal, self.save_timer),
             (self.editor.focus_in_signal, self.check_document_modified),
         ]
         self._connections = []
@@ -323,15 +310,25 @@ class AutoSaveManager(QtCore.QObject):
             name, _, handle = connect(self.editor, signal, slot)
             self._connections.append((name, slot))
 
-    def disconnect_signals(self):
-        """ Disconnects the current editor's signals from this class """
-        if not hasattr(self, 'editor'):
-            return
-        cx = self._connections
-        for name, slot in cx:
-            for x in range(self.editor.receivers(name)):
-                self.editor.disconnect(name, slot)
-        self._connections = []
+        # connect tab signals
+        tabs = self.tabs
+        cts = tabs.tab_close_signal
+        cts.connect(self.remove_subscript)
+        trs = tabs.tab_renamed_signal
+        trs.connect(self.save_by_uuid)
+        tmv = tabs.tab_repositioned_signal
+        tmv.connect(self.update_tab_index)
+        tcc = tabs.currentChanged
+        tcc.connect(self.store_current_index)
+        tss = self.tabeditor.tab_switched_signal
+        tss.connect(self.check_document_modified)
+
+        """
+        rts = tabs.reset_tab_signal
+        rts.connect(self.clear_subscripts)
+        css = tabs.contents_saved_signal
+        css.connect(self.handle_document_save)
+        """
 
     def setup_save_timer(self, interval=500):
         """
@@ -339,34 +336,33 @@ class AutoSaveManager(QtCore.QObject):
         :param interval: autosave interval in milliseconds
         :type interval: int
         """
-        self.timer = QtCore.QTimer()
-        self.timer.setSingleShot(True)
-        self.timer.setInterval(interval)
+        self.autosave_timer = QtCore.QTimer()
+        self.autosave_timer.setSingleShot(True)
+        self.autosave_timer.setInterval(interval)
 
     def save_timer(self):
         """
-        On textChanged, if no text present, save immediately.
+        On text_changed_signal, if no text present, save immediately.
         Else, start a timer that will trigger autosave after
         a brief pause in typing.
         """
         if not self.editor.toPlainText().strip():
             return self.autosave()
 
-        self.timer_waiting = True
-        if self.timer.isActive():
-            self.timer.stop()
+        self.autosave_timer_waiting = True
+        if self.autosave_timer.isActive():
+            self.autosave_timer.stop()
 
         self.setup_save_timer()
-        autosave = partial(self.autosave_handler, self.editor)
-        self.timer.timeout.connect(autosave)
-        self.timer.start()
+        self.autosave_timer.timeout.connect(self.autosave_handler)
+        self.autosave_timer.start()
 
-    def autosave_handler(self, editor=None):
+    def autosave_handler(self):
         """
         Autosave timeout triggers this.
         """
-        self.timer_waiting = False
-        self.autosave(editor=editor)
+        self.autosave_timer_waiting = False
+        self.autosave()
 
     def readfile(self, path):
         """
@@ -398,112 +394,94 @@ class AutoSaveManager(QtCore.QObject):
         Sets editor text content. First checks the
         autosave file for <subscript> elements and
         creates a tab per element.
+
+        TODO: Would be nice to remember current tab
+        (alongside preferences) when reading autosave.
         """
         root, subscripts = parsexml('subscript')
-
-        def sort_by_index(subscript):
-            tab_index = subscript.attrib.get('tab_index')
-            try:
-                return int(tab_index)
-            except TypeError:
-                return 1
-
-        editor_count = 0
+        if len(subscripts) == 0:
+            return
         subscripts = sorted(subscripts, key=sort_by_index)
+
+        autosaves = []
+        i = 0
         for s in subscripts:
+            name = s.attrib.get('name')
+            if name is None:
+                continue
+            autosaves.append((i, s))
+            i += 1
 
-            if not s.text:
-                path = s.attrib.get('path')
-                if path is None:
-                    root.remove(s)
-                    continue
-                if not os.path.isfile(path):
-                    root.remove(s)
-                    continue
-                s.attrib['name'] = os.path.basename(path)
+        standard_tabs = False
+        draw_own_close_btn = True
+        draw_own_tab = False
+        # storing autosave into new tabs
+        for i, s in autosaves:
+            name = s.attrib.get('name')
+            data = s.attrib.copy()
 
-            try:
-                tab_name = s.attrib['name']
-            except KeyError:
-                tab_name = None
+            data['text'] = s.text # we might need to fetch the text from a file
 
-            editor = self.tabs.new_tab(tab_name=tab_name, init_features=False)
-            if 'uuid' in s.attrib:
-                editor.uid = s.attrib['uuid']
-            else:
-                s.attrib['uuid'] = editor.uid
+            if standard_tabs:
+                self.tabs.new_tab(tab_name=name)
+            elif draw_own_close_btn:
+                # tab_name = name+' '*5
+                tab_name = name
+                self.tabs.new_tab(tab_name=tab_name, tab_data=data) # hax for enough space for close button :'(
+            elif draw_own_tab:
+                tab_name = name+' '*5
+                self.tabs.new_tab(tab_name=' '*len(tab_name))
 
-            if 'path' in s.attrib:
-                editor.path = s.attrib['path']
-            elif hasattr(editor, 'path'):
-                s.attrib['path'] = editor.path
+            path = data.get('path')
+            if path is not None:
+                self.tabs.setTabToolTip(i, path) # and if this changes?
 
-            if s.text:
-                editor.setPlainText(s.text)
-                editor.read_only = False
-            else:
-                self.editor = editor
-                self.readfile(path)
+        root, index_elements = parsexml('current_index')
+        for index_element in index_elements:
+            index = int(index_element.text)
+            self.tabs.setCurrentIndex(index)
+            self.tabeditor.set_editor_contents(index)
+            break
 
-            editor.tab_index = self.tabs.currentIndex()
-            editor_count += 1
-
-        subscripts = self.update_tab_order(subscripts)
-
-        if editor_count == 0:
-            self.tabs.new_tab()
-
-        writexml(root)
-
-    def update_tab_order(self, subscripts):
-        uids = [(i, getattr(self.tabs.widget(i), 'uid', None))
-                for i in range(self.tabs.count())]
-        for s in subscripts:
-            for i, uid in uids:
-                if s.attrib.get('uuid') == uid:
-                    s.attrib['tab_index'] = str(i)
-
-    def check_document_modified(self):
+    lock = False
+    def check_document_modified(self, index=-1):
         """
         On focus in event, check the xml
         to see if there are any differences.
         If there are, prompt the user to see
         if they want to update their tab.
         """
-        if self.timer_waiting:
+        # return # this is too annoying. FIX! pops up on autocomplete :(
+        if self.lock:
+            # don't allow this to be called again before
+            # autosave is complete.
             return
 
         root, subscripts = parsexml('subscript')
 
+        tabs = self.tabs
+        tab_uid = tabs['uuid']
+        editor_text = self.editor.toPlainText()
+
+        # find all subscripts with a
+        # matching uid for our current tab
         all_match = True
         not_matching = []
         for s in subscripts:
-            if s.attrib.get('uuid') == self.editor.uid:
-                if s.text is None:
-                    continue
+            if s.text is None:
+                continue
+            uid = s.attrib.get('uuid')
+            if uid != tab_uid:
+                continue
 
-                editor_text = self.editor.toPlainText()
-                text_match = (s.text == editor_text)
+            text_match = (s.text == editor_text)
+            name_match = (s.attrib.get('name') == tabs['name'])
 
-                editor_name = self.editor.name
-                name_match = (s.attrib.get('name') == editor_name)
-
-                if not (text_match and name_match):
-                    all_match = False
-                    not_matching.append((s, self.editor))
+            if not all([text_match, name_match]):
+                all_match = False
+                not_matching.append((s, uid))
 
         if all_match:
-            return
-
-        editor_present = False
-        for index in range(self.tabs.count()):
-            editor = self.tabs.widget(index)
-            for _, e in not_matching:
-                if e == editor:
-                    editor_present = True
-                    break
-
-        if not editor_present:
             return
 
         self.lock = True
@@ -516,7 +494,7 @@ class AutoSaveManager(QtCore.QObject):
                 name = s.attrib.get('name')
                 print(uid, name)
 
-        for s, editor in not_matching:
+        for s, uid in not_matching:
             # TODO: Display text/differences (difflib?)
             Yes = QtWidgets.QMessageBox.Yes
             No = QtWidgets.QMessageBox.No
@@ -527,69 +505,121 @@ class AutoSaveManager(QtCore.QObject):
                   '\nor No to overwrite the saved document.'
 
             name = s.attrib.get('name')
-            msg = msg.format(editor.name, str(name))
-            question = QtWidgets.QMessageBox.question
-            reply = question(self.editor,
-                             'Document Mismatch Warning',
-                             msg,
-                             Yes,
-                             No)
-
+            msg = msg.format(tabs['name'], str(name))
+            ask = QtWidgets.QMessageBox.question
+            title = 'Load Autosave?'
+            reply = ask(self.editor, title, msg, Yes, No)
             if reply == Yes:
                 self.editor.setPlainText(s.text)
+                self.tabs['text'] = s.text
                 if name is not None:
                     index = self.tabs.currentIndex()
                     self.tabs.setTabText(index, name)
-            else:
-                s.text = self.editor.toPlainText()
-                writexml(root)
+            elif reply == No:
+                text = self.editor.toPlainText()
+                s.text = text
+                self.tabs['text'] = text
                 self.autosave()
-        self.lock = True
 
+        # give the autosave 500ms to complete
+        # before allowing comparison checks again
         self._timer = QtCore.QTimer()
-        self._timer.setInterval(500)
+        self._timer.setInterval(1500)
         self._timer.setSingleShot(True)
 
         def unlock(): self.lock = False
         self._timer.timeout.connect(unlock)
         self._timer.start()
 
+    def sync_tab_indices(self):
+        """
+        Synchronise the tab_index saved in <subscript>
+        elements and the tab indices of all tabs in the QTabBar.
+        """
+        root, subscripts = parsexml('subscript')
+        for i in range(self.tabs.count()):
+            data = self.tabs.tabData(i)
+            for s in subscripts:
+                if s.attrib.get('uuid') != data['uuid']:
+                    continue
+                s.attrib['tab_index'] = str(i)
+                break
+        writexml(root)
+
     @QtCore.Slot()
-    def autosave(self, editor=None):
+    def autosave(self):
         """
         Saves editor contents into autosave
         file with a unique identifier (uuid)
         and accompanying file path if available.
         """
-        if editor is None:
-            editor = self.editor
+        tabs = self.tabs
+        self.save_by_uuid(
+            tabs['uuid'],
+            tabs['name'],
+            tabs['text'],
+            str(tabs.currentIndex()),
+            tabs.get('path')
+            )
+        self.sync_tab_indices()
 
+    @QtCore.Slot(str, str, str, str, object)
+    def save_by_uuid(self, uid, name, text, index, path=None):
+        """
+        Only update a specific subscript given by uuid.
+        """
         root, subscripts = parsexml('subscript')
 
         found = False
         for s in subscripts:
-            if s.attrib.get('uuid') == editor.uid:
-                if not editor.read_only:
-                    s.text = editor.toPlainText()
-
-                s.attrib['name'] = editor.name
-                s.attrib['tab_index'] = str(editor.tab_index)
-                if hasattr(editor, 'path'):
-                    s.attrib['path'] = editor.path
+            if s.attrib.get('uuid') == uid:
                 found = True
-
-        if not found:
+                sub = s
+                break
+        else:
             sub = ElementTree.Element('subscript')
-            sub.attrib['uuid'] = editor.uid
-            sub.attrib['name'] = editor.name
-            sub.attrib['tab_index'] = str(editor.tab_index)
-            if hasattr(editor, 'path'):
-                sub.attrib['path'] = editor.path
-            if not editor.read_only:
-                sub.text = editor.toPlainText()
             root.append(sub)
 
+        sub.attrib['uuid'] = uid
+        sub.attrib['name'] = name
+        sub.text = text
+        sub.attrib['tab_index'] = index
+
+        if path is not None:
+            sub.attrib['path'] = path
+
         writexml(root)
+
+    def store_current_index(self):
+        """
+        TODO: store a <currentindex> element
+        and then set the currentindex on readautosave (if present! backwards compat).
+        """
+        root, index_elements = parsexml('current_index')
+        if len(index_elements) == 0:
+            ci = ElementTree.Element('current_index')
+            root.append(ci)
+        else:
+            ci = index_elements[0]
+        ci.text = str(self.tabs.currentIndex())
+        writexml(root)
+
+    @QtCore.Slot(int, int)
+    def update_tab_index(self, from_index, to_index):
+        # return # I want to do this threaded.
+        for i in from_index, to_index:
+            data = self.tabs.tabData(i)
+            data['tab_index'] = i
+            self.tabs.setTabData(i, data) # don't like that we'e modifying tabdata here...
+            self.save_by_uuid(
+                data['uuid'],
+                data['name'],
+                data['text'],
+                str(i),
+                data.get('path')
+                )
+        self.store_current_index()
+        self.sync_tab_indices()
 
     @QtCore.Slot(object)
     def handle_document_save(self, editor):
@@ -611,7 +641,7 @@ class AutoSaveManager(QtCore.QObject):
 
         editor_found = False
         for s in subscripts:
-            if s.attrib.get('uuid') == editor.uid:
+            if s.attrib.get('uuid') == editor.uuid:
                 if not s.text:
                     continue
                 with open(editor.path, 'rt') as f:
@@ -626,11 +656,11 @@ class AutoSaveManager(QtCore.QObject):
 
         if editor_found:
             writexml(root)
-            print('Document {0} has been emptied'.format(editor.uid))
+            print('Document {0} has been emptied'.format(editor.uuid))
 
     @QtCore.Slot(object, int)
     def handle_tab_moved(self, editor, tab_index):
-        self.autosave(editor=editor)
+        self.autosave()
 
     @QtCore.Slot(int)
     def handle_tab_close(self, tab_index):
@@ -656,56 +686,16 @@ class AutoSaveManager(QtCore.QObject):
 
         writexml(root)
 
-    @QtCore.Slot(object)
-    def editor_close_handler(self, editor):
-        """
-        Called on closed_tab_signal. Checks to see if contents
-        have been saved (by checking the read_only state of the
-        editor), then removes the autosave contents.
-        """
-        # reset cancelled status to default
-        self.tabs.user_cancelled_tab_close = False
-
-        # check for unsaved contents.
-        safe_to_remove = editor.read_only
-
-        # if there's no text and no path
-        # (i.e. user doesn't want to resave file as empty)
-        is_empty = (editor.toPlainText().strip() == '')
-        no_path = not hasattr(editor, 'path')
-        if is_empty and no_path:
-            safe_to_remove = True
-
-        if not safe_to_remove:
-            msg_box = QtWidgets.QMessageBox()
-            msg_box.setText('The document has been modified.')
-            msg_box.setInformativeText('Do you want to save your changes?')
-            buttons = msg_box.Save | msg_box.Discard | msg_box.Cancel
-            msg_box.setStandardButtons(buttons)
-            msg_box.setDefaultButton(msg_box.Save)
-            ret = msg_box.exec_()
-
-            user_cancelled = (ret == msg_box.Cancel)
-
-            if (ret == msg_box.Save):
-                path = save.save(editor)
-                if path is None:
-                    user_cancelled = True
-
-            if user_cancelled:
-                self.tabs.user_cancelled_tab_close = True
-                return
-
-        # if we arrive here it means one of the following:
-        # a) file is not open for editing (read-only)
-        # b) we've already saved
-        # c) we've discarded the document
-        # So it's safe to remove it.
-        self.remove_subscript(editor.uid)
-
+    @QtCore.Slot(str)
     def remove_subscript(self, uid):
         """
         Explicitly remove a subscript entry.
+
+        If we arrive here it means one of the following:
+        a) file is not open for editing (read-only)
+        b) we've already saved
+        c) we've discarded the document
+        So it's safe to remove it.
 
         :param uid: Unique Identifier of subscript
         to remove

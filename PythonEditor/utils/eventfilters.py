@@ -51,10 +51,6 @@ filt = Filt(target=QtWidgets.QApplication.instance())
         QtCore.QCoreApplication.installEventFilter(self.target, self)
 
     def eventFilter(self, obj, event):
-        # if (event.type() == QtCore.QEvent.KeyPress
-        #         and event.key() == QtCore.Qt.Key_Escape):
-        #         self.quit()
-        #         return True
         try:
             result = self.event_filter(obj, event)
             if result not in [True, False]:
@@ -68,10 +64,16 @@ filt = Filt(target=QtWidgets.QApplication.instance())
             return False
 
     def event_filter(self, obj, event):
+        """
+        The method to be overridden when subclassing.
+        """
         return False
 
     def quit(self):
         print self.__class__, 'exiting'
+        self.silent_quit()
+
+    def silent_quit(self):
         QtCore.QCoreApplication.removeEventFilter(self.target, self)
         self.deleteLater()
 
