@@ -31,7 +31,6 @@ if __name__ == '__main__':
 
     try:
         app = QtWidgets.QApplication(sys.argv)
-        print(app)
     except RuntimeError:
         # for running inside and outside of Nuke
         app = QtWidgets.QApplication.instance()
