@@ -127,7 +127,7 @@ def add_node_menu():
     """
     Adds a menu item to the Node Menu.
     """
-    nuke.menu('Nodes').addCommand('Python Editor',
+    nuke.menu('Nodes').addCommand('Py',
                               IMPORT_CMD,
                               shortcut='\\',
                               icon=ICON_PATH)
