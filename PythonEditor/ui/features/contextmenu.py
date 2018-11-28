@@ -353,6 +353,15 @@ class ContextMenu(QtCore.QObject):
             import nuke
         except ImportError:
             return
+
+        self.nodes_menu = self.menu.addMenu('Nodes')
+        self.nodes_add_menu = self.nodes_menu.addMenu('Add knob')
+        self.nodes_set_menu = self.nodes_menu.addMenu('Set')
+        self.nodes_get_menu = self.nodes_menu.addMenu('Get')
+        self.nodes_clr_menu = self.nodes_menu.addMenu('Clear')
+        self.nodes_run_menu = self.nodes_menu.addMenu('Eval in Knob Context')
+
+
         # self.nodes_menu.addAction('Run on Selected Nodes',
         #                          self.notImplemented)
 
@@ -404,10 +413,3 @@ class ContextMenu(QtCore.QObject):
         for knob_name in add_knobs:
             func = partial(self.add_knob, knob_name)
             self.nodes_add_menu.addAction(knob_name, func)
-
-        self.nodes_menu = self.menu.addMenu('Nodes')
-        self.nodes_add_menu = self.nodes_menu.addMenu('Add knob')
-        self.nodes_set_menu = self.nodes_menu.addMenu('Set')
-        self.nodes_get_menu = self.nodes_menu.addMenu('Get')
-        self.nodes_clr_menu = self.nodes_menu.addMenu('Clear')
-        self.nodes_run_menu = self.nodes_menu.addMenu('Eval in Knob Context')
