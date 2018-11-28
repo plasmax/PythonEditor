@@ -75,8 +75,6 @@ class ShortcutHandler(QtCore.QObject):
                     'Ctrl+]': self.indent,
                     'Ctrl+[': self.unindent,
                     'Shift+Tab': self.unindent,
-                    'Ctrl+Tab': self.next_tab,
-                    'Ctrl+Shift+Tab': self.previous_tab,
                     'Ctrl+=': self.zoom_in,
                     'Ctrl++': self.zoom_in,
                     'Ctrl+-': self.zoom_out,
@@ -89,10 +87,13 @@ class ShortcutHandler(QtCore.QObject):
                     'Ctrl+Shift+Up': self.move_lines_up,
                     'Ctrl+Shift+Down': self.move_lines_down,
                     'Ctrl+S': notimp('save'),
-                    QtCore.Qt.Key_F5: self.parent_widget.parent().parent().parent().reload_package,
                     # 'Ctrl+Shift+Alt+Up': notimp('duplicate cursor up'),
                     # 'Ctrl+Shift+Alt+Down': notimp('duplicate cursor down'),
                     }
+
+
+        if self.use_tabs:
+            editor_shortcuts[QtCore.Qt.Key_F5] = self.parent_widget.parent().parent().parent().reload_package
 
         terminal_shortcuts = {
                     'Ctrl+Backspace': self.clear_output_signal.emit,
@@ -104,6 +105,8 @@ class ShortcutHandler(QtCore.QObject):
                         'Ctrl+T': self.tabs.new_tab,
                         'Ctrl+Shift+N': self.tabs.new_tab,
                         'Ctrl+Shift+W': self.tabs.remove_current_tab,
+                        'Ctrl+Tab': self.next_tab,
+                        'Ctrl+Shift+Tab': self.previous_tab,
                         # 'Ctrl+Shift+T': notimp('reopen previous tab'),
                         }
             editor_shortcuts.update(tab_shortcuts)
@@ -138,11 +141,11 @@ class ShortcutHandler(QtCore.QObject):
         for shortcut, func in editor_shortcuts.items():
             add_action(self.editor, shortcut, func)
 
-        terminal = self.parent_widget.parent().parent().terminal
-        for shortcut, func in terminal_shortcuts.items():
-            add_action(terminal, shortcut, func)
-
         if self.use_tabs:
+            terminal = self.parent_widget.parent().parent().terminal
+            for shortcut, func in terminal_shortcuts.items():
+                add_action(terminal, shortcut, func)
+
             for shortcut, func in tab_shortcuts.items():
                 add_action(self.tabs, shortcut, func)
 
@@ -740,7 +743,7 @@ class ShortcutHandler(QtCore.QObject):
         obj = __main__.__dict__.get(text)
         if obj is not None:
             print(type(obj))
-        else:
+        elif text:
             exec('print(type('+text+'))', __main__.__dict__)
 
     def zoom_in(self):
