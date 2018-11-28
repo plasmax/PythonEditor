@@ -426,11 +426,6 @@ class AutoCompleter(QtCore.QObject):
                     # assuming this should be here too but untested
                     self.editor.wait_for_autocomplete = True
                     return True
-                # elif selectedText.endswith('('):
-                #     self.show_function_help(selectedText)
-                #     # assuming this should be here too but untested
-                #     self.editor.wait_for_autocomplete = True
-                #     return True
 
         self.editor.wait_for_autocomplete = False
         self.editor.keyPressEvent(event)
