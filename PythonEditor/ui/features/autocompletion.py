@@ -20,7 +20,7 @@ KEYWORDS.extend(dir(__builtins__))
 class_snippet = """class <!cursor>():
     def __init__(self):
         super(, self).__init__()
-"""
+""".strip()
 
 context_manager_snippet = """class <!cursor>():
     def __init__(self):
@@ -30,7 +30,11 @@ context_manager_snippet = """class <!cursor>():
         return self
 
     def __exit__(self, exception_type, exception_value, traceback):
-"""
+""".strip()
+
+super_snippet = """
+super(<!class>, self).<!method>(<!args>)
+""".strip()
 
 function_snippet = 'def <!cursor>():'
 
@@ -56,6 +60,7 @@ qt_import_snippet = 'from Qt import QtWidgets, QtGui, QtCore'
 SNIPPETS = {
             'class [snippet]': class_snippet,
             'contextmanager [snippet]': context_manager_snippet,
+            'super [snippet]': super_snippet,
             'def [snippet] [func]': function_snippet,
             'def [snippet] [method]': method_snippet,
             'for node selected [snippet]': node_loop_snippet,
@@ -224,12 +229,8 @@ class AutoCompleter(QtCore.QObject):
             return
 
         if word_before_dot in ['self', 'cls']:
-            text = self.editor.toPlainText()[:pos]
-            class_pos = text.rfind('class')
-            text = text[class_pos:]
-            search = re.findall(r'(?:\()([a-zA-Z0-9_\.]+)', text)
-            if search:
-                class_name = search[0]
+            class_name = self.get_inherited_class()
+            if class_name:
                 word_before_dot = class_name
 
         app_namespace = __main__.__dict__.copy()
@@ -359,6 +360,89 @@ class AutoCompleter(QtCore.QObject):
         textCursor.insertText(completion)
         self.editor.setTextCursor(textCursor)
 
+    def get_object_body(self, _type='class'):
+        """
+        Utility method to get the text from the current
+        cursor position upwards until the 'class' keyword.
+        """
+        textCursor = self.editor.textCursor()
+        pos = textCursor.position()
+        text = self.editor.toPlainText()[:pos]
+
+        if _type not in text:
+            return ''
+
+        class_pos = text.rfind(_type)
+        text = text[class_pos:]
+        return text
+
+    def get_object_text(self, pattern, _type='class'):
+        """
+        Get the text attribute inside a class block that
+        matches the pattern given.
+        """
+        text = self.get_object_body(_type=_type)
+        search = re.findall(pattern, text)
+        if not search:
+            return ''
+
+        class_attribute = search[0]
+        return class_attribute
+
+    def get_inherited_class(self):
+        """
+        Return the name of the inherited class, e.g.:
+        class ClassName(Inherited.Class)
+        """
+        return self.get_object_text(
+            r'(?:\()([a-zA-Z0-9_\.]+)',
+            _type='class',
+        )
+
+    def get_current_class_name(self):
+        """
+        Return the class name of the first class defined
+        above the text cursor. E.g.:
+        class ClassName()
+        """
+        return self.get_object_text(
+            r'(?:class\s+)(\w+)(?:\()',
+            _type='class',
+        )
+
+    def get_current_function_name(self):
+        """
+        Return the function name of the first function
+        defined above the text cursor. E.g.:
+        def function_name()
+        """
+        return self.get_object_text(
+            r'(?:def\s+)([a-zA-Z0-9_]+)(?:\()',
+            _type='def',
+        )
+
+    def get_current_function_args(self):
+        """
+        Return the function arguments, of the first function
+        defined above the text cursor. E.g.:
+        def function_name(argument, parameter='value')
+        """
+        return self.get_object_text(
+            r'(?:def\s+\w+\()(.+)(?:\)\:)',
+            _type='def',
+        )
+
+    def get_current_method_args(self):
+        """
+        Return the function arguments, minus 'self',  of the
+        first method defined above the text cursor. E.g.:
+        def function_name(self, argument, parameter='value')
+        """
+        return self.get_object_text(
+            r'(?:def\s+\w+\(\s*self,\s*)(.+)(?:\)\:)',
+            _type='def',
+        )
+
     def insert_snippet_completion(self, completion):
         """
         Fetches snippet from dictionary and
@@ -366,11 +450,22 @@ class AutoCompleter(QtCore.QObject):
         to snippet insert point.
         """
         snippet = SNIPPETS[completion]
+        completion = snippet
         if '<!cursor>' in snippet:
-            cursor_insert = snippet.index('<!cursor>')
-            completion = snippet.replace('<!cursor>', '')
-        else:
-            completion = snippet
+            cursor_insert = completion.index('<!cursor>')
+            completion = completion.replace('<!cursor>', '')
+
+        if '<!class>' in snippet:
+            class_name = self.get_current_class_name()
+            completion = completion.replace('<!class>', class_name)
+
+        if '<!method>' in snippet:
+            method_name = self.get_current_function_name()
+            completion = completion.replace('<!method>', method_name)
+
+        if '<!args>' in snippet:
+            args = self.get_current_method_args()
+            completion = completion.replace('<!args>', args)
 
         textCursor = self.editor.textCursor()
         prefix = self.completer.completionPrefix()
