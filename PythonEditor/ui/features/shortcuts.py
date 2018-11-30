@@ -87,6 +87,7 @@ class ShortcutHandler(QtCore.QObject):
                     'Ctrl+Shift+Up': self.move_lines_up,
                     'Ctrl+Shift+Down': self.move_lines_down,
                     'Ctrl+S': notimp('save'),
+                    'Ctrl+C': notimp('copy line or text'),
                     # 'Ctrl+Shift+Alt+Up': notimp('duplicate cursor up'),
                     # 'Ctrl+Shift+Alt+Down': notimp('duplicate cursor down'),
                     }
