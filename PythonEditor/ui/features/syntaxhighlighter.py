@@ -138,7 +138,7 @@ class Highlight(QtGui.QSyntaxHighlighter):
         # args and kwargs (words) between parentheses
         # rules += [('(?:def \w+\()([^)]+)', 1, self.styles['args'])]
 
-        class_regex = '(?:class \w+\()([a-zA-Z\.]+)(?:\))'
+        class_regex = r'(?:class\s+\w+\()([a-zA-Z\.]+)(?:\))'
         rules += [(class_regex, 1, self.styles['inherited'])]
         rules += [(r'\b%s\b' % i, 0, self.styles['arguments'])
                   for i in self.arguments]
@@ -155,13 +155,13 @@ class Highlight(QtGui.QSyntaxHighlighter):
 
         rules += [
             # function names
-            ('(?:def |)(\w+)(?:\()', 1, self.styles['function_names']),
+            (r'(?:def\s+|)(\w+)(?:\()', 1, self.styles['function_names']),
             # class names
-            ('(?:class )(\w+)(?:\()', 1, self.styles['class_names']),
+            (r'(?:class\s+)(\w+)(?:\()', 1, self.styles['class_names']),
             # methods
-            ('(?:\.)([a-zA-Z\.]+)(?:\()', 1, self.styles['methods']),
+            (r'(?:\.)([a-zA-Z\.]+)(?:\()', 1, self.styles['methods']),
             # decorators
-            ('(?:@)(\w+)', 1, self.styles['function_names']),
+            (r'(?:@)(\w+)', 1, self.styles['function_names']),
             # string formatters
             (r'([rfb])(?:\'|\")', 0, self.styles['formatters']),
             # integers
