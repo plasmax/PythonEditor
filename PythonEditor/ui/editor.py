@@ -246,9 +246,10 @@ class Editor(QtWidgets.QPlainTextEdit):
         # Ctrl+X
         if (event.key() == QtCore.Qt.Key_X
                 and event.modifiers() == CTRL):
-            self.ctrl_x_signal.emit()
+            self.ctrl_x_signal.emit()            
+            self.text_changed_signal.emit()
 
-        # Ctrl+X
+        # Ctrl+N
         if (event.key() == QtCore.Qt.Key_N
                 and event.modifiers() == CTRL):
             self.ctrl_n_signal.emit()
@@ -336,6 +337,16 @@ class Editor(QtWidgets.QPlainTextEdit):
         if is_ctrl and is_vertical:
             return self.wheel_signal.emit(event)
         super(Editor, self).wheelEvent(event)
+
+    def insertFromMimeData(self, mimeData):
+        """
+        Override to emit text_changed_signal
+        (which triggers autosave) when text
+        is pasted or dragged in.
+        """
+
+        self.text_changed_signal.emit()
+        super(Editor, self).insertFromMimeData(mimeData)
 
     """ # Great idea, needs testing
     variable = ''
