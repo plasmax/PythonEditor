@@ -30,20 +30,6 @@ QTabBar::tab {
     height: 24px;
     min-width: 100px;
 }
-/*
-    background-position: left;
-    min-width: 30ex;
-    border-top-right-radius: 15px;
-    padding-right: 24ex;
-    width: 120px;
-    width: 100px;
-    width: 500px;
-    //margin: 15px;
-    //border-top-right-radius: -15px;
-QTabBar::tab:selected {
-    padding-right: 14px;
-}
-*/
 """
 
 
@@ -170,6 +156,7 @@ class Tabs(QtWidgets.QTabBar):
         self.setStyleSheet(TAB_STYLESHEET)
         self.setMovable(True)
         self.setExpanding(False)
+        self.pressed_uid = ''
 
         self.tab_close_button = close_button = CloseButton(self)
         close_button.hide()
@@ -262,7 +249,10 @@ class Tabs(QtWidgets.QTabBar):
                     else:
                         self.setTabToolTip(i, data.get('name'))
 
+        # FIXME: after reload, can raise TypeError: 
+        # super(type, obj): obj must be an instance or subtype of type
         return super(Tabs, self).event(e)
+
 
     def handle_close_button_display(self, e):
 
@@ -339,7 +329,6 @@ class Tabs(QtWidgets.QTabBar):
         elif not self.tab_pressed:
             btn.show()
 
-
     def mousePressEvent(self, event):
         """
         """
@@ -348,9 +337,9 @@ class Tabs(QtWidgets.QTabBar):
             pt = event.pos()
             i = self.pressedIndex = self.start_move_index = self.tabAt(pt)
             data = self.tabData(i)
-            self.pressed_uid = data['uuid']
+            if data is not None:
+                self.pressed_uid = data['uuid']
             self.dragStartPosition = pt
-            # self.setTabData(i, data)
 
             # handle name edit still being visible
             if hasattr(self, 'name_edit'):
@@ -377,9 +366,7 @@ class Tabs(QtWidgets.QTabBar):
             data = self.tabData(self.pressedIndex)
             if data['uuid'] != self.pressed_uid:
                 print 'wrong tab!'
-
-            # self.setTabData(self.pressedIndex, data)
-
+              
         super(Tabs, self).mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
