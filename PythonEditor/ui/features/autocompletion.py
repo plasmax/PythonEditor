@@ -503,7 +503,7 @@ class AutoCompleter(QtCore.QObject):
                 self.editor.wait_for_autocomplete = True
                 return True
 
-        not_alnum_or_mod = (not str(event.text()).isalnum()
+        not_alnum_or_mod = (not event.text().isalnum()
                             and event.modifiers() == QtCore.Qt.NoModifier)
 
         zero_completions = cp.completionCount() == 0
