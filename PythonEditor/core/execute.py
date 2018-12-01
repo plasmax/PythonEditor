@@ -58,11 +58,11 @@ def mainexec(text, whole_text, verbosity=VERBOSITY_LOW):
                     try:
                         print(value)
                     except Exception:
-                        # if the value throws an error here, 
+                        # if the value throws an error here,
                         # try to remove it from globals.
                         del __main__.__dict__[key]
         except Exception:
-            # if there's an error in iterating through the 
+            # if there's an error in iterating through the
             # interpreter globals, restore the globals one
             # by one until the offending value is removed.
             __copy = __main__.__dict__.copy()
@@ -129,7 +129,7 @@ def print_traceback(whole_text, error):
 
         message_lines.append(line)
 
-        result = re.search('(?<="{0}", line )(\d+)'.format(FILENAME), line)
+        result = re.search(r'(?<="{0}",\sline\s)(\d+)'.format(FILENAME), line)
         if result:
             lineno = int(result.group())
             text = '    ' + text_lines[lineno].strip()
