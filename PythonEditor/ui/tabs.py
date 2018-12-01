@@ -17,7 +17,6 @@ TODO:
 
 import time
 import os
-import hashlib
 import uuid
 from PythonEditor.utils import save
 from Qt import QtWidgets, QtGui, QtCore
@@ -143,12 +142,12 @@ class Tabs(QtWidgets.QTabBar):
     over_button = -1
 
     # for autosave purposes:
-    # reset_tab_signal = QtCore.Signal()
+    contents_saved_signal = QtCore.Signal(str)
     tab_close_signal = QtCore.Signal(str) # in case we receive a ctrl+shift+w signal to close the tab
-    # contents_saved_signal = QtCore.Signal(object)
-    # tab_moved_signal = QtCore.Signal(object, int)
     tab_renamed_signal = QtCore.Signal(str, str, str, str, object)
     tab_repositioned_signal = QtCore.Signal(int, int)
+    # reset_tab_signal = QtCore.Signal()
+    # tab_moved_signal = QtCore.Signal(object, int)
 
     def __init__(self, *args):
         super(Tabs, self).__init__(*args)
@@ -254,7 +253,6 @@ class Tabs(QtWidgets.QTabBar):
         # super(type, obj): obj must be an instance or subtype of type
         return super(Tabs, self).event(e)
 
-
     def handle_close_button_display(self, e):
 
         if self.tab_pressed:
@@ -333,7 +331,8 @@ class Tabs(QtWidgets.QTabBar):
     def mousePressEvent(self, event):
         """
         """
-        if event.button() == QtCore.Qt.LeftButton: # this doesn't cover wacom... might need tabletPressEvent
+        # this doesn't cover wacom... might need tabletPressEvent
+        if event.button() == QtCore.Qt.LeftButton:
             self.tab_pressed = True
             pt = event.pos()
             i = self.pressedIndex = self.start_move_index = self.tabAt(pt)
@@ -368,7 +367,7 @@ class Tabs(QtWidgets.QTabBar):
             if data['uuid'] != self.pressed_uid:
                 print 'wrong tab!'
 
-        super(Tabs, self).mouseMoveEvent(event)
+        return super(Tabs, self).mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
         self.tab_pressed = False
@@ -386,12 +385,12 @@ class Tabs(QtWidgets.QTabBar):
             if i != -1:
                 self.removeTab(i)
 
-        super(Tabs, self).mouseReleaseEvent(event)
+        return super(Tabs, self).mouseReleaseEvent(event)
 
-    def mouseDoubleClickEvent(self, e):
-        if e.button() == QtCore.Qt.LeftButton:
-            self.show_name_edit(e)
-        return super(Tabs, self).mouseDoubleClickEvent(e)
+    def mouseDoubleClickEvent(self, event):
+        if event.button() == QtCore.Qt.LeftButton:
+            self.show_name_edit(event)
+        return super(Tabs, self).mouseDoubleClickEvent(event)
 
     def show_name_edit(self, event):
         """
@@ -727,14 +726,6 @@ class TabEditor(QtWidgets.QWidget):
                 self.tabs.repaint()
 
         self.tabs['text'] = self.editor.toPlainText()
-
-        # fun but currently unused
-        text = self.tabs['text']
-        self.tabs['hash'] = hashlib.sha1(text).hexdigest()
-        # print self.tabs['hash']
-
-
-
 
 """
 # QTabBar:tab{padding-right:50px;}
