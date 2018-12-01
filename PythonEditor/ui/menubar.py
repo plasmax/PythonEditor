@@ -127,8 +127,11 @@ class MenuBar(object):
     # need to have the API updated to reflect the new single editor.
 
     def save(self):
-        save.save(self.editor.toPlainText())
-        # TODO! works but needs to set data['saved'] on current tab
+        tabs = self.tabeditor.tabs
+        path = tabs.get('path')
+        path = save.save(self.editor.toPlainText(), path)
+        tabs['path'] = path
+        tabs['saved'] = True
 
     def save_as(self):
         save.save_as(self.editor)
