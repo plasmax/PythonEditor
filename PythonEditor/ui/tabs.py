@@ -157,6 +157,7 @@ class Tabs(QtWidgets.QTabBar):
         self.setMovable(True)
         self.setExpanding(False)
         self.pressed_uid = ''
+        self._hovered_index = -2
 
         self.tab_close_button = close_button = CloseButton(self)
         close_button.hide()
@@ -249,7 +250,7 @@ class Tabs(QtWidgets.QTabBar):
                     else:
                         self.setTabToolTip(i, data.get('name'))
 
-        # FIXME: after reload, can raise TypeError: 
+        # FIXME: after reload, can raise TypeError:
         # super(type, obj): obj must be an instance or subtype of type
         return super(Tabs, self).event(e)
 
@@ -366,7 +367,7 @@ class Tabs(QtWidgets.QTabBar):
             data = self.tabData(self.pressedIndex)
             if data['uuid'] != self.pressed_uid:
                 print 'wrong tab!'
-              
+
         super(Tabs, self).mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
