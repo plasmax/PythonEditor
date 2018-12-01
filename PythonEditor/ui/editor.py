@@ -45,6 +45,8 @@ class Editor(QtWidgets.QPlainTextEdit):
     ctrl_x_signal = QtCore.Signal()
     ctrl_n_signal = QtCore.Signal()
     ctrl_w_signal = QtCore.Signal()
+    ctrl_s_signal = QtCore.Signal()
+    ctrl_c_signal = QtCore.Signal()
     ctrl_enter_signal = QtCore.Signal()
     contents_saved_signal = QtCore.Signal(object)
     read_only_signal = QtCore.Signal(bool)
@@ -81,6 +83,8 @@ class Editor(QtWidgets.QPlainTextEdit):
         self.emit_text_changed = True
         self.textChanged.connect(self._handle_textChanged)
 
+        # TODO: the linenumberarea can
+        # cause it to be slow
         linenumberarea.LineNumberArea(self)
 
         if init_features:
@@ -246,7 +250,7 @@ class Editor(QtWidgets.QPlainTextEdit):
         # Ctrl+X
         if (event.key() == QtCore.Qt.Key_X
                 and event.modifiers() == CTRL):
-            self.ctrl_x_signal.emit()            
+            self.ctrl_x_signal.emit()
             self.text_changed_signal.emit()
 
         # Ctrl+N
@@ -258,6 +262,16 @@ class Editor(QtWidgets.QPlainTextEdit):
         if (event.key() == QtCore.Qt.Key_W
                 and event.modifiers() == CTRL):
             self.ctrl_w_signal.emit()
+
+        # Ctrl+S
+        if (event.key() == QtCore.Qt.Key_S
+                and event.modifiers() == CTRL):
+            self.ctrl_s_signal.emit()
+
+        # Ctrl+C
+        if (event.key() == QtCore.Qt.Key_C
+                and event.modifiers() == CTRL):
+            self.ctrl_c_signal.emit()
 
         super(Editor, self).keyPressEvent(event)
         self.post_key_pressed_signal.emit(event)
