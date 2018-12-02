@@ -31,30 +31,28 @@ class Editor(QtWidgets.QPlainTextEdit):
                   '{', '}',
                   '<', '>']
 
-    tab_signal = QtCore.Signal()
-    return_signal = QtCore.Signal(QtGui.QKeyEvent)
-    wrap_signal = QtCore.Signal(str)
-    focus_in_signal = QtCore.Signal(QtGui.QFocusEvent)
-    key_pressed_signal = QtCore.Signal(QtGui.QKeyEvent)
-    post_key_pressed_signal = QtCore.Signal(QtGui.QKeyEvent)
-    wheel_signal = QtCore.Signal(QtGui.QWheelEvent)
-    context_menu_signal = QtCore.Signal(QtWidgets.QMenu)
-    home_key_signal = QtCore.Signal()
-    home_key_ctrl_alt_signal = QtCore.Signal()
-    end_key_ctrl_alt_signal = QtCore.Signal()
-    ctrl_x_signal = QtCore.Signal()
-    ctrl_n_signal = QtCore.Signal()
-    ctrl_w_signal = QtCore.Signal()
-    ctrl_s_signal = QtCore.Signal()
-    ctrl_c_signal = QtCore.Signal()
-    ctrl_enter_signal = QtCore.Signal()
-    contents_saved_signal = QtCore.Signal(object)
-    read_only_signal = QtCore.Signal(bool)
-    uuid_signal = QtCore.Signal(str)
-
+    wrap_signal               = QtCore.Signal(str)
+    uuid_signal               = QtCore.Signal(str)
+    return_signal             = QtCore.Signal(QtGui.QKeyEvent)
+    focus_in_signal           = QtCore.Signal(QtGui.QFocusEvent)
+    post_key_pressed_signal   = QtCore.Signal(QtGui.QKeyEvent)
+    wheel_signal              = QtCore.Signal(QtGui.QWheelEvent)
+    key_pressed_signal        = QtCore.Signal(QtGui.QKeyEvent)
+    context_menu_signal       = QtCore.Signal(QtWidgets.QMenu)
+    tab_signal                = QtCore.Signal()
+    home_key_signal           = QtCore.Signal()
+    ctrl_x_signal             = QtCore.Signal()
+    ctrl_n_signal             = QtCore.Signal()
+    ctrl_w_signal             = QtCore.Signal()
+    ctrl_s_signal             = QtCore.Signal()
+    ctrl_c_signal             = QtCore.Signal()
+    ctrl_enter_signal         = QtCore.Signal()
+    end_key_ctrl_alt_signal   = QtCore.Signal()
+    home_key_ctrl_alt_signal  = QtCore.Signal()
+    resize_signal             = QtCore.Signal()
     relay_clear_output_signal = QtCore.Signal()
-    editingFinished = QtCore.Signal()
-    text_changed_signal = QtCore.Signal()
+    editingFinished           = QtCore.Signal()
+    text_changed_signal       = QtCore.Signal()
 
     def __init__(self, handle_shortcuts=True, uid=None, init_features=True):
         super(Editor, self).__init__()
@@ -198,6 +196,14 @@ class Editor(QtWidgets.QPlainTextEdit):
         if self._changed:
             self.editingFinished.emit()
         super(Editor, self).focusOutEvent(event)
+
+    def resizeEvent(self, event):
+        """
+        Emit signal on resize so that the
+        LineNumberArea has a chance to update.
+        """
+        self.resize_signal.emit()
+        super(Editor, self).resizeEvent(event)
 
     def keyPressEvent(self, event):
         """
@@ -358,7 +364,6 @@ class Editor(QtWidgets.QPlainTextEdit):
         (which triggers autosave) when text
         is pasted or dragged in.
         """
-
         self.text_changed_signal.emit()
         super(Editor, self).insertFromMimeData(mimeData)
 
