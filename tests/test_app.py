@@ -37,8 +37,7 @@ if __name__ == '__main__':
 
     _ide = ide.IDE()
     app.setPalette(nukepalette.getNukePalette())
-    _ide.show()
-    _ide.resize(500, 800)
+    _ide.showMaximized()
     plastique = QtWidgets.QStyleFactory.create('Plastique')
     QtWidgets.QApplication.setStyle(plastique)
 
