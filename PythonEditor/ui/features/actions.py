@@ -1,3 +1,5 @@
+import os
+import uuid
 from PythonEditor.ui.Qt import QtWidgets, QtGui, QtCore
 from PythonEditor.utils import save
 
