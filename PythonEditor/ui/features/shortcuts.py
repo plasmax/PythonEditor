@@ -5,6 +5,8 @@ from functools import partial
 from PythonEditor.ui.Qt import QtWidgets, QtGui, QtCore
 from PythonEditor.core import execute
 from PythonEditor.utils.signals import connect
+from PythonEditor.utils import save
+from PythonEditor.ui.features import actions
 
 
 class ShortcutHandler(QtCore.QObject):
@@ -40,15 +42,16 @@ class ShortcutHandler(QtCore.QObject):
         """ Connects the current editor's signals to this class """
         editor = self.editor
         pairs = [
-            (editor.tab_signal, self.tab_handler),
-            (editor.return_signal, self.return_handler),
-            (editor.wrap_signal, self.wrap_text),
+            (editor.tab_signal,               self.tab_handler),
+            (editor.return_signal,            self.return_handler),
+            (editor.wrap_signal,              self.wrap_text),
             (editor.home_key_ctrl_alt_signal, self.move_to_top),
-            (editor.end_key_ctrl_alt_signal, self.move_to_bottom),
-            (editor.ctrl_x_signal, self.cut_line),
-            (editor.home_key_signal, self.jump_to_start),
-            (editor.wheel_signal, self.wheel_zoom),
-            (editor.ctrl_enter_signal, self.exec_selected_text),
+            (editor.end_key_ctrl_alt_signal,  self.move_to_bottom),
+            (editor.ctrl_x_signal,            self.cut_line),
+            (editor.ctrl_c_signal,            self.copy_block_or_selection),
+            (editor.home_key_signal,          self.jump_to_start),
+            (editor.wheel_signal,             self.wheel_zoom),
+            (editor.ctrl_enter_signal,        self.exec_selected_text),
         ]
         self._connections = []
         for signal, slot in pairs:
@@ -62,38 +65,39 @@ class ShortcutHandler(QtCore.QObject):
         """
         def notimp(msg): return partial(self.notimplemented, msg)
         editor_shortcuts = {
-                    'Ctrl+B': self.exec_current_line,
-                    'Ctrl+Shift+Return': self.new_line_above,
-                    'Ctrl+Alt+Return': self.new_line_below,
-                    'Ctrl+Shift+D': self.duplicate_lines,
-                    'Ctrl+H': self.print_help,
-                    'Ctrl+Shift+T': self.print_type,
-                    'Ctrl+Shift+F': self.search_input,
-                    'Ctrl+L': self.select_lines,
-                    'Ctrl+J': self.join_lines,
-                    'Ctrl+/': self.comment_toggle,
-                    'Ctrl+]': self.indent,
-                    'Ctrl+[': self.unindent,
-                    'Shift+Tab': self.unindent,
-                    'Ctrl+=': self.zoom_in,
-                    'Ctrl++': self.zoom_in,
-                    'Ctrl+-': self.zoom_out,
-                    'Ctrl+Shift+K': self.delete_lines,
-                    'Ctrl+D': self.select_word,
-                    'Ctrl+M': self.hop_brackets,
-                    'Ctrl+Shift+M': self.select_between_brackets,
-                    'Ctrl+Shift+Delete': self.delete_to_end_of_line,
-                    'Ctrl+Shift+Backspace': self.delete_to_start_of_line,
-                    'Ctrl+Shift+Up': self.move_lines_up,
-                    'Ctrl+Shift+Down': self.move_lines_down,
-                    'Ctrl+S': notimp('save'),
-                    'Ctrl+C': notimp('copy line or text'),
-                    # 'Ctrl+Shift+Alt+Up': notimp('duplicate cursor up'),
-                    # 'Ctrl+Shift+Alt+Down': notimp('duplicate cursor down'),
-                    }
-
+            'Ctrl+B'               : self.exec_current_line,
+            'Ctrl+Shift+Return'    : self.new_line_above,
+            'Ctrl+Alt+Return'      : self.new_line_below,
+            'Ctrl+Shift+D'         : self.duplicate_lines,
+            'Ctrl+Shift+T'         : self.print_type,
+            'Ctrl+Shift+F'         : self.search_input,
+            'Ctrl+H'               : self.print_help,
+            'Ctrl+L'               : self.select_lines,
+            'Ctrl+J'               : self.join_lines,
+            'Ctrl+/'               : self.comment_toggle,
+            'Ctrl+]'               : self.indent,
+            'Ctrl+['               : self.unindent,
+            'Shift+Tab'            : self.unindent,
+            'Ctrl+='               : self.zoom_in,
+            'Ctrl++'               : self.zoom_in,
+            'Ctrl+-'               : self.zoom_out,
+            'Ctrl+Shift+K'         : self.delete_lines,
+            'Ctrl+D'               : self.select_word,
+            'Ctrl+M'               : self.hop_brackets,
+            'Ctrl+Shift+M'         : self.select_between_brackets,
+            'Ctrl+Shift+Delete'    : self.delete_to_end_of_line,
+            'Ctrl+Shift+Backspace' : self.delete_to_start_of_line,
+            'Ctrl+Shift+Up'        : self.move_blocks_up,
+            'Ctrl+Shift+Down'      : self.move_blocks_down,
+            'Ctrl+G'               : notimp('goto'),
+            'Ctrl+P'               : notimp('palette'),
+            'Ctrl+C'               : self.copy_block_or_selection,
+            # 'Ctrl+Shift+Alt+Up': notimp('duplicate cursor up'),
+            # 'Ctrl+Shift+Alt+Down': notimp('duplicate cursor down'),
+        }
 
         if self.use_tabs:
+            editor_shortcuts['Ctrl+S'] = self.save
             editor_shortcuts[QtCore.Qt.Key_F5] = self.parent_widget.parent().parent().parent().reload_package
 
         terminal_shortcuts = {
@@ -130,8 +134,17 @@ class ShortcutHandler(QtCore.QObject):
 
         self.shortcut_dict.update(signal_dict)
 
-        def add_action(widget, shortcut, func):
-            a = QtWidgets.QAction(widget)
+        def add_action(action, widget, shortcut, func):
+            """
+            Add action to widget with a shortcut that
+            triggers the given function.
+
+            :action: QtWidgets.QAction
+            :widget: QtWidgets.QWidget
+            :shortcut: str (e.g. 'Ctrl+S') or Qt Key
+            :func: a callable that gets executed
+                   when triggering the action.
+            """
             key_seq = QtGui.QKeySequence(shortcut)
             a.setShortcut(key_seq)
             a.setShortcutContext(
@@ -140,15 +153,18 @@ class ShortcutHandler(QtCore.QObject):
             widget.addAction(a)
 
         for shortcut, func in editor_shortcuts.items():
-            add_action(self.editor, shortcut, func)
+            a = QtWidgets.QAction(self.editor)
+            add_action(a, self.editor, shortcut, func)
 
         if self.use_tabs:
             terminal = self.parent_widget.parent().parent().terminal
             for shortcut, func in terminal_shortcuts.items():
-                add_action(terminal, shortcut, func)
+                a = QtWidgets.QAction(terminal)
+                add_action(a, terminal, shortcut, func)
 
             for shortcut, func in tab_shortcuts.items():
-                add_action(self.tabs, shortcut, func)
+                a = QtWidgets.QAction(self.tabs)
+                add_action(a, self.tabs, shortcut, func)
 
     def notimplemented(self, text):
         """ Development reminders to implement features """
@@ -183,6 +199,11 @@ class ShortcutHandler(QtCore.QObject):
 
         return blocks
 
+    def save(self):
+        tabs = self.tabeditor.tabs
+        editor = self.editor
+        actions.save_action(tabs, self.editor)
+
     def offset_for_traceback(self, text=None):
         """
         Offset text using newlines to get proper line ref in tracebacks.
@@ -198,30 +219,53 @@ class ShortcutHandler(QtCore.QObject):
         text = '\n' * block_num + text
         return text
 
-    def exec_selected_text(self):
+    def exec_text(self, text, whole_text):
         """
-        Calls exec with either selected text
-        or all the text in the edit widget.
-        TODO: in some instances, this can still have the wrong
-        line number in tracebacks! Frustratingly, it seems to right
-        itself after a normal execution (full text) run.
+        Execute whatever text is passed into this function.
+
+        :text: the actual text to be executed
+        :whole_text: the whole text for context and full traceback
         """
-        textCursor = self.editor.textCursor()
-
-        whole_text = self.editor.toPlainText().strip()
-
-        if textCursor.hasSelection():
-            text = self.offset_for_traceback()
-        else:
-            text = whole_text
-
         self.exec_text_signal.emit()
-        whole_text = '\n'+whole_text
         error_line_numbers = execute.mainexec(text, whole_text)
         if error_line_numbers is None:
             return
         else:
             self.highlight_errored_lines(error_line_numbers)
+
+    def exec_selected_text(self):
+        """
+        If text is selected, call exec on that text.
+        If no text is selected, it will execute all
+        text within boundaries demarcated by the symbols #&&
+        """
+        textCursor = self.editor.textCursor()
+        whole_text = self.editor.toPlainText()
+
+        if textCursor.hasSelection():
+            text = self.offset_for_traceback()
+            return self.exec_text(text, whole_text)
+
+        if not '\n#&&' in whole_text:
+            text = whole_text
+            whole_text = '\n'+whole_text
+            return self.exec_text(text, whole_text)
+
+        text = whole_text
+        whole_text = '\n'+whole_text
+
+        pos = textCursor.position()
+        text_before = text[:pos]
+        text_after = text[pos:]
+        symbol_pos = text_before.rfind('#&&')
+        text_before = text_before.split('\n#&&')[-1]
+        text_after = text_after.split('\n#&&')[0]
+        text = text_before + text_after
+        doc = self.editor.document()
+        block_num = doc.findBlock(symbol_pos).blockNumber()
+        text = '\n' * block_num + text
+
+        self.exec_text(text, whole_text)
 
     def exec_current_line(self):
         """
@@ -254,8 +298,6 @@ class ShortcutHandler(QtCore.QObject):
         cursor = self.editor.textCursor()
         doc = self.editor.document()
         for lineno in error_line_numbers:
-
-
             selection = QtWidgets.QTextEdit.ExtraSelection()
             lineColor = QtGui.QColor.fromRgbF(0.8,
                                               0.1,
@@ -263,8 +305,10 @@ class ShortcutHandler(QtCore.QObject):
                                               0.2)
 
             selection.format.setBackground(lineColor)
-            selection.format.setProperty(QtGui.QTextFormat.FullWidthSelection,
-                                         True)
+            selection.format.setProperty(
+                QtGui.QTextFormat.FullWidthSelection,
+                True
+            )
 
             block = doc.findBlockByLineNumber(lineno-1)
             cursor.setPosition(block.position())
@@ -288,22 +332,20 @@ class ShortcutHandler(QtCore.QObject):
         characters, add an extra four spaces.
         """
         textCursor = self.editor.textCursor()
-        line = textCursor.block().text()
-        indentCount = len(str(line)) - len(str(line).lstrip(' '))
+        text = textCursor.block().text()
+        indentCount = len(text) - len(text.lstrip(' '))
 
         doc = self.editor.document()
         if doc.characterAt(textCursor.position()-1) == ':':
             indentCount = indentCount + 4
 
         insertion = '\n'+' '*indentCount
-        if len(line.strip()) == 0:
+        if len(text.strip()) == 0:
             insertion = '\n'
 
         if not self.editor.wait_for_autocomplete:
             textCursor.insertText(insertion)
             self.editor.setTextCursor(textCursor)
-
-        return True
 
         return True
 
@@ -563,6 +605,21 @@ class ShortcutHandler(QtCore.QObject):
 
         textCursor.insertText('')
 
+    def copy_block_or_selection(self):
+        """
+        If there's no text selected,
+        copy the current block.
+        """
+        textCursor = self.editor.textCursor()
+        selection = textCursor.selection()
+        text = selection.toPlainText()
+        if not text:
+            textCursor.select(QtGui.QTextCursor.BlockUnderCursor)
+            selection = textCursor.selection()
+            text = selection.toPlainText()
+
+        QtGui.QClipboard().setText(text)
+
     def select_word(self):
         """
         Selects the word under cursor if no selection.
@@ -781,11 +838,9 @@ class ShortcutHandler(QtCore.QObject):
         font.setPointSize(new_size)
         self.editor.setFont(font)
 
-    def move_lines_up(self):
+    def move_blocks_up(self):
         """
-        Moves current lines upwards.
-        TODO: Bug fix! Doesn't work with wrapped
-        text (presumably needs correct block)
+        Moves selected blocks upwards.
         """
         restoreSelection = False
         textCursor = self.editor.textCursor()
@@ -796,11 +851,11 @@ class ShortcutHandler(QtCore.QObject):
         end = textCursor.selectionEnd()
         selection_length = end-start
         textCursor.setPosition(start, QtGui.QTextCursor.MoveAnchor)
-        textCursor.movePosition(QtGui.QTextCursor.StartOfLine)
+        textCursor.movePosition(QtGui.QTextCursor.StartOfBlock)
         new_start = textCursor.position()
 
         textCursor.setPosition(end, QtGui.QTextCursor.MoveAnchor)
-        textCursor.movePosition(QtGui.QTextCursor.EndOfLine)
+        textCursor.movePosition(QtGui.QTextCursor.EndOfBlock)
 
         start_offset = start-new_start
 
@@ -812,7 +867,7 @@ class ShortcutHandler(QtCore.QObject):
 
         textCursor.insertText('')
         textCursor.deletePreviousChar()
-        textCursor.movePosition(QtGui.QTextCursor.StartOfLine)
+        textCursor.movePosition(QtGui.QTextCursor.StartOfBlock)
         pos = textCursor.position()
         textCursor.insertText(selectedText+'\n')
         textCursor.setPosition(pos, QtGui.QTextCursor.MoveAnchor)
@@ -828,11 +883,9 @@ class ShortcutHandler(QtCore.QObject):
 
         self.editor.setTextCursor(textCursor)
 
-    def move_lines_down(self):
+    def move_blocks_down(self):
         """
-        Moves current lines downwards.
-        TODO: Bug fix! Doesn't work with wrapped
-        text (presumably needs correct block)
+        Moves selected blocks downwards.
         """
         restoreSelection = False
 
@@ -845,11 +898,11 @@ class ShortcutHandler(QtCore.QObject):
         selection_length = end-start
 
         textCursor.setPosition(start, QtGui.QTextCursor.MoveAnchor)
-        textCursor.movePosition(QtGui.QTextCursor.StartOfLine)
+        textCursor.movePosition(QtGui.QTextCursor.StartOfBlock)
         new_start = textCursor.position()
 
         textCursor.setPosition(end, QtGui.QTextCursor.MoveAnchor)
-        textCursor.movePosition(QtGui.QTextCursor.EndOfLine)
+        textCursor.movePosition(QtGui.QTextCursor.EndOfBlock)
         new_end = textCursor.position()
 
         if new_end + 1 >= self.editor.document().characterCount():
@@ -861,7 +914,7 @@ class ShortcutHandler(QtCore.QObject):
         selectedText = textCursor.selectedText()
         textCursor.insertText('')
         textCursor.deleteChar()
-        textCursor.movePosition(QtGui.QTextCursor.EndOfLine)
+        textCursor.movePosition(QtGui.QTextCursor.EndOfBlock)
         textCursor.insertText('\n'+selectedText)
 
         if restoreSelection:
