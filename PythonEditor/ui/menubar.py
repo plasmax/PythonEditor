@@ -3,8 +3,8 @@ import os # temporary for self.open until files.py or files/open.py, save.py, au
 import uuid
 from PythonEditor.ui.Qt import QtWidgets
 from PythonEditor.utils import save
-
-__version__ = '0.0.1'
+from PythonEditor.ui.features import actions
+from PythonEditor._version import __version__
 
 
 class MenuBar(object):
@@ -29,17 +29,26 @@ class MenuBar(object):
         for menu in [file_menu, edit_menu, help_menu]:
             menu_bar.addMenu(menu)
 
-        file_menu.addAction('New',
-                            self.new)
+        file_menu.addAction(
+            'New',
+            self.new
+        )
 
-        file_menu.addAction('Open',
-                            self.open)
+        file_menu.addAction(
+            'Open',
+            self.open
+        )
 
-        file_menu.addAction('Save',
-                            self.save)
+        file_menu.addAction(
+            '&Save',
+            # actions.actions['save']
+            self.save
+        )
 
-        file_menu.addAction('Save As',
-                            self.save_as)
+        file_menu.addAction(
+            'Save As',
+            self.save_as
+        )
 
         export_menu = QtWidgets.QMenu('Export')
         file_menu.addMenu(export_menu)
@@ -71,56 +80,16 @@ class MenuBar(object):
 
         self.widget.layout().addWidget(menu_bar)
 
-    # @property
-    # def editor(self):
-    #     return self.tabeditor.editor
-
     def new(self):
         self.tabeditor.tabs.new_tab()
 
     def open(self):
         """
         Simple open file.
-        TODO: This needs to go into a files.py or files/open.py
         """
-        o = QtWidgets.QFileDialog.getOpenFileName
-        path, _ = o(self.tabeditor, "Open File")
-        if not path:
-            return
-
-        with open(path, 'rt') as f:
-            text = f.read()
-
         tabs = self.tabeditor.tabs
-        for index in range(tabs.count()):
-            data = tabs.tabData(index)
-            if data is None:
-                continue
-
-            if data.get('path') != path:
-                continue
-
-            # try to avoid more costly 2nd comparison
-            if data.get('text') == text:
-                tabs.setCurrentIndex(index)
-                return
-
-        tab_name = os.path.basename(path)
-
-        # Because the document will be open in read-only mode, the
-        # autosave should not save the editor's contents until the
-        # contents have been modified.
-        data = {
-            'uuid'  : str(uuid.uuid4()),
-            'name'  : tab_name,
-            'text'  : '',
-            'path'  : path,
-            'date'  : '', # need the file's date
-            'saved' : True, # read-only
-        }
-
-        tabs.new_tab(tab_name=tab_name)
-        self.tabeditor.editor.setPlainText(text)
+        editor = self.tabeditor.editor
+        actions.open_action(tabs, editor)
 
     # TODO
     # The below methods and their counterparts in utils.save
@@ -128,10 +97,8 @@ class MenuBar(object):
 
     def save(self):
         tabs = self.tabeditor.tabs
-        path = tabs.get('path')
-        path = save.save(self.editor.toPlainText(), path)
-        tabs['path'] = path
-        tabs['saved'] = True
+        editor = self.editor
+        actions.save_action(tabs, self.editor)
 
     def save_as(self):
         save.save_as(self.editor)
