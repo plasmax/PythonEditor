@@ -137,19 +137,19 @@ def export_current_tab_to_external_editor(edittabs):
     open_external_editor(path)
 
 
-def export_all_tabs_to_external_editor(edittabs):
+def export_all_tabs_to_external_editor(tabs):
     editors = []
-    for tab_index in reversed(range(edittabs.count())):
-        widget = edittabs.widget(tab_index)
+    for tab_index in reversed(range(tabs.count())):
+        widget = tabs.widget(tab_index)
         if widget.objectName() == 'Editor':
-            name = edittabs.tabText(tab_index)
+            name = tabs.tabText(tab_index)
             editors.append((tab_index, name, widget))
 
     if not bool(editors):
         return
 
     path, _ = QtWidgets.QFileDialog.getSaveFileName(
-        edittabs,
+        tabs,
         'Choose Directory to save all tabs',
         os.path.join(constants.NUKE_DIR, 'tab_name_used_per_file'),
         selectedFilter='*.py'
@@ -168,7 +168,7 @@ def export_all_tabs_to_external_editor(edittabs):
     Yes = QtWidgets.QMessageBox.Yes
     No = QtWidgets.QMessageBox.No
     answer = QtWidgets.QMessageBox.question(
-        edittabs,
+        tabs,
         'Remove all tabs?',
         'Choosing Yes will remove all tabs and clear the temp file.',
         Yes, No
@@ -177,4 +177,4 @@ def export_all_tabs_to_external_editor(edittabs):
     if answer == Yes:
         for tab_index, _, editor in editors:
             editor.setPlainText('')
-        edittabs.reset_tab_signal.emit()
+        tabs.reset_tab_signal.emit()
