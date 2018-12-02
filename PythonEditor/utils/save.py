@@ -27,7 +27,8 @@ def get_save_file_name(title='Save Text As'):
         None,
         title,
         constants.NUKE_DIR,
-        selectedFilter='*.py')
+        selectedFilter='*.py'
+    )
 
     if not path:
         path = None
@@ -73,7 +74,7 @@ def save_selected_text(editor):
     only part of the document.
     """
     text = editor.textCursor().selection().toPlainText()
-    path = get_save_file_name(editor, title='Save Selected Text')
+    path = get_save_file_name(title='Save Selected Text')
     if path:
         write_to_file(path, text)
     return path
@@ -151,7 +152,8 @@ def export_all_tabs_to_external_editor(edittabs):
         edittabs,
         'Choose Directory to save all tabs',
         os.path.join(constants.NUKE_DIR, 'tab_name_used_per_file'),
-        selectedFilter='*.py')
+        selectedFilter='*.py'
+    )
 
     if not path:
         return
@@ -169,7 +171,8 @@ def export_all_tabs_to_external_editor(edittabs):
         edittabs,
         'Remove all tabs?',
         'Choosing Yes will remove all tabs and clear the temp file.',
-        Yes, No)
+        Yes, No
+    )
 
     if answer == Yes:
         for tab_index, _, editor in editors:
