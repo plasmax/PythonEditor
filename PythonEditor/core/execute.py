@@ -93,8 +93,10 @@ def print_syntax_traceback():
     print('\n'.join(formatted_lines[3:]))
 
     error_line_numbers = []
+    global FILENAME
+    pattern = r'(?<="{0}",\sline\s)(\d+)'.format(FILENAME)
     for line in formatted_lines:
-        result = re.search('(?<="{0}", line )(\d+)'.format(FILENAME), line)
+        result = re.search(pattern, line)
         if result:
             lineno = int(result.group())
             error_line_numbers.append(lineno)
@@ -118,6 +120,9 @@ def print_traceback(whole_text, error):
 
     error_message = traceback.format_exc()
 
+    global FILENAME
+    pattern = r'(?<="{0}",\sline\s)(\d+)'.format(FILENAME)
+
     message_lines = []
     error_lines = error_message.splitlines()
     error = error_lines.pop()
@@ -129,7 +134,7 @@ def print_traceback(whole_text, error):
 
         message_lines.append(line)
 
-        result = re.search(r'(?<="{0}",\sline\s)(\d+)'.format(FILENAME), line)
+        result = re.search(pattern, line)
         if result:
             lineno = int(result.group())
             text = '    ' + text_lines[lineno].strip()
