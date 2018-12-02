@@ -12,10 +12,17 @@ if IN_NUKE:
         pyqt = 'PyQt5'
 
 USER = os.environ.get('USERNAME')
-NUKE_DIR = os.path.join(os.path.expanduser('~'), '.nuke')
+
+NUKE_DIR = None
+PYTHONEDITOR_CUSTOM_DIR = os.getenv('PYTHONEDITOR_CUSTOM_DIR')
+if PYTHONEDITOR_CUSTOM_DIR is not None:
+	if os.path.isdir(PYTHONEDITOR_CUSTOM_DIR):
+		NUKE_DIR = PYTHONEDITOR_CUSTOM_DIR
+
+if NUKE_DIR is None:
+	NUKE_DIR = os.path.join(os.path.expanduser('~'), '.nuke')
+
 QT_VERSION = os.pathsep.join([pyside, pyqt])
 
 DEFAULT_FONT = 'Courier New' if (os.name == 'nt') else 'DejaVu Sans Mono'
-
-
 
