@@ -146,8 +146,7 @@ class Tabs(QtWidgets.QTabBar):
     tab_close_signal = QtCore.Signal(str) # in case we receive a ctrl+shift+w signal to close the tab
     tab_renamed_signal = QtCore.Signal(str, str, str, str, object)
     tab_repositioned_signal = QtCore.Signal(int, int)
-    # reset_tab_signal = QtCore.Signal()
-    # tab_moved_signal = QtCore.Signal(object, int)
+    reset_tab_signal = QtCore.Signal()
 
     def __init__(self, *args):
         super(Tabs, self).__init__(*args)
