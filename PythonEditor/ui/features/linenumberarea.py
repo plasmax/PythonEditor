@@ -17,6 +17,7 @@ class LineNumberArea(QtWidgets.QWidget):
         self.editor.blockCountChanged.connect(self.updateLineNumberAreaWidth)
         self.editor.updateRequest.connect(self.updateLineNumberArea, QtCore.Qt.DirectConnection)
         self.editor.updateRequest.connect(self.resizeLineNo, QtCore.Qt.DirectConnection)
+        self.editor.resize_signal.connect(self.resizeLineNo, QtCore.Qt.DirectConnection)
         self.editor.cursorPositionChanged.connect(self.highlightCurrentLine)
         self.updateLineNumberAreaWidth(0)
         self.highlightCurrentLine()
