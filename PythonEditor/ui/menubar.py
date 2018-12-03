@@ -14,6 +14,7 @@ class MenuBar(object):
     def __init__(self, widget):
         self.widget = widget
         self.tabeditor = widget.tabeditor
+        self.tabs = widget.tabeditor.tabs
         self.editor = widget.tabeditor.editor
         self.setup_menu()
 
@@ -110,7 +111,7 @@ class MenuBar(object):
         save.export_selected_to_external_editor(self.editor)
 
     def export_current_tab_to_external_editor(self):
-        save.export_current_tab_to_external_editor(self.tabs)
+        save.export_current_tab_to_external_editor(self.tabs, self.editor)
 
     def export_all_tabs_to_external_editor(self):
         save.export_all_tabs_to_external_editor(self.tabs)
