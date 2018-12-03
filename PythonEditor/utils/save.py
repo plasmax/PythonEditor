@@ -92,15 +92,18 @@ def export_selected_to_external_editor(editor):
     return path
 
 
-def save_editor(folder, name, editor):
+def save_tab(folder, name, tabs, tab_index):
     """
-    Compose a path from folder and editor name.
-    Set the editor path property, then save.
+    Compose a path from folder and tab name.
+    Set the tab path property, then save.
     """
     file = name.split('.')[0] + '.py'
-    editor.path = os.path.join(folder, file)
-    save(editor)
-    return editor.path
+    data = tabs.tabData(tab_index)
+    path = os.path.join(folder, file)
+    data['path'] = path
+    tabs.setTabData(tab_index, data)
+    save(data['text'], path)
+    return path
 
 
 def open_external_editor(path):
@@ -113,39 +116,28 @@ def open_external_editor(path):
         subprocess.Popen([EXTERNAL_EDITOR_PATH, path])
 
 
-def export_current_tab_to_external_editor(edittabs):
-    widget = edittabs.currentWidget()
-    not_editor = (widget.objectName() != 'Editor')
-    if not_editor:
-        return
+def export_current_tab_to_external_editor(tabs, editor):
 
-    tab_index = edittabs.currentIndex()
-    name = edittabs.tabText(tab_index)
+    tab_index = tabs.currentIndex()
+    name = tabs.tabText(tab_index)
 
     path, _ = QtWidgets.QFileDialog.getSaveFileName(
-        edittabs,
+        tabs,
         'Choose Directory to save current tab',
         os.path.join(constants.NUKE_DIR, name),
-        selectedFilter='*.py')
+        selectedFilter='*.py'
+    )
 
     if not path:
         return
 
-    editor = widget
     folder = os.path.dirname(path)
-    save_editor(folder, name, editor)
+    save_tab(folder, name, tabs, tab_index)
     open_external_editor(path)
 
 
 def export_all_tabs_to_external_editor(tabs):
-    editors = []
-    for tab_index in reversed(range(tabs.count())):
-        widget = tabs.widget(tab_index)
-        if widget.objectName() == 'Editor':
-            name = tabs.tabText(tab_index)
-            editors.append((tab_index, name, widget))
-
-    if not bool(editors):
+    if tabs.count() == 0:
         return
 
     path, _ = QtWidgets.QFileDialog.getSaveFileName(
@@ -160,8 +152,16 @@ def export_all_tabs_to_external_editor(tabs):
 
     folder = os.path.dirname(path)
 
-    for _, name, editor in editors:
-        save_editor(folder, name, editor)
+    for i in range(tabs.count()):
+        data = tabs.tabData(i)
+        name = tabs.tabText(i)
+        filename = name.split('.')[0] + '.py'
+        path = os.path.join(folder, filename)
+        text = data['text']
+        if not text:
+            print('No text found for tab %s, it will not be saved' % name)
+            continue
+        save(text, path)
 
     open_external_editor(folder)
 
@@ -175,6 +175,4 @@ def export_all_tabs_to_external_editor(tabs):
     )
 
     if answer == Yes:
-        for tab_index, _, editor in editors:
-            editor.setPlainText('')
         tabs.reset_tab_signal.emit()
