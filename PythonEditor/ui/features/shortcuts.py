@@ -49,6 +49,7 @@ class ShortcutHandler(QtCore.QObject):
             (editor.end_key_ctrl_alt_signal,  self.move_to_bottom),
             (editor.ctrl_x_signal,            self.cut_line),
             (editor.ctrl_c_signal,            self.copy_block_or_selection),
+            (editor.ctrl_s_signal,            self.save),
             (editor.home_key_signal,          self.jump_to_start),
             (editor.wheel_signal,             self.wheel_zoom),
             (editor.ctrl_enter_signal,        self.exec_selected_text),
@@ -148,7 +149,8 @@ class ShortcutHandler(QtCore.QObject):
             key_seq = QtGui.QKeySequence(shortcut)
             a.setShortcut(key_seq)
             a.setShortcutContext(
-                QtCore.Qt.WidgetShortcut)
+                QtCore.Qt.WidgetShortcut
+            )
             a.triggered.connect(func)
             widget.addAction(a)
 
