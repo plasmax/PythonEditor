@@ -116,12 +116,12 @@ class SESysStdOut(SERedirector, PySingleton):
         try:
             sys.outputRedirector(text)
         except Exception as e:
-            debug('PythonEditor Terminal error (line 105). Cannot write to outputRedirector:\n%s' % e)
-
-        try:
-            sys.__stdout__.write(text)
-        except IOError as e:
-            debug('PythonEditor Terminal error (line 110). Cannot write to sys.__stdout__:\n%s' % e)
+            debug('PythonEditor Terminal error (line 119). Cannot write to outputRedirector:\n%s' % e)
+        else:
+            try:
+                sys.__stdout__.write(text)
+            except IOError as e:
+                debug('PythonEditor Terminal error (line 124). Cannot write to sys.__stdout__:\n%s' % e)
 
 
 class SESysStdErr(SERedirector, PySingleton):
@@ -136,11 +136,11 @@ class SESysStdErr(SERedirector, PySingleton):
             sys.stderrRedirector(text)
         except Exception as e:
             debug('PythonEditor Terminal error (line 124). Cannot write to stderrRedirector:\n%s' % e)
-
-        try:
-            sys.__stderr__.write(text)
-        except IOError as e:
-            debug('PythonEditor Terminal error (line 129). Cannot write to sys.__stderr__:\n%s' % e)
+        else:
+            try:
+                sys.__stderr__.write(text)
+            except IOError as e:
+                debug('PythonEditor Terminal error (line 129). Cannot write to sys.__stderr__:\n%s' % e)
 
 
 # TODO: This UI could be separate from the above
