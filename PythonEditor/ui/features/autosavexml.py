@@ -366,7 +366,7 @@ class AutoSaveManager(QtCore.QObject):
         # which will autosave before continuing.
         self.check_document_modified(
             self.tabs.currentIndex(),
-            self.tabs['path']
+            self.tabs.get('path')
         )
 
         root, subscripts = parsexml('subscript')
