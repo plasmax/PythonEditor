@@ -199,10 +199,12 @@ class ContextMenu(QtCore.QObject):
         Creates a dictionary of functions
         from the inspect module.
         """
-        self.inspectDict = {func: getattr(inspect, func)
-                            for func in dir(inspect)
-                            if isinstance(getattr(inspect, func),
-                                          types.FunctionType)}
+        self.inspectDict = {
+            func: getattr(inspect, func)
+            for func in dir(inspect)
+            if isinstance(getattr(inspect, func),
+                          types.FunctionType)
+        }
 
     def inspectExec(self, func):
         """
