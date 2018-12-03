@@ -16,38 +16,13 @@
 - [x] Autocomplete doesn't dissappear when parentheses are typed
 - [ ] Double printing to sys.stdout (/probably/ caused by writing to sys.__stdout__ as well as outputRedirector)
 - [ ] Override setPlainText to avoid string encoding errors (can this affect copy paste?)
-- [ ] CRITICAL BUG: In rare cases with network disruption the PythonEditorHistory.xml can be overwritten with 0 contents. PythonEditor will then not load.
+- [x] CRITICAL BUG: In rare cases with network disruption the PythonEditorHistory.xml can be overwritten with 0 contents. PythonEditor will then not load.
       Add in a pre-check for xml contents in the file (if it exists) and implement some sort of backup procedure (e.g. copy to /tmp/ on script close)
-
-      error:
-ElementTree.ParseError no element found: line 1, column 0
-Removing undesirable control characters:
-Traceback (most recent call last):
-  File "/opt/foundry/nuke-10.0v4/plugins/nukescripts/panels.py", line 153, in makeUI
-    self.widget = self.widgetClass()
-  File "/job/pipeline/dev/sandbox/sandbox_mlast/work/mlast/git/PythonEditor/PythonEditor/ui/ide.py", line 18, in __init__
-    self.buildUI()
-  File "/job/pipeline/dev/sandbox/sandbox_mlast/work/mlast/git/PythonEditor/PythonEditor/ui/ide.py", line 21, in buildUI
-    self.pythonEditor = pythoneditor.PythonEditor(parent=self)
-  File "/job/pipeline/dev/sandbox/sandbox_mlast/work/mlast/git/PythonEditor/PythonEditor/ui/pythoneditor.py", line 22, in __init__
-    self.connect_signals()
-  File "/job/pipeline/dev/sandbox/sandbox_mlast/work/mlast/git/PythonEditor/PythonEditor/ui/pythoneditor.py", line 49, in connect_signals
-    self.filehandler = autosavexml.AutoSaveManager(self.edittabs)
-  File "/job/pipeline/dev/sandbox/sandbox_mlast/work/mlast/git/PythonEditor/PythonEditor/ui/features/autosavexml.py", line 123, in __init__
-    self.readautosave()
-  File "/job/pipeline/dev/sandbox/sandbox_mlast/work/mlast/git/PythonEditor/PythonEditor/ui/features/autosavexml.py", line 243, in readautosave
-    root, subscripts = parsexml('subscript')
-  File "/job/pipeline/dev/sandbox/sandbox_mlast/work/mlast/git/PythonEditor/PythonEditor/ui/features/autosavexml.py", line 42, in parsexml
-    parser = fix_broken_xml(path)
-  File "/job/pipeline/dev/sandbox/sandbox_mlast/work/mlast/git/PythonEditor/PythonEditor/ui/features/autosavexml.py", line 65, in fix_broken_xml
-    parser = ElementTree.parse(path, xmlp)
-  File "<string>", line 62, in parse
-  File "<string>", line 35, in parse
-cElementTree.ParseError: no element found: line 1, column 0
 - [x] Don't set QT_PREFERRED_BINDING if present.
 
 
 #### Testing
+- [ ] WRITE TESTS. [x] exploratory testing, [ ]  integration testing,
 - [x] Check that tab closing and then cancelling restores the current tab (without causing disconnect/connect issues)
 - [x] Check that tab renaming is consistent with autosave file
 - [ ] Are editor properties correctly kept in sync? Any time a tab name or xml subscript changes, the editor
@@ -66,6 +41,7 @@ cElementTree.ParseError: no element found: line 1, column 0
 
 
 #### Features - desired
+- [ ] Pre-reload PythonEditor safety backup
 - [ ] Foldable sidebar with directory tree
 - [ ] File Browser with connected file path
 - [ ] Recent Files List
