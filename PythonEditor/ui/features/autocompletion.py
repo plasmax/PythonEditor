@@ -294,7 +294,11 @@ class AutoCompleter(QtCore.QObject):
 
         # add words except the word under the cursor
         word = self.word_under_cursor()
-        words = [w for w in re.findall('\w+', self.editor.toPlainText()) if w != word]
+        text = self.editor.toPlainText()
+        words = [
+            w for w in re.findall(r'\w+', text)
+            if w != word
+        ]
 
         variables = [variables
                      + keyword.kwlist
@@ -308,18 +312,22 @@ class AutoCompleter(QtCore.QObject):
         word = self.word_under_cursor()
 
         if re.match('[a-zA-Z0-9_]', word) is None:
-            word = self.word_before_cursor(regex='\w+')
+            word = self.word_before_cursor(regex=r'\w+')
 
         char_len = len(word)
         cp.setCompletionPrefix(word)
         popup = cp.popup()
-        popup.setCurrentIndex(cp.completionModel().index(0, 0))
+        popup.setCurrentIndex(
+            cp.completionModel().index(0, 0)
+        )
 
         # TODO: substring matching
-        # for var in variables:
-        #     found = nonconsec_find(word, var, anchored=True)
-        #     if found:
-        #         print(word, var)
+        """
+        for var in variables:
+            found = nonconsec_find(word, var, anchored=True)
+            if found:
+                print(word, var)
+        """
 
         if char_len and any(w[:char_len] == word for w in variables):
             self.show_popup()
@@ -490,23 +498,30 @@ class AutoCompleter(QtCore.QObject):
         - Hide popup if no completions available
         """
         cp = self.completer
-        cpActive = cp and cp.popup() and cp.popup().isVisible()
+        cpActive = (
+            cp
+            and cp.popup()
+            and cp.popup().isVisible()
+        )
 
         if cpActive:
             if event.key() in (
-                                QtCore.Qt.Key_Enter,
-                                QtCore.Qt.Key_Return,
-                                QtCore.Qt.Key_Escape,
-                                QtCore.Qt.Key_Tab,
-                                QtCore.Qt.Key_Backtab):
+                QtCore.Qt.Key_Enter,
+                QtCore.Qt.Key_Return,
+                QtCore.Qt.Key_Escape,
+                QtCore.Qt.Key_Tab,
+                QtCore.Qt.Key_Backtab
+            ):
                 event.ignore()
                 self.editor.wait_for_autocomplete = True
                 return True
 
-        not_alnum_or_mod = (not event.text().isalnum()
-                            and event.modifiers() == QtCore.Qt.NoModifier)
+        not_alnum_or_mod = (
+            not event.text().isalnum()
+            and event.modifiers() == QtCore.Qt.NoModifier
+        )
 
-        zero_completions = cp.completionCount() == 0
+        zero_completions = (cp.completionCount() == 0)
         if not_alnum_or_mod or zero_completions:
             cp.popup().hide()
 
@@ -551,7 +566,7 @@ class AutoCompleter(QtCore.QObject):
                 if re.match('[a-zA-Z0-9_]', event.text()) is None:
                     cp.popup().hide()
 
-                current_word = self.word_before_cursor(regex='\w+')
+                current_word = self.word_before_cursor(regex=r'\w+')
 
             # TODO: add a case for "self." completion in here
 
