@@ -143,6 +143,7 @@ class AutoCompleter(QtCore.QObject):
 
     def connect_signals(self):
         self.editor.focus_in_signal.connect(self._focusInEvent)
+        # TODO: QtCore.Qt.DirectConnection
         self.editor.key_pressed_signal.connect(self._pre_keyPressEvent)
         self.editor.post_key_pressed_signal.connect(self._post_keyPressEvent)
 
