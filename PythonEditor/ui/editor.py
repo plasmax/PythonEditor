@@ -29,7 +29,8 @@ class Editor(QtWidgets.QPlainTextEdit):
                   '[', ']',
                   '(', ')',
                   '{', '}',
-                  '<', '>']
+                  # '<', '>',
+                  ]
 
     wrap_signal               = QtCore.Signal(str)
     uuid_signal               = QtCore.Signal(str)
@@ -54,7 +55,12 @@ class Editor(QtWidgets.QPlainTextEdit):
     editingFinished           = QtCore.Signal()
     text_changed_signal       = QtCore.Signal()
 
-    def __init__(self, handle_shortcuts=True, uid=None, init_features=True):
+    def __init__(
+            self,
+            handle_shortcuts=True,
+            uid=None,
+            init_features=True
+        ):
         super(Editor, self).__init__()
         self.setObjectName('Editor')
         self.setAcceptDrops(True)
@@ -215,6 +221,10 @@ class Editor(QtWidgets.QPlainTextEdit):
         if not self.hasFocus():
             event.ignore()
             return
+
+        # self.wait_for_autocomplete = True
+        # # QtCore.Qt.DirectConnection
+        # self.key_pressed_signal.emit(event)
 
         if self.wait_for_autocomplete:
             # TODO: Connect (in autocomplete) using
