@@ -24,6 +24,19 @@ def full_stack():
     return stackstr
 
 
+class PySingleton(object):
+    """
+    Return a single instance of a class
+    or create a new instance if none exists.
+    """
+    def __new__(cls, *args, **kwargs):
+        if '_the_instance' not in cls.__dict__:
+            cls._the_instance = object.__new__(cls)
+        return cls._the_instance
+
+
+# TODO: make this a singleton? It might have to be a
+# singleton object that the QObject lives on.
 class GenericEventFilter(QtCore.QObject):
     """
     Generic EventFilter
