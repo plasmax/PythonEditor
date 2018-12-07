@@ -24,11 +24,6 @@ if __name__ == '__main__':
         pyside = 'PySide'
 
     os.environ['QT_PREFERRED_BINDING'] = pyside
-    os.environ['PYTHONEDITOR_CUSTOM_DIR'] = os.path.join(
-        os.path.expanduser('~'),
-        'Desktop',
-        'TEST' # will only work if there's a folder called TEST on the Desktop.
-    )
 
     from PythonEditor.ui.features import nukepalette
     from PythonEditor.ui import ide
