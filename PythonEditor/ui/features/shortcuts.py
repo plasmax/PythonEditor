@@ -93,6 +93,7 @@ class ShortcutHandler(QtCore.QObject):
             'Ctrl+G'               : notimp('goto'),
             'Ctrl+P'               : notimp('palette'),
             'Ctrl+C'               : self.copy_block_or_selection,
+            'Ctrl+E'               : self.open_module_file,
             # 'Ctrl+Shift+Alt+Up': notimp('duplicate cursor up'),
             # 'Ctrl+Shift+Alt+Down': notimp('duplicate cursor down'),
         }
@@ -205,6 +206,15 @@ class ShortcutHandler(QtCore.QObject):
         tabs = self.tabeditor.tabs
         editor = self.editor
         actions.save_action(tabs, self.editor)
+
+    def open_module_file(self):
+        textCursor = self.editor.textCursor()
+        text = textCursor.selection().toPlainText()
+        if not text.strip():
+            return
+
+        obj = actions.get_subobject(text)
+        actions.open_module_file(obj)
 
     def offset_for_traceback(self, text=None):
         """
@@ -515,9 +525,9 @@ class ShortcutHandler(QtCore.QObject):
         elif key in ['{', '}']:
             key_in = '{'
             key_out = '}'
-        elif key in ['<', '>']:
-            key_in = '<'
-            key_out = '>'
+        # elif key in ['<', '>']:
+        #     key_in = '<'
+        #     key_out = '>'
 
         textCursor = self.editor.textCursor()
         text = key_in + textCursor.selectedText() + key_out
