@@ -1,5 +1,9 @@
+from __future__ import print_function
 import os
 import uuid
+import __main__
+import inspect
+import subprocess
 from PythonEditor.ui.Qt import QtWidgets, QtGui, QtCore
 from PythonEditor.utils import save
 
@@ -84,6 +88,81 @@ def open_action(tabs, editor):
 
     tabs.new_tab(tab_name=tab_name)
     editor.setPlainText(text)
+
+
+def get_subobject(text):
+    """
+    Walk down an object's hierarchy to retrieve
+    the object at the end of the chain.
+    """
+    text = text.strip()
+    if '.' not in text:
+        return __main__.__dict__.get(text)
+
+    name = text.split('.')[0]
+    obj = __main__.__dict__.get(name)
+    if obj is None:
+        return
+
+    for name in text.split('.')[1:]:
+        obj = getattr(obj, name)
+        if obj is None:
+            return
+    return obj
+
+
+def open_module_file(obj):
+    try:
+        file = inspect.getfile(obj)
+    except TypeError as e:
+        if hasattr(obj, '__class__'):
+            obj = obj.__class__
+            file = inspect.getfile(obj)
+        else:
+            raise TypeError(e)
+
+    if file.endswith('.pyc'):
+        file = file.replace('.pyc', '.py')
+
+    try:
+        lines, lineno = inspect.getsourcelines(obj)
+        file = file+':'+str(lineno)
+    except AttributeError, IOError:
+        pass
+
+    print(file)
+
+    #TODO: this is a horrible hack to avoid circular imports
+    from PythonEditor.ui.features.autosavexml import get_external_editor_path
+
+    EXTERNAL_EDITOR_PATH = get_external_editor_path()
+    if (EXTERNAL_EDITOR_PATH
+            and os.path.isdir(os.path.dirname(EXTERNAL_EDITOR_PATH))):
+        subprocess.Popen([EXTERNAL_EDITOR_PATH, file])
+
+
+def open_module_directory(obj):
+    file = inspect.getfile(obj).replace('.pyc', '.py')
+    folder = os.path.dirname(file)
+    print(folder)
+
+    #TODO: this is a horrible hack to avoid circular imports
+    from PythonEditor.ui.features.autosavexml import get_external_editor_path
+
+    EXTERNAL_EDITOR_PATH = get_external_editor_path()
+    if (EXTERNAL_EDITOR_PATH
+            and os.path.isdir(os.path.dirname(EXTERNAL_EDITOR_PATH))):
+        subprocess.Popen([EXTERNAL_EDITOR_PATH, folder])
+
+
+def openDir(module):
+    try:
+        print(bytes(module.__file__))
+        subprocess.Popen(['nautilus', module.__file__])
+    except AttributeError:
+        file = inspect.getfile(module)
+        subprocess.Popen(['nautilus', file])
+    print('sublime ', __file__, ':', sys._getframe().f_lineno, sep='')  # TODO: nautilus is not multiplatform!
 
 
 # DEFAULT_WIDGET = QtWidgets.QWidget()
