@@ -1,4 +1,6 @@
 from PythonEditor.ui.Qt import QtGui, QtCore
+import tokenize
+import StringIO
 
 themes = {
   'Monokai': {
@@ -166,8 +168,6 @@ class Highlight(QtGui.QSyntaxHighlighter):
             (r'([rfb])(?:\'|\")', 0, self.styles['formatters']),
             # integers
             (r'\b[0-9]+\b', 0, self.styles['numbers']),
-            # From # until a newline unless inside a quote
-            (r'#[^\n]*', 0, self.styles['comment']),
             # Double-quoted string, possibly containing escape sequences
             (r'"[^"\\]*(\\.[^"\\]*)*"', 0, self.styles['string']),
             # Single-quoted string, possibly containing escape sequences
@@ -207,6 +207,28 @@ class Highlight(QtGui.QSyntaxHighlighter):
                 length = len(expression.cap(nth))
                 self.setFormat(index, length, format)
                 index = expression.indexIn(text, index + length)
+
+        if '#' in text:
+          s = StringIO.StringIO(text)
+          try:
+            g = tokenize.generate_tokens(s.readline)
+            for toktype, tok, start, end, line in g:
+                if toktype == tokenize.COMMENT:
+                    _, i = start
+                    _, e = end
+                    length = e-i
+                    self.setFormat(
+                      i,
+                      length,
+                      self.styles['comment']
+                    )
+          except tokenize.TokenError:
+            # tokenize will throw an error
+            # for multi-line statements such as:
+            # [ 'list item' # comment
+            # ]
+            # but will still highlight correctly.
+            pass
 
         self.setCurrentBlockState(0)
 
