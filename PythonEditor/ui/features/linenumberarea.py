@@ -11,14 +11,16 @@ class LineNumberArea(QtWidgets.QWidget):
         super(LineNumberArea, self).__init__(editor)
         self.setObjectName('LineNumberArea')
         self.editor = editor
+        self.setParent(editor)
         self.setupLineNumbers()
 
     def setupLineNumbers(self):
+
         self.editor.blockCountChanged.connect(self.updateLineNumberAreaWidth)
-        self.editor.updateRequest.connect(self.updateLineNumberArea, QtCore.Qt.DirectConnection)
-        self.editor.updateRequest.connect(self.resizeLineNo, QtCore.Qt.DirectConnection)
-        self.editor.resize_signal.connect(self.resizeLineNo, QtCore.Qt.DirectConnection)
+        self.editor.updateRequest.connect(self.updateLineNumberArea)
         self.editor.cursorPositionChanged.connect(self.highlightCurrentLine)
+        self.editor.resize_signal.connect(self.resizeLineNo, QtCore.Qt.DirectConnection)
+
         self.updateLineNumberAreaWidth(0)
         self.highlightCurrentLine()
 
@@ -26,6 +28,9 @@ class LineNumberArea(QtWidgets.QWidget):
         return QtCore.QSize(self.lineNumberAreaWidth(), 0)
 
     def paintEvent(self, event):
+        self.lineNumberAreaPaintEvent(event)
+
+    def lineNumberAreaPaintEvent(self, event):
         mypainter = QtGui.QPainter(self)
 
         block = self.editor.firstVisibleBlock()
@@ -40,6 +45,8 @@ class LineNumberArea(QtWidgets.QWidget):
 
         height = self.editor.fontMetrics().height()
         while block.isValid() and (top <= event.rect().bottom()):
+            if not block.isVisible():
+                continue
             if block.isVisible() and (bottom >= event.rect().top()):
                 number = str(blockNumber + 1)
                 colour = QtCore.Qt.darkGray
@@ -50,8 +57,14 @@ class LineNumberArea(QtWidgets.QWidget):
                     font.setBold(True)
                 mypainter.setFont(font)
                 mypainter.setPen(colour)
-                mypainter.drawText(0, top, self.width(), height,
-                                   QtCore.Qt.AlignRight, number)
+                mypainter.drawText(
+                    0,
+                    top,
+                    self.width(),
+                    height,
+                    QtCore.Qt.AlignRight,
+                    number
+                )
 
             block = block.next()
             top = bottom
@@ -69,14 +82,20 @@ class LineNumberArea(QtWidgets.QWidget):
         return space
 
     def updateLineNumberAreaWidth(self, _):
-        self.editor.setViewportMargins(self.lineNumberAreaWidth(), 0, 0, 0)
+        self.editor.setViewportMargins(
+            self.lineNumberAreaWidth(), 0, 0, 0
+        )
 
     def updateLineNumberArea(self, rect, dy):
         if dy:
-            self.editor.scroll(0, dy)
+            self.scroll(0, dy)
         else:
-            self.editor.update(0, rect.y(), self.editor.width(),
-                               rect.height())
+            self.update(
+                0,
+                rect.y(),
+                self.width(),
+                rect.height()
+            )
 
         if rect.contains(self.editor.viewport().rect()):
             self.updateLineNumberAreaWidth(0)
@@ -97,8 +116,10 @@ class LineNumberArea(QtWidgets.QWidget):
                                                   0.500000)
 
             selection.format.setBackground(lineColor)
-            selection.format.setProperty(QtGui.QTextFormat.FullWidthSelection,
-                                         True)
+            selection.format.setProperty(
+                QtGui.QTextFormat.FullWidthSelection,
+                True
+            )
             selection.cursor = self.editor.textCursor()
             selection.cursor.clearSelection()
             extraSelections.append(selection)

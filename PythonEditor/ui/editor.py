@@ -25,12 +25,12 @@ class Editor(QtWidgets.QPlainTextEdit):
     - Signals for connecting the Editor to other UI elements.
     - Unique identifier to match Editor widget to file storage.
     """
-    wrap_types = ['\'', '"',
-                  '[', ']',
-                  '(', ')',
-                  '{', '}',
-                  # '<', '>',
-                  ]
+    wrap_types = [
+        '\'', '"',
+        '[', ']',
+        '(', ')',
+        '{', '}',
+    ]
 
     wrap_signal               = QtCore.Signal(str)
     uuid_signal               = QtCore.Signal(str)
@@ -87,8 +87,6 @@ class Editor(QtWidgets.QPlainTextEdit):
         self.emit_text_changed = True
         self.textChanged.connect(self._handle_textChanged)
 
-        # TODO: the linenumberarea can
-        # cause it to be slow
         linenumberarea.LineNumberArea(self)
 
         if init_features:
