@@ -39,6 +39,7 @@ class Editor(QtWidgets.QPlainTextEdit):
     post_key_pressed_signal   = QtCore.Signal(QtGui.QKeyEvent)
     wheel_signal              = QtCore.Signal(QtGui.QWheelEvent)
     key_pressed_signal        = QtCore.Signal(QtGui.QKeyEvent)
+    resize_signal             = QtCore.Signal(QtGui.QResizeEvent)
     context_menu_signal       = QtCore.Signal(QtWidgets.QMenu)
     tab_signal                = QtCore.Signal()
     home_key_signal           = QtCore.Signal()
@@ -50,7 +51,6 @@ class Editor(QtWidgets.QPlainTextEdit):
     ctrl_enter_signal         = QtCore.Signal()
     end_key_ctrl_alt_signal   = QtCore.Signal()
     home_key_ctrl_alt_signal  = QtCore.Signal()
-    resize_signal             = QtCore.Signal()
     relay_clear_output_signal = QtCore.Signal()
     editingFinished           = QtCore.Signal()
     text_changed_signal       = QtCore.Signal()
@@ -208,8 +208,8 @@ class Editor(QtWidgets.QPlainTextEdit):
         Emit signal on resize so that the
         LineNumberArea has a chance to update.
         """
-        self.resize_signal.emit()
         super(Editor, self).resizeEvent(event)
+        self.resize_signal.emit(event)
 
     def keyPressEvent(self, event):
         """
