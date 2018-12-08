@@ -203,9 +203,10 @@ class ShortcutHandler(QtCore.QObject):
         return blocks
 
     def save(self):
-        tabs = self.tabeditor.tabs
-        editor = self.editor
-        actions.save_action(tabs, self.editor)
+        actions.save_action(
+            self.tabs,
+            self.editor
+        )
 
     def open_module_file(self):
         textCursor = self.editor.textCursor()
