@@ -1,19 +1,19 @@
 {
+	"build_systems":
+	[
+		{
+			"name": "test_app.py",
+			"shell_cmd": "python $project_path/tests/test_app.py"
+		}
+	],
 	"folders":
 	[
 		{
 			"path": "."
 		}
 	],
-    "settings":
-    {
-        "tab_size": 4
-    },
-    "build_systems":
-    [
-        {
-            "name": "test_app.py",
-            "shell_cmd": "python $project_path/tests/test_app.py"
-        }
-    ]
+	"settings":
+	{
+		"tab_size": 4
+	}
 }
