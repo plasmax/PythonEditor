@@ -51,12 +51,14 @@ class Highlight(QtGui.QSyntaxHighlighter):
         self.setObjectName('Highlight')
 
         theme = themes['Monokai Smooth']
-        self.styles = {feature: self.format(*style)
-                       for feature, style in theme.items()}
+        self.styles = {
+          feature: self.format(*style)
+          for feature, style in theme.items()
+        }
 
         self.arguments = [
             'self', 'cls', 'args', 'kwargs'
-            ]
+        ]
 
         self.keywords = [
             'and', 'assert', 'break', 'continue',
@@ -64,71 +66,73 @@ class Highlight(QtGui.QSyntaxHighlighter):
             'for', 'from', 'global', 'if', 'import', 'in',
             'is', 'lambda', 'not', 'or', 'pass', 'print',
             'raise', 'return', 'try', 'while', 'yield', 'with'
-            ]
+        ]
 
         self.instantiators = [
             'def', 'class'
-            ]
+        ]
 
-        self.exceptions = ['BaseException',
-                           'SystemExit',
-                           'KeyboardInterrupt',
-                           'GeneratorExit',
-                           'Exception',
-                           'StopIteration',
-                           'StandardError',
-                           'BufferError',
-                           'ArithmeticError',
-                           'FloatingPointError',
-                           'OverflowError',
-                           'ZeroDivisionError',
-                           'AssertionError',
-                           'AttributeError',
-                           'EnvironmentError',
-                           'IOError',
-                           'OSError',
-                           'WindowsError',
-                           'VMSError',
-                           'EOFError',
-                           'ImportError',
-                           'LookupError',
-                           'IndexError',
-                           'KeyError',
-                           'MemoryError',
-                           'NameError',
-                           'UnboundLocalError',
-                           'ReferenceError',
-                           'RuntimeError',
-                           'NotImplementedError',
-                           'SyntaxError',
-                           'IndentationError',
-                           'TabError',
-                           'SystemError',
-                           'TypeError',
-                           'ValueError',
-                           'UnicodeError',
-                           'UnicodeDecodeError',
-                           'UnicodeEncodeError',
-                           'UnicodeTranslateError',
-                           'Warning',
-                           'DeprecationWarning',
-                           'PendingDeprecationWarning',
-                           'RuntimeWarning',
-                           'SyntaxWarning',
-                           'UserWarning',
-                           'FutureWarning',
-                           'ImportWarning',
-                           'UnicodeWarning',
-                           'BytesWarning']
+        self.exceptions = [
+            'BaseException',
+            'SystemExit',
+            'KeyboardInterrupt',
+            'GeneratorExit',
+            'Exception',
+            'StopIteration',
+            'StandardError',
+            'BufferError',
+            'ArithmeticError',
+            'FloatingPointError',
+            'OverflowError',
+            'ZeroDivisionError',
+            'AssertionError',
+            'AttributeError',
+            'EnvironmentError',
+            'IOError',
+            'OSError',
+            'WindowsError',
+            'VMSError',
+            'EOFError',
+            'ImportError',
+            'LookupError',
+            'IndexError',
+            'KeyError',
+            'MemoryError',
+            'NameError',
+            'UnboundLocalError',
+            'ReferenceError',
+            'RuntimeError',
+            'NotImplementedError',
+            'SyntaxError',
+            'IndentationError',
+            'TabError',
+            'SystemError',
+            'TypeError',
+            'ValueError',
+            'UnicodeError',
+            'UnicodeDecodeError',
+            'UnicodeEncodeError',
+            'UnicodeTranslateError',
+            'Warning',
+            'DeprecationWarning',
+            'PendingDeprecationWarning',
+            'RuntimeWarning',
+            'SyntaxWarning',
+            'UserWarning',
+            'FutureWarning',
+            'ImportWarning',
+            'UnicodeWarning',
+            'BytesWarning'
+        ]
 
         self.operatorKeywords = [
             '=', '==', '!=', '<', '<=', '>', '>=',
             '\+', '-', '\*', '/', '//', '\%', '\*\*',
             '\+=', '-=', '\*=', '/=', '\%=',
             '\^', '\|', '\&', '\~', '>>', '<<',
-            ]
+        ]
 
-        self.numbers = ['True', 'False', 'None']
+        self.truthy = ['True', 'False', 'None']
 
         self.tri_single = (QtCore.QRegExp("'''"), 1, self.styles['comment'])
         self.tri_double = (QtCore.QRegExp('"""'), 2, self.styles['comment'])
@@ -149,7 +153,7 @@ class Highlight(QtGui.QSyntaxHighlighter):
         rules += [(i, 0, self.styles['keyword'])
                   for i in self.operatorKeywords]
         rules += [(r'\b%s\b' % i, 0, self.styles['numbers'])
-                  for i in self.numbers]
+                  for i in self.truthy]
         rules += [(r'\b%s\b' % i, 0, self.styles['instantiators'])
                   for i in self.instantiators]
         rules += [(r'\b%s\b' % i, 0, self.styles['exceptions'])
@@ -209,26 +213,22 @@ class Highlight(QtGui.QSyntaxHighlighter):
                 index = expression.indexIn(text, index + length)
 
         if '#' in text:
-          s = StringIO.StringIO(text)
-          try:
+            s = StringIO.StringIO(text)
             g = tokenize.generate_tokens(s.readline)
             for toktype, tok, start, end, line in g:
-                if toktype == tokenize.COMMENT:
-                    _, i = start
-                    _, e = end
-                    length = e-i
-                    self.setFormat(
-                      i,
-                      length,
-                      self.styles['comment']
-                    )
-          except tokenize.TokenError:
-            # tokenize will throw an error
-            # for multi-line statements such as:
-            # [ 'list item' # comment
-            # ]
-            # but will still highlight correctly.
-            pass
+                if toktype != tokenize.COMMENT:
+                    continue
+                _, i = start
+                _, e = end
+                length = e-i
+                self.setFormat(
+                i,
+                length,
+                self.styles['comment']
+                )
+                # break to prevent tokenize EOF
+                # errors on multi-line statements.
+                break
 
         self.setCurrentBlockState(0)
 
