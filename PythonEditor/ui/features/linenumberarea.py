@@ -125,6 +125,7 @@ class LineNumberArea(QtWidgets.QWidget):
             extraSelections.append(selection)
 
         self.editor.setExtraSelections(extraSelections)
+        self.highlight_cell_block()
 
     def resizeLineNo(self):
         cr = self.editor.contentsRect()
@@ -133,3 +134,35 @@ class LineNumberArea(QtWidgets.QWidget):
                             self.lineNumberAreaWidth(),
                             cr.height())
         self.setGeometry(rect)
+
+
+    def highlight_cell_block(self):
+        """
+        Highlight blocks that start with #&&
+        These denote a cell block border.
+        """
+        extraSelections = self.editor.extraSelections()
+        doc = self.editor.document()
+        for i in range(doc.blockCount()):
+            block = doc.findBlockByLineNumber(i)
+            text = block.text()
+            if not text.startswith('#&&'):
+                continue
+            selection = QtWidgets.QTextEdit.ExtraSelection()
+            lineColor = QtGui.QColor.fromRgbF(1,
+                                              1,
+                                              1,
+                                              0.05)
+
+            selection.format.setBackground(lineColor)
+            selection.format.setProperty(
+                QtGui.QTextFormat.FullWidthSelection,
+                True
+            )
+            cursor = self.editor.textCursor()
+            cursor.setPosition(block.position())
+            selection.cursor = cursor
+            selection.cursor.clearSelection()
+            extraSelections.append(selection)
+
+        self.editor.setExtraSelections(extraSelections)
