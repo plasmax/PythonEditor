@@ -291,6 +291,9 @@ class Editor(QtWidgets.QPlainTextEdit):
         self.post_key_pressed_signal.emit(event)
 
     def keyReleaseEvent(self, event):
+        if not isinstance(self, Editor):
+            # when the key released is F5 (reload app)
+            return
         self.wait_for_autocomplete = True
         super(Editor, self).keyReleaseEvent(event)
 
