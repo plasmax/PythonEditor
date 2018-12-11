@@ -1,4 +1,5 @@
 from PythonEditor.ui.Qt import QtGui, QtCore
+from PythonEditor.utils.debug import debug
 import tokenize
 import StringIO
 
@@ -215,20 +216,24 @@ class Highlight(QtGui.QSyntaxHighlighter):
         if '#' in text:
             s = StringIO.StringIO(text)
             g = tokenize.generate_tokens(s.readline)
-            for toktype, tok, start, end, line in g:
-                if toktype != tokenize.COMMENT:
-                    continue
-                _, i = start
-                _, e = end
-                length = e-i
-                self.setFormat(
-                i,
-                length,
-                self.styles['comment']
-                )
-                # break to prevent tokenize EOF
-                # errors on multi-line statements.
-                break
+            try:
+                for toktype, tok, start, end, line in g:
+                    if toktype == tokenize.COMMENT:
+                        _, i = start
+                        _, e = end
+                        length = e-i
+                        self.setFormat(
+                            i,
+                            length,
+                            self.styles['comment']
+                        )
+                        # break to prevent tokenize EOF
+                        # errors on multi-line statements.
+                        break
+            except tokenize.TokenError:
+                pass
+                # triple-quoted strings before a comment will cause
+                # a multi-line error.
 
         self.setCurrentBlockState(0)
 
