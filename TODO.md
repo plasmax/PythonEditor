@@ -2,6 +2,7 @@
 
 
 #### Bug fixes
+- [ ] When pressing keys simultaneously, the document changed window appears
 - [ ] Clicking on a tab to the right of the QLineEdit when editing a tab name causes a jump, and the wrong tab to be selected.
 - [ ] Save functions need to be amended to work with new single editor
 - [ ] On first open (if not pinned to layout), tab may not display contents
@@ -41,13 +42,14 @@
 
 
 #### Features - desired
+- [ ] Move all actions to actions.py and have shortcuts simply setShortcut() on the Actions() class, which can be picked up by menus.
 - [ ] Pre-reload PythonEditor safety backup
 - [ ] Foldable sidebar with directory tree
 - [ ] File Browser with connected file path
 - [ ] Recent Files List
 - [ ] Implement events or signals to redirect Script Editor stream (for speed)
 - [x] Snippet file library (currently reads from a file called PythonEditor_snippets.json in .nuke dir if found.)
-- [ ] Snippet save functions - write to PythonEditor_snippets.json
+- [ ] Snippet save actions - write to PythonEditor_snippets.json
 - [ ] Writing to external files instead of xml. Keeping those files in tab session until closed with a JSON file
 - [x] Check if there's a better way to connect widgets/objects, synchronously
       (bypassing signal in cases where it's not wanted) - Resolved, starting to use DirectConnection
@@ -61,7 +63,7 @@
       editor path, the dialog should open to that path
 - [ ] Add menu on the top right corner to select between tabs
 - [ ] Preferences - colour
-- [ ] Preferences - shortcuts - this has been at least partially acconplished on another branch
+- [ ] Preferences - shortcuts - this has been at least partially accomplished on another branch
 - [ ] Preferences - indentation (backspace deletes single space or tab)
 - [ ] Preferences - disable autocompletion in comments
 - [ ] Warn if file has changed on disk (as with autosave when regaining tab focus)
@@ -73,12 +75,13 @@
 - [ ] Edit Snippets Dialog (for snippets in /.nuke/)
 - [ ] Improve speed by loading tabs separately - (Lazy loading of tabs (or one single Autosave read/load operation instead of read/load/write/read))
 - [ ] Duplicate cursors
-- [ ] Search box at bottom of editor widget
+- [ ] Search box at bottom of editor widget (with "all tabs" checkbox)
 - [ ] Autocomplete 'toNode', node.knob() and node[knob]
 - [ ] Projects
 - [ ] Goto Links in errors/regular paths in the editor
 - [ ] Hover over varibles to get definition goto, type info, short help()
 - [ ] Hover over paths in output window to get goto link
+- [ ] Paste into sublime subprocess.Popen('sublime -n --command paste', executable='/bin/tcsh', shell=True)
 
 
 #### General
