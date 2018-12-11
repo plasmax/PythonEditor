@@ -308,7 +308,7 @@ class AutoCompleter(QtCore.QObject):
                      + KEYWORDS
                      + words]
 
-        variables = list(set().union(*variables))
+        variables = sorted(list(set().union(*variables)))
         self.set_list(variables)
         word = self.word_under_cursor()
 
