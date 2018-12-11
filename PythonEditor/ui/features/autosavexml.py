@@ -18,7 +18,6 @@ import difflib
 from xml.etree import cElementTree as ElementTree
 
 from PythonEditor.ui.Qt import QtCore, QtWidgets
-# from PythonEditor.utils import save
 from PythonEditor.ui import editor
 from PythonEditor.utils.signals import connect
 from PythonEditor.utils.constants import NUKE_DIR
@@ -580,9 +579,11 @@ class AutoSaveManager(QtCore.QObject):
 
             s.text = ''
             s.attrib['path'] = path
-            data['saved'] = True
-            data['text'] = ''
-            self.tabs.setTabData(data)
+            self.tabs['saved'] = True
+            # FIXME: i think it would be better to keep a temp copy of all open files
+            # until they are closed.
+            self.tabs['text'] = ''
+            # self.tabs.setTabData(data)
             writexml(root)
             print('Document {0} has been emptied'.format(uid))
 
