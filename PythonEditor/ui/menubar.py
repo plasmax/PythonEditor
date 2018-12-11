@@ -42,13 +42,12 @@ class MenuBar(object):
 
         file_menu.addAction(
             '&Save',
-            # actions.actions['save']
             self.save
         )
 
         file_menu.addAction(
             'Save As',
-            self.save_as
+            self.save
         )
 
         export_menu = QtWidgets.QMenu('Export')
