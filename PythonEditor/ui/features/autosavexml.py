@@ -361,6 +361,11 @@ class AutoSaveManager(QtCore.QObject):
             # autosave is complete.
             return
 
+        # FIXME: This will change when
+        # autocompletion goes synchronous.
+        if self.editor.wait_for_autocomplete:
+            return
+
         # first check against saved files,
         # which will autosave before continuing.
         self.check_document_modified(
