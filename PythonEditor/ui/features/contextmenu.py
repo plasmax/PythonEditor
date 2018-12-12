@@ -104,17 +104,20 @@ class ContextMenu(QtCore.QObject):
         cursor = document.find(text, textCursor)
         self.editor.setTextCursor(cursor)
 
+    # FIXME: Moved to actions. Delete
     def printHelp(self):
         text = self.selectedText
         obj = actions.get_subobject(text)
         if obj is not None:
             print(obj.__doc__)
 
+    # FIXME: Moved to actions. Delete
     def _open_module_file(self):
         text = str(self.selectedText)
         obj = actions.get_subobject(text)
         actions.open_module_file(obj)
 
+    # FIXME: Moved to actions. Delete
     def _open_module_directory(self):
         text = str(self.selectedText)
         obj = actions.get_subobject(text)
@@ -213,6 +216,11 @@ class ContextMenu(QtCore.QObject):
             print(obj)
 
     def menu_setup(self):
+        for a in self.editor.actions():
+            if not a.text():
+                continue
+            self.menu.addAction(a)
+        # return
         self.menu.addAction('Save As', self.notImplemented)
         self.menu.addAction('Search', self.search_input)
 

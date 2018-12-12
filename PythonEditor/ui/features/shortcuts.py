@@ -8,7 +8,24 @@ from PythonEditor.utils.signals import connect
 from PythonEditor.utils import save
 from PythonEditor.ui.features import actions
 
+# TODO: this will probably end up in a user-editable JSON file.
+REGISTER = {
+'editor': {
+    'Ctrl+H' : 'Print Help',
+    'Ctrl+E' : 'Open Module File',
+    'Ctrl+F' : 'Search',
+    # ''     : 'Open Module Directory',
+    },
+'tabs': {
+    },
+'terminal': {
+    },
+}
 
+# TODO:
+# This needs to be moved to 'actions' and replaced with
+# a class that reads user-registered shortcuts and
+# applies them to their respective actions through __setitem__
 class ShortcutHandler(QtCore.QObject):
     """
     Shortcut Manager with custom signals.
@@ -148,12 +165,12 @@ class ShortcutHandler(QtCore.QObject):
                    when triggering the action.
             """
             key_seq = QtGui.QKeySequence(shortcut)
-            a.setShortcut(key_seq)
-            a.setShortcutContext(
+            action.setShortcut(key_seq)
+            action.setShortcutContext(
                 QtCore.Qt.WidgetShortcut
             )
-            a.triggered.connect(func)
-            widget.addAction(a)
+            action.triggered.connect(func)
+            widget.addAction(action)
 
         for shortcut, func in editor_shortcuts.items():
             a = QtWidgets.QAction(self.editor)
@@ -168,6 +185,24 @@ class ShortcutHandler(QtCore.QObject):
             for shortcut, func in tab_shortcuts.items():
                 a = QtWidgets.QAction(self.tabs)
                 add_action(a, self.tabs, shortcut, func)
+
+        self.register_shortcuts()
+
+    def register_shortcuts(self):
+        global REGISTER
+        for widget_name, actions in REGISTER.items():
+            if not hasattr(self, widget_name):
+                continue
+            widget = getattr(self, widget_name)
+            for shortcut, action_description in actions.items():
+                for action in widget.actions():
+                    if action.text() == action_description:
+                        key_seq = QtGui.QKeySequence(shortcut)
+                        action.setShortcut(key_seq)
+                        action.setShortcutContext(
+                            QtCore.Qt.WidgetShortcut
+                        )
+
 
     def notimplemented(self, text):
         """ Development reminders to implement features """
@@ -208,6 +243,7 @@ class ShortcutHandler(QtCore.QObject):
             self.editor
         )
 
+    # FIXME: Has been moved to actions.
     def open_module_file(self):
         textCursor = self.editor.textCursor()
         text = textCursor.selection().toPlainText()
@@ -743,7 +779,6 @@ class ShortcutHandler(QtCore.QObject):
         if pos != -1:
             self.editor.setTextCursor(cursor)
 
-
     def duplicate_lines(self):
         """
         Duplicates the current line or
@@ -785,6 +820,7 @@ class ShortcutHandler(QtCore.QObject):
         textCursor.setPosition(pos, QtGui.QTextCursor.KeepAnchor)
         textCursor.insertText('')
 
+    # FIXME: moved to actions. Delete once ShortcutHandler assigns shortcuts
     def print_help(self):
         """
         Prints documentation
