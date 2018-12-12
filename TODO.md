@@ -2,7 +2,8 @@
 
 
 #### Bug fixes
-- [ ] When pressing keys simultaneously, the document changed window appears
+- [x] Single line (selection-based) Ctrl+Enter no longer uses accurate lineno
+- [x] When pressing keys simultaneously, the document changed window appears
 - [ ] Clicking on a tab to the right of the QLineEdit when editing a tab name causes a jump, and the wrong tab to be selected.
 - [ ] Save functions need to be amended to work with new single editor
 - [ ] On first open (if not pinned to layout), tab may not display contents
