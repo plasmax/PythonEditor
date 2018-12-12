@@ -127,9 +127,10 @@ def print_traceback(whole_text, error):
     error_lines = error_message.splitlines()
     error = error_lines.pop()
     error_line_numbers = []
+    exec_string = 'exec(_code, __main__.__dict__)'
     for line in error_lines:
         if (__file__ in line
-                or 'exec(_code, __dict__)' in line):
+                or exec_string in line):
             continue
 
         message_lines.append(line)
