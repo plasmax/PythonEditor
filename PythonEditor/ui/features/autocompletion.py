@@ -129,8 +129,11 @@ class AutoCompleter(QtCore.QObject):
         # necessary.
         """
         if self._completer is None:
-            wordlist = list(set(re.findall('\w+',
-                                self.editor.toPlainText())))
+            wordlist = re.findall(
+                r'\w+',
+                self.editor.toPlainText()
+            )
+            wordlist = list(set(wordlist))
             self._completer = Completer(wordlist)
             self._completer.setParent(self)
             self._completer.setWidget(self.editor)
@@ -499,13 +502,13 @@ class AutoCompleter(QtCore.QObject):
         - Hide popup if no completions available
         """
         cp = self.completer
-        cpActive = (
+        completing = (
             cp
             and cp.popup()
             and cp.popup().isVisible()
         )
 
-        if cpActive:
+        if completing:
             if event.key() in (
                 QtCore.Qt.Key_Enter,
                 QtCore.Qt.Key_Return,
