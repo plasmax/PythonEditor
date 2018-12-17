@@ -39,6 +39,8 @@ class Editor(QtWidgets.QPlainTextEdit):
     post_key_pressed_signal   = QtCore.Signal(QtGui.QKeyEvent)
     wheel_signal              = QtCore.Signal(QtGui.QWheelEvent)
     key_pressed_signal        = QtCore.Signal(QtGui.QKeyEvent)
+    # key_release_signal        = QtCore.Signal(QtGui.QKeyEvent)
+    shortcut_signal           = QtCore.Signal(QtGui.QKeyEvent)
     resize_signal             = QtCore.Signal(QtGui.QResizeEvent)
     context_menu_signal       = QtCore.Signal(QtWidgets.QMenu)
     tab_signal                = QtCore.Signal()
@@ -74,6 +76,7 @@ class Editor(QtWidgets.QPlainTextEdit):
         background-color: rgb(45, 42, 46);
         }
         """)
+        self.shortcut_overrode_keyevent = False
 
         if uid is None:
             uid = str(uuid.uuid4())
@@ -115,7 +118,10 @@ class Editor(QtWidgets.QPlainTextEdit):
         self.autocomplete = autocompletion.AutoCompleter(self)
 
         if self._handle_shortcuts:
-            sch = shortcuts.ShortcutHandler(self, use_tabs=False)
+            sch = shortcuts.ShortcutHandler(
+                editor=self,
+                use_tabs=False
+            )
             sch.clear_output_signal.connect(self.relay_clear_output_signal)
             self.shortcuteditor = shortcuteditor.ShortcutEditor(sch)
 
@@ -224,10 +230,18 @@ class Editor(QtWidgets.QPlainTextEdit):
         # # QtCore.Qt.DirectConnection
         # self.key_pressed_signal.emit(event)
 
+        # self.autocomplete_overrode_keyevent = False
+
         if self.wait_for_autocomplete:
             # TODO: Connect (in autocomplete) using
             # QtCore.Qt.DirectConnection to work synchronously
             self.key_pressed_signal.emit(event)
+            return
+
+
+        self.shortcut_overrode_keyevent = False
+        self.shortcut_signal.emit(event)
+        if self.shortcut_overrode_keyevent:
             return
 
         if event.modifiers() == QtCore.Qt.NoModifier:
@@ -295,6 +309,7 @@ class Editor(QtWidgets.QPlainTextEdit):
             # when the key released is F5 (reload app)
             return
         self.wait_for_autocomplete = True
+        # self.key_release_signal.emit(event)
         super(Editor, self).keyReleaseEvent(event)
 
     def contextMenuEvent(self, event):

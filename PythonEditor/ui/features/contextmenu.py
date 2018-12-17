@@ -20,8 +20,45 @@ class ContextMenu(QtCore.QObject):
         self.initSnippetDict()
         self.initInspectDict()
 
-    def menu_setup(self):
+    @QtCore.Slot(QtWidgets.QMenu)
+    def show_menu(self, menu):
+        self.menu = menu
+        self.menu_setup()
+        menu.exec_(QtGui.QCursor().pos())
 
+    def menu_setup(self):
+        self.menu.addSeparator()
+        action_dict = actions.load_actions_from_json()
+        for widget_name, widget_actions in action_dict.items():
+            if not hasattr(self, widget_name):
+                # TODO: might want to do something interesting
+                # here with state - instead of widget
+                # attrib, get 'widget clicked on'
+                continue
+            widget = getattr(self, widget_name)
+            if widget is None:
+                continue
+            for action_name, attributes in widget_actions.items():
+                location = attributes.get('Menu Location')
+                if location is None:
+                    continue
+                for action in widget.actions():
+                    if action.text() != action_name:
+                        continue
+                    break
+                else:
+                    continue
+
+                menu = self.menu
+                if location != '':
+                    for name in location.split('/'):
+                        item = actions.find_menu_item(menu, name)
+                        if item is None:
+                            item = menu.addMenu(name)
+                        menu = item
+                menu.addAction(action)
+
+        return
         # TODO: need some way of grouping these
         # Perhaps slash-separated like nuke File/Save etc
         for a in self.editor.actions():
@@ -102,7 +139,6 @@ class ContextMenu(QtCore.QObject):
         self.nodes_clr_menu = self.nodes_menu.addMenu('Clear')
         self.nodes_run_menu = self.nodes_menu.addMenu('Eval in Knob Context')
 
-
         # self.nodes_menu.addAction('Run on Selected Nodes',
         #                          self.notImplemented)
 
@@ -154,12 +190,6 @@ class ContextMenu(QtCore.QObject):
         for knob_name in add_knobs:
             func = partial(self.add_knob, knob_name)
             self.nodes_add_menu.addAction(knob_name, func)
-
-    @QtCore.Slot(QtWidgets.QMenu)
-    def show_menu(self, menu):
-        self.menu = menu
-        self.menu_setup()
-        menu.exec_(QtGui.QCursor().pos())
 
     def notImplemented(self):
         raise NotImplementedError('not implemented yet')
@@ -330,3 +360,4 @@ class ContextMenu(QtCore.QObject):
             pprint(attrs)
         elif keyword == 'pprint':
             print(obj)
+

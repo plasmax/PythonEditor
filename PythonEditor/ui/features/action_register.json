@@ -1,0 +1,393 @@
+{
+    "tabs": {
+        "Remove Current Tab": {
+            "Shortcuts": [
+                "Ctrl+Shift+W"
+            ],
+            "Menu Location": "View/Tabs",
+            "Method": "remove_current_tab"
+        },
+        "New Tab": {
+            "Shortcuts": [
+                "Ctrl+T",
+                "Ctrl+Shift+N"
+            ],
+            "Menu Location": "&File",
+            "Method": "new_tab"
+        },
+        "Previous Tab": {
+            "Shortcuts": [
+                "Ctrl+Shift+Tab",
+                "Ctrl+Shift+Backtab"
+            ],
+            "Menu Location": "View/Tabs",
+            "Method": "previous_tab"
+        },
+        "Next Tab": {
+            "Shortcuts": [
+                "Ctrl+Tab"
+            ],
+            "Menu Location": "View/Tabs",
+            "Method": "next_tab"
+        }
+    },
+    "terminal": {
+        "Clear Output Signal": {
+            "Shortcuts": [
+                "Ctrl+Backspace"
+            ],
+            "Method": "clear_output",
+            "Menu Location": "View"
+        }
+    },
+    "editor": {
+        "Hop Between Brackets": {
+            "Shortcuts": [
+                "Ctrl+M"
+            ],
+            "Method": "hop_between_brackets",
+            "Menu Location": "&Edit/Cursor"
+        },
+        "Cut Line": {
+            "Shortcuts": [
+                "Ctrl+X"
+            ],
+            "Method": "cut_line",
+            "Menu Location": "&Edit/Line"
+        },
+        "Move to Bottom": {
+            "Shortcuts": [
+                "Ctrl+Alt+End"
+            ],
+            "Method": "move_to_bottom",
+            "Menu Location": "&Edit/Line"
+        },
+        "Wrap Handler": {
+            "Shortcuts": [
+                "'",
+                "\"",
+                "[",
+                "]",
+                "(",
+                ")",
+                "{",
+                "}"
+            ],
+            "Method": "wrap_handler",
+            "Menu Location": "&Edit/Text"
+        },
+        "Toggle Comment": {
+            "Shortcuts": [
+                "Ctrl+/"
+            ],
+            "Method": "toggle_comment",
+            "Menu Location": "Line/Comment"
+        },
+        "Reload Package": {
+            "Shortcuts": [
+                "F5"
+            ],
+            "Method": "reload_package",
+            "Menu Location": "&Help"
+        },
+        "New Line Below": {
+            "Shortcuts": [
+                "Ctrl+Alt+Return"
+            ],
+            "Method": "new_line_below",
+            "Menu Location": "&Edit/Line"
+        },
+        "Open Module File": {
+            "Shortcuts": [
+                "Ctrl+E"
+            ],
+            "Method": "open_module_file",
+            "Menu Location": "Tools/Object"
+        },
+        "Unindent": {
+            "Shortcuts": [
+                "Ctrl+[",
+                "Shift+Tab",
+                "Shift+Backtab"
+            ],
+            "Method": "unindent",
+            "Menu Location": "&Edit/Text"
+        },
+        "Execute Current Block": {
+            "Shortcuts": [
+                "Ctrl+B"
+            ],
+            "Method": "exec_current_line",
+            "Menu Location": "Tools"
+        },
+        "Select Between Brackets": {
+            "Shortcuts": [
+                "Ctrl+Shift+M"
+            ],
+            "Method": "select_between_brackets",
+            "Menu Location": "Selection"
+        },
+        "Zoom Out": {
+            "Shortcuts": [
+                "Ctrl+-"
+            ],
+            "Method": "zoom_out",
+            "Menu Location": "View"
+        },
+        "Save As": {
+            "Shortcuts": [
+                "Ctrl+Shift+S"
+            ],
+            "Method": "save",
+            "Menu Location": "&File"
+        },
+        "Toggle Backslashes": {
+            "Shortcuts": [
+                "Ctrl+\\"
+            ],
+            "Method": "toggle_backslashes",
+            "Menu Location": "&Edit/Text"
+        },
+        "Open": {
+            "Shortcuts": [
+                "Ctrl+O"
+            ],
+            "Method": "open",
+            "Menu Location": "&File"
+        },
+        "Select Lines": {
+            "Shortcuts": [
+                "Ctrl+L"
+            ],
+            "Method": "select_lines",
+            "Menu Location": "Selection"
+        },
+        "Delete Lines": {
+            "Shortcuts": [
+                "Ctrl+Shift+K"
+            ],
+            "Method": "delete_lines",
+            "Menu Location": "&Edit/Text"
+        },
+        "Zoom In": {
+            "Shortcuts": [
+                "Ctrl+=",
+                "Ctrl++"
+            ],
+            "Method": "zoom_in",
+            "Menu Location": "View"
+        },
+        "Search": {
+            "Shortcuts": [
+                "Ctrl+F"
+            ],
+            "Method": "search",
+            "Menu Location": "Find"
+        },
+        "Indent": {
+            "Shortcuts": [
+                "Ctrl+]"
+            ],
+            "Method": "indent",
+            "Menu Location": "&Edit/Text"
+        },
+        "Save": {
+            "Shortcuts": [
+                "Ctrl+S"
+            ],
+            "Method": "save",
+            "Menu Location": "&File"
+        },
+        "Duplicate Cursor Down": {
+            "Shortcuts": [
+                "Ctrl+Shift+Alt+Down"
+            ],
+            "Method": "duplicate_cursor_down",
+            "Menu Location": "&Edit/Cursor"
+        },
+        "Tab Handler": {
+            "Shortcuts": [
+                "Tab"
+            ],
+            "Method": "tab_handler",
+            "Menu Location": "&Edit/Text"
+        },
+        "Open Module Directory": {
+            "Shortcuts": [],
+            "Method": "open_module_directory",
+            "Menu Location": "Tools/Object"
+        },
+        "Move Blocks Down": {
+            "Shortcuts": [
+                "Ctrl+Shift+Down"
+            ],
+            "Method": "move_blocks_down",
+            "Menu Location": "&Edit/Line"
+        },
+        "Move Blocks Up": {
+            "Shortcuts": [
+                "Ctrl+Shift+Up"
+            ],
+            "Method": "move_blocks_up",
+            "Menu Location": "&Edit/Line"
+        },
+        "Clear Output": {
+            "Shortcuts": [
+                "Ctrl+Backspace"
+            ],
+            "Method": "clear_output",
+            "Menu Location": "View"
+        },
+        "Copy Block or Selection": {
+            "Shortcuts": [
+                "Ctrl+C"
+            ],
+            "Method": "copy_block_or_selection",
+            "Menu Location": "&Edit"
+        },
+        "Return Handler": {
+            "Shortcuts": [
+                "Return",
+                "Enter"
+            ],
+            "Method": "return_handler",
+            "Menu Location": "&Edit/Text"
+        },
+        "Duplicate Cursor Up": {
+            "Shortcuts": [
+                "Ctrl+Shift+Alt+Up"
+            ],
+            "Method": "duplicate_cursor_up",
+            "Menu Location": "&Edit/Cursor"
+        },
+        "Select Word": {
+            "Shortcuts": [
+                "Ctrl+D"
+            ],
+            "Method": "select_word",
+            "Menu Location": "Selection"
+        },
+        "Goto Line": {
+            "Shortcuts": [
+                "Ctrl+G"
+            ],
+            "Method": "goto_line",
+            "Menu Location": ""
+        },
+        "Print Type": {
+            "Shortcuts": [
+                "Ctrl+Shift+T"
+            ],
+            "Method": "print_type",
+            "Menu Location": "Tools/Object"
+        },
+        "Command Palette": {
+            "Shortcuts": [
+                "Ctrl+P"
+            ],
+            "Method": "command_palette",
+            "Menu Location": "Tools"
+        },
+        "Exec Text": {
+            "Shortcuts": [
+                "Ctrl+Enter",
+                "Ctrl+Return"
+            ],
+            "Method": "exec_handler",
+            "Menu Location": "Tools"
+        },
+        "Join Lines": {
+            "Shortcuts": [
+                "Ctrl+J"
+            ],
+            "Method": "join_lines",
+            "Menu Location": "&Edit/Line"
+        },
+        "Print Help": {
+            "Shortcuts": [
+                "Ctrl+H"
+            ],
+            "Method": "print_help",
+            "Menu Location": "Tools/Object"
+        },
+        "Duplicate Lines": {
+            "Shortcuts": [
+                "Ctrl+Shift+D"
+            ],
+            "Method": "duplicate_lines",
+            "Menu Location": "&Edit/Line"
+        },
+        "Delete to Start of Line": {
+            "Shortcuts": [
+                "Ctrl+Shift+Backspace"
+            ],
+            "Method": "delete_to_start_of_line",
+            "Menu Location": "&Edit/Line"
+        },
+        "Move to Top": {
+            "Shortcuts": [
+                "Ctrl+Alt+Home"
+            ],
+            "Method": "move_to_top",
+            "Menu Location": "&Edit/Line"
+        },
+        "Jump to Start": {
+            "Shortcuts": [
+                "Home"
+            ],
+            "Method": "jump_to_start",
+            "Menu Location": "&Edit/Cursor"
+        },
+        "New Line Above": {
+            "Shortcuts": [
+                "Ctrl+Shift+Return"
+            ],
+            "Method": "new_line_above",
+            "Menu Location": "&Edit/Line"
+        },
+        "Delete to End of Line": {
+            "Shortcuts": [
+                "Ctrl+Shift+Delete"
+            ],
+            "Method": "delete_to_end_of_line",
+            "Menu Location": "&Edit/Text"
+        },
+
+
+        "Save Selected Text": {
+            "Shortcuts": [],
+            "Method": "save_selected_text",
+            "Menu Location": "&File/Export"
+        },
+        "Export Selected To External Editor": {
+            "Shortcuts": [],
+            "Method": "export_selected_to_external_editor",
+            "Menu Location": "&File/Export"
+        },
+        "Export Current Tab To External Editor": {
+            "Shortcuts": [],
+            "Method": "export_current_tab_to_external_editor",
+            "Menu Location": "&File/Export"
+        },
+        "Export All Tabs To External Editor": {
+            "Shortcuts": [],
+            "Method": "export_all_tabs_to_external_editor",
+            "Menu Location": "&File/Export"
+        },
+        "About Python Editor": {
+            "Shortcuts": [],
+            "Method": "",
+            "Menu Location": "&Help"
+        },
+        "General Preferences": {
+            "Shortcuts": [],
+            "Method": "show_preferences",
+            "Menu Location": "Preferences"
+        },
+        "Edit Shortcuts": {
+            "Shortcuts": [],
+            "Method": "show_shortcuts",
+            "Menu Location": "Preferences"
+        }
+    }
+}
