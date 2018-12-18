@@ -19,7 +19,7 @@ class Terminal(QtWidgets.QPlainTextEdit):
             QtCore.Qt.WindowStaysOnTopHint
         )
         self.setReadOnly(True)
-        # self.setup()
+        self.setup()
         # debug('ENABLE SETUP TO SEE OUTPUT')
         self.destroyed.connect(self.stop)
         font = QtGui.QFont(DEFAULT_FONT)
