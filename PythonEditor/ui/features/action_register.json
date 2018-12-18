@@ -200,7 +200,7 @@
         },
         "Duplicate Cursor Down": {
             "Shortcuts": [
-                "Ctrl+Shift+Alt+Down"
+                "Ctrl+Alt+Shift+Down"
             ],
             "Method": "duplicate_cursor_down",
             "Menu Location": "&Edit/Cursor"
@@ -255,7 +255,7 @@
         },
         "Duplicate Cursor Up": {
             "Shortcuts": [
-                "Ctrl+Shift+Alt+Up"
+                "Ctrl+Alt+Shift+Up"
             ],
             "Method": "duplicate_cursor_up",
             "Menu Location": "&Edit/Cursor"
@@ -347,7 +347,7 @@
         },
         "Delete to End of Line": {
             "Shortcuts": [
-                "Ctrl+Shift+Delete"
+                "Ctrl+Shift+Del"
             ],
             "Method": "delete_to_end_of_line",
             "Menu Location": "&Edit/Text"
