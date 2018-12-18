@@ -6,7 +6,9 @@ from PythonEditor.ui.Qt import QtWidgets, QtGui, QtCore
 from PythonEditor.utils.signals import connect
 from PythonEditor.ui.features import actions
 
-
+# FIXME:
+# Shift+Home doesn't select
+# wrap_handler doesn't know which key was pressed (store it on the editor?)
 class ShortcutHandler(QtCore.QObject):
     """
     Shortcut Manager with custom signals.
@@ -69,6 +71,7 @@ class ShortcutHandler(QtCore.QObject):
 
     QtCore.Slot(QtGui.QKeyEvent)
     def handle_keypress(self, event):
+        
         # if event.isAutoRepeat():
         #     return
 
