@@ -156,6 +156,9 @@ class Actions(QtCore.QObject):
         if pos != -1:
             self.editor.setTextCursor(cursor)
 
+    def new_tab(self):
+        self.tabs.new_tab()
+
     def save(self):
         save_action(self.tabs, self.editor)
 
@@ -956,7 +959,10 @@ class Actions(QtCore.QObject):
         offset = len(text)-len(text.lstrip())
         new_pos = pos+offset
         if new_pos != init_pos:
-            textCursor.setPosition(new_pos, QtGui.QTextCursor.MoveAnchor)
+            textCursor.setPosition(
+                new_pos,
+                QtGui.QTextCursor.MoveAnchor
+            )
         self.editor.setTextCursor(textCursor)
 
     @QtCore.Slot(str)
