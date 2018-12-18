@@ -253,12 +253,11 @@ def apply_shortcut_register(widget, category='editor_shortcuts'):
     for shortcut, function in register:
         map_shortcut_to_function(shortcut, function, widget)
 
-
 modmap = {
-        QtCore.Qt.Key_Control: QtCore.Qt.ControlModifier,
-        QtCore.Qt.Key_Shift: QtCore.Qt.ShiftModifier,
-        QtCore.Qt.Key_Alt: QtCore.Qt.AltModifier,
-        QtCore.Qt.Key.Key_Meta: QtCore.Qt.MetaModifier,
+    QtCore.Qt.Key_Control: QtCore.Qt.ControlModifier,
+    QtCore.Qt.Key_Shift: QtCore.Qt.ShiftModifier,
+    QtCore.Qt.Key_Alt: QtCore.Qt.AltModifier,
+    QtCore.Qt.Key.Key_Meta: QtCore.Qt.MetaModifier,
 }
 
 editor_shortcuts = config_dict['editor_shortcuts'].items()
