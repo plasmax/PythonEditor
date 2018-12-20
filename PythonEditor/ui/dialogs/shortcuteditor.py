@@ -7,20 +7,19 @@ class ShortcutEditor(QtWidgets.QTreeView):
     keyboard shortcuts assigned to the editor.
     TODO: Make this editable, and reassign shortcuts on edit.
     """
-    def __init__(
-            self,
-            editor=None,
-            tabeditor=None,
-            terminal=None
-        ):
+    def __init__(self, shortcuthandler):
         super(ShortcutEditor, self).__init__()
+        self.shortcuthandler = shortcuthandler
+        self.shortcut_dict = shortcuthandler.shortcut_dict
 
         model = QtGui.QStandardItemModel()
         self.setModel(model)
         root = model.invisibleRootItem()
-        model.setHorizontalHeaderLabels(
-            ['Description', 'Shortcut', 'About']
-            )
+        model.setHorizontalHeaderLabels(['Shortcut', 'Description'])
+
+        for item in self.shortcut_dict.items():
+            row = [QtGui.QStandardItem(val) for val in item]
+            root.appendRow(row)
 
         self.header().setStretchLastSection(False)
         rtc = QtWidgets.QHeaderView.ResizeToContents
@@ -31,31 +30,6 @@ class ShortcutEditor(QtWidgets.QTreeView):
             # TODO: Find compatible way to resize header.
             pass
 
-        self.setWindowFlags(
-            QtCore.Qt.WindowStaysOnTopHint
-        )
+        self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
         self.setUniformRowHeights(True)
-        self.resize(800, 600)
-
-        widgets = []
-        if editor is not None:
-            widgets.append(editor)
-        if terminal is not None:
-            widgets.append(terminal)
-        if tabeditor is not None:
-            widgets.append(tabeditor)
-
-        for widget in widgets:
-            for action in widget.actions():
-                name = action.text()
-                # TODO: put shortcut in a keycatcher widget.
-                shortcut = action.shortcut().toString()
-                about = ' '.join([
-                    line.strip() for line in
-                    action.toolTip().splitlines()
-                    ]).strip()
-                row = [
-                QtGui.QStandardItem(val)
-                for val in [name, shortcut, about]
-                ]
-                root.appendRow(row)
+        self.resize(500, 400)

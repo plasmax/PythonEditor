@@ -15,26 +15,20 @@ class Terminal(QtWidgets.QPlainTextEdit):
         super(Terminal, self).__init__()
 
         self.setObjectName('Terminal')
-        self.setWindowFlags(
-            QtCore.Qt.WindowStaysOnTopHint
-        )
+        self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
         self.setReadOnly(True)
         self.setup()
-        # debug('ENABLE SETUP TO SEE OUTPUT')
         self.destroyed.connect(self.stop)
         font = QtGui.QFont(DEFAULT_FONT)
         font.setPointSize(10)
         self.setFont(font)
-        # QtCore.QTimer.singleShot(100, self.setup)
 
     @QtCore.Slot(str)
     def receive(self, text):
         try:
             textCursor = self.textCursor()
             if bool(textCursor):
-                self.moveCursor(
-                    QtGui.QTextCursor.End
-                )
+                self.moveCursor(QtGui.QTextCursor.End)
         except Exception:
             pass
         self.insertPlainText(text)

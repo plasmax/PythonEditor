@@ -26,171 +26,6 @@ class ContextMenu(QtCore.QObject):
         self.menu_setup()
         menu.exec_(QtGui.QCursor().pos())
 
-    def menu_setup(self):
-        self.menu.addSeparator()
-        action_dict = actions.load_actions_from_json()
-        for widget_name, widget_actions in action_dict.items():
-            if not hasattr(self, widget_name):
-                # TODO: might want to do something interesting
-                # here with state - instead of widget
-                # attrib, get 'widget clicked on'
-                continue
-            widget = getattr(self, widget_name)
-            if widget is None:
-                continue
-            for action_name, attributes in widget_actions.items():
-                location = attributes.get('Menu Location')
-                if location is None:
-                    continue
-                for action in widget.actions():
-                    if action.text() != action_name:
-                        continue
-                    break
-                else:
-                    continue
-
-                menu = self.menu
-                if location != '':
-                    for name in location.split('/'):
-                        item = actions.find_menu_item(menu, name)
-                        if item is None:
-                            item = menu.addMenu(name)
-                        menu = item
-                menu.addAction(action)
-
-        return
-        # TODO: need some way of grouping these
-        # Perhaps slash-separated like nuke File/Save etc
-        for a in self.editor.actions():
-            if not a.text():
-                continue
-            self.menu.addAction(a)
-
-        self.infoMenu = self.menu.addMenu('Info')
-
-        print_globals = partial(self.printInfo, 'globals')
-        self.infoMenu.addAction('Print globals',
-                                print_globals)
-        print_locals = partial(self.printInfo, 'locals')
-        self.infoMenu.addAction('Print locals',
-                                print_locals)
-        print_environ = partial(self.printInfo, 'environ')
-        self.infoMenu.addAction('Print environ',
-                                print_environ)
-
-        self.snippetMenu = self.menu.addMenu('Snippets')
-        self.utilsMenu = self.snippetMenu.addMenu('Utils')
-
-        for snippet in self.snippetDict.keys():
-            snippet_insert = partial(self.insert_snippet, snippet)
-            self.snippetMenu.addAction(snippet,
-                                       snippet_insert)
-
-        self.add_nuke_specific_menu_items()
-
-        cursor = self.editor.textCursor()
-        self.selectedText = str(cursor.selectedText().encode('utf-8').strip())
-
-        if self.selectedText != '':
-            for info in ['help', 'type', 'dir', 'len', 'getattr', 'pprint']:
-                text = self.selectedText
-                print_info = partial(self.printInfo,
-                                     info, text=text)
-                self.infoMenu.addAction('Print {0}'.format(info),
-                                        print_info)
-
-            # conditional on text selected and external editor path verified
-            self.editorMenu = self.menu.addMenu('External Editor')
-            self.editorMenu.addAction('Open Module File',
-                                      self._open_module_file)
-            self.editorMenu.addAction('Open Module Directory',
-                                      self._open_module_directory)
-            self.editorMenu.addAction('Copy to External Editor',
-                                      self.notImplemented)
-
-            # conditional on text selected and inspect.isModule
-            self.inspectMenu = self.menu.addMenu('Inspect')
-            self.inspectIsMenu = self.inspectMenu.addMenu('is')
-            self.inspectGetMenu = self.inspectMenu.addMenu('get')
-            # self.inspectMenu.addAction('Inspect', print(self.inspectDict))
-            for attr in self.inspectDict.keys():
-                func = partial(self.inspectExec, attr)
-                if attr.startswith('is'):
-                    self.inspectIsMenu.addAction(attr, func)
-                elif attr.startswith('get'):
-                    self.inspectGetMenu.addAction(attr, func)
-                else:
-                    self.inspectMenu.addAction(attr, func)
-
-            # http://doc.qt.io/archives/qt-4.8/qrubberband.html
-            # http://doc.qt.io/archives/qt-4.8/classes.html
-            self.menu.addAction('Open Qt Docs', self.notImplemented)
-
-    def add_nuke_specific_menu_items(self):
-        try:
-            import nuke
-        except ImportError:
-            return
-
-        self.nodes_menu = self.menu.addMenu('Nodes')
-        self.nodes_add_menu = self.nodes_menu.addMenu('Add knob')
-        self.nodes_set_menu = self.nodes_menu.addMenu('Set')
-        self.nodes_get_menu = self.nodes_menu.addMenu('Get')
-        self.nodes_clr_menu = self.nodes_menu.addMenu('Clear')
-        self.nodes_run_menu = self.nodes_menu.addMenu('Eval in Knob Context')
-
-        # self.nodes_menu.addAction('Run on Selected Nodes',
-        #                          self.notImplemented)
-
-        # TODO: these could be conditional on nodes selected
-        pyknobs = set([
-                   'knobChanged',
-                   'onCreate',
-                   'beforeRender',
-                   'beforeFrameRender',
-                   ])
-
-        knob_types = (nuke.PyCustom_Knob,
-                      nuke.PythonKnob,
-                      nuke.PythonCustomKnob,
-                      nuke.PyScript_Knob)
-        # get common python knobs
-        for node in nuke.selectedNodes():
-            for knob in node.allKnobs():
-                if isinstance(knob, knob_types):
-                    pyknobs.add(knob.name())
-
-        for node in nuke.selectedNodes():
-            for knob_name in pyknobs.copy():
-                if node.knob(knob_name) is None:
-                    pyknobs.remove(knob_name)
-
-        for knob_name in pyknobs:
-            func = partial(self.set_knob_value, knob_name)
-            self.nodes_set_menu.addAction(knob_name, func)
-
-        for knob_name in pyknobs:
-            func = partial(self.get_knob_value, knob_name)
-            self.nodes_get_menu.addAction(knob_name, func)
-
-        for knob_name in pyknobs:
-            func = partial(self.clr_knob_value, knob_name)
-            self.nodes_clr_menu.addAction(knob_name, func)
-
-        for knob_name in pyknobs:
-            func = partial(self.run_knob_value, knob_name)
-            self.nodes_run_menu.addAction(knob_name, func)
-
-        problem_knobs = ('Obsolete_Knob', 'GeoSelect_Knob')
-        add_knobs = {name: knob for name, knob in nuke.__dict__.items()
-                 if '_Knob' in name
-                 and name not in problem_knobs}
-        #knobs['Boolean_Knob'].__new__(knobs['Boolean_Knob'], 'name', 'label')
-
-        for knob_name in add_knobs:
-            func = partial(self.add_knob, knob_name)
-            self.nodes_add_menu.addAction(knob_name, func)
-
     def notImplemented(self):
         raise NotImplementedError('not implemented yet')
 
@@ -250,20 +85,36 @@ class ContextMenu(QtCore.QObject):
             if knob is not None:
                 nuke.runIn(knob.fullyQualifiedName(), text)
 
-    # FIXME: Moved to actions. Delete
+    def search_input(self):
+        """
+        Very basic search dialog.
+        TODO: Create a QAction and store
+        this in utils so that it can be
+        linked to Ctrl + F as well.
+        """
+
+        dialog = QtWidgets.QInputDialog.getText(
+            self.editor, 'Search', '')
+        text, ok = dialog
+        if not ok:
+            return
+
+        textCursor = self.editor.textCursor()
+        document = self.editor.document()
+        cursor = document.find(text, textCursor)
+        self.editor.setTextCursor(cursor)
+
     def printHelp(self):
         text = self.selectedText
         obj = actions.get_subobject(text)
         if obj is not None:
             print(obj.__doc__)
 
-    # FIXME: Moved to actions. Delete
     def _open_module_file(self):
         text = str(self.selectedText)
         obj = actions.get_subobject(text)
         actions.open_module_file(obj)
 
-    # FIXME: Moved to actions. Delete
     def _open_module_directory(self):
         text = str(self.selectedText)
         obj = actions.get_subobject(text)
@@ -361,3 +212,132 @@ class ContextMenu(QtCore.QObject):
         elif keyword == 'pprint':
             print(obj)
 
+    def menu_setup(self):
+        self.menu.addAction('Save As', self.notImplemented)
+        self.menu.addAction('Search', self.search_input)
+
+        self.infoMenu = self.menu.addMenu('Info')
+
+        print_globals = partial(self.printInfo, 'globals')
+        self.infoMenu.addAction('Print globals',
+                                print_globals)
+        print_locals = partial(self.printInfo, 'locals')
+        self.infoMenu.addAction('Print locals',
+                                print_locals)
+        print_environ = partial(self.printInfo, 'environ')
+        self.infoMenu.addAction('Print environ',
+                                print_environ)
+
+        self.snippetMenu = self.menu.addMenu('Snippets')
+        self.utilsMenu = self.snippetMenu.addMenu('Utils')
+
+        for snippet in self.snippetDict.keys():
+            snippet_insert = partial(self.insert_snippet, snippet)
+            self.snippetMenu.addAction(snippet,
+                                       snippet_insert)
+
+        self.add_nuke_specific_menu_items()
+
+        cursor = self.editor.textCursor()
+        self.selectedText = str(cursor.selectedText().encode('utf-8').strip())
+
+        if self.selectedText != '':
+            for info in ['help', 'type', 'dir', 'len', 'getattr', 'pprint']:
+                text = self.selectedText
+                print_info = partial(self.printInfo,
+                                     info, text=text)
+                self.infoMenu.addAction('Print {0}'.format(info),
+                                        print_info)
+
+            # conditional on text selected and external editor path verified
+            self.editorMenu = self.menu.addMenu('External Editor')
+            self.editorMenu.addAction('Open Module File',
+                                      self._open_module_file)
+            self.editorMenu.addAction('Open Module Directory',
+                                      self._open_module_directory)
+            self.editorMenu.addAction('Copy to External Editor',
+                                      self.notImplemented)
+
+            # conditional on text selected and inspect.isModule
+            self.inspectMenu = self.menu.addMenu('Inspect')
+            self.inspectIsMenu = self.inspectMenu.addMenu('is')
+            self.inspectGetMenu = self.inspectMenu.addMenu('get')
+            # self.inspectMenu.addAction('Inspect', print(self.inspectDict))
+            for attr in self.inspectDict.keys():
+                func = partial(self.inspectExec, attr)
+                if attr.startswith('is'):
+                    self.inspectIsMenu.addAction(attr, func)
+                elif attr.startswith('get'):
+                    self.inspectGetMenu.addAction(attr, func)
+                else:
+                    self.inspectMenu.addAction(attr, func)
+
+            # http://doc.qt.io/archives/qt-4.8/qrubberband.html
+            # http://doc.qt.io/archives/qt-4.8/classes.html
+            self.menu.addAction('Open Qt Docs', self.notImplemented)
+
+    def add_nuke_specific_menu_items(self):
+        try:
+            import nuke
+        except ImportError:
+            return
+
+        self.nodes_menu = self.menu.addMenu('Nodes')
+        self.nodes_add_menu = self.nodes_menu.addMenu('Add knob')
+        self.nodes_set_menu = self.nodes_menu.addMenu('Set')
+        self.nodes_get_menu = self.nodes_menu.addMenu('Get')
+        self.nodes_clr_menu = self.nodes_menu.addMenu('Clear')
+        self.nodes_run_menu = self.nodes_menu.addMenu('Eval in Knob Context')
+
+
+        # self.nodes_menu.addAction('Run on Selected Nodes',
+        #                          self.notImplemented)
+
+        # TODO: these could be conditional on nodes selected
+        pyknobs = set([
+                   'knobChanged',
+                   'onCreate',
+                   'beforeRender',
+                   'beforeFrameRender',
+                   ])
+
+        knob_types = (nuke.PyCustom_Knob,
+                      nuke.PythonKnob,
+                      nuke.PythonCustomKnob,
+                      nuke.PyScript_Knob)
+        # get common python knobs
+        for node in nuke.selectedNodes():
+            for knob in node.allKnobs():
+                if isinstance(knob, knob_types):
+                    pyknobs.add(knob.name())
+
+        for node in nuke.selectedNodes():
+            for knob_name in pyknobs.copy():
+                if node.knob(knob_name) is None:
+                    pyknobs.remove(knob_name)
+
+        for knob_name in pyknobs:
+            func = partial(self.set_knob_value, knob_name)
+            self.nodes_set_menu.addAction(knob_name, func)
+
+        for knob_name in pyknobs:
+            func = partial(self.get_knob_value, knob_name)
+            self.nodes_get_menu.addAction(knob_name, func)
+
+        for knob_name in pyknobs:
+            func = partial(self.clr_knob_value, knob_name)
+            self.nodes_clr_menu.addAction(knob_name, func)
+
+        for knob_name in pyknobs:
+            func = partial(self.run_knob_value, knob_name)
+            self.nodes_run_menu.addAction(knob_name, func)
+
+        problem_knobs = ('Obsolete_Knob', 'GeoSelect_Knob')
+        add_knobs = {name: knob for name, knob in nuke.__dict__.items()
+                 if '_Knob' in name
+                 and name not in problem_knobs}
+        #knobs['Boolean_Knob'].__new__(knobs['Boolean_Knob'], 'name', 'label')
+
+        for knob_name in add_knobs:
+            func = partial(self.add_knob, knob_name)
+            self.nodes_add_menu.addAction(knob_name, func)

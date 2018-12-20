@@ -17,7 +17,6 @@ IDE
         ObjectInspector
         PreferencesEditor
         ShortcutEditor
-        Actions
 """
 
 def main():
