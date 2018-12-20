@@ -117,8 +117,11 @@ class SESysStdOut(SERedirector, PySingleton):
 
         if hasattr(sys, 'outputRedirector'):
             sys.outputRedirector(text)
-
-        sys.__stdout__.write(text)
+            
+        try:
+            sys.__stdout__.write(text)
+        except IOError:
+            pass
 
 
 class SESysStdErr(SERedirector, PySingleton):
@@ -133,7 +136,11 @@ class SESysStdErr(SERedirector, PySingleton):
         if hasattr(sys, 'stderrRedirector'):
             sys.stderrRedirector(text)
         else:
-            sys.__stderr__.write(text)
+
+            try:
+                sys.__stderr__.write(text)
+            except IOError:
+                pass
 
 
 # we need these functions to be registered in the sys module
