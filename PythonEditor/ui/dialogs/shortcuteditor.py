@@ -24,7 +24,7 @@ class ShortcutEditor(QtWidgets.QTreeView):
         self.header().setStretchLastSection(False)
         rtc = QtWidgets.QHeaderView.ResizeToContents
         try:
-            self.header().setResizeMode(rtc)
+            self.header().setSectionResizeMode(rtc)
         except AttributeError:
             # 'PySide2.QtWidgets.QHeaderView' object has no attribute 'setResizeMode'
             # TODO: Find compatible way to resize header.
