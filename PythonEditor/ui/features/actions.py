@@ -170,39 +170,3 @@ def openDir(module):
     print('sublime ', __file__, ':', sys._getframe().f_lineno, sep='')  # TODO: nautilus is not multiplatform!
 
 
-# DEFAULT_WIDGET = QtWidgets.QWidget()
-
-# def make_action(callable):
-#     global DEFAULT_WIDGET
-#     action = QtWidgets.QAction(DEFAULT_WIDGET)
-#     action.triggered.connect(callable)
-#     return action
-
-# # actions
-
-# actions = {
-#     'toggle_backslash_action' : make_action(toggle_backslashes),
-#     'save' : make_action(save),
-# }
-
-# tests
-
-"""
-TEST_TEXT = '''
-c:\\path/to\\some\\file.jpg
-'''
-
-def test_toggle_backslashes():
-    editor = QtWidgets.QPlainTextEdit()
-    test_toggle_backslashes.editor = editor
-    editor.setPlainText(TEST_TEXT)
-    editor.show()
-    textCursor = editor.textCursor()
-    textCursor.setPosition(0, QtGui.QTextCursor.MoveAnchor)
-    editor.setTextCursor(textCursor)
-    toggle_backslashes(editor)
-
-TEST_TEXT = toggle_backslashes_in_string(TEST_TEXT)
-print TEST_TEXT
-test_toggle_backslashes()
-"""
