@@ -117,9 +117,14 @@ def open_module_file(obj):
     except TypeError as e:
         if hasattr(obj, '__class__'):
             obj = obj.__class__
-            file = inspect.getfile(obj)
+            try:
+                file = inspect.getfile(obj)
+            except TypeError as e:
+                print(e)
+                return
         else:
-            raise TypeError(e)
+            print(e)
+            return
 
     if file.endswith('.pyc'):
         file = file.replace('.pyc', '.py')
