@@ -47,7 +47,7 @@ class MenuBar(object):
 
         file_menu.addAction(
             'Save As',
-            self.save
+            self.save_as
         )
 
         export_menu = QtWidgets.QMenu('Export')
@@ -72,8 +72,8 @@ class MenuBar(object):
         help_menu.addAction('About Python Editor',
                             self.show_about_dialog)
 
-        edit_menu.addAction('Preferences',
-                            self.show_preferences)
+        # edit_menu.addAction('Preferences',
+        #                     self.show_preferences)
 
         edit_menu.addAction('Shortcuts',
                             self.show_shortcuts)
@@ -101,7 +101,10 @@ class MenuBar(object):
         actions.save_action(tabs, self.editor)
 
     def save_as(self):
-        save.save_as(self.editor)
+        tabs = self.tabeditor.tabs
+        tabs['path'] = ''
+        editor = self.editor
+        actions.save_action(tabs, self.editor)
 
     def save_selected_text(self):
         save.save_selected_text(self.editor)

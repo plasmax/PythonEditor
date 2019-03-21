@@ -1,18 +1,6 @@
 """
-A nicer solution using a single editor and
-a subclassed QTabBar.
-
-TODO:
- x update the tab dict['text'] on every keypress
- - properly save
-    ~ pick the dict data up with a background thread
- - draw proper looking, application native close buttons
- - ctrl + shift + n new tab
- - check for differences in tabs
- - work without PythonEditorHistory.xml
-
- # Keep the single responsibility principle in mind!
-
+A QTabWidget-like QWidget designed to use a
+single editor widget with text data stored in QTabBar.
 """
 
 import time
@@ -227,16 +215,28 @@ class Tabs(QtWidgets.QTabBar):
         rect.adjust(0,0, -side_button_width, 0)
         return rect
 
-    def event(self, e):
+    def event(self, event):
+
+        if not issubclass(Tabs, self.__class__):
+            # Check class (after reload, opening a new window, etc)
+            # this can raise TypeError:
+            # super(type, obj): obj must be an instance or subtype of type
+            return False
+
         try:
             QE = QtCore.QEvent
         except AttributeError:
             return True
 
-        if e.type() in [QE.HoverEnter, QE.HoverMove, QE.HoverLeave, QE.Paint]:
-            self.handle_close_button_display(e)
+        if event.type() in [
+                QE.HoverEnter,
+                QE.HoverMove,
+                QE.HoverLeave,
+                QE.Paint
+            ]:
+            self.handle_close_button_display(event)
 
-        elif e.type() == QtCore.QEvent.ToolTip:
+        elif event.type() == QtCore.QEvent.ToolTip:
             pos = self.mapFromGlobal(self.cursor().pos())
             if self.rect().contains(pos):
                 i = self.tabAt(pos)
@@ -246,11 +246,12 @@ class Tabs(QtWidgets.QTabBar):
                     if path:
                         self.setTabToolTip(i, path)
                     else:
-                        self.setTabToolTip(i, data.get('name'))
+                        self.setTabToolTip(
+                            i,
+                            data.get('name')
+                        )
 
-        # FIXME: after reload, can raise TypeError:
-        # super(type, obj): obj must be an instance or subtype of type
-        return super(Tabs, self).event(e)
+        return super(Tabs, self).event(event)
 
     def handle_close_button_display(self, e):
 
@@ -378,7 +379,25 @@ class Tabs(QtWidgets.QTabBar):
                 self.tab_repositioned_signal.emit(i, self.start_move_index)
 
         elif event.button() == QtCore.Qt.RightButton:
-            print 'show close/save menu'
+            from functools import partial
+            menu = QtWidgets.QMenu()
+            # menu.addAction('Close Other Tabs', )
+            # menu.addAction('Close Tabs to Right', )
+            # menu.addAction('Close Tabs to Left', )
+
+            rename = partial(self._show_name_edit, i)
+            menu.addAction('Rename', rename)
+
+            move_to_first = partial(self.move_to_first, i)
+            menu.addAction('Move Tab to First', move_to_first)
+
+            move_to_last = partial(self.move_to_last, i)
+            menu.addAction('Move Tab to Last', move_to_last)
+
+            close_tab_func = partial(self.removeTab, i)
+            menu.addAction('Close Tab', close_tab_func)
+            # menu.addAction('Pin Tab', )
+            menu.exec_(QtGui.QCursor().pos())
 
         elif event.button() == QtCore.Qt.MiddleButton:
             if i != -1:
@@ -403,6 +422,13 @@ class Tabs(QtWidgets.QTabBar):
             return
 
         index = self.tabAt(event.pos())
+        self._show_name_edit(index)
+
+    def _show_name_edit(self, index):
+        """
+        Shows a QLineEdit widget where the tab
+        text is, allowing renaming of tabs.
+        """
         rect = self.tabRect(index)
 
         self.renaming_label = label = self.tabText(index)
@@ -423,6 +449,25 @@ class Tabs(QtWidgets.QTabBar):
         self.name_edit.move(p.x(), p.y()+5)
 
         self.name_edit.setFocus(QtCore.Qt.MouseFocusReason)
+
+    def move_to_first(self, index):
+        """
+        Move the current tab to the first position.
+        """
+        self.setCurrentIndex(0)
+        self.moveTab(index, 0)
+        self.setCurrentIndex(0)
+        self.tab_repositioned_signal.emit(index, 0)
+
+    def move_to_last(self, index):
+        """
+        Move the current tab to the last position.
+        """
+        last = self.count()-1
+        self.setCurrentIndex(last)
+        self.moveTab(index, last)
+        self.setCurrentIndex(last)
+        self.tab_repositioned_signal.emit(index, last)
 
     def rename_tab(self):
         """

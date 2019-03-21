@@ -8,7 +8,24 @@ from PythonEditor.utils.signals import connect
 from PythonEditor.utils import save
 from PythonEditor.ui.features import actions
 
+# TODO: this will probably end up in a user-editable JSON file.
+REGISTER = {
+'editor': {
+    'Ctrl+H' : 'Print Help',
+    'Ctrl+E' : 'Open Module File',
+    'Ctrl+F' : 'Search',
+    # ''     : 'Open Module Directory',
+    },
+'tabs': {
+    },
+'terminal': {
+    },
+}
 
+# TODO:
+# This needs to be moved to 'actions' and replaced with
+# a class that reads user-registered shortcuts and
+# applies them to their respective actions through __setitem__
 class ShortcutHandler(QtCore.QObject):
     """
     Shortcut Manager with custom signals.
@@ -52,7 +69,7 @@ class ShortcutHandler(QtCore.QObject):
             (editor.ctrl_s_signal,            self.save),
             (editor.home_key_signal,          self.jump_to_start),
             (editor.wheel_signal,             self.wheel_zoom),
-            (editor.ctrl_enter_signal,        self.exec_selected_text),
+            (editor.ctrl_enter_signal,        self.exec_handler),
         ]
         self._connections = []
         for signal, slot in pairs:
@@ -71,8 +88,8 @@ class ShortcutHandler(QtCore.QObject):
             'Ctrl+Alt+Return'      : self.new_line_below,
             'Ctrl+Shift+D'         : self.duplicate_lines,
             'Ctrl+Shift+T'         : self.print_type,
-            'Ctrl+Shift+F'         : self.search_input,
-            'Ctrl+H'               : self.print_help,
+            # 'Ctrl+Shift+F'         : self.search_input,
+            # 'Ctrl+H'               : self.print_help,
             'Ctrl+L'               : self.select_lines,
             'Ctrl+J'               : self.join_lines,
             'Ctrl+/'               : self.comment_toggle,
@@ -93,7 +110,7 @@ class ShortcutHandler(QtCore.QObject):
             'Ctrl+G'               : notimp('goto'),
             'Ctrl+P'               : notimp('palette'),
             'Ctrl+C'               : self.copy_block_or_selection,
-            'Ctrl+E'               : self.open_module_file,
+            # 'Ctrl+E'               : self.open_module_file,
             # 'Ctrl+Shift+Alt+Up': notimp('duplicate cursor up'),
             # 'Ctrl+Shift+Alt+Down': notimp('duplicate cursor down'),
         }
@@ -148,12 +165,12 @@ class ShortcutHandler(QtCore.QObject):
                    when triggering the action.
             """
             key_seq = QtGui.QKeySequence(shortcut)
-            a.setShortcut(key_seq)
-            a.setShortcutContext(
+            action.setShortcut(key_seq)
+            action.setShortcutContext(
                 QtCore.Qt.WidgetShortcut
             )
-            a.triggered.connect(func)
-            widget.addAction(a)
+            action.triggered.connect(func)
+            widget.addAction(action)
 
         for shortcut, func in editor_shortcuts.items():
             a = QtWidgets.QAction(self.editor)
@@ -168,6 +185,23 @@ class ShortcutHandler(QtCore.QObject):
             for shortcut, func in tab_shortcuts.items():
                 a = QtWidgets.QAction(self.tabs)
                 add_action(a, self.tabs, shortcut, func)
+
+        self.register_shortcuts()
+
+    def register_shortcuts(self):
+        global REGISTER
+        for widget_name, actions in REGISTER.items():
+            if not hasattr(self, widget_name):
+                continue
+            widget = getattr(self, widget_name)
+            for shortcut, action_description in actions.items():
+                for action in widget.actions():
+                    if action.text() == action_description:
+                        key_seq = QtGui.QKeySequence(shortcut)
+                        action.setShortcut(key_seq)
+                        action.setShortcutContext(
+                            QtCore.Qt.WidgetShortcut
+                        )
 
     def notimplemented(self, text):
         """ Development reminders to implement features """
@@ -208,6 +242,7 @@ class ShortcutHandler(QtCore.QObject):
             self.editor
         )
 
+    # FIXME: Has been moved to actions.
     def open_module_file(self):
         textCursor = self.editor.textCursor()
         text = textCursor.selection().toPlainText()
@@ -246,67 +281,127 @@ class ShortcutHandler(QtCore.QObject):
         else:
             self.highlight_errored_lines(error_line_numbers)
 
-    def exec_selected_text(self):
+    def exec_handler(self):
         """
         If text is selected, call exec on that text.
-        If no text is selected, it will execute all
-        text within boundaries demarcated by the symbols #&&
+        If no text is selected, look for cells bordered
+        by the symbols #&& and execute text between those borders.
         """
         textCursor = self.editor.textCursor()
         whole_text = self.editor.toPlainText()
+        if not whole_text.strip():
+            return
 
+        # check that the document doesn't just have comments.
+        if self.just_comments(whole_text):
+            return
+
+        # execute only selection
         if textCursor.hasSelection():
+            text = textCursor.selection().toPlainText()
+            if not text.strip():
+                return
+            # check that the selected text doesn't just have comments.
+            if self.just_comments(text):
+                return
+            multiline_text = ('\n' in text)
+            if not multiline_text:
+                whole_text = '\n'+whole_text
             text = self.offset_for_traceback()
             return self.exec_text(text, whole_text)
 
-        if not '\n#&&' in whole_text:
-            text = whole_text
-            whole_text = '\n'+whole_text
-            return self.exec_text(text, whole_text)
+        # if there are cells (marked by '\n#&&')
+        # execute current cell
+        if '\n#&&' in whole_text:
+            return self.exec_current_cell()
 
+        # execute whole document
+        text = whole_text
+        whole_text = '\n'+whole_text
+        return self.exec_text(text, whole_text)
+
+    def exec_current_cell(self):
+        textCursor = self.editor.textCursor()
+        whole_text = self.editor.toPlainText()
+        if not whole_text.strip():
+            return
+
+        # if there are cells (marked by '\n#&&')
+        # execute only that cell.
         text = whole_text
         whole_text = '\n'+whole_text
 
+        # split the text by the cursor position
         pos = textCursor.position()
         text_before = text[:pos]
         text_after = text[pos:]
+
+        # recover text from the current cell
         symbol_pos = text_before.rfind('#&&')
-        text_before = text_before.split('\n#&&')[-1]
-        text_after = text_after.split('\n#&&')[0]
-        text = text_before + text_after
+        cell_top = text_before.split('\n#&&')[-1]
+        cell_bottom = text_after.split('\n#&&')[0]
+        cell_text = cell_top + cell_bottom
+        if not cell_text.strip():
+            return
         doc = self.editor.document()
         block_num = doc.findBlock(symbol_pos).blockNumber()
-        text = '\n' * block_num + text
+        cell_text = '\n' * block_num + cell_text
 
-        self.exec_text(text, whole_text)
+        # check that the cell doesn't just have comments.
+        if self.just_comments(cell_text):
+            return
+        self.exec_text(cell_text, whole_text)
 
     def exec_current_line(self):
         """
-        Calls exec with the text of the line the cursor is on.
+        Calls exec() with the text of the line the cursor is on.
         Calls lstrip on current line text to allow exec of indented text.
         """
         textCursor = self.editor.textCursor()
         whole_text = self.editor.toPlainText()
 
         if textCursor.hasSelection():
-            return self.exec_selected_text()
+            return self.exec_handler()
 
         textCursor.select(QtGui.QTextCursor.BlockUnderCursor)
         text = textCursor.selection().toPlainText().lstrip()
+        if not text:
+            return
+        # check that the current line doesn't just have comments.
+        if self.just_comments(text):
+            return
         text = self.offset_for_traceback(text=text)
 
         whole_text = '\n'+whole_text
-        error_line_numbers = execute.mainexec(text, whole_text, verbosity=1)
+        error_line_numbers = execute.mainexec(
+            text,
+            whole_text,
+            verbosity=1
+        )
         if error_line_numbers is None:
             return
-        else:
-            self.highlight_errored_lines(error_line_numbers)
+
+        self.highlight_errored_lines(error_line_numbers)
+
+    def just_comments(self, text):
+        """
+        Check that the given text doesn't
+        just contain comments.
+        """
+        lines = text.strip().splitlines()
+        for line in lines:
+            if not line.strip():
+                continue
+            if line.strip().startswith('#'):
+                continue
+            return False
+        return True
 
     def highlight_errored_lines(self, error_line_numbers):
         """
         Draw a red background on any lines that caused an error.
         """
-        extraSelections = []
+        extraSelections = self.editor.extraSelections()
 
         cursor = self.editor.textCursor()
         doc = self.editor.document()
@@ -427,10 +522,10 @@ class ShortcutHandler(QtCore.QObject):
 
     def unindent(self):
         """
-        Unindent Selected Text
-        TODO: Maintain original selection
-        and cursor position.
+        Unindent selected text.
         """
+        # TODO: Maintain original selection
+        # and cursor position.
         blocks = self.get_selected_blocks(ignoreEmpty=False)
         for block in blocks:
             cursor = QtGui.QTextCursor(block)
@@ -637,9 +732,6 @@ class ShortcutHandler(QtCore.QObject):
         """
         Selects the word under cursor if no selection.
         If selection, selects next occurence of the same word.
-        TODO: 1 )could optionally highlight all occurences of the word
-        and iterate to the next selection. 2) Would be nice if extra
-        selections could be made editable. 3) Wrap around.
         """
         textCursor = self.editor.textCursor()
         if not textCursor.hasSelection():
@@ -701,8 +793,8 @@ class ShortcutHandler(QtCore.QObject):
     def select_between_brackets(self):
         """
         Selects text between [] {} ()
-        TODO: implement [] and {}
         """
+        # TODO: implement [] and {}
         textCursor = self.editor.textCursor()
         pos = textCursor.position()
         whole_text = self.editor.toPlainText()
@@ -722,10 +814,10 @@ class ShortcutHandler(QtCore.QObject):
     def search_input(self):
         """
         Very basic search dialog.
-        TODO: Create a QAction/util for this
-        as it is also accessed through
-        the right-click menu.
         """
+        # TODO: Create a QAction/util for this
+        # as it is also accessed through
+        # the right-click menu.
         getText = QtWidgets.QInputDialog.getText
         dialog = getText(self.editor, 'Search', '',)
         text, ok = dialog
@@ -742,7 +834,6 @@ class ShortcutHandler(QtCore.QObject):
         pos = cursor.position()
         if pos != -1:
             self.editor.setTextCursor(cursor)
-
 
     def duplicate_lines(self):
         """
@@ -785,6 +876,7 @@ class ShortcutHandler(QtCore.QObject):
         textCursor.setPosition(pos, QtGui.QTextCursor.KeepAnchor)
         textCursor.insertText('')
 
+    # FIXME: moved to actions. Delete once ShortcutHandler assigns shortcuts
     def print_help(self):
         """
         Prints documentation

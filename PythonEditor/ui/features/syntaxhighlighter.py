@@ -5,37 +5,37 @@ import StringIO
 
 themes = {
   'Monokai': {
-            'keyword': ((249, 38, 114), ''),
-            'args': ((249, 38, 114), ''),
-            'kwargs': ((249, 38, 114), ''),
-            'string': ((230, 219, 116), ''),
-            'comment': ((140, 140, 140), ''),
-            'numbers': ((174, 129, 255), ''),
-            'inherited': ((102, 217, 239), 'italic'),
-            'class_names': ((166, 226, 46), ''),
-            'function_names': ((166, 226, 46), ''),
-            'arguments': ((253, 151, 31), ''),
-            'formatters': ((114, 209, 221), 'italic'),
-            'instantiators': ((102, 217, 239), 'italic'),
-            'exceptions': ((102, 217, 239), 'italic'),
-            'methods': ((102, 217, 239), ''),
-            },
+        'keyword': ((249, 38, 114), ''),
+        'args': ((249, 38, 114), ''),
+        'kwargs': ((249, 38, 114), ''),
+        'string': ((230, 219, 116), ''),
+        'comment': ((140, 140, 140), ''),
+        'numbers': ((174, 129, 255), ''),
+        'inherited': ((102, 217, 239), 'italic'),
+        'class_names': ((166, 226, 46), ''),
+        'function_names': ((166, 226, 46), ''),
+        'arguments': ((253, 151, 31), ''),
+        'formatters': ((114, 209, 221), 'italic'),
+        'instantiators': ((102, 217, 239), 'italic'),
+        'exceptions': ((102, 217, 239), 'italic'),
+        'methods': ((102, 217, 239), ''),
+    },
   'Monokai Smooth': {
-            'keyword': ((255, 97, 136), ''),
-            'args': ((255, 97, 136), ''),
-            'kwargs': ((255, 97, 136), ''),
-            'string': ((255, 216, 102), ''),
-            'comment': ((108, 106, 108), 'italic'),
-            'numbers': ((171, 157, 242), ''),
-            'inherited': ((114, 209, 221), 'italic'),
-            'class_names': ((250, 250, 248), ''),
-            'function_names': ((169, 220, 118), ''),
-            'arguments': ((193, 192, 192), 'italic'),
-            'formatters': ((114, 209, 221), 'italic'),
-            'instantiators': ((114, 209, 221), 'italic'),
-            'exceptions': ((114, 209, 221), 'italic'),
-            'methods': ((169, 220, 101), ''),
-            }
+        'keyword': ((255, 97, 136), ''),
+        'args': ((255, 97, 136), ''),
+        'kwargs': ((255, 97, 136), ''),
+        'string': ((255, 216, 102), ''),
+        'comment': ((108, 106, 108), 'italic'),
+        'numbers': ((171, 157, 242), ''),
+        'inherited': ((114, 209, 221), 'italic'),
+        'class_names': ((250, 250, 248), ''),
+        'function_names': ((169, 220, 118), ''),
+        'arguments': ((193, 192, 192), 'italic'),
+        'formatters': ((114, 209, 221), 'italic'),
+        'instantiators': ((114, 209, 221), 'italic'),
+        'exceptions': ((114, 209, 221), 'italic'),
+        'methods': ((169, 220, 101), ''),
+    }
 }
 
 
@@ -45,99 +45,95 @@ class Highlight(QtGui.QSyntaxHighlighter):
     that Wouter Gilsing found and modified when researching.
     wiki.python.org/moin/PyQt/Python%20syntax%20highlighting
     """
+    arguments = [
+        'self', 'cls', 'args', 'kwargs'
+    ]
+    keywords = [
+        'and', 'assert', 'break', 'continue',
+        'del', 'elif', 'else', 'except', 'exec', 'finally',
+        'for', 'from', 'global', 'if', 'import', 'in',
+        'is', 'lambda', 'not', 'or', 'pass', 'print',
+        'raise', 'return', 'try', 'while', 'yield', 'with'
+    ]
+    instantiators = [
+        'def', 'class'
+    ]
+    exceptions = [
+        'BaseException',
+        'SystemExit',
+        'KeyboardInterrupt',
+        'GeneratorExit',
+        'Exception',
+        'StopIteration',
+        'StandardError',
+        'BufferError',
+        'ArithmeticError',
+        'FloatingPointError',
+        'OverflowError',
+        'ZeroDivisionError',
+        'AssertionError',
+        'AttributeError',
+        'EnvironmentError',
+        'IOError',
+        'OSError',
+        'WindowsError',
+        'VMSError',
+        'EOFError',
+        'ImportError',
+        'LookupError',
+        'IndexError',
+        'KeyError',
+        'MemoryError',
+        'NameError',
+        'UnboundLocalError',
+        'ReferenceError',
+        'RuntimeError',
+        'NotImplementedError',
+        'SyntaxError',
+        'IndentationError',
+        'TabError',
+        'SystemError',
+        'TypeError',
+        'ValueError',
+        'UnicodeError',
+        'UnicodeDecodeError',
+        'UnicodeEncodeError',
+        'UnicodeTranslateError',
+        'Warning',
+        'DeprecationWarning',
+        'PendingDeprecationWarning',
+        'RuntimeWarning',
+        'SyntaxWarning',
+        'UserWarning',
+        'FutureWarning',
+        'ImportWarning',
+        'UnicodeWarning',
+        'BytesWarning'
+    ]
+    operatorKeywords = [
+        '=', '==', '!=', '<', '<=', '>', '>=',
+        '\+', '-', '\*', '/', '//', '\%', '\*\*',
+        '\+=', '-=', '\*=', '/=', '\%=',
+        '\^', '\|', '\&', '\~', '>>', '<<',
+    ]
+    truthy = ['True', 'False', 'None']
 
     def __init__(self, document):
         super(Highlight, self).__init__(document)
 
         self.setObjectName('Highlight')
+        self.set_style(themes['Monokai Smooth'])
 
-        theme = themes['Monokai Smooth']
+    def set_style(self, theme):
         self.styles = {
           feature: self.format(*style)
           for feature, style in theme.items()
         }
-
-        self.arguments = [
-            'self', 'cls', 'args', 'kwargs'
-        ]
-
-        self.keywords = [
-            'and', 'assert', 'break', 'continue',
-            'del', 'elif', 'else', 'except', 'exec', 'finally',
-            'for', 'from', 'global', 'if', 'import', 'in',
-            'is', 'lambda', 'not', 'or', 'pass', 'print',
-            'raise', 'return', 'try', 'while', 'yield', 'with'
-        ]
-
-        self.instantiators = [
-            'def', 'class'
-        ]
-
-        self.exceptions = [
-            'BaseException',
-            'SystemExit',
-            'KeyboardInterrupt',
-            'GeneratorExit',
-            'Exception',
-            'StopIteration',
-            'StandardError',
-            'BufferError',
-            'ArithmeticError',
-            'FloatingPointError',
-            'OverflowError',
-            'ZeroDivisionError',
-            'AssertionError',
-            'AttributeError',
-            'EnvironmentError',
-            'IOError',
-            'OSError',
-            'WindowsError',
-            'VMSError',
-            'EOFError',
-            'ImportError',
-            'LookupError',
-            'IndexError',
-            'KeyError',
-            'MemoryError',
-            'NameError',
-            'UnboundLocalError',
-            'ReferenceError',
-            'RuntimeError',
-            'NotImplementedError',
-            'SyntaxError',
-            'IndentationError',
-            'TabError',
-            'SystemError',
-            'TypeError',
-            'ValueError',
-            'UnicodeError',
-            'UnicodeDecodeError',
-            'UnicodeEncodeError',
-            'UnicodeTranslateError',
-            'Warning',
-            'DeprecationWarning',
-            'PendingDeprecationWarning',
-            'RuntimeWarning',
-            'SyntaxWarning',
-            'UserWarning',
-            'FutureWarning',
-            'ImportWarning',
-            'UnicodeWarning',
-            'BytesWarning'
-        ]
-
-        self.operatorKeywords = [
-            '=', '==', '!=', '<', '<=', '>', '>=',
-            '\+', '-', '\*', '/', '//', '\%', '\*\*',
-            '\+=', '-=', '\*=', '/=', '\%=',
-            '\^', '\|', '\&', '\~', '>>', '<<',
-        ]
-
-        self.truthy = ['True', 'False', 'None']
-
         self.tri_single = (QtCore.QRegExp("'''"), 1, self.styles['comment'])
         self.tri_double = (QtCore.QRegExp('"""'), 2, self.styles['comment'])
+        self.make_rules()
 
+    def make_rules(self):
         # rules
         rules = []
 

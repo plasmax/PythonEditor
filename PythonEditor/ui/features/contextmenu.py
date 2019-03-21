@@ -20,201 +20,14 @@ class ContextMenu(QtCore.QObject):
         self.initSnippetDict()
         self.initInspectDict()
 
-    @QtCore.Slot(QtWidgets.QMenu)
-    def show_menu(self, menu):
-        self.menu = menu
-        self.menu_setup()
-        menu.exec_(QtGui.QCursor().pos())
-
-    def notImplemented(self):
-        raise NotImplementedError('not implemented yet')
-
-    def add_knob(self, knob_name='knobChanged'):
-        # TODO: this is only a test feature, the best way to quickly add knobs
-        # would be through autocompletion on the addKnob method
-        import nuke
-        problem_knobs = ('Obsolete_Knob', 'GeoSelect_Knob')
-        add_knobs = {name: knob for name, knob in nuke.__dict__.items()
-                 if '_Knob' in name
-                 and name not in problem_knobs}
-        for node in nuke.selectedNodes():
-            knob = add_knobs[knob_name].__new__(add_knobs[knob_name], 'name', 'label')
-            node.addKnob(knob)
-
-    def set_knob_value(self, knob_name='knobChanged'):
-        import nuke
-        self.textCursor = self.editor.textCursor()
-        text = self.textCursor.selection().toPlainText()
-        # text = self.textCursor.selectedText().encode('utf-8').splitlines()
-        # if not ''.join(text).strip():
-        if not text.strip():
-            text = self.editor.toPlainText()
-
-        for node in nuke.selectedNodes():
-            node.knob(knob_name).setValue(text)
-            print(node.fullName(), 'set:', knob_name, '\n', text)
-
-    def get_knob_value(self, knob_name='knobChanged'):
-        import nuke
-
-        for node in nuke.selectedNodes():
-            knob = node.knob(knob_name)
-            if knob is not None:
-                description = '# %s.%s\n' % (node.fullName(), knob.name())
-                self.editor.insertPlainText(description)
-                self.editor.insertPlainText(knob.value())
-
-    def clr_knob_value(self, knob_name='knobChanged'):
-        import nuke
-
-        for node in nuke.selectedNodes():
-            knob = node.knob(knob_name)
-            if knob is not None:
-                knob.setValue('')
-
-    def run_knob_value(self, knob_name='knobChanged'):
-        import nuke
-
-        self.textCursor = self.editor.textCursor()
-        text = self.textCursor.selectedText().encode('utf-8')
-        if not text.strip():
-            text = self.editor.toPlainText()
-
-        for node in nuke.selectedNodes():
-            knob = node.knob(knob_name)
-            if knob is not None:
-                nuke.runIn(knob.fullyQualifiedName(), text)
-
-    def search_input(self):
-        """
-        Very basic search dialog.
-        TODO: Create a QAction and store
-        this in utils so that it can be
-        linked to Ctrl + F as well.
-        """
-
-        dialog = QtWidgets.QInputDialog.getText(
-            self.editor, 'Search', '')
-        text, ok = dialog
-        if not ok:
-            return
-
-        textCursor = self.editor.textCursor()
-        document = self.editor.document()
-        cursor = document.find(text, textCursor)
-        self.editor.setTextCursor(cursor)
-
-    def printHelp(self):
-        text = self.selectedText
-        obj = actions.get_subobject(text)
-        if obj is not None:
-            print(obj.__doc__)
-
-    def _open_module_file(self):
-        text = str(self.selectedText)
-        obj = actions.get_subobject(text)
-        actions.open_module_file(obj)
-
-    def _open_module_directory(self):
-        text = str(self.selectedText)
-        obj = actions.get_subobject(text)
-        actions.open_module_directory(obj)
-
-    def initInspectDict(self):
-        """
-        Creates a dictionary of functions
-        from the inspect module.
-        """
-        self.inspectDict = {
-            func: getattr(inspect, func)
-            for func in dir(inspect)
-            if isinstance(getattr(inspect, func),
-                          types.FunctionType)
-        }
-
-    def inspectExec(self, func):
-        """
-        Call a function from the inspect
-        module using the selected text as the
-        input parameter and print the result.
-        """
-        cursor = self.editor.textCursor()
-        selection = cursor.selection()
-        text = selection.toPlainText()
-        if not text.strip():
-            return
-        obj = actions.get_subobject(text)
-        if obj is None:
-            return
-        print(self.inspectDict.get(func).__call__(obj))
-
-    def initSnippetDict(self):
-        """
-        Creates a basic snippet dictionary.
-        TODO: Add some nice getter/setters
-        and JSON file parsing to store and
-        read larger snippet samples.
-        """
-        pkn = 'print nuke.thisKnob().name()'
-        nsn = 'nuke.selectedNode()'
-        fns = 'for node in nuke.selectedNodes():'
-        fna = 'for node in nuke.allNodes():'
-        ppa = 'pprint({attr:getattr(obj, attr) for attr in dir(obj)})'
-        nid = '_nuke_internal.debugBreakPoint()'
-        self.snippetDict = {
-            pkn: pkn,
-            nsn: nsn,
-            fns: fns + '\n    ',
-            fna: fna + '\n    ',
-            ppa: ppa,
-            nid: nid,
-        }
-
-    def new_snippet(self):
-        """
-        Save a new snippet to JSON file.
-        """
-        raise NotImplementedError('save new snippet')
-
-    def insert_snippet(self, snippet):
-        self.textCursor = self.editor.textCursor()
-        self.textCursor.insertText(self.snippetDict.get(snippet))
-
-    def openUtil(self, path):
-        with open(path, 'r') as f:
-            text = f.read()
-        self.textCursor = self.editor.textCursor()
-        self.textCursor.insertText(text)
-
-    def printInfo(self, keyword, text=''):
-        if keyword == 'globals':
-            pprint(__main__.__dict__)
-        elif keyword == 'locals':
-            print(__main__.__dict__)
-
-        obj = __main__.__dict__.get(text)
-        if obj is None:
-            return
-
-        if keyword == 'dir':
-            pprint(dir(obj))
-        elif keyword == 'environ':
-            pprint(os.environ.copy())
-        elif keyword == 'help':
-            print(help(obj))
-        elif keyword == 'type':
-            print(type(obj))
-        elif keyword == 'len':
-            print(len(obj))
-        elif keyword == 'getattr':
-            attrs = {attr: getattr(obj, attr) for attr in dir(obj)}
-            pprint(attrs)
-        elif keyword == 'pprint':
-            print(obj)
-
     def menu_setup(self):
-        self.menu.addAction('Save As', self.notImplemented)
-        self.menu.addAction('Search', self.search_input)
+
+        # TODO: need some way of grouping these
+        # Perhaps slash-separated like nuke File/Save etc
+        for a in self.editor.actions():
+            if not a.text():
+                continue
+            self.menu.addAction(a)
 
         self.infoMenu = self.menu.addMenu('Info')
 
@@ -341,3 +154,179 @@ class ContextMenu(QtCore.QObject):
         for knob_name in add_knobs:
             func = partial(self.add_knob, knob_name)
             self.nodes_add_menu.addAction(knob_name, func)
+
+    @QtCore.Slot(QtWidgets.QMenu)
+    def show_menu(self, menu):
+        self.menu = menu
+        self.menu_setup()
+        menu.exec_(QtGui.QCursor().pos())
+
+    def notImplemented(self):
+        raise NotImplementedError('not implemented yet')
+
+    def add_knob(self, knob_name='knobChanged'):
+        # TODO: this is only a test feature, the best way to quickly add knobs
+        # would be through autocompletion on the addKnob method
+        import nuke
+        problem_knobs = ('Obsolete_Knob', 'GeoSelect_Knob')
+        add_knobs = {name: knob for name, knob in nuke.__dict__.items()
+                 if '_Knob' in name
+                 and name not in problem_knobs}
+        for node in nuke.selectedNodes():
+            knob = add_knobs[knob_name].__new__(add_knobs[knob_name], 'name', 'label')
+            node.addKnob(knob)
+
+    def set_knob_value(self, knob_name='knobChanged'):
+        import nuke
+        self.textCursor = self.editor.textCursor()
+        text = self.textCursor.selection().toPlainText()
+        # text = self.textCursor.selectedText().encode('utf-8').splitlines()
+        # if not ''.join(text).strip():
+        if not text.strip():
+            text = self.editor.toPlainText()
+
+        for node in nuke.selectedNodes():
+            node.knob(knob_name).setValue(text)
+            print(node.fullName(), 'set:', knob_name, '\n', text)
+
+    def get_knob_value(self, knob_name='knobChanged'):
+        import nuke
+
+        for node in nuke.selectedNodes():
+            knob = node.knob(knob_name)
+            if knob is not None:
+                description = '# %s.%s\n' % (node.fullName(), knob.name())
+                self.editor.insertPlainText(description)
+                self.editor.insertPlainText(knob.value())
+
+    def clr_knob_value(self, knob_name='knobChanged'):
+        import nuke
+
+        for node in nuke.selectedNodes():
+            knob = node.knob(knob_name)
+            if knob is not None:
+                knob.setValue('')
+
+    def run_knob_value(self, knob_name='knobChanged'):
+        import nuke
+
+        self.textCursor = self.editor.textCursor()
+        text = self.textCursor.selectedText().encode('utf-8')
+        if not text.strip():
+            text = self.editor.toPlainText()
+
+        for node in nuke.selectedNodes():
+            knob = node.knob(knob_name)
+            if knob is not None:
+                nuke.runIn(knob.fullyQualifiedName(), text)
+
+    # FIXME: Moved to actions. Delete
+    def printHelp(self):
+        text = self.selectedText
+        obj = actions.get_subobject(text)
+        if obj is not None:
+            print(obj.__doc__)
+
+    # FIXME: Moved to actions. Delete
+    def _open_module_file(self):
+        text = str(self.selectedText)
+        obj = actions.get_subobject(text)
+        actions.open_module_file(obj)
+
+    # FIXME: Moved to actions. Delete
+    def _open_module_directory(self):
+        text = str(self.selectedText)
+        obj = actions.get_subobject(text)
+        actions.open_module_directory(obj)
+
+    def initInspectDict(self):
+        """
+        Creates a dictionary of functions
+        from the inspect module.
+        """
+        self.inspectDict = {
+            func: getattr(inspect, func)
+            for func in dir(inspect)
+            if isinstance(getattr(inspect, func),
+                          types.FunctionType)
+        }
+
+    def inspectExec(self, func):
+        """
+        Call a function from the inspect
+        module using the selected text as the
+        input parameter and print the result.
+        """
+        cursor = self.editor.textCursor()
+        selection = cursor.selection()
+        text = selection.toPlainText()
+        if not text.strip():
+            return
+        obj = actions.get_subobject(text)
+        if obj is None:
+            return
+        print(self.inspectDict.get(func).__call__(obj))
+
+    def initSnippetDict(self):
+        """
+        Creates a basic snippet dictionary.
+        TODO: Add some nice getter/setters
+        and JSON file parsing to store and
+        read larger snippet samples.
+        """
+        pkn = 'print nuke.thisKnob().name()'
+        nsn = 'nuke.selectedNode()'
+        fns = 'for node in nuke.selectedNodes():'
+        fna = 'for node in nuke.allNodes():'
+        ppa = 'pprint({attr:getattr(obj, attr) for attr in dir(obj)})'
+        nid = '_nuke_internal.debugBreakPoint()'
+        self.snippetDict = {
+            pkn: pkn,
+            nsn: nsn,
+            fns: fns + '\n    ',
+            fna: fna + '\n    ',
+            ppa: ppa,
+            nid: nid,
+        }
+
+    def new_snippet(self):
+        """
+        Save a new snippet to JSON file.
+        """
+        raise NotImplementedError('save new snippet')
+
+    def insert_snippet(self, snippet):
+        self.textCursor = self.editor.textCursor()
+        self.textCursor.insertText(self.snippetDict.get(snippet))
+
+    def openUtil(self, path):
+        with open(path, 'r') as f:
+            text = f.read()
+        self.textCursor = self.editor.textCursor()
+        self.textCursor.insertText(text)
+
+    def printInfo(self, keyword, text=''):
+        if keyword == 'globals':
+            pprint(__main__.__dict__)
+        elif keyword == 'locals':
+            print(__main__.__dict__)
+
+        obj = __main__.__dict__.get(text)
+        if obj is None:
+            return
+
+        if keyword == 'dir':
+            pprint(dir(obj))
+        elif keyword == 'environ':
+            pprint(os.environ.copy())
+        elif keyword == 'help':
+            print(help(obj))
+        elif keyword == 'type':
+            print(type(obj))
+        elif keyword == 'len':
+            print(len(obj))
+        elif keyword == 'getattr':
+            attrs = {attr: getattr(obj, attr) for attr in dir(obj)}
+            pprint(attrs)
+        elif keyword == 'pprint':
+            print(obj)

@@ -14,7 +14,13 @@ class EditorKnob(Editor):
 
     def knob_check(self):
         if not self.node.knob('code'):
-            self.node.addKnob(nuke.PyScript_Knob('code', 'Execute Code', ''))
+            self.node.addKnob(
+                nuke.PyScript_Knob(
+                    'code',
+                    'Execute Code',
+                    ''
+                )
+            )
 
     def read(self):
         self.knob_check()

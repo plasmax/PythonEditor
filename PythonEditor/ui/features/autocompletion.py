@@ -39,7 +39,8 @@ super(<!class>, self).<!method>(<!args>)
 function_snippet = 'def <!cursor>():'
 
 method_snippet = 'def <!cursor>(self):'
-
+name_main_snippet = "if __name__ == '__main__':"
+pprint_snippet = 'from pprint import pprint'
 node_selected = 'node = nuke.selectedNode()'
 nodes_selected = 'nodes = nuke.selectedNodes()'
 node_loop_snippet = 'for node in nuke.selectedNodes():\n    '
@@ -70,6 +71,8 @@ SNIPPETS = {
             'nodes [snippet]': nodes_selected,
             'custom widget [snippet]': custom_widget_snippet,
             'Qt [snippet]': qt_import_snippet,
+            'if [snippet]': name_main_snippet,
+            'pprint [snippet]' : pprint_snippet,
             }
 
 

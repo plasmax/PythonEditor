@@ -4,14 +4,15 @@ from PythonEditor.ui.Qt import QtWidgets, QtGui, QtCore
 
 from PythonEditor.utils.constants import DEFAULT_FONT
 from PythonEditor.ui.dialogs import shortcuteditor
-from PythonEditor.ui.features import (shortcuts,
-                                      linenumberarea,
-                                      syntaxhighlighter,
-                                      autocompletion,
-                                      contextmenu)
+from PythonEditor.ui.features import shortcuts
+from PythonEditor.ui.features import linenumberarea
+from PythonEditor.ui.features import syntaxhighlighter
+from PythonEditor.ui.features import autocompletion
+from PythonEditor.ui.features import contextmenu
+
 
 CTRL = QtCore.Qt.ControlModifier
-CTRL_ALT = QtCore.Qt.ControlModifier | QtCore.Qt.AltModifier
+ALT = QtCore.Qt.AltModifier
 
 
 class Editor(QtWidgets.QPlainTextEdit):
@@ -39,8 +40,6 @@ class Editor(QtWidgets.QPlainTextEdit):
     post_key_pressed_signal   = QtCore.Signal(QtGui.QKeyEvent)
     wheel_signal              = QtCore.Signal(QtGui.QWheelEvent)
     key_pressed_signal        = QtCore.Signal(QtGui.QKeyEvent)
-    # key_release_signal        = QtCore.Signal(QtGui.QKeyEvent)
-    shortcut_signal           = QtCore.Signal(QtGui.QKeyEvent)
     resize_signal             = QtCore.Signal(QtGui.QResizeEvent)
     context_menu_signal       = QtCore.Signal(QtWidgets.QMenu)
     tab_signal                = QtCore.Signal()
@@ -76,7 +75,6 @@ class Editor(QtWidgets.QPlainTextEdit):
         background-color: rgb(45, 42, 46);
         }
         """)
-        self.shortcut_overrode_keyevent = False
 
         if uid is None:
             uid = str(uuid.uuid4())
@@ -86,6 +84,7 @@ class Editor(QtWidgets.QPlainTextEdit):
         self.wait_for_autocomplete = False
         self._handle_shortcuts = handle_shortcuts
         self._features_initialised = False
+        self._key_pressed = False
 
         self.emit_text_changed = True
         self.textChanged.connect(self._handle_textChanged)
@@ -119,13 +118,13 @@ class Editor(QtWidgets.QPlainTextEdit):
 
         if self._handle_shortcuts:
             sch = shortcuts.ShortcutHandler(
-                editor=self,
+                self,
                 use_tabs=False
             )
-            sch.clear_output_signal.connect(self.relay_clear_output_signal)
+            sch.clear_output_signal.connect(
+                self.relay_clear_output_signal
+            )
             self.shortcuteditor = shortcuteditor.ShortcutEditor(sch)
-
-        self.selectionChanged.connect(self.highlight_same_words)
 
     def _handle_textChanged(self):
         self._changed = True
@@ -136,25 +135,6 @@ class Editor(QtWidgets.QPlainTextEdit):
 
     def setTextChanged(self, state=True):
         self._changed = state
-
-    def highlight_same_words(self):
-        """
-        Highlights other matching words in document
-        when full word selected.
-        TODO: implement this!
-        """
-        textCursor = self.textCursor()
-        if not textCursor.hasSelection():
-            return
-
-        """
-        text = textCursor.selection().toPlainText()
-        textCursor.select(QtGui.QTextCursor.WordUnderCursor)
-        word = textCursor.selection().toPlainText()
-        print(text, word)
-        if text == word:
-            print(word)
-        """
 
     def setPlainText(self, text):
         """
@@ -187,16 +167,14 @@ class Editor(QtWidgets.QPlainTextEdit):
 
     def focusInEvent(self, event):
         """
-        Emit a signal when focusing in a window.
-        When there used to be an editor per tab,
-        this would work well to check that the tab's
-        contents had not been changed. Now, we'll also
-        want to signal from the tab switched signal.
+        Emit a signal when the editor receives focus.
+        This is used elsewhere to monitor the editor's
+        autosave entry for changes. If using tabs, this
+        signal will also be emitted by the tab widget.
         """
         FR = QtCore.Qt.FocusReason
         ignored_reasons = [
             FR.PopupFocusReason,
-            FR.MouseFocusReason
         ]
         if event.reason() not in ignored_reasons:
             self.focus_in_signal.emit(event)
@@ -217,31 +195,17 @@ class Editor(QtWidgets.QPlainTextEdit):
 
     def keyPressEvent(self, event):
         """
-        Emit signals for key events
+        Emit signals for specific key events
         that QShortcut cannot override.
         """
-        # will this be enough to give focus back to the
-        # script editor or rest of the application?
+        self._key_pressed = True
+
         if not self.hasFocus():
             event.ignore()
             return
 
-        # self.wait_for_autocomplete = True
-        # # QtCore.Qt.DirectConnection
-        # self.key_pressed_signal.emit(event)
-
-        # self.autocomplete_overrode_keyevent = False
-
         if self.wait_for_autocomplete:
-            # TODO: Connect (in autocomplete) using
-            # QtCore.Qt.DirectConnection to work synchronously
             self.key_pressed_signal.emit(event)
-            return
-
-
-        self.shortcut_overrode_keyevent = False
-        self.shortcut_signal.emit(event)
-        if self.shortcut_overrode_keyevent:
             return
 
         if event.modifiers() == QtCore.Qt.NoModifier:
@@ -264,7 +228,7 @@ class Editor(QtWidgets.QPlainTextEdit):
 
         if event.key() == QtCore.Qt.Key_Home:
             # Ctrl+Alt+Home
-            if event.modifiers() == CTRL_ALT:
+            if event.modifiers() == CTRL | ALT:
                 self.home_key_ctrl_alt_signal.emit()
             # Home
             elif event.modifiers() == QtCore.Qt.NoModifier:
@@ -272,7 +236,7 @@ class Editor(QtWidgets.QPlainTextEdit):
 
         # Ctrl+Alt+End
         if (event.key() == QtCore.Qt.Key_End
-                and event.modifiers() == CTRL_ALT):
+                and event.modifiers() == CTRL | ALT):
             self.end_key_ctrl_alt_signal.emit()
 
         # Ctrl+X
@@ -286,12 +250,12 @@ class Editor(QtWidgets.QPlainTextEdit):
                 and event.modifiers() == CTRL):
             self.ctrl_n_signal.emit()
 
-        # Ctrl+W
+        # Ctrl+W # because this is an ApplicationShortcut by default in Nuke, this won't even reach here without an event filter.
         if (event.key() == QtCore.Qt.Key_W
                 and event.modifiers() == CTRL):
             self.ctrl_w_signal.emit()
 
-        # Ctrl+S
+        # # Ctrl+S
         if (event.key() == QtCore.Qt.Key_S
                 and event.modifiers() == CTRL):
             self.ctrl_s_signal.emit()
@@ -305,11 +269,11 @@ class Editor(QtWidgets.QPlainTextEdit):
         self.post_key_pressed_signal.emit(event)
 
     def keyReleaseEvent(self, event):
+        self._key_pressed = False
         if not isinstance(self, Editor):
             # when the key released is F5 (reload app)
             return
         self.wait_for_autocomplete = True
-        # self.key_release_signal.emit(event)
         super(Editor, self).keyReleaseEvent(event)
 
     def contextMenuEvent(self, event):
@@ -393,87 +357,3 @@ class Editor(QtWidgets.QPlainTextEdit):
         self.text_changed_signal.emit()
         super(Editor, self).insertFromMimeData(mimeData)
 
-    """ # Great idea, needs testing
-    variable = ''
-    def mouseMoveEvent(self, event):
-        super(Editor, self).mouseMoveEvent(event)
-
-        cursor = self.cursorForPosition(event.pos())
-        selection = cursor.select(QtGui.QTextCursor.WordUnderCursor)
-        word = cursor.selection().toPlainText()
-        if not word.strip():
-            return
-
-        variable = word
-        start = cursor.selectionStart()
-        end = cursor.selectionEnd()
-        text = self.toPlainText()
-        pretext = text[:start]
-        postext = text[end:]
-
-        for letter in reversed(pretext):
-            if not (letter.isalnum() or letter in ['_','.']):
-                break
-            else:
-                variable = letter + variable
-
-        for letter in postext:
-            if not (letter.isalnum() or letter in ['_','.']):
-                break
-            variable += letter
-
-        if self.variable == variable:
-            return
-
-        self.variable = variable
-        obj = __main__.__dict__.get(variable)
-        if obj is None:
-            return
-
-        print obj
-        if hasattr(obj, '__doc__'):
-            print obj.__doc__
-
-    """
-
-    # def show_function_help(self, text):
-    #     """
-    #     Shows a tooltip with function documentation
-    #     and input arguments if available.
-    #     TODO: failing return __doc__,
-    #     try to get me the function code!
-    #     """
-    #     _ = {}
-    #     name = text[:-1].split(' ')[-1]
-    #     cmd = '__ret = ' + name
-    #     try:
-    #         cmd = compile(cmd, '<Python Editor Tooltip>', 'exec')
-    #         exec(cmd, __main__.__dict__.copy(), _)
-    #     except (SyntaxError, NameError):
-    #         return
-    #     _obj = _.get('__ret')
-    #     if _obj and _obj.__doc__:
-    #         info = 'help(' + name + ')\n' + _obj.__doc__
-    #         if len(info) > 500:
-    #             info = info[:500]+'...'
-
-    #         if (inspect.isfunction(_obj)
-    #                 or inspect.ismethod(_obj)):
-    #             args = str(inspect.getargspec(_obj))
-    #             info = args + '\n'*2 + info
-
-    #         center_cursor_rect = self.cursorRect().center()
-    #         global_rect = self.mapToGlobal(center_cursor_rect)
-
-    #         # TODO: border color? can be done with stylesheet?
-    #         # on the main widget?
-    #         # BUG: This assigns the global tooltip colour
-    #         palette = QtWidgets.QToolTip.palette()
-    #         palette.setColor(QtGui.QPalette.ToolTipText,
-    #                          QtGui.QColor("#F6F6F6"))
-    #         palette.setColor(QtGui.QPalette.ToolTipBase,
-    #                          QtGui.QColor(45, 42, 46))
-    #         QtWidgets.QToolTip.setPalette(palette)
-
-    #         # TODO: Scrollable! Does QToolTip have this?
-    #         QtWidgets.QToolTip.showText(global_rect, info)

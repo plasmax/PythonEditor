@@ -116,7 +116,9 @@ def print_traceback(whole_text, error):
     :type error: exceptions.Exception
 
     """
-    text_lines = whole_text.splitlines()
+    # text_lines = whole_text.splitlines()
+    text_lines = whole_text.split('\n')
+    num_lines = len(text_lines)
 
     error_message = traceback.format_exc()
 
@@ -138,10 +140,17 @@ def print_traceback(whole_text, error):
         result = re.search(pattern, line)
         if result:
             lineno = int(result.group())
+            while lineno >= num_lines:
+                # FIXME: this exists to patch a logical fault
+                # When text is selected and there is no newline
+                # afterwards, the lineno can exceed the number
+                # of lines in the text_lines list. ideally, no
+                # whole_text would be provided that can exceed
+                # this limit
+                lineno -= 1
             text = '    ' + text_lines[lineno].strip()
             message_lines.append(text)
             error_line_numbers.append(lineno)
-
     message_lines.append(error)
     error_message = '\n'.join(message_lines)
     print(error_message)

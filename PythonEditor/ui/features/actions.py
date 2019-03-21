@@ -8,6 +8,149 @@ from PythonEditor.ui.Qt import QtWidgets, QtGui, QtCore
 from PythonEditor.utils import save
 
 
+REGISTER = {
+'editor': {
+    'Print Help'            : 'print_help',
+    'Open Module File'      : 'open_module_file',
+    'Open Module Directory' : 'open_module_directory',
+    'Search'                : 'search_input',
+    },
+'tabs': {
+    },
+'terminal': {
+    },
+}
+
+class Actions(QtCore.QObject):
+    """
+    Collection of QActions that are
+    accessible for menu and shortcut registry.
+    """
+    clear_output_signal = QtCore.Signal()
+    exec_text_signal = QtCore.Signal()
+
+    actions = {}
+    def __init__(
+            self,
+            editor=None,
+            tabeditor=None,
+            terminal=None,
+            use_tabs=True
+        ):
+        """
+        :param use_tabs:
+        If False, the parent_widget is the QPlainTextEdit (Editor)
+        widget. If True, apply actions to the QTabBar as well as
+        the Editor.
+        """
+        super(Actions, self).__init__()
+        self.setObjectName('Actions')
+
+        if editor is None:
+            raise Exception('A text editor is necessary for this class.')
+        self.editor = editor
+
+        if tabeditor is not None:
+            self.tabeditor = tabeditor
+            self.tabs = tabeditor.tabs
+            parent_widget = tabeditor
+        else:
+            parent_widget = editor
+
+        if terminal is not None:
+            self.terminal = terminal
+            self.clear_output_signal.connect(self.terminal.clear)
+
+        self.setParent(parent_widget)
+        self.use_tabs = use_tabs
+
+        self.create_action_register()
+
+    def create_action_register(self):
+        global REGISTER
+        for widget_name, actions in REGISTER.items():
+            widget = getattr(self, widget_name)
+            if widget is None:
+                continue
+            for name, method in actions.items():
+                if not isinstance(method, str):
+                    continue
+                func = getattr(self, method)
+                action = make_action(name, widget, func)
+
+    def print_help(self):
+        """
+        Prints documentation for selected text if
+        it currently represents a python object.
+        """
+        cursor = self.editor.textCursor()
+        selection = cursor.selection()
+        text = selection.toPlainText().strip()
+        if not text:
+            return
+        obj = __main__.__dict__.get(text)
+        if obj is not None:
+            print(obj.__doc__)
+        elif text:
+            exec('help('+text+')', __main__.__dict__)
+
+    def open_module_file(self):
+        textCursor = self.editor.textCursor()
+        text = textCursor.selection().toPlainText()
+        if not text.strip():
+            return
+
+        obj = get_subobject(text)
+        open_module_file(obj)
+
+    def open_module_directory(self):
+        textCursor = self.editor.textCursor()
+        text = textCursor.selection().toPlainText()
+        if not text.strip():
+            return
+
+        obj = get_subobject(text)
+        open_module_directory(obj)
+
+    def search_input(self):
+        """
+        Very basic search dialog.
+        """
+        getText = QtWidgets.QInputDialog.getText
+        dialog = getText(self.editor, 'Search', '',)
+        text, ok = dialog
+        if not ok:
+            return
+
+        textCursor = self.editor.textCursor()
+        original_pos = textCursor.position()
+
+        # start the search from the beginning of the document
+        textCursor.setPosition(0, QtGui.QTextCursor.MoveAnchor)
+        document = self.editor.document()
+        cursor = document.find(text, textCursor)
+        pos = cursor.position()
+        if pos != -1:
+            self.editor.setTextCursor(cursor)
+
+
+def make_action(name, widget, func):
+    """
+    Add action to widget with
+    given triggered function.
+
+    :action: QtWidgets.QAction
+    :widget: QtWidgets.QWidget
+    :func: a callable that gets executed
+           when triggering the action.
+    """
+    action = QtWidgets.QAction(widget)
+    action.triggered.connect(func)
+    widget.addAction(action)
+    action.setText(name)
+    return action
+
+
 def toggle_backslashes_in_string(text):
     if '\\' in text:
         text = text.replace('\\\\', '/')
@@ -168,5 +311,3 @@ def openDir(module):
         file = inspect.getfile(module)
         subprocess.Popen(['nautilus', file])
     print('sublime ', __file__, ':', sys._getframe().f_lineno, sep='')  # TODO: nautilus is not multiplatform!
-
-
