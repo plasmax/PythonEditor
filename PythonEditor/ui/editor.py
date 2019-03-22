@@ -1,8 +1,18 @@
+"""
+This module contains the main text editor that can be
+run independently, embedded in other layouts, or used
+within the tabbed editor to have different contents
+per tab.
+"""
+
+import os
 import uuid
 import __main__
-from PythonEditor.ui.Qt import QtWidgets, QtGui, QtCore
+from PythonEditor.ui.Qt import QtWidgets
+from PythonEditor.ui.Qt import QtGui
+from PythonEditor.ui.Qt import QtCore
 
-from PythonEditor.utils.constants import DEFAULT_FONT
+from PythonEditor.utils import constants
 from PythonEditor.ui.dialogs import shortcuteditor
 from PythonEditor.ui.features import shortcuts
 from PythonEditor.ui.features import linenumberarea
@@ -17,14 +27,15 @@ ALT = QtCore.Qt.AltModifier
 
 class Editor(QtWidgets.QPlainTextEdit):
     """
-    Code Editor widget. Extends QPlainTextEdit to provide:
+    Code Editor widget. Extends QPlainTextEdit to
+    provide (through separate modules):
     - Line Number Area
     - Syntax Highlighting
     - Autocompletion (of Python code)
     - Shortcuts for code editing
-    - New Context Menu
-    - Signals for connecting the Editor to other UI elements.
-    - Unique identifier to match Editor widget to file storage.
+    - Custom Context Menu
+    - Signals for connecting the Editor to other
+        UI elements.
     """
     wrap_types = [
         '\'', '"',
@@ -65,10 +76,16 @@ class Editor(QtWidgets.QPlainTextEdit):
         super(Editor, self).__init__()
         self.setObjectName('Editor')
         self.setAcceptDrops(True)
+
+        DEFAULT_FONT = constants.DEFAULT_FONT
+        df = 'PYTHONEDITOR_DEFAULT_FONT'
+        if os.getenv(df) is not None:
+            DEFAULT_FONT = os.environ[df]
         font = QtGui.QFont(DEFAULT_FONT)
         font.setPointSize(10)
         self.setFont(font)
         self.setMouseTracking(True)
+        self.setCursorWidth(2)
         self.setStyleSheet("""
         QToolTip {
         color: #F6F6F6;
@@ -76,10 +93,11 @@ class Editor(QtWidgets.QPlainTextEdit):
         }
         """)
 
+        # instance variables
         if uid is None:
             uid = str(uuid.uuid4())
         self._uuid = uid
-
+        self.shortcut_overrode_keyevent = False
         self._changed = False
         self.wait_for_autocomplete = False
         self._handle_shortcuts = handle_shortcuts
@@ -87,7 +105,9 @@ class Editor(QtWidgets.QPlainTextEdit):
         self._key_pressed = False
 
         self.emit_text_changed = True
-        self.textChanged.connect(self._handle_textChanged)
+        self.textChanged.connect(
+            self._handle_textChanged
+        )
 
         linenumberarea.LineNumberArea(self)
 
@@ -102,19 +122,28 @@ class Editor(QtWidgets.QPlainTextEdit):
             return
         self._features_initialised = True
 
-        # QSyntaxHighlighter causes textChanged to be emitted, which we don't want.
+        # QSyntaxHighlighter causes
+        # textChanged to be emitted,
+        # which we don't want.
         self.emit_text_changed = False
-        syntaxhighlighter.Highlight(self.document())
+        syntaxhighlighter.Highlight(
+			self.document()
+		)
         def set_text_changed_enabled():
             self.emit_text_changed = True
-        QtCore.QTimer.singleShot(0, set_text_changed_enabled)
+        QtCore.QTimer.singleShot(
+            0,
+            set_text_changed_enabled
+        )
 
-        # self.emit_text_changed = True
-        self.contextmenu = contextmenu.ContextMenu(self)
+        CM = contextmenu.ContextMenu
+        self.contextmenu = CM(self)
 
-        # TOOD: add a new autocompleter that uses DirectConnection.
+        # TODO: add a new autocompleter
+        # that uses DirectConnection.
         self.wait_for_autocomplete = True
-        self.autocomplete = autocompletion.AutoCompleter(self)
+        AC = autocompletion.AutoCompleter
+        self.autocomplete = AC(self)
 
         if self._handle_shortcuts:
             sch = shortcuts.ShortcutHandler(
@@ -167,10 +196,12 @@ class Editor(QtWidgets.QPlainTextEdit):
 
     def focusInEvent(self, event):
         """
-        Emit a signal when the editor receives focus.
-        This is used elsewhere to monitor the editor's
-        autosave entry for changes. If using tabs, this
-        signal will also be emitted by the tab widget.
+        Emit a signal when focusing in a window.
+        When there used to be an editor per tab,
+        this would work well to check that the tab's
+        contents had not been changed. Now, we'll
+        also want to signal from the tab switched
+        signal.
         """
         FR = QtCore.Qt.FocusReason
         ignored_reasons = [
@@ -195,7 +226,7 @@ class Editor(QtWidgets.QPlainTextEdit):
 
     def keyPressEvent(self, event):
         """
-        Emit signals for specific key events
+        Emit signals for key events
         that QShortcut cannot override.
         """
         self._key_pressed = True
@@ -271,7 +302,8 @@ class Editor(QtWidgets.QPlainTextEdit):
     def keyReleaseEvent(self, event):
         self._key_pressed = False
         if not isinstance(self, Editor):
-            # when the key released is F5 (reload app)
+            # when the key released is F5
+            # (reload app)
             return
         self.wait_for_autocomplete = True
         super(Editor, self).keyReleaseEvent(event)
@@ -342,7 +374,10 @@ class Editor(QtWidgets.QPlainTextEdit):
         """
         self.setFocus(QtCore.Qt.MouseFocusReason)
         vertical = QtCore.Qt.Orientation.Vertical
-        is_vertical = (event.orientation() == vertical)
+        is_vertical = (
+            event.orientation() == vertical
+        )
+        CTRL = QtCore.Qt.ControlModifier
         is_ctrl = (event.modifiers() == CTRL)
         if is_ctrl and is_vertical:
             return self.wheel_signal.emit(event)
@@ -355,5 +390,10 @@ class Editor(QtWidgets.QPlainTextEdit):
         is pasted or dragged in.
         """
         self.text_changed_signal.emit()
-        super(Editor, self).insertFromMimeData(mimeData)
+        super(
+            Editor, self
+            ).insertFromMimeData(mimeData)
 
+    def showEvent(self, event):
+        self.setFocus(QtCore.Qt.MouseFocusReason)
+        super(Editor, self).showEvent(event)

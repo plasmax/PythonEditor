@@ -2,7 +2,9 @@ from __future__ import print_function
 import __main__
 from functools import partial
 
-from PythonEditor.ui.Qt import QtWidgets, QtGui, QtCore
+from PythonEditor.ui.Qt import QtWidgets
+from PythonEditor.ui.Qt import QtGui
+from PythonEditor.ui.Qt import QtCore
 from PythonEditor.core import execute
 from PythonEditor.utils.signals import connect
 from PythonEditor.utils import save
@@ -21,6 +23,33 @@ REGISTER = {
 'terminal': {
     },
 }
+
+def key_to_sequence(key):
+    """
+    Convert the given QtCore.Qt.Key type to a
+    QKeySequence including currently held
+    modifiers. The only downside to this being
+    that, for keys that require shift to be held,
+    the sequence Shift+Key will be returned.
+    """
+    QT = QtCore.Qt
+    modifier_map = {
+        QT.Key_Control : QT.ControlModifier,
+        QT.Key_Shift   : QT.ShiftModifier,
+        QT.Key_Alt     : QT.AltModifier,
+        QT.Key_Meta    : QT.MetaModifier,
+    }
+    app = QtWidgets.QApplication
+    held = app.keyboardModifiers()
+    combo = 0
+    for mod in modifier_map.values():
+        if held & mod == mod:
+            combo |= mod
+    combo |= key
+
+    combo = QtGui.QKeySequence(combo)
+    return combo
+
 
 # TODO:
 # This needs to be moved to 'actions' and replaced with

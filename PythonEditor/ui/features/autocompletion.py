@@ -7,14 +7,18 @@ import inspect
 import os
 import json
 
-from PythonEditor.ui.Qt import QtGui, QtCore, QtWidgets
+from PythonEditor.ui.Qt import QtGui
+from PythonEditor.ui.Qt import QtCore
+from PythonEditor.ui.Qt import QtWidgets
 from PythonEditor.utils.debug import debug
 from PythonEditor.utils.constants import NUKE_DIR
 
 
-KEYWORDS = ['True',
-            'False',
-            'execfile']
+KEYWORDS = [
+    'True',
+    'False',
+    'execfile'
+]
 KEYWORDS.extend(dir(__builtins__))
 
 class_snippet = """class <!cursor>():
@@ -22,15 +26,17 @@ class_snippet = """class <!cursor>():
         super(, self).__init__()
 """.strip()
 
-context_manager_snippet = """class <!cursor>():
+context_manager_snippet = (
+"""class <!cursor>():
     def __init__(self):
         super(, self).__init__()
 
     def __enter__(self):
         return self
 
-    def __exit__(self, exception_type, exception_value, traceback):
-""".strip()
+    def __exit__(self, exception_type, """
++ """exception_value, traceback):"""
+).strip()
 
 super_snippet = """
 super(<!class>, self).<!method>(<!args>)
@@ -43,11 +49,18 @@ name_main_snippet = "if __name__ == '__main__':"
 pprint_snippet = 'from pprint import pprint'
 node_selected = 'node = nuke.selectedNode()'
 nodes_selected = 'nodes = nuke.selectedNodes()'
-node_loop_snippet = 'for node in nuke.selectedNodes():\n    '
-node_all_snippet = 'for node in nuke.allNodes():\n    '
-node_deselect_snippet = """
-n.setSelected(False) for n in nuke.allNodes(recurseGroups=True)]
-""".strip()
+node_loop_snippet = (
+    'for node in nuke.selectedNodes():\n    '
+)
+node_all_snippet = (
+    'for node in nuke.allNodes():\n    '
+)
+
+node_deselect_snippet = (
+    'n.setSelected(False) for n in '
+    +'nuke.allNodes(recurseGroups=True)]'
+)
+
 custom_widget_snippet = """
 class MyWidget(QtWidgets.QWidget):
     def __init__(self):
@@ -57,23 +70,41 @@ class MyWidget(QtWidgets.QWidget):
     def valueChanged(self, value):
         pass
 """.strip()
-qt_import_snippet = 'from Qt import QtWidgets, QtGui, QtCore'
+qt_import_snippet = (
+    'from Qt import '
+    +'QtWidgets, QtGui, QtCore'
+)
+
 SNIPPETS = {
-            'class [snippet]': class_snippet,
-            'contextmanager [snippet]': context_manager_snippet,
-            'super [snippet]': super_snippet,
-            'def [snippet] [func]': function_snippet,
-            'def [snippet] [method]': method_snippet,
-            'for node selected [snippet]': node_loop_snippet,
-            'for node all [snippet]': node_all_snippet,
-            'n.setSelected(False) [snippet]': node_deselect_snippet,
-            'node [snippet]': node_selected,
-            'nodes [snippet]': nodes_selected,
-            'custom widget [snippet]': custom_widget_snippet,
-            'Qt [snippet]': qt_import_snippet,
-            'if [snippet]': name_main_snippet,
-            'pprint [snippet]' : pprint_snippet,
-            }
+    'class [snippet]':
+        class_snippet,
+    'contextmanager [snippet]':
+        context_manager_snippet,
+    'super [snippet]':
+        super_snippet,
+    'def [snippet] [func]':
+        function_snippet,
+    'def [snippet] [method]':
+        method_snippet,
+    'for node selected [snippet]':
+        node_loop_snippet,
+    'for node all [snippet]':
+        node_all_snippet,
+    'n.setSelected(False) [snippet]':
+        node_deselect_snippet,
+    'node [snippet]':
+        node_selected,
+    'nodes [snippet]':
+        nodes_selected,
+    'custom widget [snippet]':
+        custom_widget_snippet,
+    'Qt [snippet]':
+        qt_import_snippet,
+    'if [snippet]': 
+		name_main_snippet,
+    'pprint [snippet]' : 
+		pprint_snippet,
+}
 
 
 def locate_snippet_file():
@@ -85,7 +116,10 @@ def locate_snippet_file():
     """
     global SNIPPETS
     try:
-        snippet_path = os.path.join(NUKE_DIR, 'PythonEditor_snippets.json')
+        snippet_path = os.path.join(
+            NUKE_DIR,
+            'PythonEditor_snippets.json'
+        )
         if os.path.isfile(snippet_path):
             with open(snippet_path, 'r') as f:
                 data = f.read()
@@ -99,8 +133,12 @@ class Completer(QtWidgets.QCompleter):
     def __init__(self, stringlist):
         super(Completer, self).__init__(stringlist)
 
-        self.setCompletionMode(QtWidgets.QCompleter.PopupCompletion)
-        self.setCaseSensitivity(QtCore.Qt.CaseSensitive)
+        self.setCompletionMode(
+            QtWidgets.QCompleter.PopupCompletion
+        )
+        self.setCaseSensitivity(
+            QtCore.Qt.CaseSensitive
+        )
 
 
 class AutoCompleter(QtCore.QObject):
@@ -140,7 +178,9 @@ class AutoCompleter(QtCore.QObject):
             self._completer = Completer(wordlist)
             self._completer.setParent(self)
             self._completer.setWidget(self.editor)
-            self._completer.activated.connect(self.insert_completion)
+            self._completer.activated.connect(
+                self.insert_completion
+            )
         return self._completer
 
     @completer.setter
@@ -148,10 +188,16 @@ class AutoCompleter(QtCore.QObject):
         self._completer = completer
 
     def connect_signals(self):
-        self.editor.focus_in_signal.connect(self._focusInEvent)
+        self.editor.focus_in_signal.connect(
+            self._focusInEvent
+        )
         # TODO: QtCore.Qt.DirectConnection
-        self.editor.key_pressed_signal.connect(self._pre_keyPressEvent)
-        self.editor.post_key_pressed_signal.connect(self._post_keyPressEvent)
+        self.editor.key_pressed_signal.connect(
+            self._pre_keyPressEvent
+        )
+        self.editor.post_key_pressed_signal.connect(
+            self._post_keyPressEvent
+        )
 
     @QtCore.Slot(QtGui.QFocusEvent)
     def _focusInEvent(self, event):
@@ -162,20 +208,27 @@ class AutoCompleter(QtCore.QObject):
 
     def word_under_cursor(self):
         """
-        Returns a string with the word under the cursor.
+        Returns a string with the
+        word under the cursor.
         """
         textCursor = self.editor.textCursor()
-        textCursor.select(QtGui.QTextCursor.WordUnderCursor)
+        textCursor.select(
+            QtGui.QTextCursor.WordUnderCursor
+        )
         word = textCursor.selection().toPlainText()
         return word
 
     def word_before_cursor(self, regex=r'[\w|\.]+'):
         """
-        Returns a string with the last word of the block.
+        Returns a string with the last
+        word of the block.
         """
         textCursor = self.editor.textCursor()
-        textCursor.select(QtGui.QTextCursor.BlockUnderCursor)
-        line_text = textCursor.selection().toPlainText()
+        textCursor.select(
+            QtGui.QTextCursor.BlockUnderCursor
+        )
+        line_text = textCursor.selection(
+            ).toPlainText()
         words = re.findall(regex, line_text)
         if (len(words) == 0):
             return ''
@@ -184,26 +237,32 @@ class AutoCompleter(QtCore.QObject):
     def get_word_after_dot(self, _char):
         """
         TODO:
-        This needs a total rethink. Was hacked together.
+        This needs a total rethink.
+        Was hacked together.
         """
         self.completer.setCompletionPrefix('')
         textCursor = self.editor.textCursor()
         document = self.editor.document()
 
         pos = textCursor.position()
-        block_number = document.findBlock(pos).blockNumber()
+        block_number = document.findBlock(
+            pos).blockNumber()
 
-        block = document.findBlockByNumber(block_number)
+        block = document.findBlockByNumber(
+            block_number
+        )
         block_start = block.position()
-        s = self.editor.toPlainText()[block_start:pos]
+        s = self.editor.toPlainText(
+            )[block_start:pos]
 
         for c in s:
             if (not c.isalnum()
-                    and c not in ['.', '_']):
+                and c not in ['.', '_']):
                 s = s.replace(c, ' ')
 
         word_after_dot = s.split(' ')[-1]
-        word_after_dot = word_after_dot.split('.')[-1]
+        word_after_dot = word_after_dot.split(
+            '.')[-1]
 
         return word_after_dot
 
@@ -216,23 +275,28 @@ class AutoCompleter(QtCore.QObject):
         document = self.editor.document()
 
         pos = textCursor.position()
-        block_number = document.findBlock(pos).blockNumber()
+        block_number = document.findBlock(
+            pos).blockNumber()
 
-        block = document.findBlockByNumber(block_number)
+        block = document.findBlockByNumber(
+            block_number
+        )
         block_start = block.position()
-        s = self.editor.toPlainText()[block_start:pos]
+        s = self.editor.toPlainText(
+            )[block_start:pos]
 
         for c in s:
             if (not c.isalnum()
-                    and c not in ['.', '_']):
+                and c not in ['.', '_']):
                 s = s.replace(c, ' ')
 
         word_before_dot = s.split(' ')[-1]
-        word_before_dot = '.'.join(word_before_dot.split('.')[:-1])
+        word_before_dot = '.'.join(
+            word_before_dot.split('.')[:-1])
 
         if (word_before_dot.strip() == ''
-                or word_before_dot.endswith(_char)
-                or not word_before_dot[-1].isalnum()):
+            or word_before_dot.endswith(_char)
+            or not word_before_dot[-1].isalnum()):
             return
 
         if word_before_dot in ['self', 'cls']:
@@ -245,9 +309,17 @@ class AutoCompleter(QtCore.QObject):
         if _obj is None:
             try:
                 _ = {}
-                exec('_obj = '+word_before_dot, app_namespace, _)
+                exec(
+                    '_obj = '+word_before_dot,
+                    app_namespace,
+                    _
+                )
                 _obj = _.get('_obj')
-            except (NameError, AttributeError, SyntaxError):
+            except (
+                NameError,
+                AttributeError,
+                SyntaxError
+                ):
                 # we want to handle this
                 # silently, except. TODO:
                 # SyntaxError avoidance
@@ -272,29 +344,47 @@ class AutoCompleter(QtCore.QObject):
 
         attrs = dir(_obj)
 
-        methods = [a for a in attrs if a[0].islower()]
-        therest = [a for a in attrs if not a[0].islower()]
+        methods = [
+            a for a in attrs
+            if a[0].islower()
+        ]
+        therest = [
+            a for a in attrs
+            if not a[0].islower()
+        ]
         stringlist = methods+therest
         self.set_list(stringlist)
         self.show_popup()
 
         cp = self.completer
         current_word = self.word_under_cursor()
-        all_alpha = all((c.isalnum() or c in '_.') for c in current_word)
+        all_alpha = all(
+            (c.isalnum() or c in '_.')
+            for c in current_word
+        )
         if not all_alpha:
-            current_word =  self.get_word_after_dot('.') # TODO: won't always be a dot!
-            all_alpha = all((c.isalnum() or c in '_.') for c in current_word)
+            current_word = self.get_word_after_dot(
+                '.'
+            ) # TODO: won't always be a dot!
+            all_alpha = all(
+                (c.isalnum() or c in '_.')
+                for c in current_word
+            )
             if not all_alpha:
                 cp.popup().hide()
                 return
-        cp.setCompletionPrefix(current_word)
-        cp.popup().setCurrentIndex(cp.completionModel().index(0, 0))
+        cp.setCompletionPrefix(
+            current_word
+        )
+        cp.popup().setCurrentIndex(
+            cp.completionModel().index(0, 0)
+        )
 
     def complete_variables(self):
         """
         Complete variable names in
         global scope.
-        TODO: Substring matching ;)
+        TODO: Substring matching
         """
         cp = self.completer
         variables = __main__.__dict__.keys()
@@ -307,19 +397,27 @@ class AutoCompleter(QtCore.QObject):
             if w != word
         ]
 
-        variables = [variables
-                     + keyword.kwlist
-                     + list(SNIPPETS.keys())
-                     + dir(__builtins__)
-                     + KEYWORDS
-                     + words]
+        variables = [
+            variables
+            + keyword.kwlist
+            + list(SNIPPETS.keys())
+            + dir(__builtins__)
+            + KEYWORDS
+            + words
+        ]
 
-        variables = sorted(list(set().union(*variables)))
+        variables = sorted(
+            list(
+                set().union(*variables)
+            )
+        )
         self.set_list(variables)
         word = self.word_under_cursor()
 
         if re.match('[a-zA-Z0-9_]', word) is None:
-            word = self.word_before_cursor(regex=r'\w+')
+            word = self.word_before_cursor(
+                regex=r'\w+'
+                )
 
         char_len = len(word)
         cp.setCompletionPrefix(word)
@@ -331,12 +429,19 @@ class AutoCompleter(QtCore.QObject):
         # TODO: substring matching
         """
         for var in variables:
-            found = nonconsec_find(word, var, anchored=True)
+            found = nonconsec_find(
+                word,
+                var,
+                anchored=True
+            )
             if found:
                 print(word, var)
         """
 
-        if char_len and any(w[:char_len] == word for w in variables):
+        if char_len and any(
+                w[:char_len] == word
+                for w in variables
+            ):
             self.show_popup()
 
     def set_list(self, stringlist):
@@ -353,8 +458,12 @@ class AutoCompleter(QtCore.QObject):
         """
         cursorRect = self.editor.cursorRect()
         pop = self.completer.popup()
-        cursorRect.setWidth(pop.sizeHintForColumn(0)
-                            + pop.verticalScrollBar().sizeHint().width())
+        cursorRect.setWidth(
+            pop.sizeHintForColumn(0)
+            + pop.verticalScrollBar(
+                ).sizeHint(
+                ).width()
+        )
         self.completer.complete(cursorRect)
 
     def insert_completion(self, completion):
@@ -363,22 +472,27 @@ class AutoCompleter(QtCore.QObject):
         replacing current word.
         """
         if '[snippet]' in completion:
-            return self.insert_snippet_completion(completion)
+            return self.insert_snippet_completion(
+                completion
+                )
 
         textCursor = self.editor.textCursor()
         prefix = self.completer.completionPrefix()
         pos = textCursor.position()
 
-        textCursor.setPosition(pos-len(prefix),
-                               QtGui.QTextCursor.KeepAnchor)
+        textCursor.setPosition(
+            pos-len(prefix),
+            QtGui.QTextCursor.KeepAnchor
+        )
 
         textCursor.insertText(completion)
         self.editor.setTextCursor(textCursor)
 
     def get_object_body(self, _type='class'):
         """
-        Utility method to get the text from the current
-        cursor position upwards until the 'class' keyword.
+        Utility method to get the text from
+        the current cursor position upwards
+        until the 'class' keyword.
         """
         textCursor = self.editor.textCursor()
         pos = textCursor.position()
@@ -393,8 +507,8 @@ class AutoCompleter(QtCore.QObject):
 
     def get_object_text(self, pattern, _type='class'):
         """
-        Get the text attribute inside a class block that
-        matches the pattern given.
+        Get the text attribute inside a class
+        block that matches the pattern given.
         """
         text = self.get_object_body(_type=_type)
         search = re.findall(pattern, text)
@@ -406,8 +520,8 @@ class AutoCompleter(QtCore.QObject):
 
     def get_inherited_class(self):
         """
-        Return the name of the inherited class, e.g.:
-        class ClassName(Inherited.Class)
+        Return the name of the inherited class,
+        e.g.: class ClassName(Inherited.Class)
         """
         return self.get_object_text(
             r'(?:\()([a-zA-Z0-9_\.]+)',
@@ -416,9 +530,9 @@ class AutoCompleter(QtCore.QObject):
 
     def get_current_class_name(self):
         """
-        Return the class name of the first class defined
-        above the text cursor. E.g.:
-        class ClassName()
+        Return the class name of the first class
+        defined above the text cursor.
+        e.g.: class ClassName()
         """
         return self.get_object_text(
             r'(?:class\s+)(\w+)(?:\()',
@@ -427,9 +541,9 @@ class AutoCompleter(QtCore.QObject):
 
     def get_current_function_name(self):
         """
-        Return the function name of the first function
-        defined above the text cursor. E.g.:
-        def function_name()
+        Return the function name of the first
+        function defined above the text cursor.
+        e.g.: def function_name()
         """
         return self.get_object_text(
             r'(?:def\s+)([a-zA-Z0-9_]+)(?:\()',
@@ -438,9 +552,13 @@ class AutoCompleter(QtCore.QObject):
 
     def get_current_function_args(self):
         """
-        Return the function arguments, of the first function
-        defined above the text cursor. E.g.:
-        def function_name(argument, parameter='value')
+        Return the function arguments, of the
+        first function defined above the text
+        cursor.
+        e.g.:
+        def function_name(
+        argument, parameter='value'
+        )
         """
         return self.get_object_text(
             r'(?:def\s+\w+\()(.+)(?:\)\:)',
@@ -449,9 +567,13 @@ class AutoCompleter(QtCore.QObject):
 
     def get_current_method_args(self):
         """
-        Return the function arguments, minus 'self',  of the
-        first method defined above the text cursor. E.g.:
-        def function_name(self, argument, parameter='value')
+        Return the function arguments, minus 'self',
+        of the first method defined above the text
+        cursor.
+        e.g.:
+        def function_name(
+        self, argument, parameter='value'
+        )
         """
         return self.get_object_text(
             r'(?:def\s+\w+\(\s*self,\s*)(.+)(?:\)\:)',
@@ -461,36 +583,52 @@ class AutoCompleter(QtCore.QObject):
     def insert_snippet_completion(self, completion):
         """
         Fetches snippet from dictionary and
-        completes with that. Sets text cursor position
-        to snippet insert point.
+        completes with that. Sets text cursor
+        position to snippet insert point.
         """
         snippet = SNIPPETS[completion]
         completion = snippet
         if '<!cursor>' in snippet:
-            cursor_insert = completion.index('<!cursor>')
-            completion = completion.replace('<!cursor>', '')
+            cursor_insert = completion.index(
+                '<!cursor>'
+            )
+            completion = completion.replace(
+                '<!cursor>',
+                ''
+            )
 
         if '<!class>' in snippet:
-            class_name = self.get_current_class_name()
-            completion = completion.replace('<!class>', class_name)
+            completion = completion.replace(
+                '<!class>',
+                self.get_current_class_name()
+            )
 
         if '<!method>' in snippet:
-            method_name = self.get_current_function_name()
-            completion = completion.replace('<!method>', method_name)
+            completion = completion.replace(
+                '<!method>',
+                self.get_current_function_name()
+            )
 
         if '<!args>' in snippet:
-            args = self.get_current_method_args()
-            completion = completion.replace('<!args>', args)
+            completion = completion.replace(
+                '<!args>',
+                self.get_current_method_args()
+            )
 
         textCursor = self.editor.textCursor()
         prefix = self.completer.completionPrefix()
         pos = textCursor.position()
-        textCursor.setPosition(pos-len(prefix), QtGui.QTextCursor.KeepAnchor)
+        textCursor.setPosition(
+            pos-len(prefix),
+            QtGui.QTextCursor.KeepAnchor
+        )
         textCursor.insertText(completion)
 
         if '<!cursor>' in snippet:
-            textCursor.setPosition(pos+cursor_insert-len(prefix),
-                                   QtGui.QTextCursor.MoveAnchor)
+            textCursor.setPosition(
+                pos+cursor_insert-len(prefix),
+                QtGui.QTextCursor.MoveAnchor
+            )
 
         self.editor.setTextCursor(textCursor)
 
@@ -499,7 +637,8 @@ class AutoCompleter(QtCore.QObject):
         """
         Called before QPlainTextEdit.keyPressEvent
         TODO:
-        - Complete defined names (parse for "name =" thing)
+        - Complete defined names
+            (parse for "name =" thing)
         - Complete class names (parse for "self.")
         - Complete snippets
         - Hide popup if no completions available
@@ -520,12 +659,14 @@ class AutoCompleter(QtCore.QObject):
                 QtCore.Qt.Key_Backtab
             ):
                 event.ignore()
-                self.editor.wait_for_autocomplete = True
+                e = self.editor
+                e.wait_for_autocomplete = True
                 return True
 
+        NOMOD = QtCore.Qt.NoModifier
         not_alnum_or_mod = (
             not event.text().isalnum()
-            and event.modifiers() == QtCore.Qt.NoModifier
+            and event.modifiers() == NOMOD
         )
 
         zero_completions = (cp.completionCount() == 0)
@@ -534,14 +675,20 @@ class AutoCompleter(QtCore.QObject):
 
         if event.key() == QtCore.Qt.Key_Tab:
             textCursor = self.editor.textCursor()
+            SHIFT = QtCore.Qt.ShiftModifier
+            shift_held = (event.modifiers() == SHIFT)
             if (not textCursor.hasSelection()
-                    and not event.modifiers() == QtCore.Qt.ShiftModifier):
-                textCursor.select(QtGui.QTextCursor.LineUnderCursor)
-                selectedText = textCursor.selectedText()
-                if selectedText.endswith('.'):
+                and not shift_held):
+                textCursor.select(
+                    QtGui.QTextCursor.LineUnderCursor
+                )
+                text = textCursor.selectedText()
+                if text.endswith('.'):
                     self.complete_object()
-                    # assuming this should be here too but untested
-                    self.editor.wait_for_autocomplete = True
+                    # assuming this should be
+                    # here too but untested
+                    e = self.editor
+                    e.wait_for_autocomplete = True
                     return True
 
         self.editor.wait_for_autocomplete = False
@@ -555,8 +702,9 @@ class AutoCompleter(QtCore.QObject):
         cp = self.completer
 
         if (event.key() == QtCore.Qt.Key_Period
-                or event.text() in [':', '!']):     # TODO: this should hide
-                                                    # on a lot more characters!
+            or event.text() in [':', '!']):
+            # TODO: this should hide
+            # on a lot more characters!
             if cp.popup():
                 cp.popup().hide()
             self.complete_object()
@@ -569,22 +717,41 @@ class AutoCompleter(QtCore.QObject):
 
             current_word = self.word_under_cursor()
 
-            if re.match('[a-zA-Z0-9_]', current_word) is None:
-                if re.match('[a-zA-Z0-9_]', event.text()) is None:
+            word_match = re.match(
+                '[a-zA-Z0-9_]',
+                current_word
+            )
+            if word_match is None:
+                text_match = re.match(
+                    '[a-zA-Z0-9_]',
+                    event.text()
+                )
+                if text_match is None:
                     cp.popup().hide()
 
-                current_word = self.word_before_cursor(regex=r'\w+')
+                current_word = self.word_before_cursor(
+                    regex=r'\w+'
+                )
 
-            # TODO: add a case for "self." completion in here
+            # TODO: add a case for "self."
+            # completion in here
 
             cp.setCompletionPrefix(current_word)
-            cp.popup().setCurrentIndex(cp.completionModel().index(0, 0))
+            cp.popup().setCurrentIndex(
+                cp.completionModel().index(0, 0)
+            )
 
-        elif event.text().isalnum() or event.text() in ['_']:
+        elif (
+            event.text().isalnum()
+            or event.text() in ['_']
+            ):
             pos = self.editor.textCursor().position()
             document = self.editor.document()
-            block_number = document.findBlock(pos).blockNumber()
-            block = document.findBlockByNumber(block_number)
+            block_number = document.findBlock(
+                pos).blockNumber()
+            block = document.findBlockByNumber(
+                block_number
+            )
             if '.' in block.text().split(' ')[-1]:
                 self.complete_object()
             else:
@@ -595,9 +762,11 @@ class AutoCompleter(QtCore.QObject):
 
 # from tabtabtab by Ben Dickson
 def nonconsec_find(needle, haystack, anchored=False):
-    """checks if each character of "needle" can be found in order (but not
+    """checks if each character of "needle" can be
+    found in order (but not
     necessarily consecutivly) in haystack.
-    For example, "mm" can be found in "matchmove", but not "move2d"
+    For example, "mm" can be found in "matchmove",
+    but not "move2d"
     "m2" can be found in "move2d", but not "matchmove"
 
     >>> nonconsec_find("m2", "move2d")
@@ -607,22 +776,30 @@ def nonconsec_find(needle, haystack, anchored=False):
 
     Anchored ensures the first letter matches
 
-    >>> nonconsec_find("atch", "matchmove", anchored = False)
+    >>> nonconsec_find(
+    "atch", "matchmove", anchored = False)
     True
-    >>> nonconsec_find("atch", "matchmove", anchored = True)
+    >>> nonconsec_find(
+    "atch", "matchmove", anchored = True)
     False
-    >>> nonconsec_find("match", "matchmove", anchored = True)
+    >>> nonconsec_find(
+    "match", "matchmove", anchored = True)
     True
 
-    If needle starts with a string, non-consecutive searching is disabled:
+    If needle starts with a string,
+    non-consecutive searching is disabled:
 
-    >>> nonconsec_find(" mt", "matchmove", anchored = True)
+    >>> nonconsec_find(
+    " mt", "matchmove", anchored = True)
     False
-    >>> nonconsec_find(" ma", "matchmove", anchored = True)
+    >>> nonconsec_find(
+    " ma", "matchmove", anchored = True)
     True
-    >>> nonconsec_find(" oe", "matchmove", anchored = False)
+    >>> nonconsec_find(
+    " oe", "matchmove", anchored = False)
     False
-    >>> nonconsec_find(" ov", "matchmove", anchored = False)
+    >>> nonconsec_find(
+    " ov", "matchmove", anchored = False)
     True
     """
 
@@ -641,13 +818,17 @@ def nonconsec_find(needle, haystack, anchored=False):
         # ..?
         return True
 
-    # Turn haystack into list of characters (as strings are immutable)
+    # Turn haystack into list of characters
+    # (as strings are immutable)
     haystack = [hay for hay in str(haystack)]
 
     if needle.startswith(" "):
-        # "[space]abc" does consecutive search for "abc" in "abcdef"
+        # "[space]abc" does consecutive
+        # search for "abc" in "abcdef"
         if anchored:
-            if "".join(haystack).startswith(needle.lstrip(" ")):
+            if "".join(
+                haystack).startswith(
+                needle.lstrip(" ")):
                 return True
         else:
             if needle.lstrip(" ") in "".join(haystack):
@@ -657,7 +838,8 @@ def nonconsec_find(needle, haystack, anchored=False):
         if needle[0] != haystack[0]:
             return False
         else:
-            # First letter matches, remove it for further matches
+            # First letter matches, remove it
+            # for further matches
             needle = needle[1:]
             del haystack[0]
 
@@ -667,6 +849,7 @@ def nonconsec_find(needle, haystack, anchored=False):
         except ValueError:
             return False
         else:
-            # Dont find string in same pos or backwards again
+            # Dont find string in same pos or
+            # backwards again
             del haystack[:needle_pos + 1]
     return True

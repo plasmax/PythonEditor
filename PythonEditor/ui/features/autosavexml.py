@@ -24,7 +24,10 @@ from PythonEditor.utils.debug import debug
 from PythonEditor.utils.constants import NUKE_DIR
 
 
-AUTOSAVE_FILE = os.path.join(NUKE_DIR, 'PythonEditorHistory.xml')
+AUTOSAVE_FILE = os.path.join(
+    NUKE_DIR,
+    'PythonEditorHistory.xml'
+)
 XML_HEADER = '<?xml version="1.0" encoding="UTF-8"?>'
 
 
@@ -32,7 +35,7 @@ class AutoSaveManager(QtCore.QObject):
     """
     Simple xml text storage.
 
-    TODO: Check that these rules are being followed.
+    TODO: Test that these rules are being followed.
     # Reads when:
     - A new file is opened (text is set and file path is stored)
     - Restoring Autosave from XML: is read from xml file (unsaved)

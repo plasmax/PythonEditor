@@ -15,7 +15,9 @@ class Terminal(QtWidgets.QPlainTextEdit):
         super(Terminal, self).__init__()
 
         self.setObjectName('Terminal')
-        self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+        self.setWindowFlags(
+            QtCore.Qt.WindowStaysOnTopHint
+        )
         self.setReadOnly(True)
         self.setup()
         self.destroyed.connect(self.stop)
@@ -28,14 +30,17 @@ class Terminal(QtWidgets.QPlainTextEdit):
         try:
             textCursor = self.textCursor()
             if bool(textCursor):
-                self.moveCursor(QtGui.QTextCursor.End)
+                self.moveCursor(
+                    QtGui.QTextCursor.End
+                )
         except Exception:
             pass
         self.insertPlainText(text)
 
     def stop(self):
-        sys.stdout.reset()
-        sys.stderr.reset()
+        for stream in sys.stdout, sys.stderr:
+            if hasattr(stream, 'reset'):
+                stream.reset()
 
     def setup(self):
         """

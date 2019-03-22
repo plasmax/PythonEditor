@@ -73,7 +73,7 @@
                 "{",
                 "}"
             ],
-            "Method": "wrap_handler",
+            "Method": "wrap_text",
             "Menu Location": "&Edit/Text"
         },
         "Toggle Comment": {
@@ -81,7 +81,7 @@
                 "Ctrl+/"
             ],
             "Method": "toggle_comment",
-            "Menu Location": "Line/Comment"
+            "Menu Location": "&Edit/Line/Comment"
         },
         "Reload Package": {
             "Shortcuts": [
@@ -248,7 +248,9 @@
         "Return Handler": {
             "Shortcuts": [
                 "Return",
-                "Enter"
+                "Enter",
+                "Alt+Enter",
+                "Alt+Return"
             ],
             "Method": "return_handler",
             "Menu Location": "&Edit/Text"
@@ -376,7 +378,7 @@
         },
         "About Python Editor": {
             "Shortcuts": [],
-            "Method": "",
+            "Method": "show_about",
             "Menu Location": "&Help"
         },
         "General Preferences": {

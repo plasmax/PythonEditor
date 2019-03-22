@@ -15,7 +15,9 @@ class ShortcutEditor(QtWidgets.QTreeView):
         model = QtGui.QStandardItemModel()
         self.setModel(model)
         root = model.invisibleRootItem()
-        model.setHorizontalHeaderLabels(['Shortcut', 'Description'])
+        model.setHorizontalHeaderLabels(
+			['Shortcut', 'Description']
+		)
 
         for item in self.shortcut_dict.items():
             row = [QtGui.QStandardItem(val) for val in item]
@@ -30,6 +32,8 @@ class ShortcutEditor(QtWidgets.QTreeView):
             # TODO: Find compatible way to resize header.
             pass
 
-        self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+        self.setWindowFlags(
+            QtCore.Qt.WindowStaysOnTopHint
+        )
         self.setUniformRowHeights(True)
-        self.resize(500, 400)
+        self.resize(800, 600)

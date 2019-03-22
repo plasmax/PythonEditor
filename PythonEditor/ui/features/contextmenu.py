@@ -20,8 +20,13 @@ class ContextMenu(QtCore.QObject):
         self.initSnippetDict()
         self.initInspectDict()
 
-    def menu_setup(self):
+    @QtCore.Slot(QtWidgets.QMenu)
+    def show_menu(self, menu):
+        self.menu = menu
+        self.menu_setup()
+        menu.exec_(QtGui.QCursor().pos())
 
+    def menu_setup(self):
         # TODO: need some way of grouping these
         # Perhaps slash-separated like nuke File/Save etc
         for a in self.editor.actions():
@@ -102,7 +107,6 @@ class ContextMenu(QtCore.QObject):
         self.nodes_clr_menu = self.nodes_menu.addMenu('Clear')
         self.nodes_run_menu = self.nodes_menu.addMenu('Eval in Knob Context')
 
-
         # self.nodes_menu.addAction('Run on Selected Nodes',
         #                          self.notImplemented)
 
@@ -154,12 +158,6 @@ class ContextMenu(QtCore.QObject):
         for knob_name in add_knobs:
             func = partial(self.add_knob, knob_name)
             self.nodes_add_menu.addAction(knob_name, func)
-
-    @QtCore.Slot(QtWidgets.QMenu)
-    def show_menu(self, menu):
-        self.menu = menu
-        self.menu_setup()
-        menu.exec_(QtGui.QCursor().pos())
 
     def notImplemented(self):
         raise NotImplementedError('not implemented yet')

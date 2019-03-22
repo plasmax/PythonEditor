@@ -1,10 +1,12 @@
-from PythonEditor.ui.Qt import QtGui, QtCore
-from PythonEditor.utils.debug import debug
 import tokenize
 import StringIO
 
+from PythonEditor.ui.Qt import QtGui, QtCore
+from PythonEditor.utils.debug import debug
+
+
 themes = {
-  'Monokai': {
+    'Monokai': {
         'keyword': ((249, 38, 114), ''),
         'args': ((249, 38, 114), ''),
         'kwargs': ((249, 38, 114), ''),
@@ -20,7 +22,7 @@ themes = {
         'exceptions': ((102, 217, 239), 'italic'),
         'methods': ((102, 217, 239), ''),
     },
-  'Monokai Smooth': {
+    'Monokai Smooth': {
         'keyword': ((255, 97, 136), ''),
         'args': ((255, 97, 136), ''),
         'kwargs': ((255, 97, 136), ''),
@@ -52,7 +54,7 @@ class Highlight(QtGui.QSyntaxHighlighter):
         'and', 'assert', 'break', 'continue',
         'del', 'elif', 'else', 'except', 'exec', 'finally',
         'for', 'from', 'global', 'if', 'import', 'in',
-        'is', 'lambda', 'not', 'or', 'pass', 'print',
+        'is', 'lambda', 'not', 'or', 'pass', 'print', 'as',
         'raise', 'return', 'try', 'while', 'yield', 'with'
     ]
     instantiators = [
@@ -173,7 +175,7 @@ class Highlight(QtGui.QSyntaxHighlighter):
             (r'"[^"\\]*(\\.[^"\\]*)*"', 0, self.styles['string']),
             # Single-quoted string, possibly containing escape sequences
             (r"'[^'\\]*(\\.[^'\\]*)*'", 0, self.styles['string']),
-            ]
+        ]
 
         # Build a QRegExp for each pattern
         self.rules = [(QtCore.QRegExp(pat), index, fmt)
@@ -181,7 +183,8 @@ class Highlight(QtGui.QSyntaxHighlighter):
 
     def format(self, rgb, style=''):
         """
-        Return a QtGui.QTextCharFormat with the given attributes.
+        Return a QtGui.QTextCharFormat
+        with the given attributes.
         """
         color = QtGui.QColor(*rgb)
         textFormat = QtGui.QTextCharFormat()
@@ -228,8 +231,8 @@ class Highlight(QtGui.QSyntaxHighlighter):
                         break
             except tokenize.TokenError:
                 pass
-                # triple-quoted strings before a comment will cause
-                # a multi-line error.
+                # triple-quoted strings before a comment
+                # will cause a multi-line error.
 
         self.setCurrentBlockState(0)
 
