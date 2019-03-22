@@ -19,15 +19,19 @@ if __name__ == '__main__':
 
     try:
         import nuke
-        pyside = ('PySide' if (nuke.NUKE_VERSION_MAJOR < 11) else 'PySide2')
+        pyside = (
+            'PySide'
+            if (nuke.NUKE_VERSION_MAJOR < 11)
+            else 'PySide2'
+        )
     except ImportError:
         pyside = 'PySide'
 
     os.environ['QT_PREFERRED_BINDING'] = pyside
 
-    from PythonEditor.ui.features import nukepalette
     from PythonEditor.ui import ide
-    from PythonEditor.ui.Qt import QtWidgets
+    from PythonEditor.ui.features import nukepalette
+    from PythonEditor.ui.Qt import QtWidgets, QtGui
 
     try:
         app = QtWidgets.QApplication(sys.argv)
@@ -35,11 +39,18 @@ if __name__ == '__main__':
         # for running inside and outside of Nuke
         app = QtWidgets.QApplication.instance()
 
+    PDF = 'PYTHONEDITOR_DEFAULT_FONT'
+    os.environ[PDF] = 'Consolas'
     _ide = ide.IDE()
     app.setPalette(nukepalette.getNukePalette())
     _ide.showMaximized()
-    plastique = QtWidgets.QStyleFactory.create('Plastique')
+    plastique = QtWidgets.QStyleFactory.create(
+        'Plastique'
+    )
     QtWidgets.QApplication.setStyle(plastique)
 
-    print('PythonEditor startup time: %.04f seconds' % (time.time()-start) )
+    print(
+        'PythonEditor startup time: %.04f seconds'
+        % (time.time()-start)
+    )
     sys.exit(app.exec_())
