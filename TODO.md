@@ -46,6 +46,8 @@
 
 
 #### Features - desired
+- [ ] Move 'nukefeatures' into an app/nuke folder to make it program agnostic.
+      True agnosticism would require moving PythonEditorHistory.xml to the user home directory as well.
 - [ ] Tab close button [x] should appear on active tab only (like chrome)
       and change width of tab (in proportion to the name) when added (setTabButton, RightSide)
 - [ ] Move all actions to actions.py and have shortcuts simply setShortcut()
