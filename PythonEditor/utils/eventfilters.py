@@ -61,6 +61,9 @@ filt = Filt(target=QtWidgets.QApplication.instance())
             target = QtWidgets.QApplication.instance()
 
         self.target = target
+        self.install()
+
+    def install():
         QtCore.QCoreApplication.installEventFilter(self.target, self)
 
     def eventFilter(self, obj, event):
