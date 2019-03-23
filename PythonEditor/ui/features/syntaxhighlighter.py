@@ -1,5 +1,7 @@
 import tokenize
 import StringIO
+import time
+import re
 
 from PythonEditor.ui.Qt import QtGui, QtCore
 from PythonEditor.utils.debug import debug
@@ -21,6 +23,7 @@ themes = {
         'instantiators': ((102, 217, 239), 'italic'),
         'exceptions': ((102, 217, 239), 'italic'),
         'methods': ((102, 217, 239), ''),
+        'selected_word': ((100, 100, 100), 'bold'),
     },
     'Monokai Smooth': {
         'keyword': ((255, 97, 136), ''),
@@ -37,6 +40,7 @@ themes = {
         'instantiators': ((114, 209, 221), 'italic'),
         'exceptions': ((114, 209, 221), 'italic'),
         'methods': ((169, 220, 101), ''),
+        'selected_word': ((100, 100, 100), 'bold'),
     }
 }
 
@@ -124,7 +128,8 @@ class Highlight(QtGui.QSyntaxHighlighter):
         super(Highlight, self).__init__(document)
 
         self.setObjectName('Highlight')
-        self.set_style(themes['Monokai Smooth'])
+        self.theme = themes['Monokai Smooth']
+        self.set_style(self.theme)
 
     def set_style(self, theme):
         self.styles = {
