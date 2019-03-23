@@ -27,6 +27,7 @@ class ContextMenu(QtCore.QObject):
         menu.exec_(QtGui.QCursor().pos())
 
     def menu_setup(self):
+        self.menu.addSeparator()
         # TODO: need some way of grouping these
         # Perhaps slash-separated like nuke File/Save etc
         for a in self.editor.actions():
