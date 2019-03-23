@@ -12,23 +12,23 @@ class MenuBar(object):
     Install a menu on the given widget.
     """
     def __init__(self, widget):
-        self.widget = widget
+        self.pythoneditor = widget
         self.tabeditor = widget.tabeditor
         self.tabs = widget.tabeditor.tabs
         self.editor = widget.tabeditor.editor
-        self.setup_menu()
+        self.menu_setup()
 
-    def setup_menu(self):
+    def menu_setup(self):
         """
         Adds top menu bar and various menu items.
         """
-        menu_bar = QtWidgets.QMenuBar(self.widget)
+        self.menu = QtWidgets.QMenuBar(self.pythoneditor)
         file_menu = QtWidgets.QMenu('File')
         help_menu = QtWidgets.QMenu('Help')
         edit_menu = QtWidgets.QMenu('Edit')
 
         for menu in [file_menu, edit_menu, help_menu]:
-            menu_bar.addMenu(menu)
+            self.menu.addMenu(menu)
 
         file_menu.addAction(
             'New',
@@ -67,7 +67,7 @@ class MenuBar(object):
            self.export_all_tabs_to_external_editor)
 
         help_menu.addAction('Reload Python Editor',
-                            self.widget._parent.reload_package)
+                            self.pythoneditor._parent.reload_package)
 
         help_menu.addAction('About Python Editor',
                             self.show_about_dialog)
@@ -78,7 +78,7 @@ class MenuBar(object):
         edit_menu.addAction('Shortcuts',
                             self.show_shortcuts)
 
-        self.widget.layout().addWidget(menu_bar)
+        self.pythoneditor.layout().insertWidget(0, self.menu)
 
     def new(self):
         self.tabeditor.tabs.new_tab()
@@ -122,13 +122,13 @@ class MenuBar(object):
         """
         Generates a popup dialog listing available shortcuts.
         """
-        self.widget.shortcuteditor.show()
+        self.pythoneditor.shortcuteditor.show()
 
     def show_preferences(self):
         """
         Generates a popup dialog listing available preferences.
         """
-        self.widget.preferenceseditor.show()
+        self.pythoneditor.preferenceseditor.show()
 
     def show_about_dialog(self):
         """
