@@ -117,7 +117,7 @@ class SESysStdOut(SERedirector, PySingleton):
 
         if hasattr(sys, 'outputRedirector'):
             sys.outputRedirector(text)
-            
+
         try:
             sys.__stdout__.write(text)
         except IOError:
@@ -136,7 +136,6 @@ class SESysStdErr(SERedirector, PySingleton):
         if hasattr(sys, 'stderrRedirector'):
             sys.stderrRedirector(text)
         else:
-
             try:
                 sys.__stderr__.write(text)
             except IOError:
