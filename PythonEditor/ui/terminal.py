@@ -1,4 +1,5 @@
 from __future__ import print_function
+import os
 import sys
 
 from PythonEditor.core import streams
@@ -19,11 +20,15 @@ class Terminal(QtWidgets.QPlainTextEdit):
             QtCore.Qt.WindowStaysOnTopHint
         )
         self.setReadOnly(True)
-        self.setup()
         self.destroyed.connect(self.stop)
         font = QtGui.QFont(DEFAULT_FONT)
         font.setPointSize(10)
         self.setFont(font)
+
+        if os.getenv('PYTHONEDITOR_CAPTURE_STARTUP_STREAMS') == '1':
+            self.setup()
+        else:
+            QtCore.QTimer.singleShot(0, self.setup)
 
     @QtCore.Slot(str)
     def receive(self, text):
