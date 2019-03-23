@@ -69,11 +69,12 @@ class Editor(QtWidgets.QPlainTextEdit):
 
     def __init__(
             self,
+            parent=None,
             handle_shortcuts=True,
             uid=None,
             init_features=True
         ):
-        super(Editor, self).__init__()
+        super(Editor, self).__init__(parent)
         self.setObjectName('Editor')
         self.setAcceptDrops(True)
 
