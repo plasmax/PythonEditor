@@ -217,6 +217,15 @@ class Editor(QtWidgets.QPlainTextEdit):
     def focusOutEvent(self, event):
         if self._changed:
             self.editingFinished.emit()
+        self.text_changed_signal.emit()
+
+        FR = QtCore.Qt.FocusReason
+        ignored_reasons = [
+            FR.PopupFocusReason,
+        ]
+        if event.reason() not in ignored_reasons:
+            self.focus_out_signal.emit(event)
+
         super(Editor, self).focusOutEvent(event)
 
     def resizeEvent(self, event):
