@@ -1,14 +1,20 @@
 from __future__ import print_function
+import os
+import uuid
 import __main__
+import inspect
+import subprocess
+import json
 from functools import partial
 
 from PythonEditor.ui.Qt import QtWidgets
 from PythonEditor.ui.Qt import QtGui
 from PythonEditor.ui.Qt import QtCore
+from PythonEditor.ui.features import actions
 from PythonEditor.core import execute
 from PythonEditor.utils.signals import connect
 from PythonEditor.utils import save
-from PythonEditor.ui.features import actions
+
 
 # TODO: this will probably end up in a user-editable JSON file.
 REGISTER = {
@@ -829,9 +835,6 @@ class ShortcutHandler(QtCore.QObject):
         elif key in ['{', '}']:
             key_in = '{'
             key_out = '}'
-        # elif key in ['<', '>']:
-        #     key_in = '<'
-        #     key_out = '>'
 
         textCursor = self.editor.textCursor()
         text = key_in + textCursor.selectedText() + key_out
@@ -1097,7 +1100,6 @@ class ShortcutHandler(QtCore.QObject):
         if pos != -1:
             self.editor.setTextCursor(cursor)
 
-    # FIXME: moved to actions. Delete once ShortcutHandler assigns shortcuts
     def print_help(self):
         """
         Prints documentation for selected text if
@@ -1150,7 +1152,6 @@ class ShortcutHandler(QtCore.QObject):
         font.setPointSize(new_size)
         self.editor.setFont(font)
 
-
     # -------------------------------------- #
     # ---------------         -------------- #
     # ---------------         -------------- #
@@ -1158,6 +1159,12 @@ class ShortcutHandler(QtCore.QObject):
     # ---------------         -------------- #
     # ---------------         -------------- #
     # -------------------------------------- #
+    def new_tab(self):
+        self.tabs.new_tab()
+
+    def remove_current_tab(self):
+        self.tabs.remove_current_tab()
+
     def next_tab(self):
         """
         Switch to the next tab.
@@ -1197,9 +1204,15 @@ class ShortcutHandler(QtCore.QObject):
                     ])
 
         pos = textCursor.position()
-        blockNumbers |= set([doc.findBlock(pos).blockNumber()])
+        blockNumbers |= set([
+            doc.findBlock(
+            pos).blockNumber()
+        ])
 
-        def isEmpty(b): return doc.findBlockByNumber(b).text().strip() != ''
+        def isEmpty(b):
+            return doc.findBlockByNumber(
+                b).text().strip() != ''
+
         blocks = []
         for b in blockNumbers:
             bn = doc.findBlockByNumber(b)
@@ -1218,14 +1231,21 @@ class ShortcutHandler(QtCore.QObject):
         """
         textCursor = self.editor.textCursor()
         init_pos = textCursor.position()
-        textCursor.select(QtGui.QTextCursor.LineUnderCursor)
+        textCursor.select(
+            QtGui.QTextCursor.LineUnderCursor
+        )
         text = textCursor.selection().toPlainText()
-        textCursor.movePosition(QtGui.QTextCursor.StartOfLine)
+        textCursor.movePosition(
+            QtGui.QTextCursor.StartOfLine
+        )
         pos = textCursor.position()
         offset = len(text)-len(text.lstrip())
         new_pos = pos+offset
         if new_pos != init_pos:
-            textCursor.setPosition(new_pos, QtGui.QTextCursor.MoveAnchor)
+            textCursor.setPosition(
+                new_pos,
+                QtGui.QTextCursor.MoveAnchor
+            )
         self.editor.setTextCursor(textCursor)
 
     def wheel_zoom(self, event):
@@ -1235,13 +1255,54 @@ class ShortcutHandler(QtCore.QObject):
         """
         font = self.editor.font()
         size = font.pointSize()
-        delta = event.delta()
-        amount = int(delta/10) if delta > 1 or delta < -1 else delta
+        d = event.delta()
+        amount = int(d/10) if d > 1 or d < -1 else d
         new_size = size + amount
         new_size = new_size if new_size > 0 else 1
         font.setPointSize(new_size)
         self.editor.setFont(font)
 
+    def save_selected_text(self):
+        save.save_selected_text(
+            self.editor
+        )
+
+    def export_selected_to_external_editor(self):
+        save.export_selected_to_external_editor(
+            self.editor
+        )
+
+    def export_current_tab_to_external_editor(self):
+        save.export_current_tab_to_external_editor(
+            self.tabs,
+            self.editor
+        )
+
+    def export_all_tabs_to_external_editor(self):
+        save.export_all_tabs_to_external_editor(self.tabs)
+
+    def show_shortcuts(self):
+        """
+        Generates a popup dialog listing available shortcuts.
+        """
+        self.pythoneditor.shortcuteditor.show()
+
+    def show_preferences(self):
+        """
+        Generates a popup dialog listing available preferences.
+        """
+        self.pythoneditor.preferenceseditor.show()
+
+    def show_about_dialog(self):
+        """
+        Shows an about dialog with version information.
+        TODO: Make it a borderless splash screen, centred, nice text,
+        major and minor version numbers set in one place in the
+        project.
+        """
+        msg = 'Python Editor version {0} by Max Last'.format(__version__)
+        self.about_dialog = QtWidgets.QLabel(msg)
+        self.about_dialog.show()
 
 
 class CommandPalette(QtWidgets.QLineEdit):
