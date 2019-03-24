@@ -276,11 +276,13 @@ class Tabs(QtWidgets.QTabBar):
         return rect
 
     def event(self, event):
-
-        if not issubclass(Tabs, self.__class__):
-            # Check class (after reload, opening a new window, etc)
-            # this can raise TypeError:
-            # super(type, obj): obj must be an instance or subtype of type
+        try:
+            if not issubclass(Tabs, self.__class__):
+                # Check class (after reload, opening a new window, etc)
+                # this can raise TypeError:
+                # super(type, obj): obj must be an instance or subtype of type
+                return False
+        except TypeError:
             return False
 
         try:

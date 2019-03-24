@@ -283,8 +283,10 @@ class Editor(QtWidgets.QPlainTextEdit):
                 urls = mimeData.urls()
                 self.drop_files(urls)
                 return True
-
-        return super(Editor, self).event(event)
+        try:
+            return super(Editor, self).event(event)
+        except TypeError:
+            return False
 
     def drop_files(self, urls):
         """
