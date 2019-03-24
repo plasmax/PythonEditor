@@ -5,8 +5,10 @@ from functools import partial
 from PythonEditor.ui.Qt import QtWidgets
 from PythonEditor.ui.Qt import QtGui
 from PythonEditor.ui.Qt import QtCore
-from PythonEditor.utils.signals import connect
+
 from PythonEditor.ui.features import actions
+from PythonEditor.utils.signals import connect
+from PythonEditor.utils import eventfilters
 
 
 def key_to_sequence(key):
@@ -58,6 +60,7 @@ class ShortcutHandler(QtCore.QObject):
         super(ShortcutHandler, self).__init__()
         self.setObjectName('ShortcutHandler')
         self.use_tabs = use_tabs
+        self._installed = False
 
         if editor is None:
             raise Exception("""
@@ -89,16 +92,63 @@ class ShortcutHandler(QtCore.QObject):
         Connects the current editor's
         signals to this class
         """
-        self.editor.shortcut_signal.connect(
-            self.handle_keypress,
+        self.editor.focus_in_signal.connect(
+            self.install_event_filter,
             QtCore.Qt.DirectConnection
         )
+        self.editor.focus_out_signal.connect(
+            self.remove_event_filter,
+            QtCore.Qt.DirectConnection
+        )
+
+    def install_event_filter(self):
+        if self._installed:
+            return
+        app = QtWidgets.QApplication.instance()
+        # QtCore.QCoreApplication.installEventFilter(self.parent_widget, self)
+        QtCore.QCoreApplication.installEventFilter(app, self)
+        self._installed = True
+
+    def remove_event_filter(self):
+        app = QtWidgets.QApplication.instance()
+        QtCore.QCoreApplication.removeEventFilter(app, self)
+        # QtCore.QCoreApplication.removeEventFilter(self.parent_widget, self)
+        self._installed = False
+
+    def eventFilter(self, obj, event):
+        if QtCore is None:
+            return False
+
+        if event.type() == QtCore.QEvent.Shortcut:
+            if isinstance(obj, QtWidgets.QAction):
+                combo = obj.shortcut()
+                shortcut = combo.toString()
+                action = self.shortcut_dict.get(
+                    shortcut
+                )
+                if action is None:
+                    return False
+                action.trigger()
+                return True
+
+        if event.type() == QtCore.QEvent.KeyPress:
+            # only let the editor receive keypress overrides
+            if obj == self.editor:
+                return self.handle_keypress(event)
+
+        return False
 
     QtCore.Slot(QtGui.QKeyEvent)
     def handle_keypress(self, event):
 
-        if event.isAutoRepeat():
-            return
+        app = QtWidgets.QApplication
+        held = app.keyboardModifiers()
+
+        if (
+            event.isAutoRepeat()
+            and held == QtCore.Qt.NoModifier
+            ):
+            return False
 
         key = event.key()
         if key in [
@@ -108,10 +158,7 @@ class ShortcutHandler(QtCore.QObject):
             QtCore.Qt.Key_AltGr,
             QtCore.Qt.Key_Meta,
         ]:
-            return
-
-        app = QtWidgets.QApplication
-        held = app.keyboardModifiers()
+            return False
 
         # try with event.text() for things
         # like " and { which appear as
@@ -128,7 +175,7 @@ class ShortcutHandler(QtCore.QObject):
             )
 
             if action is None:
-                return
+                return False
 
         # need some way for the key to be
         # recognised, for example in wrap_text
@@ -136,6 +183,7 @@ class ShortcutHandler(QtCore.QObject):
         e.last_key_pressed = event.text()
         action.trigger()
         e.shortcut_overrode_keyevent = True
+        return True
 
     def register_shortcuts(self, action_dict=None):
         """

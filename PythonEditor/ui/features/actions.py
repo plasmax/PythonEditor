@@ -333,9 +333,8 @@ class Actions(QtCore.QObject):
         if len(text.strip()) == 0:
             insertion = '\n'
 
-        if not self.editor.wait_for_autocomplete:
-            textCursor.insertText(insertion)
-            self.editor.setTextCursor(textCursor)
+        textCursor.insertText(insertion)
+        self.editor.setTextCursor(textCursor)
 
         return True
 
