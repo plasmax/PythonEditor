@@ -49,22 +49,27 @@ class PythonEditor(QtWidgets.QWidget):
         layout.addWidget(splitter)
 
         act = actions.Actions(
+            pythoneditor=self,
+            editor=self.editor,
+            tabeditor=self.tabeditor,
+            terminal=self.terminal,
+        )
+
+        sch = shortcuts.ShortcutHandler(
             editor=self.editor,
             tabeditor=self.tabeditor,
             terminal=self.terminal,
             use_tabs=True
         )
 
-        sch = shortcuts.ShortcutHandler(
-			self.tabeditor,
-			use_tabs=True
-		)
-        sch.clear_output_signal.connect(self.terminal.clear)
-
         self.menubar = menubar.MenuBar(self)
 
         SE = shortcuteditor.ShortcutEditor
-        self.shortcuteditor = SE(sch)
+        self.shortcuteditor = SE(
+            editor=self.editor,
+            tabeditor=self.tabeditor,
+            terminal=self.terminal
+            )
 
         PE = preferences.PreferencesEditor
         self.preferenceseditor = PE()
