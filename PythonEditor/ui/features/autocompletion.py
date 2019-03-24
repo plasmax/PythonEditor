@@ -100,9 +100,9 @@ SNIPPETS = {
         custom_widget_snippet,
     'Qt [snippet]':
         qt_import_snippet,
-    'if [snippet]': 
+    'if [snippet]':
 		name_main_snippet,
-    'pprint [snippet]' : 
+    'pprint [snippet]' :
 		pprint_snippet,
 }
 

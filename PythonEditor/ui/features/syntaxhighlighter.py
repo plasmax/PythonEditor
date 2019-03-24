@@ -124,10 +124,11 @@ class Highlight(QtGui.QSyntaxHighlighter):
     ]
     truthy = ['True', 'False', 'None']
 
-    def __init__(self, document):
+    def __init__(self, document, editor):
         super(Highlight, self).__init__(document)
 
         self.setObjectName('Highlight')
+        self.editor = editor
         self.theme = themes['Monokai Smooth']
         self.set_style(self.theme)
 
@@ -185,6 +186,38 @@ class Highlight(QtGui.QSyntaxHighlighter):
         # Build a QRegExp for each pattern
         self.rules = [(QtCore.QRegExp(pat), index, fmt)
                       for (pat, index, fmt) in rules]
+
+        self.setup_timers()
+
+    def setup_timers(self):
+        """
+        Create the timer objects that
+        react to text_changed_signal and
+        selectionChanged signals.
+        """
+        self.selected_word = ''
+        self.sel_timer = QtCore.QTimer()
+        self.sel_timer.setSingleShot(True)
+        self.sel_timer.setInterval(50)
+        self.sel_timer.timeout.connect(
+
+            self.highlight_same_words
+        )
+        self.editor.selectionChanged.connect(
+            self.sel_timer.start
+        )
+
+        self.text_timer = QtCore.QTimer()
+        self.text_timer.setSingleShot(True)
+        self.text_timer.setInterval(100)
+        self.text_timer.timeout.connect(
+            self.collect_words
+        )
+        self.editor.text_changed_signal.connect(
+            self.text_timer.start
+        )
+
+        self.collect_words()
 
     def format(self, rgb, style=''):
         """
@@ -246,6 +279,35 @@ class Highlight(QtGui.QSyntaxHighlighter):
         if not in_multiline:
             in_multiline = self.match_multiline(text, *self.tri_double)
 
+        self.highlight_selected_word(text)
+
+    def highlight_selected_word(self, text):
+        # highlight the selected word
+        if not self.selected_word:
+            return
+
+        occurences = []
+        start = 0
+        for word in re.findall(self.selected_word, text):
+            if word == self.selected_word:
+                index = text.find(word, start)
+                start = index+1
+                occurences.append(index)
+        if not occurences:
+            return
+
+        length = len(self.selected_word)
+        for index in occurences:
+            rgb, weight = self.theme['selected_word']
+            color = QtGui.QColor(*rgb)
+            textFormat = QtGui.QTextCharFormat()
+            textFormat.setBackground(color)
+            self.setFormat(
+                index,
+                length,
+                textFormat
+            )
+
     def match_multiline(self, text, delimiter, in_state, style):
         """
         Check whether highlighting requires multiple lines.
@@ -282,3 +344,19 @@ class Highlight(QtGui.QSyntaxHighlighter):
             return True
         else:
             return False
+
+    def collect_words(self):
+        self.words = re.findall(
+            r'\w\w+',
+            self.editor.toPlainText()
+        )
+
+    def highlight_same_words(self):
+        editor = self.editor
+        cursor = editor.textCursor()
+        self.selected_word = ''
+        if cursor.hasSelection():
+            text = cursor.selectedText()
+            if text in self.words:
+                self.selected_word = text
+        self.rehighlight()

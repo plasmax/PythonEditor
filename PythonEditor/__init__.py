@@ -42,6 +42,7 @@ def main():
     from ui import Qt
     import sys
     sys.modules['Qt'] = Qt
+    sys.dont_write_bytecode = True
 
 
 def nuke_menu_setup(nuke_menu=False, node_menu=False, pane_menu=True):

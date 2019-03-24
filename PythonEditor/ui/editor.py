@@ -14,15 +14,12 @@ from PythonEditor.ui.Qt import QtCore
 
 from PythonEditor.utils import constants
 from PythonEditor.ui.dialogs import shortcuteditor
+from PythonEditor.ui.features import actions
 from PythonEditor.ui.features import shortcuts
 from PythonEditor.ui.features import linenumberarea
 from PythonEditor.ui.features import syntaxhighlighter
 from PythonEditor.ui.features import autocompletion
 from PythonEditor.ui.features import contextmenu
-
-
-CTRL = QtCore.Qt.ControlModifier
-ALT = QtCore.Qt.AltModifier
 
 
 class Editor(QtWidgets.QPlainTextEdit):
@@ -53,18 +50,11 @@ class Editor(QtWidgets.QPlainTextEdit):
     post_key_pressed_signal   = S(QtGui.QKeyEvent)
     wheel_signal              = S(QtGui.QWheelEvent)
     key_pressed_signal        = S(QtGui.QKeyEvent)
+    shortcut_signal           = S(QtGui.QKeyEvent)
     resize_signal             = S(QtGui.QResizeEvent)
     context_menu_signal       = S(QtWidgets.QMenu)
     tab_signal                = S()
     home_key_signal           = S()
-    ctrl_x_signal             = S()
-    ctrl_n_signal             = S()
-    ctrl_w_signal             = S()
-    ctrl_s_signal             = S()
-    ctrl_c_signal             = S()
-    ctrl_enter_signal         = S()
-    end_key_ctrl_alt_signal   = S()
-    home_key_ctrl_alt_signal  = S()
     relay_clear_output_signal = S()
     editingFinished           = S()
     text_changed_signal       = S()
@@ -105,7 +95,6 @@ class Editor(QtWidgets.QPlainTextEdit):
         self.wait_for_autocomplete = False
         self._handle_shortcuts = handle_shortcuts
         self._features_initialised = False
-        self._key_pressed = False
 
         self.emit_text_changed = True
         self.textChanged.connect(
@@ -130,8 +119,9 @@ class Editor(QtWidgets.QPlainTextEdit):
         # which we don't want.
         self.emit_text_changed = False
         syntaxhighlighter.Highlight(
-			self.document()
-		)
+            self.document(),
+            self
+        )
         def set_text_changed_enabled():
             self.emit_text_changed = True
         QtCore.QTimer.singleShot(
@@ -149,14 +139,13 @@ class Editor(QtWidgets.QPlainTextEdit):
         self.autocomplete = AC(self)
 
         if self._handle_shortcuts:
-            sch = shortcuts.ShortcutHandler(
-                self,
+            actions.Actions(
+                editor=self,
+            )
+            shortcuts.ShortcutHandler(
+                editor=self,
                 use_tabs=False
             )
-            sch.clear_output_signal.connect(
-                self.relay_clear_output_signal
-            )
-            self.shortcuteditor = shortcuteditor.ShortcutEditor(sch)
 
     def _handle_textChanged(self):
         self._changed = True
@@ -241,8 +230,6 @@ class Editor(QtWidgets.QPlainTextEdit):
         Emit signals for key events
         that QShortcut cannot override.
         """
-        self._key_pressed = True
-
         if not self.hasFocus():
             event.ignore()
             return
@@ -251,68 +238,16 @@ class Editor(QtWidgets.QPlainTextEdit):
             self.key_pressed_signal.emit(event)
             return
 
-        if event.modifiers() == QtCore.Qt.NoModifier:
-            # Tab Key
-            if event.key() == QtCore.Qt.Key_Tab:
-                return self.tab_signal.emit()
-            # Enter/Return Key
-            if event.key() == QtCore.Qt.Key_Return:
-                return self.return_signal.emit(event)
-
-        # Ctrl+Enter/Return Key
-        if (event.key() == QtCore.Qt.Key_Return
-                and event.modifiers() == CTRL):
-            return self.ctrl_enter_signal.emit()
-
-        # Surround selected text in brackets or quotes
-        if (event.text() in self.wrap_types
-                and self.textCursor().hasSelection()):
-            return self.wrap_signal.emit(event.text())
-
-        if event.key() == QtCore.Qt.Key_Home:
-            # Ctrl+Alt+Home
-            if event.modifiers() == CTRL | ALT:
-                self.home_key_ctrl_alt_signal.emit()
-            # Home
-            elif event.modifiers() == QtCore.Qt.NoModifier:
-                return self.home_key_signal.emit()
-
-        # Ctrl+Alt+End
-        if (event.key() == QtCore.Qt.Key_End
-                and event.modifiers() == CTRL | ALT):
-            self.end_key_ctrl_alt_signal.emit()
-
-        # Ctrl+X
-        if (event.key() == QtCore.Qt.Key_X
-                and event.modifiers() == CTRL):
-            self.ctrl_x_signal.emit()
-            self.text_changed_signal.emit()
-
-        # Ctrl+N
-        if (event.key() == QtCore.Qt.Key_N
-                and event.modifiers() == CTRL):
-            self.ctrl_n_signal.emit()
-
-        # Ctrl+W # because this is an ApplicationShortcut by default in Nuke, this won't even reach here without an event filter.
-        if (event.key() == QtCore.Qt.Key_W
-                and event.modifiers() == CTRL):
-            self.ctrl_w_signal.emit()
-
-        # # Ctrl+S
-        if (event.key() == QtCore.Qt.Key_S
-                and event.modifiers() == CTRL):
-            self.ctrl_s_signal.emit()
-
-        # Ctrl+C
-        if (event.key() == QtCore.Qt.Key_C
-                and event.modifiers() == CTRL):
-            self.ctrl_c_signal.emit()
+        self.shortcut_overrode_keyevent = False
+        self.shortcut_signal.emit(event)
+        if self.shortcut_overrode_keyevent:
+            event.accept()
+            return
 
         super(Editor, self).keyPressEvent(event)
         self.post_key_pressed_signal.emit(event)
 
     def keyReleaseEvent(self, event):
-        self._key_pressed = False
         if not isinstance(self, Editor):
             # when the key released is F5
             # (reload app)
@@ -329,56 +264,61 @@ class Editor(QtWidgets.QPlainTextEdit):
         menu = self.createStandardContextMenu()
         self.context_menu_signal.emit(menu)
 
-    def dragEnterEvent(self, e):
-        mimeData = e.mimeData()
-        if mimeData.hasUrls:
-            e.accept()
-        else:
-            super(Editor, self).dragEnterEvent(e)
-
-        # prevent mimedata from being displayed unless alt is held
-        app = QtWidgets.QApplication.instance()
-        if app.keyboardModifiers() != QtCore.Qt.AltModifier:
-            return
-
-        # let's see what the data contains, at least!
-        # maybe restrict this to non-known formats...
-        for f in mimeData.formats():
-            data = str(mimeData.data(f)).replace(b'\0', b'')
-            data = data.replace(b'\x12', b'')
-            print(f, data)
-
-    def dragMoveEvent(self, e):
-        # prevent mimedata from being displayed unless alt is held
-        app = QtWidgets.QApplication.instance()
-        if app.keyboardModifiers() != QtCore.Qt.AltModifier:
-            super(Editor, self).dragMoveEvent(e)
-            return
-
-        if e.mimeData().hasUrls:
-            e.accept()
-        else:
-            super(Editor, self).dragMoveEvent(e)
-
-    def dropEvent(self, e):
+    def event(self, event):
         """
-        TODO: e.ignore() files and send to edittabs to
-        create new tab instead?
+        Drop to open files implemented as a filter
+        instead of dragEnterEvent and dropEvent
+        because it is the only way to make it work
+        on windows.
         """
-        mimeData = e.mimeData()
-        if (mimeData.hasUrls
-                and mimeData.urls()):
-            urls = mimeData.urls()
+        if event.type() == event.DragEnter:
+            mimeData = event.mimeData()
+            if mimeData.hasUrls():
+                event.accept()
+                return True
+        if event.type() == event.Drop:
+            mimeData = event.mimeData()
+            if mimeData.hasUrls():
+                event.accept()
+                urls = mimeData.urls()
+                self.drop_files(urls)
+                return True
+        try:
+            return super(Editor, self).event(event)
+        except TypeError:
+            return False
 
+    def drop_files(self, urls):
+        """
+        When dragging and dropping files onto the
+        editor from a source with urls (file paths),
+        if there are tabs, open the files in new
+        tabs. If the tabs are not present just insert
+        the text into the editor.
+        """
+        if self._handle_shortcuts:
+            # if we're handling shortcuts
+            # it means there are no tabs.
+            # just insert the text
             text_list = []
             for url in urls:
                 path = url.toLocalFile()
                 with open(path, 'r') as f:
                     text_list.append(f.read())
 
-            self.textCursor().insertText('\n'.join(text_list))
+            self.textCursor(
+                ).insertText(
+                '\n'.join(text_list)
+            )
         else:
-            super(Editor, self).dropEvent(e)
+            tabeditor = self.parent()
+            for url in urls:
+                path = url.toLocalFile()
+                actions.open_action(
+                    tabeditor.tabs,
+                    self,
+                    path
+                )
 
     def wheelEvent(self, event):
         """

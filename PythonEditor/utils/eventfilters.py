@@ -89,8 +89,11 @@ filt = Filt(target=QtWidgets.QApplication.instance())
         print self.__class__, 'exiting'
         self.silent_quit()
 
-    def silent_quit(self):
+    def remove_event_filter(self):
         QtCore.QCoreApplication.removeEventFilter(self.target, self)
+
+    def silent_quit(self):
+        self.remove_event_filter()
         self.deleteLater()
 
 
