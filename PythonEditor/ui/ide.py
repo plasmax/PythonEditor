@@ -79,7 +79,11 @@ class IDE(QtWidgets.QWidget):
             mod = sys.modules.get(name)
             if mod is None:
                 continue
-            imp.reload(mod)
+            try:
+                imp.reload(mod)
+            except ImportError:
+                msg = 'could not reload %s: %s'
+                print(msg % (name, mod))
 
         QtCore.QTimer.singleShot(1, self.buildUI)
 
