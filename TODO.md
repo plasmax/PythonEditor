@@ -2,7 +2,8 @@
 
 
 #### Bug fixes
-- [ ] Shortcuts can be overridden by nuke global shortcuts.
+- [ ] Opening a file doesn't set its file property.
+- [ ] Ctrl+F doesn't update word highlighting selection.
 - [ ] Help -> About shows nothing
 - [ ] Minor - Clicking on a tab to the right of the QLineEdit when editing a tab name causes a jump, and the wrong tab to be selected.
 - [ ] Save functions need to be amended to work with new single editor
@@ -14,6 +15,7 @@
 - [ ] # in string causes rest of line to be greyed out
 - [ ] Double printing to sys.stdout (/probably/ caused by writing to sys.__stdout__ as well as outputRedirector)
 - [ ] Override setPlainText to avoid string encoding errors (can this affect copy paste?)
+- [x] Shortcuts can be overridden by nuke global shortcuts.
 - [x] Single line (selection-based) Ctrl+Enter no longer uses accurate lineno
 - [x] When pressing keys simultaneously, the document changed window appears
 - [x] CRITICAL BUG: Currently not fully reloadable (error with redirector)
