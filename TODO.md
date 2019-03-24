@@ -2,8 +2,11 @@
 
 
 #### Bug fixes
-- [ ] Clicking on a tab to the right of the QLineEdit when editing a tab name causes a jump, and the wrong tab to be selected.
+- [ ] Shortcuts can be overridden by nuke global shortcuts.
+- [ ] Help -> About shows nothing
+- [ ] Minor - Clicking on a tab to the right of the QLineEdit when editing a tab name causes a jump, and the wrong tab to be selected.
 - [ ] Save functions need to be amended to work with new single editor
+- [ ] Select between brackets only works for round brackets
 - [ ] On first open (if not pinned to layout), tab may not display contents
 - [ ] Word wrapping and blocks can cause errors, especially in moving text up/down
 - [ ] Tooltip colour permanently set in autocompletion
