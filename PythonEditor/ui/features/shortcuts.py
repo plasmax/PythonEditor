@@ -503,19 +503,47 @@ class ShortcutHandler(QtCore.QObject):
         Duplicates the current line or
         selected text downwards.
         """
-        textCursor = self.editor.textCursor()
-        if textCursor.hasSelection():
-            selected_text = textCursor.selectedText()
-            for i in range(2):
-                textCursor.insertText(selected_text)
-                self.editor.setTextCursor(textCursor)
+        cursor = self.editor.textCursor()
+        if cursor.hasSelection():
+            selected_text = cursor.selectedText()
+            start = cursor.selectionStart()
+            end = cursor.selectionEnd()
+            if start > end:
+                new_end = start
+                start = end
+                end = new_end
+            length = end-start
+
+            cursor.setPosition(
+                end,
+                QtGui.QTextCursor.MoveAnchor
+            )
+            cursor.insertText(selected_text)
+            cursor.setPosition(
+                end,
+                QtGui.QTextCursor.MoveAnchor
+            )
+            cursor.setPosition(
+                end+length,
+                QtGui.QTextCursor.KeepAnchor
+            )
+            self.editor.setTextCursor(cursor)
         else:
-            textCursor.movePosition(QtGui.QTextCursor.EndOfLine)
-            end_pos = textCursor.position()
-            textCursor.movePosition(QtGui.QTextCursor.StartOfLine)
-            textCursor.setPosition(end_pos, QtGui.QTextCursor.KeepAnchor)
-            selected_text = textCursor.selectedText()
-            textCursor.insertText(selected_text+'\n'+selected_text)
+            cursor.movePosition(
+                QtGui.QTextCursor.EndOfLine
+            )
+            end_pos = cursor.position()
+            cursor.movePosition(
+                QtGui.QTextCursor.StartOfLine
+            )
+            cursor.setPosition(
+                end_pos,
+                QtGui.QTextCursor.KeepAnchor
+            )
+            selected_text = cursor.selectedText()
+            cursor.insertText(
+                selected_text+'\n'+selected_text
+            )
 
     def new_line_above(self):
         """
@@ -585,24 +613,39 @@ class ShortcutHandler(QtCore.QObject):
             text = textCursor.selectedText()
             text = ' '.join(ln.strip() for ln in text.splitlines())
             textCursor.insertText(text)
-        else:
-            block = textCursor.block()
-            text = block.text()
-            next_line = block.next().text().strip()
-            new_text = text + ' ' + next_line
+            return
 
-            textCursor.select(QtGui.QTextCursor.LineUnderCursor)
-            textCursor.movePosition(QtGui.QTextCursor.EndOfLine)
-            new_pos = textCursor.position()+1
-            if new_pos >= self.editor.document().characterCount():
-                return
-            textCursor.setPosition(new_pos, QtGui.QTextCursor.KeepAnchor)
+        block = textCursor.block()
+        text = block.text()
+        next_line = block.next().text().strip()
+        new_text = text + next_line
 
-            textCursor.insertText('')
-            textCursor.select(QtGui.QTextCursor.LineUnderCursor)
-            textCursor.insertText(new_text)
+        pos = textCursor.position()
+        textCursor.select(
+            QtGui.QTextCursor.LineUnderCursor
+        )
+        textCursor.movePosition(
+            QtGui.QTextCursor.EndOfLine
+        )
+        new_pos = textCursor.position()+1
+        if new_pos >= self.editor.document().characterCount():
+            return
+        textCursor.setPosition(
+            new_pos,
+            QtGui.QTextCursor.KeepAnchor
+        )
 
-            self.editor.setTextCursor(textCursor)
+        textCursor.insertText('')
+        textCursor.select(
+            QtGui.QTextCursor.LineUnderCursor
+        )
+        textCursor.insertText(new_text)
+        textCursor.setPosition(
+            pos,
+            QtGui.QTextCursor.MoveAnchor
+        )
+
+        self.editor.setTextCursor(textCursor)
 
     def delete_lines(self):
         """
@@ -636,10 +679,15 @@ class ShortcutHandler(QtCore.QObject):
             QtGui.QTextCursor.KeepAnchor
         )
 
-        if textCursor.selectedText() == '':
-            textCursor.setPosition(start, QtGui.QTextCursor.MoveAnchor)
+        if not textCursor.hasSelection():
+            textCursor.setPosition(
+                start,
+                QtGui.QTextCursor.MoveAnchor
+            )
             next_line = new_end+1
-            if 0 < next_line >= self.editor.document().characterCount():
+            doc = self.editor.document()
+            num_chars = doc.characterCount()
+            if 0 < next_line >= num_chars:
                 next_line = next_line-2
                 if next_line == -1:
                     return
@@ -823,18 +871,22 @@ class ShortcutHandler(QtCore.QObject):
         Wrap selected text in brackets
         or quotes of type "key".
         """
-        if key in ['\'', '"']:
+        key_in, key_out = None, None
+        if key in [u'\'', u'"']:
             key_in = key
             key_out = key
-        elif key in ['[', ']']:
-            key_in = '['
-            key_out = ']'
-        elif key in ['(', ')']:
-            key_in = '('
-            key_out = ')'
-        elif key in ['{', '}']:
-            key_in = '{'
-            key_out = '}'
+        elif key in [u'[', u']']:
+            key_in = u'['
+            key_out = u']'
+        elif key in [u'(', u')']:
+            key_in = u'('
+            key_out = u')'
+        elif key in [u'{', u'}']:
+            key_in = u'{'
+            key_out = u'}'
+
+        if key_in is None or key_out is None:
+            return
 
         textCursor = self.editor.textCursor()
         text = key_in + textCursor.selectedText() + key_out
@@ -946,10 +998,13 @@ class ShortcutHandler(QtCore.QObject):
         second_half = whole_text[end_pos:]
         next_pos = second_half.find(text)
 
-        if next_pos == -1:
-            return
-
-        next_start = next_pos + start_pos + word_len
+        if next_pos != -1:
+            next_start = next_pos + start_pos + word_len
+        else:
+            first_half = whole_text[:start_pos]
+            next_start = first_half.find(text)
+            if next_start == -1:
+                return
         next_end = next_start + word_len
 
         textCursor.setPosition(next_start, QtGui.QTextCursor.MoveAnchor)
@@ -1073,32 +1128,63 @@ class ShortcutHandler(QtCore.QObject):
         if not text.strip():
             return
 
-        obj = actions.get_subobject(text)
-        actions.open_module_file(obj)
+        obj = get_subobject(text)
+        open_module_file(obj)
 
-    def search_input(self):
+    def open_module_directory(self):
+        textCursor = self.editor.textCursor()
+        text = textCursor.selection().toPlainText()
+        if not text.strip():
+            return
+
+        obj = get_subobject(text)
+        open_module_directory(obj)
+
+    def search(self):
         """
         Very basic search dialog.
         """
-        # TODO: Create a QAction/util for this
-        # as it is also accessed through
-        # the right-click menu.
-        getText = QtWidgets.QInputDialog.getText
-        dialog = getText(self.editor, 'Search', '',)
-        text, ok = dialog
+        textCursor = self.editor.textCursor()
+        input_text = ''
+        if textCursor.hasSelection():
+            input_text = textCursor.selectedText()
+
+        text, ok = QtWidgets.QInputDialog.getText(
+            self.editor,
+            'Search',
+            '',
+            QtWidgets.QLineEdit.Normal,
+            input_text,
+        )
         if not ok:
             return
 
-        textCursor = self.editor.textCursor()
-        original_pos = textCursor.position()
+        def lookup(text, textCursor):
+            document = self.editor.document()
+            cursor = document.find(text, textCursor)
+            pos = cursor.position()
+            if pos != -1:
+                self.editor.setTextCursor(cursor)
+                return True
 
-        # start the search from the beginning of the document
-        textCursor.setPosition(0, QtGui.QTextCursor.MoveAnchor)
-        document = self.editor.document()
-        cursor = document.find(text, textCursor)
-        pos = cursor.position()
-        if pos != -1:
-            self.editor.setTextCursor(cursor)
+        # start the search from the current position
+        if lookup(text, textCursor):
+            return
+        # search from the beginning of the document
+        textCursor.setPosition(
+            0,
+            QtGui.QTextCursor.MoveAnchor
+        )
+        lookup(text, textCursor)
+
+    def reload_package(self):
+        widget = self.tabeditor
+        while not hasattr(widget, 'reload_package'):
+            parent = widget.parent()
+            if parent is None:
+                return
+            widget = parent
+        widget.reload_package()
 
     def print_help(self):
         """
@@ -1179,13 +1265,19 @@ class ShortcutHandler(QtCore.QObject):
         Switch to the next tab.
         """
         if hasattr(self, 'tabs'):
-            self.tabs.setCurrentIndex(self.tabs.currentIndex()-1)
+            self.tabs.setCurrentIndex(
+                self.tabs.currentIndex()-1
+            )
 
     def save(self):
-        actions.save_action(
-            self.tabs,
-            self.editor
-        )
+        save_action(self.tabs, self.editor)
+
+    def open(self):
+        open_action(self.tabs, self.editor)
+
+    def clear_output(self):
+        if hasattr(self, 'terminal'):
+            self.terminal.clear()
 
     # TODO: move utility methods to functions
     def get_selected_blocks(self, ignoreEmpty=True):
