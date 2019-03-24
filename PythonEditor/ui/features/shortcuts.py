@@ -236,51 +236,13 @@ class ShortcutHandler(QtCore.QObject):
         """ Development reminders to implement features """
         raise NotImplementedError(text)
 
-    def get_selected_blocks(self, ignoreEmpty=True):
-        """
-        Utility method for getting lines in selection.
-        """
-        textCursor = self.editor.textCursor()
-        doc = self.editor.document()
-        start = textCursor.selectionStart()
-        end = textCursor.selectionEnd()
-
-        # get line numbers
-        blockNumbers = set([
-                doc.findBlock(b).blockNumber()
-                for b in range(start, end)
-                    ])
-
-        pos = textCursor.position()
-        blockNumbers |= set([doc.findBlock(pos).blockNumber()])
-
-        def isEmpty(b): return doc.findBlockByNumber(b).text().strip() != ''
-        blocks = []
-        for b in blockNumbers:
-            bn = doc.findBlockByNumber(b)
-            if not ignoreEmpty:
-                blocks.append(bn)
-            elif isEmpty(b):
-                blocks.append(bn)
-
-        return blocks
-
-    def save(self):
-        actions.save_action(
-            self.tabs,
-            self.editor
-        )
-
-    # FIXME: Has been moved to actions.
-    def open_module_file(self):
-        textCursor = self.editor.textCursor()
-        text = textCursor.selection().toPlainText()
-        if not text.strip():
-            return
-
-        obj = actions.get_subobject(text)
-        actions.open_module_file(obj)
-
+    # -------------------------------------- #
+    # ---------------         -------------- #
+    # ---------------         -------------- #
+    #                execution               #
+    # ---------------         -------------- #
+    # ---------------         -------------- #
+    # -------------------------------------- #
     def offset_for_traceback(self, text=None):
         """
         Offset text using newlines to get proper line ref in tracebacks.
@@ -454,6 +416,13 @@ class ShortcutHandler(QtCore.QObject):
             extraSelections.append(selection)
         self.editor.setExtraSelections(extraSelections)
 
+    # -------------------------------------- #
+    # ---------------         -------------- #
+    # ---------------         -------------- #
+    #                text edit               #
+    # ---------------         -------------- #
+    # ---------------         -------------- #
+    # -------------------------------------- #
     @QtCore.Slot(QtGui.QKeyEvent)
     def return_handler(self, event):
         """
@@ -496,36 +465,13 @@ class ShortcutHandler(QtCore.QObject):
         if textCursor.hasSelection():
             return
 
-        textCursor.select(QtGui.QTextCursor.LineUnderCursor)
+        textCursor.select(
+            QtGui.QTextCursor.LineUnderCursor
+        )
         text = textCursor.selectedText()
         textCursor.insertText('')
 
         QtGui.QClipboard().setText(text)
-
-    def new_line_above(self):
-        """
-        Inserts new line above current.
-        """
-        textCursor = self.editor.textCursor()
-        line = textCursor.block().text()
-        indentCount = len(line) - len(line.lstrip(' '))
-        indent = ' '*indentCount
-        textCursor.movePosition(textCursor.StartOfLine)
-        self.editor.setTextCursor(textCursor)
-        textCursor.insertText(indent+'\n')
-        self.editor.moveCursor(textCursor.Left)
-
-    def new_line_below(self):
-        """
-        Inserts new line below current.
-        """
-        textCursor = self.editor.textCursor()
-        line = textCursor.block().text()
-        indentCount = len(line) - len(line.lstrip(' '))
-        indent = ' '*indentCount
-        textCursor.movePosition(textCursor.EndOfLine)
-        self.editor.setTextCursor(textCursor)
-        textCursor.insertText('\n'+indent)
 
     @QtCore.Slot()
     def tab_handler(self):
@@ -539,147 +485,87 @@ class ShortcutHandler(QtCore.QObject):
         else:
             self.tab_space()
 
-    def indent(self):
-        """
-        Indent Selected Text
-        """
-        blocks = self.get_selected_blocks()
-        for block in blocks:
-            cursor = QtGui.QTextCursor(block)
-            cursor.movePosition(QtGui.QTextCursor.StartOfLine)
-            cursor.insertText('    ')
-
-    def unindent(self):
-        """
-        Unindent selected text.
-        """
-        # TODO: Maintain original selection
-        # and cursor position.
-        blocks = self.get_selected_blocks(ignoreEmpty=False)
-        for block in blocks:
-            cursor = QtGui.QTextCursor(block)
-            cursor.select(QtGui.QTextCursor.LineUnderCursor)
-            lineText = cursor.selectedText()
-            if lineText.startswith(' '):
-                newText = str(lineText[:4]).replace(' ', '') + lineText[4:]
-                cursor.insertText(newText)
-
     def tab_space(self):
         """ Insert spaces instead of tabs """
         self.editor.insertPlainText('    ')
 
-    def next_tab(self):
-        """
-        Switch to the next tab.
-        """
-        if hasattr(self, 'tabs'):
-            next_index = self.tabs.currentIndex()+1
-            if next_index <= self.tabs.count():
-                self.tabs.setCurrentIndex(next_index)
+    def toggle_backslashes(self):
+        toggle_backslashes(self.editor)
 
-    def previous_tab(self):
+    def duplicate_lines(self):
         """
-        Switch to the next tab.
-        """
-        if hasattr(self, 'tabs'):
-            self.tabs.setCurrentIndex(self.tabs.currentIndex()-1)
-
-    def jump_to_start(self):
-        """
-        Jump to first character in line.
-        If at first character, jump to
-        start of line.
+        Duplicates the current line or
+        selected text downwards.
         """
         textCursor = self.editor.textCursor()
-        init_pos = textCursor.position()
-        textCursor.select(QtGui.QTextCursor.LineUnderCursor)
-        text = textCursor.selection().toPlainText()
-        textCursor.movePosition(QtGui.QTextCursor.StartOfLine)
-        pos = textCursor.position()
-        offset = len(text)-len(text.lstrip())
-        new_pos = pos+offset
-        if new_pos != init_pos:
-            textCursor.setPosition(new_pos, QtGui.QTextCursor.MoveAnchor)
-        self.editor.setTextCursor(textCursor)
-
-    def comment_toggle(self):
-        """
-        Toggles commenting out selected lines,
-        or lines with cursor.
-        """
-        blocks = self.get_selected_blocks()
-
-        # iterate through lines in doc commenting or uncommenting
-        # based on whether everything is commented or not
-        commentAllOut = any([not str(block.text()).lstrip().startswith('#')
-                            for block in blocks])
-        if commentAllOut:
-            for block in blocks:
-                cursor = QtGui.QTextCursor(block)
-                cursor.select(QtGui.QTextCursor.LineUnderCursor)
-                selectedText = cursor.selectedText()
-                right_split = len(selectedText.lstrip())
-                count = len(selectedText)
-                split_index = count-right_split
-                split_text = selectedText[split_index:]
-                newText = ' '*split_index + '#' + split_text
-                cursor.insertText(newText)
+        if textCursor.hasSelection():
+            selected_text = textCursor.selectedText()
+            for i in range(2):
+                textCursor.insertText(selected_text)
+                self.editor.setTextCursor(textCursor)
         else:
-            for block in blocks:
-                cursor = QtGui.QTextCursor(block)
-                cursor.select(QtGui.QTextCursor.LineUnderCursor)
-                selectedText = cursor.selectedText()
-                newText = str(selectedText).replace('#', '', 1)
-                cursor.insertText(newText)
+            textCursor.movePosition(QtGui.QTextCursor.EndOfLine)
+            end_pos = textCursor.position()
+            textCursor.movePosition(QtGui.QTextCursor.StartOfLine)
+            textCursor.setPosition(end_pos, QtGui.QTextCursor.KeepAnchor)
+            selected_text = textCursor.selectedText()
+            textCursor.insertText(selected_text+'\n'+selected_text)
 
-    @QtCore.Slot(str)
-    def wrap_text(self, key):
+    def new_line_above(self):
         """
-        Wrap selected text in brackets
-        or quotes of type "key".
-        """
-        if key in ['\'', '"']:
-            key_in = key
-            key_out = key
-        elif key in ['[', ']']:
-            key_in = '['
-            key_out = ']'
-        elif key in ['(', ')']:
-            key_in = '('
-            key_out = ')'
-        elif key in ['{', '}']:
-            key_in = '{'
-            key_out = '}'
-        # elif key in ['<', '>']:
-        #     key_in = '<'
-        #     key_out = '>'
-
-        textCursor = self.editor.textCursor()
-        text = key_in + textCursor.selectedText() + key_out
-        textCursor.insertText(text)
-
-    def select_lines(self):
-        """
-        Sets current lines selected
-        and moves cursor to beginning
-        of next line.
+        Inserts new line above current.
         """
         textCursor = self.editor.textCursor()
-
-        start = textCursor.selectionStart()
-        end = textCursor.selectionEnd()
-
-        textCursor.setPosition(end, QtGui.QTextCursor.MoveAnchor)
-        textCursor.movePosition(QtGui.QTextCursor.EndOfLine)
-        new_end = textCursor.position()+1
-        if new_end >= self.editor.document().characterCount():
-            new_end = new_end-1
-
-        textCursor.setPosition(start, QtGui.QTextCursor.MoveAnchor)
-        textCursor.movePosition(QtGui.QTextCursor.StartOfLine)
-
-        textCursor.setPosition(new_end, QtGui.QTextCursor.KeepAnchor)
+        line = textCursor.block().text()
+        indentCount = len(line)-len(line.lstrip(' '))
+        indent = ' '*indentCount
+        textCursor.movePosition(
+            textCursor.StartOfLine
+        )
         self.editor.setTextCursor(textCursor)
+        textCursor.insertText(indent+'\n')
+        self.editor.moveCursor(textCursor.Left)
+
+    def new_line_below(self):
+        """
+        Inserts new line below current.
+        """
+        textCursor = self.editor.textCursor()
+        line = textCursor.block().text()
+        indentCount = len(line)-len(line.lstrip(' '))
+        indent = ' '*indentCount
+        textCursor.movePosition(
+            textCursor.EndOfLine
+        )
+        self.editor.setTextCursor(textCursor)
+        textCursor.insertText('\n'+indent)
+
+    def delete_to_end_of_line(self):
+        """
+        Deletes characters from cursor
+        position to end of line.
+        """
+        textCursor = self.editor.textCursor()
+        pos = textCursor.position()
+        textCursor.movePosition(
+            QtGui.QTextCursor.EndOfLine
+        )
+        textCursor.setPosition(
+            pos,
+            QtGui.QTextCursor.KeepAnchor
+        )
+        textCursor.insertText('')
+
+    def delete_to_start_of_line(self):
+        """
+        Deletes characters from cursor
+        position to start of line.
+        """
+        textCursor = self.editor.textCursor()
+        pos = textCursor.position()
+        textCursor.movePosition(QtGui.QTextCursor.StartOfLine)
+        textCursor.setPosition(pos, QtGui.QTextCursor.KeepAnchor)
+        textCursor.insertText('')
 
     def join_lines(self):
         """
@@ -717,19 +603,32 @@ class ShortcutHandler(QtCore.QObject):
         Deletes the contents of the current line(s).
         """
         textCursor = self.editor.textCursor()
-
         start = textCursor.selectionStart()
         end = textCursor.selectionEnd()
-        textCursor.setPosition(start, QtGui.QTextCursor.MoveAnchor)
-        textCursor.movePosition(QtGui.QTextCursor.StartOfLine)
+
+        textCursor.setPosition(
+            start,
+            QtGui.QTextCursor.MoveAnchor
+        )
+        textCursor.movePosition(
+            QtGui.QTextCursor.StartOfLine
+        )
         new_start = textCursor.position()
 
-        textCursor.setPosition(end, QtGui.QTextCursor.MoveAnchor)
-        textCursor.movePosition(QtGui.QTextCursor.EndOfLine)
+        textCursor.setPosition(
+            end,
+            QtGui.QTextCursor.MoveAnchor
+        )
+        textCursor.movePosition(
+            QtGui.QTextCursor.EndOfLine
+        )
 
         new_end = textCursor.position()
 
-        textCursor.setPosition(new_start, QtGui.QTextCursor.KeepAnchor)
+        textCursor.setPosition(
+            new_start,
+            QtGui.QTextCursor.KeepAnchor
+        )
 
         if textCursor.selectedText() == '':
             textCursor.setPosition(start, QtGui.QTextCursor.MoveAnchor)
@@ -738,29 +637,297 @@ class ShortcutHandler(QtCore.QObject):
                 next_line = next_line-2
                 if next_line == -1:
                     return
-            textCursor.setPosition(next_line, QtGui.QTextCursor.KeepAnchor)
+            textCursor.setPosition(
+                next_line,
+                QtGui.QTextCursor.KeepAnchor
+            )
 
         textCursor.insertText('')
 
-    def copy_block_or_selection(self):
+    def comment_toggle(self):
         """
-        If there's no text selected,
-        copy the current block.
+        Toggles commenting out selected lines,
+        or lines with cursor.
+        """
+        blocks = self.get_selected_blocks()
+
+        # iterate through lines in doc commenting or uncommenting
+        # based on whether everything is commented or not
+        comment_all_out = any([
+            not str(block.text()).lstrip().startswith('#')
+            for block in blocks
+        ])
+        if comment_all_out:
+            for block in blocks:
+                cursor = QtGui.QTextCursor(block)
+                cursor.select(
+                    QtGui.QTextCursor.LineUnderCursor
+                )
+                selectedText = cursor.selectedText()
+                right_split = len(selectedText.lstrip())
+                count = len(selectedText)
+                split_index = count-right_split
+                split_text = selectedText[split_index:]
+                newText = ' '*split_index + '#' + split_text
+                cursor.insertText(newText)
+        else:
+            for block in blocks:
+                cursor = QtGui.QTextCursor(block)
+                cursor.select(
+                    QtGui.QTextCursor.LineUnderCursor
+                )
+                selectedText = cursor.selectedText()
+                newText = str(selectedText).replace('#', '', 1)
+                cursor.insertText(newText)
+
+    def move_blocks_up(self):
+        """
+        Moves selected blocks upwards.
+        """
+        restoreSelection = False
+        textCursor = self.editor.textCursor()
+        if textCursor.hasSelection():
+            restoreSelection = True
+
+        start = textCursor.selectionStart()
+        end = textCursor.selectionEnd()
+        selection_length = end-start
+        textCursor.setPosition(
+            start,
+            QtGui.QTextCursor.MoveAnchor
+        )
+        textCursor.movePosition(QtGui.QTextCursor.StartOfBlock)
+        new_start = textCursor.position()
+
+        textCursor.setPosition(
+            end,
+            QtGui.QTextCursor.MoveAnchor
+        )
+        textCursor.movePosition(QtGui.QTextCursor.EndOfBlock)
+
+        start_offset = start-new_start
+
+        if new_start == 0:
+            return
+
+        textCursor.setPosition(
+            new_start,
+            QtGui.QTextCursor.KeepAnchor
+        )
+        selectedText = textCursor.selectedText()
+
+        textCursor.insertText('')
+        textCursor.deletePreviousChar()
+        textCursor.movePosition(QtGui.QTextCursor.StartOfBlock)
+        pos = textCursor.position()
+        textCursor.insertText(selectedText+'\n')
+        textCursor.setPosition(pos, QtGui.QTextCursor.MoveAnchor)
+
+        if restoreSelection:
+            moved_start = textCursor.position()+start_offset
+            textCursor.setPosition(
+                moved_start,
+                QtGui.QTextCursor.MoveAnchor
+            )
+            moved_end = textCursor.position()+selection_length
+            textCursor.setPosition(
+                moved_end,
+                QtGui.QTextCursor.KeepAnchor
+            )
+        else:
+            new_pos = pos+start_offset
+            textCursor.setPosition(new_pos, QtGui.QTextCursor.MoveAnchor)
+
+        self.editor.setTextCursor(textCursor)
+
+    def move_blocks_down(self):
+        """
+        Moves selected blocks downwards.
+        """
+        restoreSelection = False
+
+        textCursor = self.editor.textCursor()
+        if textCursor.hasSelection():
+            restoreSelection = True
+
+        start = textCursor.selectionStart()
+        end = textCursor.selectionEnd()
+        selection_length = end-start
+
+        textCursor.setPosition(start, QtGui.QTextCursor.MoveAnchor)
+        textCursor.movePosition(QtGui.QTextCursor.StartOfBlock)
+        new_start = textCursor.position()
+
+        textCursor.setPosition(end, QtGui.QTextCursor.MoveAnchor)
+        textCursor.movePosition(QtGui.QTextCursor.EndOfBlock)
+        new_end = textCursor.position()
+
+        if new_end + 1 >= self.editor.document().characterCount():
+            return
+
+        end_offset = new_end-end
+
+        textCursor.setPosition(new_start, QtGui.QTextCursor.KeepAnchor)
+        selectedText = textCursor.selectedText()
+        textCursor.insertText('')
+        textCursor.deleteChar()
+        textCursor.movePosition(QtGui.QTextCursor.EndOfBlock)
+        textCursor.insertText('\n'+selectedText)
+
+        if restoreSelection:
+            moved_end = textCursor.position()-end_offset
+            textCursor.setPosition(moved_end, QtGui.QTextCursor.MoveAnchor)
+            moved_start = moved_end-selection_length
+            textCursor.setPosition(moved_start, QtGui.QTextCursor.KeepAnchor)
+        else:
+            pos = textCursor.position()
+            new_pos = pos-end_offset
+            textCursor.setPosition(new_pos, QtGui.QTextCursor.MoveAnchor)
+
+        self.editor.setTextCursor(textCursor)
+
+    def indent(self):
+        """
+        Indent Selected Text
+        """
+        blocks = self.get_selected_blocks()
+        for block in blocks:
+            cursor = QtGui.QTextCursor(block)
+            cursor.movePosition(QtGui.QTextCursor.StartOfLine)
+            cursor.insertText('    ')
+
+    def unindent(self):
+        """
+        Unindent Selected Text
+        TODO: Maintain original selection
+        and cursor position.
+        """
+        blocks = self.get_selected_blocks(ignoreEmpty=False)
+        for block in blocks:
+            cursor = QtGui.QTextCursor(block)
+            cursor.select(QtGui.QTextCursor.LineUnderCursor)
+            lineText = cursor.selectedText()
+            if lineText.startswith(' '):
+                newText = str(lineText[:4]).replace(' ', '') + lineText[4:]
+                cursor.insertText(newText)
+
+    @QtCore.Slot(str)
+    def wrap_text(self, key):
+        """
+        Wrap selected text in brackets
+        or quotes of type "key".
+        """
+        if key in ['\'', '"']:
+            key_in = key
+            key_out = key
+        elif key in ['[', ']']:
+            key_in = '['
+            key_out = ']'
+        elif key in ['(', ')']:
+            key_in = '('
+            key_out = ')'
+        elif key in ['{', '}']:
+            key_in = '{'
+            key_out = '}'
+        # elif key in ['<', '>']:
+        #     key_in = '<'
+        #     key_out = '>'
+
+        textCursor = self.editor.textCursor()
+        text = key_in + textCursor.selectedText() + key_out
+        textCursor.insertText(text)
+
+    def move_to_top(self):
+        """
+        Move selection or line if no
+        selection to top of document.
         """
         textCursor = self.editor.textCursor()
-        selection = textCursor.selection()
-        text = selection.toPlainText()
-        if not text:
-            textCursor.select(QtGui.QTextCursor.BlockUnderCursor)
-            selection = textCursor.selection()
-            text = selection.toPlainText()
+        if not textCursor.hasSelection():
+            textCursor.select(QtGui.QTextCursor.LineUnderCursor)
+        text = textCursor.selectedText()
+        textCursor.insertText('')
+        textCursor.setPosition(0, QtGui.QTextCursor.MoveAnchor)
+        textCursor.insertText(text)
+        self.editor.setTextCursor(textCursor)
 
-        QtGui.QClipboard().setText(text)
+    def move_to_bottom(self):
+        """
+        Move selection or line if no
+        selection to bottom of document.
+        """
+        textCursor = self.editor.textCursor()
+        if not textCursor.hasSelection():
+            textCursor.select(QtGui.QTextCursor.LineUnderCursor)
+        text = textCursor.selectedText()
+        textCursor.insertText('')
+        end = len(self.editor.toPlainText())
+        textCursor.setPosition(end, QtGui.QTextCursor.MoveAnchor)
+        textCursor.insertText(text)
+        self.editor.setTextCursor(textCursor)
+
+    # -------------------------------------- #
+    # ---------------         -------------- #
+    # ---------------         -------------- #
+    #                selection               #
+    # ---------------         -------------- #
+    # ---------------         -------------- #
+    # -------------------------------------- #
+    def duplicate_cursor_down(self):
+        """
+        Placeholder.
+        Duplicate text cursor down.
+        """
+        pass
+
+    def duplicate_cursor_up(self):
+        """
+        Placeholder.
+        Duplicate text cursor up.
+        """
+        pass
+
+    def select_lines(self):
+        """
+        Sets current lines selected
+        and moves cursor to beginning
+        of next line.
+        """
+        textCursor = self.editor.textCursor()
+
+        start = textCursor.selectionStart()
+        end = textCursor.selectionEnd()
+
+        textCursor.setPosition(
+            end,
+            QtGui.QTextCursor.MoveAnchor
+        )
+        textCursor.movePosition(QtGui.QTextCursor.EndOfLine)
+        new_end = textCursor.position()+1
+        if new_end >= self.editor.document().characterCount():
+            new_end = new_end-1
+
+        textCursor.setPosition(
+            start,
+            QtGui.QTextCursor.MoveAnchor
+        )
+        textCursor.movePosition(
+            QtGui.QTextCursor.StartOfLine
+        )
+
+        textCursor.setPosition(
+            new_end,
+            QtGui.QTextCursor.KeepAnchor
+        )
+        self.editor.setTextCursor(textCursor)
 
     def select_word(self):
         """
         Selects the word under cursor if no selection.
         If selection, selects next occurence of the same word.
+        TODO: 1) could optionally highlight all occurences of the word
+        and iterate to the next selection. 2) Would be nice if extra
+        selections could be made editable.
         """
         textCursor = self.editor.textCursor()
         if not textCursor.hasSelection():
@@ -822,8 +989,8 @@ class ShortcutHandler(QtCore.QObject):
     def select_between_brackets(self):
         """
         Selects text between [] {} ()
+        TODO: implement [] and {}
         """
-        # TODO: implement [] and {}
         textCursor = self.editor.textCursor()
         pos = textCursor.position()
         whole_text = self.editor.toPlainText()
@@ -833,12 +1000,78 @@ class ShortcutHandler(QtCore.QObject):
         first_pos = first_half.rfind('(')
         second_pos = second_half.find(')')
 
-        first_pos = first_pos + 1
-        second_pos = second_pos + pos
+        first_pos = first_pos+1
+        second_pos = second_pos+pos
 
-        textCursor.setPosition(first_pos, QtGui.QTextCursor.MoveAnchor)
-        textCursor.setPosition(second_pos, QtGui.QTextCursor.KeepAnchor)
+        textCursor.setPosition(
+            first_pos,
+            QtGui.QTextCursor.MoveAnchor
+        )
+        textCursor.setPosition(
+            second_pos,
+            QtGui.QTextCursor.KeepAnchor
+        )
         self.editor.setTextCursor(textCursor)
+
+    # -------------------------------------- #
+    # ---------------         -------------- #
+    # ---------------         -------------- #
+    #                 utility                #
+    # ---------------         -------------- #
+    # ---------------         -------------- #
+    # -------------------------------------- #
+
+    def copy_block_or_selection(self):
+        """
+        If there's no text selected,
+        copy the current block.
+        """
+        textCursor = self.editor.textCursor()
+        selection = textCursor.selection()
+        text = selection.toPlainText()
+        if not text:
+            textCursor.select(
+                QtGui.QTextCursor.BlockUnderCursor
+            )
+            selection = textCursor.selection()
+            text = selection.toPlainText().lstrip()
+
+        QtGui.QClipboard().setText(text)
+
+    def goto_line(self):
+        """
+        Placeholder.
+        Show small lineedit widget allowing
+        user to type line to go to. Store current
+        line in case user cancels.
+        """
+        self.goto_palette = GotoPalette(self.editor)
+        self.goto_palette.show()
+
+    def command_palette(self):
+        """
+        Placeholder.
+        Show QLineEdit Command Palette allowing
+        user to type commands instead of using shortcuts.
+        """
+        pass
+
+    def show_about(self):
+        """
+        Placeholder.
+        Show splash screen with about window and version
+        info for pythoneditor.
+        """
+        pass
+
+    def open_module_file(self):
+        textCursor = self.editor.textCursor()
+        text = textCursor.selection().toPlainText()
+        if not text.strip():
+            return
+
+        obj = actions.get_subobject(text)
+        actions.open_module_file(obj)
 
     def search_input(self):
         """
@@ -864,52 +1097,11 @@ class ShortcutHandler(QtCore.QObject):
         if pos != -1:
             self.editor.setTextCursor(cursor)
 
-    def duplicate_lines(self):
-        """
-        Duplicates the current line or
-        selected text downwards.
-        """
-        textCursor = self.editor.textCursor()
-        if textCursor.hasSelection():
-            selected_text = textCursor.selectedText()
-            for i in range(2):
-                textCursor.insertText(selected_text)
-                self.editor.setTextCursor(textCursor)
-        else:
-            textCursor.movePosition(QtGui.QTextCursor.EndOfLine)
-            end_pos = textCursor.position()
-            textCursor.movePosition(QtGui.QTextCursor.StartOfLine)
-            textCursor.setPosition(end_pos, QtGui.QTextCursor.KeepAnchor)
-            selected_text = textCursor.selectedText()
-            textCursor.insertText(selected_text+'\n'+selected_text)
-
-    def delete_to_end_of_line(self):
-        """
-        Deletes characters from cursor
-        position to end of line.
-        """
-        textCursor = self.editor.textCursor()
-        pos = textCursor.position()
-        textCursor.movePosition(QtGui.QTextCursor.EndOfLine)
-        textCursor.setPosition(pos, QtGui.QTextCursor.KeepAnchor)
-        textCursor.insertText('')
-
-    def delete_to_start_of_line(self):
-        """
-        Deletes characters from cursor
-        position to start of line.
-        """
-        textCursor = self.editor.textCursor()
-        pos = textCursor.position()
-        textCursor.movePosition(QtGui.QTextCursor.StartOfLine)
-        textCursor.setPosition(pos, QtGui.QTextCursor.KeepAnchor)
-        textCursor.insertText('')
-
     # FIXME: moved to actions. Delete once ShortcutHandler assigns shortcuts
     def print_help(self):
         """
-        Prints documentation
-        for selected object
+        Prints documentation for selected text if
+        it currently represents a python object.
         """
         cursor = self.editor.textCursor()
         selection = cursor.selection()
@@ -958,6 +1150,84 @@ class ShortcutHandler(QtCore.QObject):
         font.setPointSize(new_size)
         self.editor.setFont(font)
 
+
+    # -------------------------------------- #
+    # ---------------         -------------- #
+    # ---------------         -------------- #
+    #                   tabs                 #
+    # ---------------         -------------- #
+    # ---------------         -------------- #
+    # -------------------------------------- #
+    def next_tab(self):
+        """
+        Switch to the next tab.
+        """
+        if hasattr(self, 'tabs'):
+            next_index = self.tabs.currentIndex()+1
+            if next_index <= self.tabs.count():
+                self.tabs.setCurrentIndex(next_index)
+
+    def previous_tab(self):
+        """
+        Switch to the next tab.
+        """
+        if hasattr(self, 'tabs'):
+            self.tabs.setCurrentIndex(self.tabs.currentIndex()-1)
+
+    def save(self):
+        actions.save_action(
+            self.tabs,
+            self.editor
+        )
+
+    # TODO: move utility methods to functions
+    def get_selected_blocks(self, ignoreEmpty=True):
+        """
+        Utility method for getting lines in selection.
+        """
+        textCursor = self.editor.textCursor()
+        doc = self.editor.document()
+        start = textCursor.selectionStart()
+        end = textCursor.selectionEnd()
+
+        # get line numbers
+        blockNumbers = set([
+                doc.findBlock(b).blockNumber()
+                for b in range(start, end)
+                    ])
+
+        pos = textCursor.position()
+        blockNumbers |= set([doc.findBlock(pos).blockNumber()])
+
+        def isEmpty(b): return doc.findBlockByNumber(b).text().strip() != ''
+        blocks = []
+        for b in blockNumbers:
+            bn = doc.findBlockByNumber(b)
+            if not ignoreEmpty:
+                blocks.append(bn)
+            elif isEmpty(b):
+                blocks.append(bn)
+
+        return blocks
+
+    def jump_to_start(self):
+        """
+        Jump to first character in line.
+        If at first character, jump to
+        start of line.
+        """
+        textCursor = self.editor.textCursor()
+        init_pos = textCursor.position()
+        textCursor.select(QtGui.QTextCursor.LineUnderCursor)
+        text = textCursor.selection().toPlainText()
+        textCursor.movePosition(QtGui.QTextCursor.StartOfLine)
+        pos = textCursor.position()
+        offset = len(text)-len(text.lstrip())
+        new_pos = pos+offset
+        if new_pos != init_pos:
+            textCursor.setPosition(new_pos, QtGui.QTextCursor.MoveAnchor)
+        self.editor.setTextCursor(textCursor)
+
     def wheel_zoom(self, event):
         """
         Zooms by changing the font size
@@ -972,122 +1242,323 @@ class ShortcutHandler(QtCore.QObject):
         font.setPointSize(new_size)
         self.editor.setFont(font)
 
-    def move_blocks_up(self):
-        """
-        Moves selected blocks upwards.
-        """
-        restoreSelection = False
-        textCursor = self.editor.textCursor()
-        if textCursor.hasSelection():
-            restoreSelection = True
 
-        start = textCursor.selectionStart()
-        end = textCursor.selectionEnd()
-        selection_length = end-start
-        textCursor.setPosition(start, QtGui.QTextCursor.MoveAnchor)
-        textCursor.movePosition(QtGui.QTextCursor.StartOfBlock)
-        new_start = textCursor.position()
 
-        textCursor.setPosition(end, QtGui.QTextCursor.MoveAnchor)
-        textCursor.movePosition(QtGui.QTextCursor.EndOfBlock)
+class CommandPalette(QtWidgets.QLineEdit):
+    def __init__(self, editor):
+        super(CommandPalette, self).__init__()
+        self.editor = editor
+        self.setWindowFlags(
+            QtCore.Qt.WindowStaysOnTopHint
+            | QtCore.Qt.FramelessWindowHint
+        )
+        self.editingFinished.connect(self.hide)
 
-        start_offset = start-new_start
+    def keyPressEvent(self, event):
+        esc = QtCore.Qt.Key.Key_Escape
+        if event.key() == esc:
+            self.hide()
+        super(
+            CommandPalette, self
+            ).keyPressEvent(event)
 
-        if new_start == 0:
+    def showEvent(self, event):
+        self.editor.installEventFilter(self)
+        self.setFocus(QtCore.Qt.MouseFocusReason)
+        super(CommandPalette, self).showEvent(event)
+        self.match_editor_size()
+
+    def hideEvent(self, event):
+        self.editor.removeEventFilter(self)
+        super(CommandPalette, self).hideEvent(event)
+
+    def match_editor_size(self):
+        geo = self.editor.geometry()
+        centre = geo.center()
+        x = centre.x()-(self.width()/2)
+        y = geo.top()-12
+        pos = QtCore.QPoint(x, y)
+        pos = self.editor.mapToGlobal(pos)
+        self.move(pos)
+
+    def eventFilter(self, obj, event):
+        if event.type() == QtCore.QEvent.Move:
+            self.match_editor_size()
+        elif event.type() == QtCore.QEvent.Resize:
+            self.match_editor_size()
+        elif event.type() == QtCore.QEvent.Hide:
+            self.hide()
+        return False
+
+
+class GotoPalette(CommandPalette):
+    def __init__(self, editor):
+        super(GotoPalette, self).__init__(editor)
+        self.editor = editor
+        self.current_line = editor.textCursor(
+            ).block(
+            ).blockNumber()+1
+        self.match_editor_size()
+
+    def keyPressEvent(self, event):
+        esc = QtCore.Qt.Key.Key_Escape
+        if event.key() == esc:
+            self.goto_line(self.current_line)
+            self.hide()
+
+        if event.text().isalpha():
             return
 
-        textCursor.setPosition(new_start, QtGui.QTextCursor.KeepAnchor)
-        selectedText = textCursor.selectedText()
+        super(
+            GotoPalette, self
+            ).keyPressEvent(event)
+        try:
+            lineno = int(self.text())
+        except ValueError:
+            return
+        self.goto_line(lineno)
 
-        textCursor.insertText('')
-        textCursor.deletePreviousChar()
-        textCursor.movePosition(QtGui.QTextCursor.StartOfBlock)
-        pos = textCursor.position()
-        textCursor.insertText(selectedText+'\n')
-        textCursor.setPosition(pos, QtGui.QTextCursor.MoveAnchor)
-
-        if restoreSelection:
-            moved_start = textCursor.position()+start_offset
-            textCursor.setPosition(moved_start, QtGui.QTextCursor.MoveAnchor)
-            moved_end = textCursor.position()+selection_length
-            textCursor.setPosition(moved_end, QtGui.QTextCursor.KeepAnchor)
-        else:
-            new_pos = pos+start_offset
-            textCursor.setPosition(new_pos, QtGui.QTextCursor.MoveAnchor)
-
-        self.editor.setTextCursor(textCursor)
-
-    def move_blocks_down(self):
+    def goto_line(self, lineno):
         """
-        Moves selected blocks downwards.
+        Sets the text cursor of the editor
+        to the given lineno.
         """
-        restoreSelection = False
+        editor = self.editor
+        count = editor.blockCount()
+        if lineno > count:
+            lineno = count
+        lineno = lineno-1
+        pos = editor.document(
+            ).findBlockByNumber(
+            lineno).position()
 
-        textCursor = self.editor.textCursor()
-        if textCursor.hasSelection():
-            restoreSelection = True
+        cursor = editor.textCursor()
+        cursor.setPosition(pos)
+        editor.setTextCursor(cursor)
 
-        start = textCursor.selectionStart()
-        end = textCursor.selectionEnd()
-        selection_length = end-start
 
-        textCursor.setPosition(start, QtGui.QTextCursor.MoveAnchor)
-        textCursor.movePosition(QtGui.QTextCursor.StartOfBlock)
-        new_start = textCursor.position()
+def make_action(name, widget, func):
+    """
+    Add action to widget with
+    given triggered function.
 
-        textCursor.setPosition(end, QtGui.QTextCursor.MoveAnchor)
-        textCursor.movePosition(QtGui.QTextCursor.EndOfBlock)
-        new_end = textCursor.position()
+    :action: QtWidgets.QAction
+    :widget: QtWidgets.QWidget
+    :func: a callable that gets executed
+           when triggering the action.
+    """
+    action = QtWidgets.QAction(widget)
+    action.triggered.connect(func)
+    widget.addAction(action)
+    action.setText(name)
+    action.setToolTip(func.__doc__)
+    return action
 
-        if new_end + 1 >= self.editor.document().characterCount():
+
+def toggle_backslashes_in_string(text):
+    if '\\' in text:
+        text = text.replace('\\\\', '/')
+        text = text.replace('\\', '/')
+    elif '/' in text:
+        text = text.replace('/', '\\\\')
+    return text
+
+
+def toggle_backslashes(editor):
+    textCursor = editor.textCursor()
+    if not textCursor.hasSelection():
+        textCursor.select(QtGui.QTextCursor.BlockUnderCursor)
+
+    selection = textCursor.selection()
+    text = selection.toPlainText()
+
+    if not text:
+        return
+
+    edited_text = toggle_backslashes_in_string(text)
+    if edited_text == text:
+        return
+
+    textCursor.insertText(edited_text)
+
+
+def save_action(tabs, editor):
+    """
+    """
+    path = tabs.get('path')
+    text = editor.toPlainText()
+    path = save.save(text, path)
+    if path is None:
+        return
+    tabs['path'] = path
+    tabs['saved'] = True
+    # notify the autosave to empty entry
+    tabs.contents_saved_signal.emit(tabs['uuid'])
+
+
+def open_action(tabs, editor, path=''):
+    """
+    Simple open file.
+    :tabs: TabBar
+    :editor: Editor
+    :path: optional path to file.
+    """
+    if not path:
+        o = QtWidgets.QFileDialog.getOpenFileName
+        path, _ = o(tabs, "Open File")
+        if not path:
+            return
+    elif not os.path.isfile(path):
+        return
+
+    with open(path, 'rt') as f:
+        text = f.read()
+
+    for index in range(tabs.count()):
+        data = tabs.tabData(index)
+        if data is None:
+            continue
+
+        if data.get('path') != path:
+            continue
+
+        # try to avoid more costly 2nd comparison
+        if data.get('text') == text:
+            tabs.setCurrentIndex(index)
             return
 
-        end_offset = new_end-end
+    tab_name = os.path.basename(path)
 
-        textCursor.setPosition(new_start, QtGui.QTextCursor.KeepAnchor)
-        selectedText = textCursor.selectedText()
-        textCursor.insertText('')
-        textCursor.deleteChar()
-        textCursor.movePosition(QtGui.QTextCursor.EndOfBlock)
-        textCursor.insertText('\n'+selectedText)
+    # Because the document will be open in read-only mode, the
+    # autosave should not save the editor's contents until the
+    # contents have been modified.
+    data = {
+        'uuid'  : str(uuid.uuid4()),
+        'name'  : tab_name,
+        'text'  : '',
+        'path'  : path,
+        'date'  : '', # need the file's date
+        'saved' : True, # read-only
+    }
 
-        if restoreSelection:
-            moved_end = textCursor.position()-end_offset
-            textCursor.setPosition(moved_end, QtGui.QTextCursor.MoveAnchor)
-            moved_start = moved_end-selection_length
-            textCursor.setPosition(moved_start, QtGui.QTextCursor.KeepAnchor)
+    tabs.new_tab(tab_name=tab_name)
+    editor.setPlainText(text)
+    # TODO: emit a signal to trigger autosave, otherwise
+    # the file dissappears on next load if unedited
+
+
+def get_subobject(text):
+    """
+    Walk down an object's hierarchy to retrieve
+    the object at the end of the chain.
+    """
+    text = text.strip()
+    if '.' not in text:
+        return __main__.__dict__.get(text)
+
+    name = text.split('.')[0]
+    obj = __main__.__dict__.get(name)
+    if obj is None:
+        return
+
+    for name in text.split('.')[1:]:
+        obj = getattr(obj, name)
+        if obj is None:
+            return
+    return obj
+
+
+def open_module_file(obj):
+    try:
+        file = inspect.getfile(obj)
+    except TypeError as e:
+        if hasattr(obj, '__class__'):
+            obj = obj.__class__
+            file = inspect.getfile(obj)
         else:
-            pos = textCursor.position()
-            new_pos = pos-end_offset
-            textCursor.setPosition(new_pos, QtGui.QTextCursor.MoveAnchor)
+            raise
 
-        self.editor.setTextCursor(textCursor)
+    if file.endswith('.pyc'):
+        file = file.replace('.pyc', '.py')
 
-    def move_to_top(self):
-        """
-        Move selection or line if no
-        selection to top of document.
-        """
-        textCursor = self.editor.textCursor()
-        if not textCursor.hasSelection():
-            textCursor.select(QtGui.QTextCursor.LineUnderCursor)
-        text = textCursor.selectedText()
-        textCursor.insertText('')
+    try:
+        lines, lineno = inspect.getsourcelines(obj)
+        file = file+':'+str(lineno)
+    except AttributeError, IOError:
+        pass
+
+    print(file)
+
+    #TODO: this is a horrible hack to avoid circular imports
+    from PythonEditor.ui.features.autosavexml import get_external_editor_path
+
+    EXTERNAL_EDITOR_PATH = get_external_editor_path()
+    if (EXTERNAL_EDITOR_PATH
+            and os.path.isdir(os.path.dirname(EXTERNAL_EDITOR_PATH))):
+        subprocess.Popen([EXTERNAL_EDITOR_PATH, file])
+
+
+def open_module_directory(obj):
+    file = inspect.getfile(obj).replace('.pyc', '.py')
+    folder = os.path.dirname(file)
+    print(folder)
+
+    #TODO: this is a horrible hack to avoid circular imports
+    from PythonEditor.ui.features.autosavexml import get_external_editor_path
+
+    EXTERNAL_EDITOR_PATH = get_external_editor_path()
+    if (EXTERNAL_EDITOR_PATH
+            and os.path.isdir(os.path.dirname(EXTERNAL_EDITOR_PATH))):
+        subprocess.Popen([EXTERNAL_EDITOR_PATH, folder])
+
+
+def openDir(module):
+    try:
+        print(bytes(module.__file__))
+        subprocess.Popen(['nautilus', module.__file__])
+    except AttributeError:
+        file = inspect.getfile(module)
+        subprocess.Popen(['nautilus', file])
+    print('sublime ', __file__, ':', sys._getframe().f_lineno, sep='')  # TODO: nautilus is not multiplatform!
+
+
+def find_menu_item(menu, item_name=''):
+    for item in menu.children():
+        if hasattr(item, 'text'):
+            name = item.text()
+        elif hasattr(item, 'title'):
+            name = item.title()
+        else:
+            continue
+        if str(name) == str(item_name):
+            return item
+
+
+# tests
+
+TEST_TEXT = """
+c:\\path/to\\some\\file.jpg
+"""
+
+EXPECTED_RESULT = """
+c:/path/to/some/file.jpg
+"""
+
+if __name__ == '__main__':
+    assert toggle_backslashes_in_string(TEST_TEXT) == EXPECTED_RESULT
+
+    def test_toggle_backslashes():
+        editor = QtWidgets.QPlainTextEdit()
+        test_toggle_backslashes.editor = editor
+        editor.setPlainText(TEST_TEXT)
+        editor.show()
+        textCursor = editor.textCursor()
         textCursor.setPosition(0, QtGui.QTextCursor.MoveAnchor)
-        textCursor.insertText(text)
-        self.editor.setTextCursor(textCursor)
+        editor.setTextCursor(textCursor)
+        toggle_backslashes(editor)
 
-    def move_to_bottom(self):
-        """
-        Move selection or line if no
-        selection to bottom of document.
-        """
-        textCursor = self.editor.textCursor()
-        if not textCursor.hasSelection():
-            textCursor.select(QtGui.QTextCursor.LineUnderCursor)
-        text = textCursor.selectedText()
-        textCursor.insertText('')
-        end = len(self.editor.toPlainText())
-        textCursor.setPosition(end, QtGui.QTextCursor.MoveAnchor)
-        textCursor.insertText(text)
-        self.editor.setTextCursor(textCursor)
+"""
+TEST_TEXT = toggle_backslashes_in_string(TEST_TEXT)
+print TEST_TEXT
+test_toggle_backslashes()
+"""
