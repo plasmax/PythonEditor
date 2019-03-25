@@ -2,7 +2,8 @@
 
 
 #### Bug fixes
-- [ ] Opening a file doesn't set its file property.
+- [ ] Opening a file doesn't prevent its contents from being autosaved. If not modified, files should be read-only.
+- [ ] The same file opened twice will open two separate tabs.
 - [ ] Ctrl+F doesn't update word highlighting selection.
 - [ ] Help -> About shows nothing
 - [ ] Minor - Clicking on a tab to the right of the QLineEdit when editing a tab name causes a jump, and the wrong tab to be selected.
