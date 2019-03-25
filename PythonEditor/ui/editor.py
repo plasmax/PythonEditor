@@ -95,6 +95,7 @@ class Editor(QtWidgets.QPlainTextEdit):
         self.wait_for_autocomplete = False
         self._handle_shortcuts = handle_shortcuts
         self._features_initialised = False
+        self._key_pressed = False
 
         self.emit_text_changed = True
         self.textChanged.connect(
@@ -230,6 +231,8 @@ class Editor(QtWidgets.QPlainTextEdit):
         Emit signals for key events
         that QShortcut cannot override.
         """
+        self._key_pressed = True
+
         if not self.hasFocus():
             event.ignore()
             return
@@ -248,6 +251,7 @@ class Editor(QtWidgets.QPlainTextEdit):
         self.post_key_pressed_signal.emit(event)
 
     def keyReleaseEvent(self, event):
+        self._key_pressed = False
         if not isinstance(self, Editor):
             # when the key released is F5
             # (reload app)
