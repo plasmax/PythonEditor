@@ -2,20 +2,19 @@
 
 
 #### Bug fixes
-- [ ] Opening a file doesn't prevent its contents from being autosaved. If not modified, files should be read-only.
 - [ ] The same file opened twice will open two separate tabs.
-- [ ] Ctrl+F doesn't update word highlighting selection.
+- [ ] Ctrl+F doesn't update word highlighting selection if there is a different word selected.
 - [ ] Help -> About shows nothing
 - [ ] Minor - Clicking on a tab to the right of the QLineEdit when editing a tab name causes a jump, and the wrong tab to be selected.
-- [ ] Save functions need to be amended to work with new single editor
 - [ ] Select between brackets only works for round brackets
 - [ ] On first open (if not pinned to layout), tab may not display contents
 - [ ] Word wrapping and blocks can cause errors, especially in moving text up/down
 - [ ] Tooltip colour permanently set in autocompletion
-- [ ] Search causes cursor to go missing
-- [ ] # in string causes rest of line to be greyed out
 - [ ] Double printing to sys.stdout (/probably/ caused by writing to sys.__stdout__ as well as outputRedirector)
 - [ ] Override setPlainText to avoid string encoding errors (can this affect copy paste?)
+- [x] Save functions need to be amended to work with new single editor
+- [x] Search causes cursor to go missing
+- [x] # in string causes rest of line to be greyed out
 - [x] Shortcuts can be overridden by nuke global shortcuts.
 - [x] Single line (selection-based) Ctrl+Enter no longer uses accurate lineno
 - [x] When pressing keys simultaneously, the document changed window appears
@@ -56,7 +55,7 @@
       True agnosticism would require moving PythonEditorHistory.xml to the user home directory as well.
 - [ ] Tab close button [x] should appear on active tab only (like chrome)
       and change width of tab (in proportion to the name) when added (setTabButton, RightSide)
-- [ ] Move all actions to actions.py and have shortcuts simply setShortcut()
+- [x] Move all actions to actions.py and have shortcuts simply setShortcut()
       on the Actions() class, which can be picked up by menus.
 - [ ] Pre-reload PythonEditor safety backup
 - [ ] Foldable sidebar with directory tree
@@ -67,10 +66,10 @@
 - [ ] Writing to external files instead of xml. Keeping those files in tab session until closed with a JSON file
 - [ ] Would be nice to highlight line on Ctrl+B execution (of single line)
 - [ ] Tabs need QLabels so that they can be italicized when in read_only mode
-- [ ] Tooltip displaying file path when hovering over tabs would be nice. (Easy to implement with QLabels)
+- [x] Tooltip displaying file path when hovering over tabs would be nice. (Easy to implement with QLabels)
 - [ ] When save dialog comes up, the suggested name should be the tab name/editor.name - and if there's an
       editor path, the dialog should open to that path
-- [ ] Add menu on the top right corner to select between tabs
+- [x] Add menu on the top right corner to select between tabs
 - [ ] Preferences - colour
 - [ ] Preferences - shortcuts - this has been at least partially accomplished on another branch
 - [ ] Preferences - indentation (backspace deletes single space or tab)
@@ -82,8 +81,7 @@
 - [ ] Add reverse ' = '.join(reversed('sys.stdout = backup'.split(' = ')))
 - [ ] GOTO tooltip over selected text
 - [ ] Edit Snippets Dialog (for snippets in /.nuke/)
-- [ ] Improve speed by loading tabs separately -
-      (Lazy loading of tabs (or one single Autosave read/load operation instead of read/load/write/read))
+- [x] Improve speed of loading tabs
 - [ ] Duplicate cursors
 - [ ] Search box at bottom of editor widget (with "all tabs" checkbox)
 - [ ] Search across all tabs
