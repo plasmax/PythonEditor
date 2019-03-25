@@ -1159,6 +1159,9 @@ class Actions(QtCore.QObject):
     def save(self):
         save_action(self.tabs, self.editor)
 
+    def save_as(self):
+        save_as_action(self.tabs, self.editor)
+
     def open(self):
         open_action(self.tabs, self.editor)
 
@@ -1436,6 +1439,25 @@ def save_action(tabs, editor):
     tabs.contents_saved_signal.emit(tabs['uuid'])
 
 
+def save_as_action(tabs, editor):
+    """
+    """
+    text = editor.toPlainText()
+    path = save.save_as(text)
+    if path is None:
+        return
+    tabs['path'] = path
+    tabs['saved'] = True
+
+    name = os.path.basename(path)
+    tabs['name'] = name
+    index = tabs.currentIndex()
+    tabs.setTabText(index, name)
+
+    # notify the autosave to empty entry
+    tabs.contents_saved_signal.emit(tabs['uuid'])
+
+
 def open_action(tabs, editor, path=''):
     """
     Simple open file.
@@ -1485,8 +1507,8 @@ def open_action(tabs, editor, path=''):
     tabs.new_tab(tab_name=tab_name, tab_data=data)
     editor.setPlainText(text)
 
-    # emit a signal to trigger autosave. 
-    # we want the file's cntents to be loaded 
+    # emit a signal to trigger autosave.
+    # we want the file's contents to be loaded
     # into the autosave in case the file is moved.
     tabs.contents_saved_signal.emit(uid)
 
