@@ -366,6 +366,8 @@ class AutoSaveManager(QtCore.QObject):
 
         # FIXME: This will change when
         # autocompletion goes synchronous.
+        if self.editor._key_pressed:
+            return
 
         # first check against saved files,
         # which will autosave before continuing.
