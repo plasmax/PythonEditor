@@ -138,7 +138,7 @@
             "Shortcuts": [
                 "Ctrl+Shift+S"
             ],
-            "Method": "save",
+            "Method": "save_as",
             "Menu Location": "&File"
         },
         "Toggle Backslashes": {
