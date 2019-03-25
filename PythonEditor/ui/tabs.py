@@ -165,6 +165,7 @@ class Tabs(QtWidgets.QTabBar):
     brush = QtGui.QBrush()
     mouse_over_rect = False
     over_button = -1
+    start_move_index = -1
 
     # for autosave purposes:
     contents_saved_signal   = QtCore.Signal(
@@ -240,7 +241,7 @@ class Tabs(QtWidgets.QTabBar):
         data = self.tabData(index)
         if data is None:
             raise KeyError(
-                'No tab data available.'
+                'No tab data available for index %i.' % index
             )
 
         return data[name]
@@ -653,12 +654,12 @@ class Tabs(QtWidgets.QTabBar):
             path = data.get('path')
 
             if path is None:
-                # can't be sure it's saved if it
-                # has no path
+                # can't be sure it's saved
+                # if it has no path
                 data['saved'] = False
             elif not os.path.isfile(path):
-                # can't be sure it's saved if path
-                # doesn't exist
+                # can't be sure it's saved
+                # if path doesn't exist
                 data['saved'] = False
             else:
                 with open(path, 'r') as f:

@@ -230,7 +230,6 @@ class AutoSaveManager(QtCore.QObject):
             if path is not None:
                 self.tabs.setTabToolTip(i, path) # and if this changes?
 
-
         # try and get the index of the current tab from the last session
         index = self.tabs.count()
         root, index_elements = parsexml('current_index')
@@ -523,7 +522,6 @@ class AutoSaveManager(QtCore.QObject):
 
     @QtCore.Slot(int, int)
     def update_tab_index(self, from_index, to_index):
-        # return # I want to do this threaded.
         for i in from_index, to_index:
             data = self.tabs.tabData(i)
             if data is None:

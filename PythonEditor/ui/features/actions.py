@@ -1472,8 +1472,9 @@ def open_action(tabs, editor, path=''):
     # Because the document will be open in read-only mode, the
     # autosave should not save the editor's contents until the
     # contents have been modified.
+    uid = str(uuid.uuid4())
     data = {
-        'uuid'  : str(uuid.uuid4()),
+        'uuid'  : uid,
         'name'  : tab_name,
         'text'  : '',
         'path'  : path,
@@ -1481,11 +1482,11 @@ def open_action(tabs, editor, path=''):
         'saved' : True, # read-only
     }
 
-    tabs.new_tab(tab_name=tab_name)
+    tabs.new_tab(tab_name=tab_name, tab_data=data)
     editor.setPlainText(text)
-    # TODO: emit a signal to trigger autosave, otherwise
-    # the file dissappears on next load if unedited
 
+    # emit a signal to trigger autosave
+    tabs.contents_saved_signal.emit(uid)
 
 def get_subobject(text):
     """
