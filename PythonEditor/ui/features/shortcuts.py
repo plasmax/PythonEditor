@@ -116,6 +116,14 @@ class ShortcutHandler(QtCore.QObject):
         self._installed = False
 
     def eventFilter(self, obj, event):
+        if not self.editor.isVisible():
+            self.remove_event_filter()
+            return False
+
+        if not self.editor.hasFocus():
+            self.remove_event_filter()
+            return False
+
         if QtCore is None:
             return False
 
