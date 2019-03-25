@@ -1485,7 +1485,9 @@ def open_action(tabs, editor, path=''):
     tabs.new_tab(tab_name=tab_name, tab_data=data)
     editor.setPlainText(text)
 
-    # emit a signal to trigger autosave
+    # emit a signal to trigger autosave. 
+    # we want the file's cntents to be loaded 
+    # into the autosave in case the file is moved.
     tabs.contents_saved_signal.emit(uid)
 
 def get_subobject(text):
