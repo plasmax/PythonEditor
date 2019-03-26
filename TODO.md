@@ -2,6 +2,9 @@
 
 
 #### Bug fixes
+- [] wrong tab!
+- [] duplicate tab (need to recreate)
+- [] check overwrite on save
 - [ ] The same file opened twice will open two separate tabs.
 - [ ] Ctrl+F doesn't update word highlighting selection if there is a different word selected.
 - [ ] Help -> About shows nothing
