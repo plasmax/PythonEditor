@@ -26,14 +26,14 @@ class MenuBar(object):
         """
         self.menu = QtWidgets.QMenuBar(self.pythoneditor)
         names = [
-            '&File',
-            '&Edit',
+            'File',
+            'Edit',
             'View',
             'Tools',
             'Find',
             'Selection',
             'Preferences',
-            '&Help',
+            'Help',
         ]
         for name in names:
             self.menu.addMenu(name)
