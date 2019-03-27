@@ -105,14 +105,12 @@ class ShortcutHandler(QtCore.QObject):
         if self._installed:
             return
         app = QtWidgets.QApplication.instance()
-        # QtCore.QCoreApplication.installEventFilter(self.parent_widget, self)
         QtCore.QCoreApplication.installEventFilter(app, self)
         self._installed = True
 
     def remove_event_filter(self):
         app = QtWidgets.QApplication.instance()
         QtCore.QCoreApplication.removeEventFilter(app, self)
-        # QtCore.QCoreApplication.removeEventFilter(self.parent_widget, self)
         self._installed = False
 
     def eventFilter(self, obj, event):
@@ -168,22 +166,32 @@ class ShortcutHandler(QtCore.QObject):
         ]:
             return False
 
+        # is it a Tab after a dot?
+        if key == QtCore.Qt.Key_Tab:
+            cursor = self.editor.textCursor()
+            cursor.select(cursor.LineUnderCursor)
+            text = cursor.selectedText()
+            if text.endswith('.'):
+                # allow autocompletion to handle this
+                return False
+
         # try with event.text() for things
         # like " and { which appear as
         # shift+2 and shift+[ respectively
         action = self.shortcut_dict.get(
             event.text()
         )
-
-        if action is None:
+        
+        single_key = (action is not None)
+        if not single_key:
             combo = key_to_sequence(key)
             shortcut = combo.toString()
             action = self.shortcut_dict.get(
                 shortcut
             )
 
-            if action is None:
-                return False
+        if action is None:
+            return False
 
         # need some way for the key to be
         # recognised, for example in wrap_text
@@ -191,6 +199,10 @@ class ShortcutHandler(QtCore.QObject):
         e.last_key_pressed = event.text()
         action.trigger()
         e.shortcut_overrode_keyevent = True
+        if single_key:
+            # it's a single key. let the
+            # autocomplete do its thing
+            e.post_key_pressed_signal.emit(event)
         return True
 
     def register_shortcuts(self, action_dict=None):
@@ -229,14 +241,14 @@ class ShortcutHandler(QtCore.QObject):
                         shortcut
                     )
 
-                    # convert to unicode again to
-                    # make sure the format stays
-                    # the same
+                    # convert to unicode again
+                    # to make sure the format
+                    # stays the same
                     s = key_seq.toString()
                     self.shortcut_dict[s] = action
                     key_seqs.append(key_seq)
 
                 action.setShortcuts(key_seqs)
                 action.setShortcutContext(
-                    QtCore.Qt.WidgetShortcut
+                    QtCore.Qt.WidgetWithChildrenShortcut
                 )
