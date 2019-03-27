@@ -206,6 +206,18 @@ class AutoCompleter(QtCore.QObject):
         """
         return self.completer
 
+    def line_under_cursor(self):
+        """
+        Returns a string with the
+        line under the cursor.
+        """
+        textCursor = self.editor.textCursor()
+        textCursor.select(
+            QtGui.QTextCursor.LineUnderCursor
+        )
+        line = textCursor.selection().toPlainText()
+        return line
+
     def word_under_cursor(self):
         """
         Returns a string with the
@@ -673,16 +685,16 @@ class AutoCompleter(QtCore.QObject):
         if not_alnum_or_mod or zero_completions:
             cp.popup().hide()
 
+        # the eventfilter that dispatches
+        # shortcuts makes a special provision
+        # for the tab key after a dot
         if event.key() == QtCore.Qt.Key_Tab:
             textCursor = self.editor.textCursor()
             SHIFT = QtCore.Qt.ShiftModifier
             shift_held = (event.modifiers() == SHIFT)
             if (not textCursor.hasSelection()
                 and not shift_held):
-                textCursor.select(
-                    QtGui.QTextCursor.LineUnderCursor
-                )
-                text = textCursor.selectedText()
+                text = self.line_under_cursor()
                 if text.endswith('.'):
                     self.complete_object()
                     # assuming this should be
@@ -700,9 +712,10 @@ class AutoCompleter(QtCore.QObject):
         Called after QPlainTextEdit.keyPressEvent
         """
         cp = self.completer
-
-        if (event.key() == QtCore.Qt.Key_Period
-            or event.text() in [':', '!']):
+        if (
+            # things to autocomplete on
+            event.text() in [':', '!', '.']
+            ):
             # TODO: this should hide
             # on a lot more characters!
             if cp.popup():
@@ -710,10 +723,42 @@ class AutoCompleter(QtCore.QObject):
             self.complete_object()
             self.editor.wait_for_autocomplete = True
             return True
-
-        elif (cp and cp.popup()
-                  and cp.popup().isVisible()
-                  and not cp.completionCount() == 0):
+        elif event.text() in ['"', "'"]:
+            # autocomplete node knob names
+            text = self.line_under_cursor()
+            if not (
+                text.endswith('["')
+                or text.endswith("['")
+                ):
+                return False
+            last_word = text.split()[-1]
+            words = re.findall(
+                '[a-zA-Z0-9_.()]+',
+                last_word
+                )
+            if not words:
+                return False
+            word = words[-1]
+            node = __main__.__dict__.get(word)
+            if node is None:
+                return False
+            if not hasattr(node, 'allKnobs'):
+                return False
+            try:
+                knob_names = [
+                    knob.name() for knob in node.allKnobs()
+                    if knob.name().strip()
+                ]
+            except Exception as e:
+                print(e)
+                return False
+            self.set_list(knob_names)
+            self.show_popup()
+        elif (
+            cp and cp.popup()
+            and cp.popup().isVisible()
+            and not cp.completionCount() == 0
+            ):
 
             current_word = self.word_under_cursor()
 
@@ -732,9 +777,6 @@ class AutoCompleter(QtCore.QObject):
                 current_word = self.word_before_cursor(
                     regex=r'\w+'
                 )
-
-            # TODO: add a case for "self."
-            # completion in here
 
             cp.setCompletionPrefix(current_word)
             cp.popup().setCurrentIndex(
