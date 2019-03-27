@@ -21,8 +21,8 @@ class MenuBar(object):
 
     def menu_setup(self):
         """
-        Adds top menu bar and various menu 
-		items based on a json config file.
+        Adds top menu bar and various menu
+        items based on a json config file.
         """
         self.menu = QtWidgets.QMenuBar(self.pythoneditor)
         names = [
