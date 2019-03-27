@@ -11,6 +11,7 @@ import os
 import uuid
 from functools import partial
 from PythonEditor.utils import save
+from PythonEditor.utils.debug import debug
 from PythonEditor.ui.Qt import QtWidgets
 from PythonEditor.ui.Qt import QtGui
 from PythonEditor.ui.Qt import QtCore
@@ -448,7 +449,7 @@ class Tabs(QtWidgets.QTabBar):
                 self.pressedIndex = i
             data = self.tabData(self.pressedIndex)
             if data['uuid'] != self.pressed_uid:
-                print 'wrong tab!'
+                debug('wrong tab!')
 
         return super(
             Tabs, self
