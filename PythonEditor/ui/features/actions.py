@@ -10,10 +10,10 @@ in the shortcuts, contextmenu and menubar modules.
 from __future__ import print_function
 import os
 import uuid
-import __main__
-import inspect
-import subprocess
 import json
+import inspect
+import __main__
+import subprocess
 
 from PythonEditor.ui.Qt import QtWidgets
 from PythonEditor.ui.Qt import QtGui
@@ -35,10 +35,9 @@ def load_actions_from_json():
         'action_register.json'
     )
     if not os.path.exists(actions_path):
-        raise Exception(
-            'Could not locate %s '
-            % actions_path
-            )
+        msg = 'Could not locate {!s}'
+        msg = msg.format(actions_path)
+        raise Exception(msg)
     with open(actions_path, 'r') as f:
         action_dict = json.load(f)
 
@@ -1534,6 +1533,13 @@ def get_subobject(text):
 
 
 def open_module_file(obj):
+    if inspect.isbuiltin(obj):
+        print(
+            '{!r} is a built-in {!s}'.format(
+            obj, type(obj)
+            )
+        )
+        return
     try:
         file = inspect.getfile(obj)
     except TypeError as e:
@@ -1541,7 +1547,8 @@ def open_module_file(obj):
             obj = obj.__class__
             file = inspect.getfile(obj)
         else:
-            raise
+            print(e)
+            return
 
     if file.endswith('.pyc'):
         file = file.replace('.pyc', '.py')
