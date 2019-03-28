@@ -280,12 +280,6 @@ class AutoSaveManager(QtCore.QObject):
         if index != self.tabs.currentIndex():
             return
         if not os.path.isfile(path):
-            # set tab saved status to false
-            # data = self.tabs.tabData(index)
-            # if data is None:
-            #     return
-            # data['saved'] = False
-            # self.tabs.setTabData(index, data)
             self.tabs['saved'] = False
             return
         with open(path, 'r') as f:
@@ -360,12 +354,13 @@ class AutoSaveManager(QtCore.QObject):
         """
 
         if self.lock:
-            # don't allow this to be called again before
-            # autosave is complete.
+            # don't allow this to be called again
+            # before autosave is complete.
             return
 
-        # FIXME: This will change when
-        # autocompletion goes synchronous.
+        # because autocomplete signals are currently
+        # asyncronous, this checks for a blocking attribute
+        # set at keyPressEvent and unset on keyReleaseEvent
         if self.editor._key_pressed:
             return
 
@@ -425,6 +420,10 @@ class AutoSaveManager(QtCore.QObject):
                   'the saved version'\
                   '\nor No to overwrite the saved document.'
 
+            # TODO: or Save to New Tab
+            # 'The autosave for {0} is out of date.'
+            # [Load New Tab] [Save This Version] [Update From Autosave]
+
             name = s.attrib.get('name')
             msg = msg.format(tabs['name'], str(name))
             ask = QtWidgets.QMessageBox.question
@@ -436,6 +435,7 @@ class AutoSaveManager(QtCore.QObject):
                 if name is not None:
                     index = self.tabs.currentIndex()
                     self.tabs.setTabText(index, name)
+                self.autosave()
             elif reply == No:
                 text = self.editor.toPlainText()
                 s.text = text
