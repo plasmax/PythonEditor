@@ -2,13 +2,17 @@
 
 
 #### Bug fixes
-- [] wrong tab!
-- [] duplicate tab (need to recreate)
-- [] check overwrite on save
+- [ ] Tab may duplicate on save
+- [ ] Sometimes wrong tab may be clicked
+- [ ] Confirm overwrite file on save.
+- [ ] When editing a document across multiple instances, updating to latest autosave sometimes triggers twice.
+- [ ] Opening a file doesn't prevent its contents from being autosaved. If not modified, files should be read-only.
+- [ ] Workspace doesn't properly recover on Nuke 11
 - [ ] The same file opened twice will open two separate tabs.
-- [ ] Ctrl+F doesn't update word highlighting selection if there is a different word selected.
+- [ ] Ctrl+F doesn't update word highlighting selection.
 - [ ] Help -> About shows nothing
 - [ ] Minor - Clicking on a tab to the right of the QLineEdit when editing a tab name causes a jump, and the wrong tab to be selected.
+- [ ] Save functions need to be amended to work with new single editor
 - [ ] Select between brackets only works for round brackets
 - [ ] On first open (if not pinned to layout), tab may not display contents
 - [ ] Word wrapping and blocks can cause errors, especially in moving text up/down
@@ -18,9 +22,9 @@
 - [x] Save functions need to be amended to work with new single editor
 - [x] Search causes cursor to go missing
 - [x] # in string causes rest of line to be greyed out
+- [x] Pressing . followed immediately by another key causes the autosave document changed window to appear.
 - [x] Shortcuts can be overridden by nuke global shortcuts.
 - [x] Single line (selection-based) Ctrl+Enter no longer uses accurate lineno
-- [x] When pressing keys simultaneously, the document changed window appears
 - [x] CRITICAL BUG: Currently not fully reloadable (error with redirector)
 - [x] After saving, close button appears stuck on saved symbol
 - [x] Extra indentation occurs in some other programs - this was due to not using a monospaced font.
@@ -47,6 +51,9 @@
 
 
 #### Features - parity
+- [ ] "from module import name 'as' othername", "with ContextManager() 'as' name" - syntax highlight the 'as'
+- [ ] Add Script Editor buttons to Menu bar at top - especially fullscreen editor/output,
+      which should remember the settings
 - [x] Highlight line with error
 - [x] Read stdout/stderr on open
 - [ ] Add Script Editor buttons to Menu bar at top - especially fullscreen editor/output,
@@ -54,12 +61,20 @@
 
 
 #### Features - desired
+- [ ] "Actions" - allow users to create and edit custom scripts that run on editor text and are added to the user actions config.
+- [ ] Backup PythonEditorHistory.xml button.
+- [ ] Search and Replace
+- [ ] QTreeView/QStandardItemModel snippet
+- [ ] Strip whitespace from line endings action
+- [ ] Meld diff between tabs and/or tab autosave update warning
+- [ ] debugger - needs a traceback parser and an editor view with a list like Pythonista
 - [ ] Move 'nukefeatures' into an app/nuke folder to make it program agnostic.
       True agnosticism would require moving PythonEditorHistory.xml to the user home directory as well.
 - [ ] Tab close button [x] should appear on active tab only (like chrome)
       and change width of tab (in proportion to the name) when added (setTabButton, RightSide)
 - [x] Move all actions to actions.py and have shortcuts simply setShortcut()
       on the Actions() class, which can be picked up by menus.
+- [x] Move tab to start/end
 - [ ] Pre-reload PythonEditor safety backup
 - [ ] Foldable sidebar with directory tree
 - [ ] File Browser with connected file path
@@ -77,7 +92,6 @@
 - [ ] Preferences - shortcuts - this has been at least partially accomplished on another branch
 - [ ] Preferences - indentation (backspace deletes single space or tab)
 - [ ] Preferences - disable autocompletion in comments
-- [ ] Warn if file has changed on disk (as with autosave when regaining tab focus)
 - [ ] After updating to saved version of autosave, there should be
       the possibility to undo if replacing with the autosave text wasn't desired.
 - [ ] Autocompletion weighting (a la tabtabtab)
@@ -94,6 +108,7 @@
 - [ ] Hover over varibles to get definition goto, type info, short help()
 - [ ] Hover over paths in output window to get goto link
 - [ ] Paste into sublime subprocess.Popen('sublime -n --command paste', executable='/bin/tcsh', shell=True)
+- [ ] Warn if file has changed on disk (as with autosave when regaining tab focus)
 - [/] Set up an execution model where stdout, stderr and stdin are temporarily encapsulated within a context managing with
       statement - is this a good idea? it means output will only be shown when text is executed from PythonEditor.
 - [x] Snippet file library (currently reads from a file called PythonEditor_snippets.json in .nuke dir if found.)
@@ -105,5 +120,6 @@
 
 #### General
 - [ ] Test moving TODO.md to github issues (not so great for local)
-
+- [ ] Consider moving snippets to the back of the autocomplete list
+- [ ] Prep for release
 
