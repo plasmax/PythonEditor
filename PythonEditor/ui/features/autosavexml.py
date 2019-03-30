@@ -543,12 +543,16 @@ class AutoSaveManager(QtCore.QObject):
     @QtCore.Slot(object)
     def handle_document_save(self, uid):
         """
-        Locate tab via uid attribute and remove the autosave
-        contents if they match the given path file contents as
-        these should be loaded from file on next app load
-        (if the tab remains open).
+        After saving the editor's contents,
+        store the path to the saved file in the
+        autosave attributes. The text contents
+        are retained in the autosave until the
+        file is closed, at which time a diff is
+        attempted of the saved file and the
+        autosave.
         """
 
+        # find the tab by uid
         index = -1
         if self.tabs['uuid'] != uid:
             for i in range(self.tabs.count()):
@@ -561,34 +565,22 @@ class AutoSaveManager(QtCore.QObject):
                 return
         else:
             index = self.tabs.currentIndex()
+            data = self.tabs.tabData(index)
 
-        data = self.tabs.tabData(index)
         path = data.get('path')
-        if path is None:
-            return
-        if not os.path.isfile(path):
-            print('No save file found at %s. Retaining autosave.' % path)
-            return
+        if (path is not None
+            and os.path.isfile(path)
+            ):
+            root, subscripts = parsexml('subscript')
+            for s in subscripts:
 
-        with open(path, 'rt') as f:
-            contents = f.read()
+                if s.attrib.get('uuid') != uid:
+                    continue
 
-        root, subscripts = parsexml('subscript')
-        for s in subscripts:
-
-            if s.attrib.get('uuid') != uid:
-                continue
-
-            if s.text != contents:
-                msg = '{0} did not match {1} contents, autosave'
-                debug(msg.format(name, path))
-                return
-
-            s.attrib['path'] = path
-            self.tabs['saved'] = True
-            # FIXME: i think it would be better to keep a temp copy of all open files
-            # until they are closed.
-            writexml(root)
+                s.attrib['path'] = path
+        data['saved'] = True
+        self.tabs.setTabData(index, data)
+        writexml(root)
 
     @QtCore.Slot(object, int)
     def handle_tab_moved(self, editor, tab_index):
