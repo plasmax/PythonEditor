@@ -6,6 +6,7 @@
 - [ ] Sometimes wrong tab may be clicked
 - [ ] Confirm overwrite file on save.
 - [ ] When editing a document across multiple instances, updating to latest autosave sometimes triggers twice.
+- [ ] Alt-tabbing quickly away from and back to the editor causes an autosave message. call autosave() on focusOutEvent to ensure save.
 - [ ] Opening a file doesn't prevent its contents from being autosaved. If not modified, files should be read-only.
 - [ ] Workspace doesn't properly recover on Nuke 11
 - [ ] The same file opened twice will open two separate tabs.
@@ -61,6 +62,7 @@
 
 
 #### Features - desired
+- [] /proc/<pid>/fd/1 & 2 - would these allow a cleaner way of reading stdout that overriding the output stream? Is there a windows/Mac equivalent?
 - [ ] "Actions" - allow users to create and edit custom scripts that run on editor text and are added to the user actions config.
 - [ ] Backup PythonEditorHistory.xml button.
 - [ ] Search and Replace
