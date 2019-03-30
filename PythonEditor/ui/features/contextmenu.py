@@ -59,32 +59,28 @@ class ContextMenu(QtCore.QObject):
                 menu.addAction(action)
 
         return
-        # TODO: need some way of grouping these
-        # Perhaps slash-separated like nuke File/Save etc
-        for a in self.editor.actions():
-            if not a.text():
-                continue
-            self.menu.addAction(a)
 
-        self.infoMenu = self.menu.addMenu('Info')
+        # TODO: migrate to actions
+        self.info_menu = self.menu.addMenu('Info')
+        for var in ('globals', 'locals', 'environ'):
+            print_var = partial(
+                self.print_info,
+                var
+            )
+            self.info_menu.addAction(
+                'Print {0}'.format(var),
+                print_var
+            )
 
-        print_globals = partial(self.printInfo, 'globals')
-        self.infoMenu.addAction('Print globals',
-                                print_globals)
-        print_locals = partial(self.printInfo, 'locals')
-        self.infoMenu.addAction('Print locals',
-                                print_locals)
-        print_environ = partial(self.printInfo, 'environ')
-        self.infoMenu.addAction('Print environ',
-                                print_environ)
-
-        self.snippetMenu = self.menu.addMenu('Snippets')
-        self.utilsMenu = self.snippetMenu.addMenu('Utils')
+        self.snippet_menu = self.menu.addMenu('Snippets')
+        self.utils_menu = self.snippet_menu.addMenu('Utils')
 
         for snippet in self.snippetDict.keys():
             snippet_insert = partial(self.insert_snippet, snippet)
-            self.snippetMenu.addAction(snippet,
-                                       snippet_insert)
+            self.snippet_menu.addAction(
+                snippet,
+                snippet_insert
+            )
 
         self.add_nuke_specific_menu_items()
 
@@ -94,25 +90,25 @@ class ContextMenu(QtCore.QObject):
         if self.selectedText != '':
             for info in ['help', 'type', 'dir', 'len', 'getattr', 'pprint']:
                 text = self.selectedText
-                print_info = partial(self.printInfo,
+                print_info = partial(self.print_info,
                                      info, text=text)
-                self.infoMenu.addAction('Print {0}'.format(info),
+                self.info_menu.addAction('Print {0}'.format(info),
                                         print_info)
 
             # conditional on text selected and external editor path verified
-            self.editorMenu = self.menu.addMenu('External Editor')
-            self.editorMenu.addAction('Open Module File',
+            self.editor_menu = self.menu.addMenu('External Editor')
+            self.editor_menu.addAction('Open Module File',
                                       self._open_module_file)
-            self.editorMenu.addAction('Open Module Directory',
+            self.editor_menu.addAction('Open Module Directory',
                                       self._open_module_directory)
-            self.editorMenu.addAction('Copy to External Editor',
+            self.editor_menu.addAction('Copy to External Editor',
                                       self.notImplemented)
 
             # conditional on text selected and inspect.isModule
-            self.inspectMenu = self.menu.addMenu('Inspect')
-            self.inspectIsMenu = self.inspectMenu.addMenu('is')
-            self.inspectGetMenu = self.inspectMenu.addMenu('get')
-            # self.inspectMenu.addAction('Inspect', print(self.inspectDict))
+            self.inspect_menu = self.menu.addMenu('Inspect')
+            self.inspectIsMenu = self.inspect_menu.addMenu('is')
+            self.inspectGetMenu = self.inspect_menu.addMenu('get')
+            # self.inspect_menu.addAction('Inspect', print(self.inspectDict))
             for attr in self.inspectDict.keys():
                 func = partial(self.inspectExec, attr)
                 if attr.startswith('is'):
@@ -120,7 +116,7 @@ class ContextMenu(QtCore.QObject):
                 elif attr.startswith('get'):
                     self.inspectGetMenu.addAction(attr, func)
                 else:
-                    self.inspectMenu.addAction(attr, func)
+                    self.inspect_menu.addAction(attr, func)
 
             # http://doc.qt.io/archives/qt-4.8/qrubberband.html
             # http://doc.qt.io/archives/qt-4.8/classes.html
@@ -139,21 +135,19 @@ class ContextMenu(QtCore.QObject):
         self.nodes_clr_menu = self.nodes_menu.addMenu('Clear')
         self.nodes_run_menu = self.nodes_menu.addMenu('Eval in Knob Context')
 
-        # self.nodes_menu.addAction('Run on Selected Nodes',
-        #                          self.notImplemented)
-
         # TODO: these could be conditional on nodes selected
         pyknobs = set([
-                   'knobChanged',
-                   'onCreate',
-                   'beforeRender',
-                   'beforeFrameRender',
-                   ])
+            'knobChanged',
+            'onCreate',
+            'beforeRender',
+            'beforeFrameRender',
+        ])
 
         knob_types = (nuke.PyCustom_Knob,
                       nuke.PythonKnob,
                       nuke.PythonCustomKnob,
                       nuke.PyScript_Knob)
+
         # get common python knobs
         for node in nuke.selectedNodes():
             for knob in node.allKnobs():
@@ -335,11 +329,13 @@ class ContextMenu(QtCore.QObject):
         self.textCursor = self.editor.textCursor()
         self.textCursor.insertText(text)
 
-    def printInfo(self, keyword, text=''):
+    def print_info(self, keyword, text=''):
         if keyword == 'globals':
             pprint(__main__.__dict__)
         elif keyword == 'locals':
             print(__main__.__dict__)
+        elif keyword == 'environ':
+            pprint(os.environ.copy())
 
         obj = __main__.__dict__.get(text)
         if obj is None:
@@ -347,8 +343,6 @@ class ContextMenu(QtCore.QObject):
 
         if keyword == 'dir':
             pprint(dir(obj))
-        elif keyword == 'environ':
-            pprint(os.environ.copy())
         elif keyword == 'help':
             print(help(obj))
         elif keyword == 'type':

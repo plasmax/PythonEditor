@@ -274,7 +274,7 @@
                 "Ctrl+G"
             ],
             "Method": "goto_line",
-            "Menu Location": ""
+            "Menu Location": "Tools"
         },
         "Print Type": {
             "Shortcuts": [
