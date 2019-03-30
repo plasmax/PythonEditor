@@ -1003,11 +1003,21 @@ class Actions(QtCore.QObject):
 
     def show_about(self):
         """
-        Placeholder.
-        Show splash screen with about window and version
+        Show about message with version
         info for pythoneditor.
         """
-        pass
+        from PythonEditor._version import __version__
+        msg = (
+            'PythonEditor version {0}\n\n'.format(__version__)
+            + 'Written by Max Last.\n'
+            + 'Please email feedback to: '
+            + 'tsalxam@gmail.com'
+        )
+        QtWidgets.QMessageBox.about(
+            self.editor,
+            'About PythonEditor',
+            msg
+        )
 
     def open_module_file(self):
         textCursor = self.editor.textCursor()
@@ -1244,17 +1254,6 @@ class Actions(QtCore.QObject):
         Generates a popup dialog listing available preferences.
         """
         self.pythoneditor.preferenceseditor.show()
-
-    def show_about_dialog(self):
-        """
-        Shows an about dialog with version information.
-        TODO: Make it a borderless splash screen, centred, nice text,
-        major and minor version numbers set in one place in the
-        project.
-        """
-        msg = 'Python Editor version {0} by Max Last'.format(__version__)
-        self.about_dialog = QtWidgets.QLabel(msg)
-        self.about_dialog.show()
 
 
 class CommandPalette(QtWidgets.QLineEdit):
