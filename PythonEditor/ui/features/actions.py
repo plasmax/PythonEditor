@@ -985,7 +985,6 @@ class Actions(QtCore.QObject):
 
     def goto_line(self):
         """
-        Placeholder.
         Show small lineedit widget allowing
         user to type line to go to. Store current
         line in case user cancels.
