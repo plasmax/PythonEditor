@@ -24,10 +24,46 @@ from PythonEditor.utils.debug import debug
 from PythonEditor.utils.constants import NUKE_DIR
 
 
-AUTOSAVE_FILE = os.path.join(
-    NUKE_DIR,
-    'PythonEditorHistory.xml'
-)
+def isdir(path):
+    return os.path.isdir(
+    os.path.dirname(path)
+    )
+
+
+def haspermissions(path):
+    return os.access(
+        path,
+        os.R_OK|os.W_OK
+    )
+
+
+def define_autosave_path():
+    """
+    Allow users to define a custom
+    xml file path via an environment
+    variable.
+    """
+    global NUKE_DIR
+    global AUTOSAVE_FILE
+    AUTOSAVE_FILE = os.getenv(
+        'PYTHONEDITOR_AUTOSAVE_FILE'
+    )
+    if (AUTOSAVE_FILE is None
+        or not isdir(AUTOSAVE_FILE)
+        ):
+        if not isdir(NUKE_DIR):
+            NUKE_DIR = os.path.expanduser('~')
+        AUTOSAVE_FILE = os.path.join(
+            NUKE_DIR,
+            'PythonEditorHistory.xml'
+        )
+    os.environ[
+        'PYTHONEDITOR_AUTOSAVE_FILE'
+    ] = AUTOSAVE_FILE
+    return AUTOSAVE_FILE
+
+
+AUTOSAVE_FILE = define_autosave_path()
 XML_HEADER = '<?xml version="1.0" encoding="UTF-8"?>'
 
 
@@ -821,14 +857,46 @@ def parsexml(element_name, path=AUTOSAVE_FILE):
     return root, elements
 
 
+TEMP_FILE = None
 def writexml(root, path=AUTOSAVE_FILE):
+    """
+    Attempt to write xml element
+    to a file as a string. If the
+    save fails, write to a temporary
+    file instead.
+
+    :param root: The xml element to write.
+    :type  root: <type 'Element'>
+    :param path: The path to save to.
+    :type  path: <type 'str'>
+    """
     data = ElementTree.tostring(root)
     data = data.decode('utf-8')
     data = data.replace('><subscript', '>\n<subscript')
     data = data.replace('</subscript><', '</subscript>\n<')
 
-    with io.open(path, 'wt', encoding='utf8', errors='ignore') as f:
-        f.write(XML_HEADER+data)
+    try:
+        with io.open(
+            path, 'wt', encoding='utf8', errors='ignore'
+        ) as f:
+            f.write(XML_HEADER+data)
+    except IOError as e:
+        msg = "Couldn't write to {0}\n".format(path)
+        msg += "due to the following error:\n{0}".format(e)
+        print(msg)
+
+        global TEMP_FILE
+        if (
+            TEMP_FILE is None
+            or not os.path.isfile(TEMP_FILE)
+            ):
+            fd, TEMP_FILE = tempfile.mkstemp()
+            TEMP_FILE += '.xml'
+        print('Writing to {0}'.format(TEMP_FILE))
+        with io.open(
+            TEMP_FILE, 'wt', encoding='utf8', errors='ignore'
+        ) as f:
+            f.write(XML_HEADER+data)
 
 
 def fix_broken_xml(path=AUTOSAVE_FILE):
