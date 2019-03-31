@@ -62,8 +62,12 @@
 
 
 #### Features - desired
-- [] /proc/<pid>/fd/1 & 2 - would these allow a cleaner way of reading stdout that overriding the output stream? Is there a windows/Mac equivalent?
-- [ ] "Actions" - allow users to create and edit custom scripts that run on editor text and are added to the user actions config.
+- [ ] Open Containing Folder action - default to autosave dir if nothing else
+- [ ] Copy File Path action
+- [ ] /proc/<pid>/fd/1 & 2 - would these allow a cleaner way of reading stdout that
+      overrides the output stream? Is there a windows/Mac equivalent?
+- [ ] "Actions" - allow users to create and edit custom scripts that run on editor
+      text and are added to the user actions config.
 - [ ] Backup PythonEditorHistory.xml button.
 - [ ] Search and Replace
 - [ ] QTreeView/QStandardItemModel snippet
@@ -74,9 +78,16 @@
       True agnosticism would require moving PythonEditorHistory.xml to the user home directory as well.
 - [ ] Tab close button [x] should appear on active tab only (like chrome)
       and change width of tab (in proportion to the name) when added (setTabButton, RightSide)
-- [x] Move all actions to actions.py and have shortcuts simply setShortcut()
-      on the Actions() class, which can be picked up by menus.
-- [x] Move tab to start/end
+- [ ] Duplicate cursors
+- [ ] Search box at bottom of editor widget (with "all tabs" checkbox)
+- [ ] Search across all tabs
+- [ ] Autocomplete 'toNode', node.knob() and node[knob]
+- [ ] Projects - the new PYTHONEDITOR_AUTOSAVE_FILE env variable should help.
+- [ ] Goto Links in errors/regular paths in the editor
+- [ ] Hover over varibles to get definition goto, type info, short help()
+- [ ] Hover over paths in output window to get goto link
+- [ ] Paste into sublime subprocess.Popen('sublime -n --command paste', executable='/bin/tcsh', shell=True)
+- [ ] Warn if file has changed on disk (as with autosave when regaining tab focus)
 - [ ] Pre-reload PythonEditor safety backup
 - [ ] Foldable sidebar with directory tree
 - [ ] File Browser with connected file path
@@ -86,10 +97,8 @@
 - [ ] Writing to external files instead of xml. Keeping those files in tab session until closed with a JSON file
 - [ ] Would be nice to highlight line on Ctrl+B execution (of single line)
 - [ ] Tabs need QLabels so that they can be italicized when in read_only mode
-- [x] Tooltip displaying file path when hovering over tabs would be nice. (Easy to implement with QLabels)
 - [ ] When save dialog comes up, the suggested name should be the tab name/editor.name - and if there's an
       editor path, the dialog should open to that path
-- [x] Add menu on the top right corner to select between tabs
 - [ ] Preferences - colour
 - [ ] Preferences - shortcuts - this has been at least partially accomplished on another branch
 - [ ] Preferences - indentation (backspace deletes single space or tab)
@@ -100,17 +109,12 @@
 - [ ] Add reverse ' = '.join(reversed('sys.stdout = backup'.split(' = ')))
 - [ ] GOTO tooltip over selected text
 - [ ] Edit Snippets Dialog (for snippets in /.nuke/)
+- [x] Tooltip displaying file path when hovering over tabs would be nice. (Easy to implement with QLabels)
+- [x] Add menu on the top right corner to select between tabs
+- [x] Move all actions to actions.py and have shortcuts simply setShortcut()
+      on the Actions() class, which can be picked up by menus.
+- [x] Move tab to start/end
 - [x] Improve speed of loading tabs
-- [ ] Duplicate cursors
-- [ ] Search box at bottom of editor widget (with "all tabs" checkbox)
-- [ ] Search across all tabs
-- [ ] Autocomplete 'toNode', node.knob() and node[knob]
-- [ ] Projects
-- [ ] Goto Links in errors/regular paths in the editor
-- [ ] Hover over varibles to get definition goto, type info, short help()
-- [ ] Hover over paths in output window to get goto link
-- [ ] Paste into sublime subprocess.Popen('sublime -n --command paste', executable='/bin/tcsh', shell=True)
-- [ ] Warn if file has changed on disk (as with autosave when regaining tab focus)
 - [/] Set up an execution model where stdout, stderr and stdin are temporarily encapsulated within a context managing with
       statement - is this a good idea? it means output will only be shown when text is executed from PythonEditor.
 - [x] Snippet file library (currently reads from a file called PythonEditor_snippets.json in .nuke dir if found.)
