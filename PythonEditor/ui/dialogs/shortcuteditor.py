@@ -49,6 +49,10 @@ class ShortcutEditor(QtWidgets.QTreeView):
                 name = action.text()
                 # TODO: put shortcut in a keycatcher widget.
                 shortcut = action.shortcut().toString()
+                # if not shortcut.strip():
+                #     continue
+                if 'Placeholder' in action.toolTip():
+                    continue
                 about = ' '.join([
                     line.strip() for line in
                     action.toolTip().splitlines()
