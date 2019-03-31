@@ -510,8 +510,9 @@ class AutoSaveManager(QtCore.QObject):
 
     def store_current_index(self):
         """
-        TODO: store a <currentindex> element
-        and then set the currentindex on readautosave (if present! backwards compat).
+        Store a <currentindex> element in order
+        to restore the current index on readautosave.
+        (if present, for backwards compatibility).
         """
         root, index_elements = parsexml('current_index')
         if len(index_elements) == 0:
@@ -662,6 +663,10 @@ def create_autosave_file():
     if os.path.isfile(AUTOSAVE_FILE):
 
         # if the autosave file is empty, write header
+        # FIXME: can this be an os.stat/get file size?
+        # Furthermore, what if it's not empty but has a
+        # corrupted header? What are the methods for
+        # data preservation?
         with open(AUTOSAVE_FILE, 'r') as f:
             is_empty = not bool(f.read().strip())
         if is_empty:
@@ -671,9 +676,9 @@ def create_autosave_file():
         # if file not found, check if directory exists
         if not os.path.isdir(NUKE_DIR):
             # filehandle, filepath = tempfile.mkstemp()
+            # FIXME: set os.environ['PYTHONEDITOR_AUTOSAVE_FILE'] and define_autosave_path()
             # msg = 'Directory %s does not exist, saving to %s' % (NUKE_DIR, filepath)
-            msg = 'Directory %s does not exist' % NUKE_DIR
-            # NUKE_DIR = filepath
+            msg = 'Directory {0} does not exist'.format(NUKE_DIR)
             raise CouldNotCreateAutosave(msg)
         else:
             init_file_header()
