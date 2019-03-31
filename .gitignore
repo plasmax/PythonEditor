@@ -1,6 +1,7 @@
 *.pyc
 TODO.txt
 _tests/
+_deprecated/
 _old
 *.nk
 icons/
