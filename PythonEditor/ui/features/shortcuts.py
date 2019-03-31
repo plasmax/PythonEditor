@@ -114,7 +114,11 @@ class ShortcutHandler(QtCore.QObject):
         self._installed = False
 
     def eventFilter(self, obj, event):
-        if not self.editor.isVisible():
+        try:
+            if not self.editor.isVisible():
+                self.remove_event_filter()
+                return False
+        except RuntimeError:
             self.remove_event_filter()
             return False
 
@@ -181,7 +185,7 @@ class ShortcutHandler(QtCore.QObject):
         action = self.shortcut_dict.get(
             event.text()
         )
-        
+
         single_key = (action is not None)
         if not single_key:
             combo = key_to_sequence(key)

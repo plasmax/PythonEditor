@@ -39,34 +39,24 @@ class MenuBar(object):
         for name in names:
             self.menu.addMenu(name)
 
-        action_dict = actions.load_actions_from_json()
-        for widget_name, widget_actions in action_dict.items():
-            if not hasattr(self, widget_name):
-                # TODO: might want to do something interesting
-                # here with state - instead of widget
-                # attrib, get 'widget clicked on'
+        for widget, action_name, attributes in actions.class_actions(self):
+            location = attributes.get('Menu Location')
+            if location is None:
                 continue
-            widget = getattr(self, widget_name)
-            if widget is None:
+            for action in widget.actions():
+                if action.text() != action_name:
+                    continue
+                break
+            else:
                 continue
-            for action_name, attributes in widget_actions.items():
-                location = attributes.get('Menu Location')
-                if location is None:
-                    continue
-                for action in widget.actions():
-                    if action.text() != action_name:
-                        continue
-                    break
-                else:
-                    continue
 
-                menu = self.menu
-                if location != '':
-                    for name in location.split('/'):
-                        item = actions.find_menu_item(menu, name)
-                        if item is None:
-                            item = menu.addMenu(name)
-                        menu = item
-                    menu.addAction(action)
+            menu = self.menu
+            if location != '':
+                for name in location.split('/'):
+                    item = actions.find_menu_item(menu, name)
+                    if item is None:
+                        item = menu.addMenu(name)
+                    menu = item
+                menu.addAction(action)
 
         self.pythoneditor.layout().insertWidget(0, self.menu)

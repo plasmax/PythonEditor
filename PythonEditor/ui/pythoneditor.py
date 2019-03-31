@@ -47,6 +47,7 @@ class PythonEditor(QtWidgets.QWidget):
         splitter.addWidget(self.tabeditor)
 
         layout.addWidget(splitter)
+        self.splitter = splitter
 
         act = actions.Actions(
             pythoneditor=self,

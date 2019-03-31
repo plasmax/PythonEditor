@@ -10,6 +10,7 @@ in the shortcuts, contextmenu and menubar modules.
 from __future__ import print_function
 import re
 import os
+import sys
 import uuid
 import json
 import inspect
@@ -47,6 +48,25 @@ def load_actions_from_json():
     # (or perhaps in XML) that allow dictionary updates here.
 
     return action_dict
+
+
+def class_actions(cls):
+    """
+    Convenience function to return all the
+    actions relevant to a class, such as the
+    Actions, ContextMenu, and MenuBar classes,
+    based on which widgets the actions refer to.
+    """
+    action_dict = load_actions_from_json()
+    for widget_name, widget_actions in action_dict.items():
+        if not hasattr(cls, widget_name):
+            continue
+        widget = getattr(cls, widget_name)
+        if widget is None:
+            continue
+        for action_name, attributes in widget_actions.items():
+            yield widget, action_name, attributes
+
 
 
 class Actions(QtCore.QObject):
@@ -102,24 +122,27 @@ class Actions(QtCore.QObject):
         same names as those registered in the
         json file(s) where actions are stored.
         """
-        action_dict = load_actions_from_json()
-        for widget_name, widget_actions in action_dict.items():
-            if not hasattr(self, widget_name):
-                continue
-            widget = getattr(self, widget_name)
-            if widget is None:
-                continue
-            for action_name, attributes in widget_actions.items():
-                method_name = attributes['Method']
-                if not hasattr(self, method_name):
-                    print('could not find method %s: %s' % (action_name, method_name))
-                    continue
-                func = getattr(self, method_name)
-                action = make_action(
+        for widget, action_name, attributes in class_actions(self):
+            method_name = attributes['Method']
+            if not hasattr(self, method_name):
+                msg = 'could not find method {0}: {1}'.format(
                     action_name,
-                    widget,
-                    func
+                    method_name
                 )
+                print(msg)
+                continue
+            func = getattr(self, method_name)
+
+            # skip placeholders
+            if func.__doc__ is not None:
+                if 'Placeholder' in func.__doc__:
+                    continue
+
+            action = make_action(
+                action_name,
+                widget,
+                func
+            )
 
     # -------------------------------------- #
     # ---------------         -------------- #
@@ -961,6 +984,42 @@ class Actions(QtCore.QObject):
     # ---------------         -------------- #
     # -------------------------------------- #
 
+    # TODO: move utility methods to functions
+    def get_selected_blocks(self, ignoreEmpty=True):
+        """
+        Utility method for getting lines in selection.
+        """
+        textCursor = self.editor.textCursor()
+        doc = self.editor.document()
+        start = textCursor.selectionStart()
+        end = textCursor.selectionEnd()
+
+        # get line numbers
+        blockNumbers = set([
+                doc.findBlock(b).blockNumber()
+                for b in range(start, end)
+                    ])
+
+        pos = textCursor.position()
+        blockNumbers |= set([
+            doc.findBlock(
+            pos).blockNumber()
+        ])
+
+        def isEmpty(b):
+            return doc.findBlockByNumber(
+                b).text().strip() != ''
+
+        blocks = []
+        for b in blockNumbers:
+            bn = doc.findBlockByNumber(b)
+            if not ignoreEmpty:
+                blocks.append(bn)
+            elif isEmpty(b):
+                blocks.append(bn)
+
+        return blocks
+
     def copy_block_or_selection(self):
         """
         If there's no text selected,
@@ -994,7 +1053,7 @@ class Actions(QtCore.QObject):
 
     def command_palette(self):
         """
-        Placeholder.
+        Placeholder. (Will be skipped.)
         Show QLineEdit Command Palette allowing
         user to type commands instead of using shortcuts.
         """
@@ -1038,10 +1097,16 @@ class Actions(QtCore.QObject):
 
     def search(self):
         """
-        Very basic search dialog.
+        Search the current document.
         """
         self.find_palette = FindPalette(self.editor)
         self.find_palette.show()
+
+    def find_and_replace(self):
+        """
+        Placeholder.
+        """
+        pass
 
     def reload_package(self):
         widget = self.tabeditor
@@ -1114,7 +1179,7 @@ class Actions(QtCore.QObject):
     def new_tab(self):
         self.tabs.new_tab()
 
-    def remove_current_tab(self):
+    def close_tab(self):
         self.tabs.remove_current_tab()
 
     def next_tab(self):
@@ -1147,42 +1212,6 @@ class Actions(QtCore.QObject):
     def clear_output(self):
         if hasattr(self, 'terminal'):
             self.terminal.clear()
-
-    # TODO: move utility methods to functions
-    def get_selected_blocks(self, ignoreEmpty=True):
-        """
-        Utility method for getting lines in selection.
-        """
-        textCursor = self.editor.textCursor()
-        doc = self.editor.document()
-        start = textCursor.selectionStart()
-        end = textCursor.selectionEnd()
-
-        # get line numbers
-        blockNumbers = set([
-                doc.findBlock(b).blockNumber()
-                for b in range(start, end)
-                    ])
-
-        pos = textCursor.position()
-        blockNumbers |= set([
-            doc.findBlock(
-            pos).blockNumber()
-        ])
-
-        def isEmpty(b):
-            return doc.findBlockByNumber(
-                b).text().strip() != ''
-
-        blocks = []
-        for b in blockNumbers:
-            bn = doc.findBlockByNumber(b)
-            if not ignoreEmpty:
-                blocks.append(bn)
-            elif isEmpty(b):
-                blocks.append(bn)
-
-        return blocks
 
     def jump_to_start(self):
         """
@@ -1253,6 +1282,30 @@ class Actions(QtCore.QObject):
         Generates a popup dialog listing available preferences.
         """
         self.pythoneditor.preferenceseditor.show()
+
+    # -------------------------------------- #
+    # ---------------         -------------- #
+    # ---------------         -------------- #
+    #                interface               #
+    # ---------------         -------------- #
+    # ---------------         -------------- #
+    # -------------------------------------- #
+    splitter_state = None
+    def fullscreen_editor(self):
+        """
+        Toggle the QSplitter between
+        fullscreen editor and 50%.
+        """
+        splitter = self.pythoneditor.splitter
+        top = splitter.sizes()[0]
+        if top == 0:
+            if self.splitter_state is None:
+                splitter.setSizes([1,1])
+                self.splitter_state = splitter.saveState()
+            splitter.restoreState(self.splitter_state)
+        else:
+            self.splitter_state = splitter.saveState()
+            splitter.setSizes([0,1])
 
 
 class CommandPalette(QtWidgets.QLineEdit):
@@ -1672,13 +1725,31 @@ def open_module_directory(obj):
     folder = os.path.dirname(file)
     print(folder)
 
-    #TODO: this is a horrible hack to avoid circular imports
-    from PythonEditor.ui.features.autosavexml import get_external_editor_path
+    autosavexml = sys.modules.get(
+        '.'.join([
+        'PythonEditor',
+        'ui',
+        'features',
+        'autosavexml'
+        ])
+    )
+    if autosavexml is None:
+        return
 
-    EXTERNAL_EDITOR_PATH = get_external_editor_path()
-    if (EXTERNAL_EDITOR_PATH
-            and os.path.isdir(os.path.dirname(EXTERNAL_EDITOR_PATH))):
-        subprocess.Popen([EXTERNAL_EDITOR_PATH, folder])
+    eepath = autosavexml.get_external_editor_path
+
+    EXTERNAL_EDITOR_PATH = eepath()
+    if (
+        EXTERNAL_EDITOR_PATH
+        and os.path.isdir(
+                os.path.dirname(
+                    EXTERNAL_EDITOR_PATH
+                )
+            )
+        ):
+        subprocess.Popen(
+            [EXTERNAL_EDITOR_PATH, folder]
+        )
 
 
 def openDir(module):

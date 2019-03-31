@@ -1,12 +1,5 @@
 {
     "tabs": {
-        "Remove Current Tab": {
-            "Shortcuts": [
-                "Ctrl+Shift+W"
-            ],
-            "Menu Location": "View/Tabs",
-            "Method": "remove_current_tab"
-        },
         "New Tab": {
             "Shortcuts": [
                 "Ctrl+T",
@@ -29,6 +22,14 @@
             ],
             "Menu Location": "View/Tabs",
             "Method": "next_tab"
+        },
+        "Close Tab": {
+            "Shortcuts": [
+                "Ctrl+Shift+W",
+                "Ctrl+W"
+            ],
+            "Menu Location": "File",
+            "Method": "close_tab"
         }
     },
     "terminal": {
@@ -89,6 +90,13 @@
             ],
             "Method": "reload_package",
             "Menu Location": "Help"
+        },
+        "Fullscreen Editor": {
+            "Shortcuts": [
+                "F11"
+            ],
+            "Method": "fullscreen_editor",
+            "Menu Location": "View"
         },
         "New Line Below": {
             "Shortcuts": [

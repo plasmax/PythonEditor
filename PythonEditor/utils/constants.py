@@ -14,15 +14,15 @@ if IN_NUKE:
 USER = os.environ.get('USERNAME')
 
 NUKE_DIR = os.path.join(
-	os.path.expanduser('~'),
-	'.nuke'
+    os.path.expanduser('~'),
+    '.nuke'
 )
 PYTHONEDITOR_CUSTOM_DIR = os.getenv(
-	'PYTHONEDITOR_CUSTOM_DIR'
+    'PYTHONEDITOR_CUSTOM_DIR'
 )
 if PYTHONEDITOR_CUSTOM_DIR is not None:
-	if os.path.isdir(PYTHONEDITOR_CUSTOM_DIR):
-		NUKE_DIR = PYTHONEDITOR_CUSTOM_DIR
+    if os.path.isdir(PYTHONEDITOR_CUSTOM_DIR):
+        NUKE_DIR = PYTHONEDITOR_CUSTOM_DIR
 
 QT_VERSION = os.pathsep.join([pyside, pyqt])
 
@@ -31,6 +31,9 @@ DEFAULT_FONT = (
     if (os.name == 'nt')
     else 'DejaVu Sans Mono'
 )
-os.environ[
-	'PYTHONEDITOR_DEFAULT_FONT'
-] = DEFAULT_FONT
+if os.getenv(
+    'PYTHONEDITOR_DEFAULT_FONT'
+    ) is None:
+    os.environ[
+        'PYTHONEDITOR_DEFAULT_FONT'
+    ] = DEFAULT_FONT

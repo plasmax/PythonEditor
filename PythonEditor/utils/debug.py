@@ -10,14 +10,17 @@ def debug(*args, **kwargs):
     TODO: what more useful information could be included here?
     Would be nice to allow this to send information via email.
     """
-    if os.getenv('USER') != 'mlast':
-        return
+    try:
+        if os.getenv('USER') != 'mlast':
+            return
 
-    f = sys._getframe().f_back
+        f = sys._getframe().f_back
 
-    print('\nDEBUG:')
-    print(*args, **kwargs)
+        print('\nDEBUG:')
+        print(*args, **kwargs)
 
-    _file = inspect.getfile(f)
-    lineno = str(inspect.getlineno(f))
-    print('sublime %s:%s' % (_file, lineno))
+        _file = inspect.getfile(f)
+        lineno = str(inspect.getlineno(f))
+        print('sublime %s:%s' % (_file, lineno))
+    except:
+        pass
