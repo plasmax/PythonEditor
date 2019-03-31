@@ -1,9 +1,10 @@
 
 import os # temporary for self.open until files.py or files/open.py, save.py, autosave.py implemented.
 import uuid
+
 from PythonEditor.ui.Qt import QtWidgets
-from PythonEditor.utils import save
 from PythonEditor.ui.features import actions
+from PythonEditor.utils import save
 from PythonEditor._version import __version__
 
 
