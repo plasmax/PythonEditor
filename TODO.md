@@ -3,7 +3,8 @@
 
 #### Bug fixes
 - [ ] Tab may duplicate on save
-- [ ] Sometimes wrong tab may be clicked
+- [ ] Close button should be persistent 
+      on the active tab.
 - [ ] Confirm overwrite file on save.
 - [ ] When editing a document across multiple instances, updating to latest autosave sometimes triggers twice.
 - [ ] Alt-tabbing quickly away from and back to the editor causes an autosave message. call autosave() on focusOutEvent to ensure save.
@@ -82,6 +83,7 @@
 - [ ] Search box at bottom of editor widget (with "all tabs" checkbox)
 - [ ] Search across all tabs
 - [ ] Autocomplete 'toNode', node.knob() and node[knob]
+- [ ] Autocomplete os.environ and other dicts
 - [ ] Projects - the new PYTHONEDITOR_AUTOSAVE_FILE env variable should help.
 - [ ] Goto Links in errors/regular paths in the editor
 - [ ] Hover over varibles to get definition goto, type info, short help()
