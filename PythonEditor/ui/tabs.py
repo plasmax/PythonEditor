@@ -279,10 +279,10 @@ class Tabs(QtWidgets.QTabBar):
 
     def event(self, event):
         try:
+            # Check class (after reload, opening a new window, etc)
+            # this can raise TypeError:
+            # super(type, obj): obj must be an instance or subtype of type
             if not issubclass(Tabs, self.__class__):
-                # Check class (after reload, opening a new window, etc)
-                # this can raise TypeError:
-                # super(type, obj): obj must be an instance or subtype of type
                 return False
         except TypeError:
             return False
@@ -296,7 +296,8 @@ class Tabs(QtWidgets.QTabBar):
             QE.HoverEnter,
             QE.HoverMove,
             QE.HoverLeave,
-            QE.Paint
+            QE.Paint,
+            QE.MouseButtonRelease
             ]:
             self.handle_close_button_display(event)
 
