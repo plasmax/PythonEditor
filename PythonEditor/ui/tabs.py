@@ -297,7 +297,6 @@ class Tabs(QtWidgets.QTabBar):
             QE.HoverMove,
             QE.HoverLeave,
             QE.Paint,
-            QE.MouseButtonRelease
             ]:
             self.handle_close_button_display(event)
 
@@ -330,10 +329,12 @@ class Tabs(QtWidgets.QTabBar):
                 self.tab_close_button.hide()
             return
 
-        if e.type() == QtCore.QEvent.HoverEnter:
+        if e.type() in [
+            e.HoverEnter,
+            e.MouseButtonRelease
+            ]:
             pos = e.pos()
             self._hovered_index = i = self.tabAt(pos)
-
             self.tab_close_button.show()
             self.tab_close_button.raise_()
             self.move_tab_close_button(pos)
@@ -467,6 +468,7 @@ class Tabs(QtWidgets.QTabBar):
                     i,
                     self.start_move_index
                 )
+            self.handle_close_button_display(event)
 
         elif event.button() == QtCore.Qt.RightButton:
             menu = QtWidgets.QMenu()
