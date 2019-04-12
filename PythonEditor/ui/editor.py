@@ -158,6 +158,20 @@ class Editor(QtWidgets.QPlainTextEdit):
     def setTextChanged(self, state=True):
         self._changed = state
 
+    def replace_text(self, text):
+        """
+        Set the text programmatically
+        but allow an undo. Works around
+        setPlainText automatically
+        resetting the undo stack.
+        """
+        tc = self.textCursor()
+        tc.beginEditBlock()
+        tc.select(tc.Document)
+        tc.removeSelectedText()
+        self.appendPlainText(text)
+        tc.endEditBlock()
+
     def setPlainText(self, text):
         """
         Override original method to prevent
