@@ -363,6 +363,10 @@ class Tabs(QtWidgets.QTabBar):
             self.tab_close_button.hide()
 
         elif e.type() == QtCore.QEvent.Paint:
+            if hasattr(self, 'name_edit'):
+                if self.name_edit.isVisible():
+                    self.tab_close_button.hide()
+                    return
             pos = self.mapFromGlobal(
                 self.cursor().pos()
             )
