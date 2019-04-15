@@ -96,6 +96,7 @@ class Editor(QtWidgets.QPlainTextEdit):
         self._handle_shortcuts = handle_shortcuts
         self._features_initialised = False
         self._key_pressed = False
+        self.last_key_pressed = ''
 
         self.emit_text_changed = True
         self.textChanged.connect(
@@ -158,6 +159,20 @@ class Editor(QtWidgets.QPlainTextEdit):
     def setTextChanged(self, state=True):
         self._changed = state
 
+    def replace_text(self, text):
+        """
+        Set the text programmatically
+        but allow an undo. Works around
+        setPlainText automatically
+        resetting the undo stack.
+        """
+        tc = self.textCursor()
+        tc.beginEditBlock()
+        tc.select(tc.Document)
+        tc.removeSelectedText()
+        self.appendPlainText(text)
+        tc.endEditBlock()
+
     def setPlainText(self, text):
         """
         Override original method to prevent
@@ -197,6 +212,8 @@ class Editor(QtWidgets.QPlainTextEdit):
         signal.
         """
         FR = QtCore.Qt.FocusReason
+        # ignore PopupFocusReason as the
+        # autocomplete QListView triggers it.
         ignored_reasons = [
             FR.PopupFocusReason,
         ]
@@ -351,5 +368,13 @@ class Editor(QtWidgets.QPlainTextEdit):
             ).insertFromMimeData(mimeData)
 
     def showEvent(self, event):
-        self.setFocus(QtCore.Qt.MouseFocusReason)
+        """
+        Override to automatically set the
+        focus on the editor using
+        PopupFocusReason which won't
+        trigger the autosave.
+        """
         super(Editor, self).showEvent(event)
+        self.setFocus(
+            QtCore.Qt.PopupFocusReason
+        )
