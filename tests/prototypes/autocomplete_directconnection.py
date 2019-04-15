@@ -13,12 +13,12 @@ class Editor(QtWidgets.QPlainTextEdit):
         if not self.enter_text:
             return
         #super(Editor, self).keyPressEvent(event)
-        
+
 
 class AutoCompleter(QtWidgets.QListView):
     def __init__(self, editor):
         super(AutoCompleter, self).__init__()
-        
+
         self.setWindowFlags(
             QtCore.Qt.WindowStaysOnTopHint
             | QtCore.Qt.FramelessWindowHint
@@ -35,13 +35,13 @@ class AutoCompleter(QtWidgets.QListView):
         editor = self.editor
         super(editor.__class__, editor).keyPressEvent(event)
         return
-        
+
         if event.key() == QtCore.Qt.Key_Tab:
             event.accept()
             editor.enter_text = False
-            
+
             rect = editor.cursorRect()
-            pos = rect.bottomRight()            
+            pos = rect.bottomRight()
             pos = editor.mapToGlobal(pos)
             self.move(pos)
             self.show()
