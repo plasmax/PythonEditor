@@ -15,6 +15,7 @@ import unicodedata
 import warnings
 import tempfile
 import difflib
+from functools import partial
 from xml.etree import cElementTree as ElementTree
 
 from PythonEditor.ui.Qt import QtCore, QtWidgets
@@ -86,8 +87,6 @@ class AutoSaveManager(QtCore.QObject):
     - A new tab is opened and content created
 
     # Deletes when:
-    - When writing to a file, the autosave text
-    content is cleared, but the xml entry is left.
     - When closing a tab:
         if there is autosaved content:
             the user will be asked to save.
@@ -106,7 +105,7 @@ class AutoSaveManager(QtCore.QObject):
 
         self.setObjectName('AutoSaveManager')
         self.autosave_timer_waiting = False
-        self.setup_save_timer(interval=1000) # TODO: hook this up
+        self.setup_save_timer(interval=1000)
 
         self.tabeditor = tabs
         self.editor = tabs.editor
@@ -117,32 +116,62 @@ class AutoSaveManager(QtCore.QObject):
         self.connect_signals()
 
     def connect_signals(self):
-        """ Connects the editor and tab signals to this class """
-        pairs = [
-            (self.editor.text_changed_signal, self.save_timer),
-            (self.editor.focus_in_signal, self.check_autosave_modified),
-        ]
-        self._connections = []
-        for signal, slot in pairs:
-            name, _, handle = connect(self.editor, signal, slot)
-            self._connections.append((name, slot))
+        """
+        Connects the editor, tabeditor
+        and tab signals to this class
+        """
+        editor = self.editor
+        editor.text_changed_signal.connect(
+            self.save_timer)
+        editor.focus_in_signal.connect(
+            self.check_autosave_modified)
 
-        # connect tab signals
         tabs = self.tabs
-        cts = tabs.tab_close_signal
-        cts.connect(self.remove_subscript)
-        trs = tabs.tab_renamed_signal
-        trs.connect(self.save_by_uuid)
-        tmv = tabs.tab_repositioned_signal
-        tmv.connect(self.update_tab_index)
-        tcc = tabs.currentChanged
-        tcc.connect(self.store_current_index)
-        tss = self.tabeditor.tab_switched_signal
-        tss.connect(self.check_autosave_modified)
-        css = tabs.contents_saved_signal
-        css.connect(self.handle_document_save)
-        rts = tabs.reset_tab_signal
-        rts.connect(self.clear_subscripts)
+        tabs.tab_close_signal.connect(
+            self.remove_subscript
+        )
+        tabs.tab_renamed_signal.connect(
+            self.save_by_uuid
+        )
+        tabs.tab_repositioned_signal.connect(
+            self.update_tab_index
+        )
+        tabs.currentChanged.connect(
+            self.store_current_index
+        )
+        tabs.contents_saved_signal.connect(
+            self.handle_document_save
+        )
+        tabs.reset_tab_signal.connect(
+            self.clear_subscripts
+        )
+
+        tabeditor = self.tabeditor
+        tabeditor.tab_switched_signal.connect(
+            self.check_autosave_modified
+        )
+
+    def save_timer(self):
+        """
+        On text_changed_signal, if no text present, save immediately.
+        Else, start a timer that will trigger autosave after
+        a brief pause in typing.
+        """
+        # FIXME: so this was set up to allow quick clearing of
+        # documents so that the tab could be closed immediately
+        # afterwards. however, it caused a problem somewhere so
+        # was commented out. I don't remember where.
+        # if not self.editor.toPlainText().strip():
+        #     return self.autosave()
+
+        self.autosave_timer_waiting = True
+        if self.autosave_timer.isActive():
+            self.autosave_timer.stop()
+
+        self.setup_save_timer()
+        self.autosave_timer.timeout.connect(self.autosave_handler)
+        if self.editor.document().isModified():
+            self.autosave_timer.start()
 
     def setup_save_timer(self, interval=500):
         """
@@ -154,66 +183,19 @@ class AutoSaveManager(QtCore.QObject):
         self.autosave_timer.setSingleShot(True)
         self.autosave_timer.setInterval(interval)
 
-    def save_timer(self):
-        """
-        On text_changed_signal, if no text present, save immediately.
-        Else, start a timer that will trigger autosave after
-        a brief pause in typing.
-        """
-
-        # why did I used to block saving when no text was present?
-        # maybe because a timer is unecessary...
-        # if not self.editor.toPlainText().strip():
-        #     return self.autosave()
-
-        self.autosave_timer_waiting = True
-        if self.autosave_timer.isActive():
-            self.autosave_timer.stop()
-
-        self.setup_save_timer()
-        self.autosave_timer.timeout.connect(self.autosave_handler)
-        self.autosave_timer.start()
-
     def autosave_handler(self):
         """
         Autosave timeout triggers this.
         """
         self.autosave_timer_waiting = False
-        self.autosave()
-
-    def readfile(self, path):
-        """
-        Opens any file and sets the editor's contents
-        to the file's contents. Changes .pyc to .py in
-        path arguments.
-        """
-        if '.xml' in path:
-            return self.readxml(path)
-
-        # do not open compiled python files
-        path = path.replace('.pyc', '.py')
-
-        with io.open(path, 'r') as f:
-            text = f.read()
-
-        self.editor.read_only = True
-
-        self.editor.path = path
-        self.editor.setPlainText(text)
-
-    def readxml(self, path):
-        parser = ElementTree.parse(path)
-        root = parser.getroot()
-        self.editor.setPlainText(root.text)
+        if self.editor.document().isModified():
+            self.autosave()
 
     def readautosave(self):
         """
         Sets editor text content. First checks the
         autosave file for <subscript> elements and
         creates a tab per element.
-
-        TODO: Would be nice to remember current tab
-        (alongside preferences) when reading autosave.
         """
         root, subscripts = parsexml('subscript')
         if len(subscripts) == 0:
@@ -302,10 +284,88 @@ class AutoSaveManager(QtCore.QObject):
         self.tabs['text'] = text
         self.tabs['saved'] = True
 
+    def check_autosave_modified(self, index=-1):
+        """
+        On focus in event, check the xml (or
+        the saved file if present) to see if
+        there are any differences. If there
+        are, ask the user if they want to update
+        their tab.
+        """
+        # remove any popup windows that
+        # were previously showing
+        self.remove_existing_popups(
+            'Document out of sync warning'
+        )
+
+        # first check against saved files,
+        self.check_document_modified(
+            self.tabs.currentIndex(),
+            self.tabs.get('path')
+        )
+
+        # safety: do not autosave if current
+        # index is -1. this should not happen
+        # as there is no [+] tab anymore.
+        tabs = self.tabs
+        if tabs.currentIndex() == -1:
+            return
+
+        # read the autosave file
+        root, subscripts = parsexml('subscript')
+
+        # sync tab names from the autosave
+        tab_uid = tabs['uuid']
+        for s in subscripts:
+            uid = s.attrib.get('uuid')
+            if uid != tab_uid:
+                continue
+            xml_tab_name = s.attrib.get('name')
+            if xml_tab_name == tabs['name']:
+                continue
+            index = self.tabs.currentIndex()
+            self.tabs.setTabText(index, xml_tab_name)
+            self.tabs['name'] = xml_tab_name
+
+        # find all subscripts with a
+        # matching uid for our current tab
+        not_matching = []
+        editor_text = self.editor.toPlainText()
+        for s in subscripts:
+            if s.text is None:
+                continue
+            uid = s.attrib.get('uuid')
+            if uid != tab_uid:
+                continue
+            if s.text != editor_text:
+                not_matching.append((s, uid))
+
+        mismatch_count = len(not_matching)
+        if mismatch_count == 0:
+            return
+        # print('number of mismatches:',mismatch_count,not_matching)
+
+        # if there's more than one subscript with
+        # the same uid as the current tab, something
+        # has gone wrong.
+        if mismatch_count != 1:
+            count = str(mismatch_count)
+            print('More than one mismatch! Found {0}'.format(count))
+            for s in not_matching:
+                uid = s.attrib.get('uuid')
+                name = s.attrib.get('name')
+                print(uid, name)
+
+        for s, uid in not_matching:
+            self.show_diff_text_popup(s)
+
     def check_document_modified(self, index=-1, path=''):
         """
-        For tabs that have an associated path, check that the
-        text matches the file contents the path's pointing at.
+        For tabs that have an associated path,
+        check that the text matches the file
+        contents the path is pointing at, and
+        set the tab saved status to False if
+        it does not match.
         """
         if not path:
             return
@@ -325,165 +385,192 @@ class AutoSaveManager(QtCore.QObject):
         if text == editor_text:
             return
 
-        # TODO:
-        """
-        I think that instead of a popup window I'd rather
-        display the state of the tab in an obvious way and let
-        the user see a diff if they request one through a right-click menu.
-        """
         self.tabs['saved'] = False
 
-#         self.lock = True
-#         l1 = text.splitlines(True)
-#         l2 = editor_text.splitlines(True)
-
-#         ctx_diff = difflib.context_diff(l1, l2)
-#         diff_text = ''
-#         for i in ctx_diff:
-#             diff_text += i
-
-#         name = self.tabs.tabText(index)
-#         msg = '%s (tab "%s") has changed on disk. Reload?' % (path, name)
-#         msgbox = QtWidgets.QMessageBox()
-#         msgbox.setText(msg)
-#         msgbox.setInformativeText("""
-# Click Reload to load the file on disk and replace the text in the editor.
-# Click Ignore to temporarily ignore this message.
-# """
-#         )
-#         reload_button = QtWidgets.QPushButton('Reload')
-#         msgbox.addButton(reload_button, QtWidgets.QMessageBox.ActionRole)
-
-#         layout = QtWidgets.QVBoxLayout()
-#         lm = msgbox.layout()
-#         lm.addLayout(layout, lm.rowCount(), lm.columnCount())
-#         diff_button = QtWidgets.QPushButton('Show Diff')
-#         layout.addWidget(diff_button)
-#         diff_editor = editor.Editor()
-#         diff_editor.setPlainText(diff_text)
-#         # diff_editor.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
-#         from functools import partial
-#         add_de = partial(layout.addWidget, diff_editor)
-#         diff_button.clicked.connect(add_de)
-#         msgbox.setStandardButtons(
-#             QtWidgets.QMessageBox.Ignore
-#         )
-#         msgbox.setDefaultButton(QtWidgets.QMessageBox.Ignore)
-#         ret = msgbox.exec_()
-
-#         if msgbox.clickedButton() == reload_button:
-#             self.read_current_tab_file()
-#         elif ret == QtWidgets.QMessageBox.Ignore:
-#             # TODO: disassociate file from saved file
-#             pass
-
-#         QtCore.QTimer.singleShot(1500, self.unlock)
-
-    lock = False
-    def check_autosave_modified(self, index=-1):
-        """
-        On focus in event, check the xml (or
-        the saved file if present) to see if
-        there are any differences. If there
-        are, ask the user if they want to update
-        their tab.
-        """
-
-        if self.lock:
-            # don't allow this to be called again
-            # before autosave is complete.
-            return
-
-        # because autocomplete signals are currently
-        # asyncronous, this checks for a blocking attribute
-        # set at keyPressEvent and unset on keyReleaseEvent
-        if self.editor._key_pressed:
-            return
-
-        # first check against saved files,
-        # which will autosave before continuing.
-        self.check_document_modified(
-            self.tabs.currentIndex(),
-            self.tabs.get('path')
+    def show_diff_text_popup(self, subscript):
+        # global popup_bar
+        popup_bar = QtWidgets.QWidget()
+        self.popup_bar = popup_bar
+        name = 'Document out of sync warning'
+        popup_bar.setObjectName(name)
+        popup_bar.setLayout(
+            QtWidgets.QHBoxLayout(popup_bar)
         )
 
-        root, subscripts = parsexml('subscript')
+        # global label
+        label = QtWidgets.QLabel()
+        label.setText(
+            'This tab is out of sync\n'\
+            'with the autosave.'
+        )
+        popup_bar.layout().addWidget(label)
 
-        tabs = self.tabs
-        if self.tabs.currentIndex() == -1:
-            return
-        tab_uid = tabs['uuid']
+        B = QtWidgets.QPushButton
+        # global new_button
+        new_button    = B('Load into New Tab')
+        new_button.setToolTip(
+            'Click to load the text inside '\
+            'the editor into a fresh tab, '\
+            'updating the autosaved version '\
+            'into the previous tab.'
+        )
+        # global save_button
+        save_button   = B('Save This Version')
+        save_button.setToolTip(
+            'Click to choose this version '\
+            'as the version to save.'
+        )
+        # global update_button
+        update_button = B('Update From Autosave')
+        update_button.setToolTip(
+            'Load the version from the '\
+            'autosave into this tab.'
+        )
+
+        # global diff_button
+        diff_button   = B('Show Diff')
+        diff_button.setToolTip(
+            'Show the difference between the two.'
+        )
+
+        remove = partial(
+            self.remove_existing_popups,
+            name
+        )
+        # self.remove_existing_popups(name)
+
+        # global layout
+        layout = self.tabeditor.layout()
+        layout.insertWidget(1, popup_bar)
+
+        stylesheet = """
+        QPushButton { background-color: #444; }
+        QPushButton:hover { background-color: orange; }
+        """
+        buttons = (
+            new_button,
+            save_button,
+            update_button,
+            diff_button
+        )
+        for b in buttons:
+            popup_bar.layout().addWidget(b)
+            b.setStyleSheet(stylesheet)
+
+        # wire signals into buttons
+        new = partial(
+            self.load_into_new_tab,
+            subscript
+        )
+        new_button.clicked.connect(new)
+        new_button.clicked.connect(remove)
+        save = partial(
+            self.save_this_version,
+            subscript
+        )
+        save_button.clicked.connect(save)
+        save_button.clicked.connect(remove)
+        update = partial(
+            self.update_from_autosave,
+            subscript
+        )
+        update_button.clicked.connect(update)
+        update_button.clicked.connect(remove)
+
+        show_diff = partial(
+            self.show_diff_text,
+            subscript.text
+        )
+        diff_button.clicked.connect(show_diff)
+
+        self.editor.modificationChanged.connect(
+            self.check_diff_modified
+        )
+
+        # self.animate_popup()
+
+    def animate_popup(self, start=0, end=46):
+        """
+        FIXME: This works in the prototype, but
+        not here yet. Perhaps because it's called
+        via a few signals, or something to do with
+        the parent object being the tabeditor while
+        the class is instantiated on the tabeditor's
+        parent class, pythoneditor.
+        """
+        # global anim
+        anim = QtCore.QPropertyAnimation(
+            self.popup_bar,
+            'maximumHeight'
+        )
+        self._anim = anim
+        anim.setStartValue(start)
+        anim.setEndValue(end)
+        anim.setDuration(400)
+        anim.start()
+
+    def remove_existing_popups(self, name=None):
+        layout = self.tabeditor.layout()
+        # first remove any previous widgets
+        for i in range(layout.count()):
+            item = layout.itemAt(i)
+            if item is None:
+                continue
+            widget = item.widget()
+            if widget.objectName() != name:
+                continue
+            layout.removeItem(item)
+            widget.deleteLater()
+
+    def show_diff_text(self, text):
         editor_text = self.editor.toPlainText()
+        l1 = text.splitlines(True)
+        l2 = editor_text.splitlines(True)
 
-        # find all subscripts with a
-        # matching uid for our current tab
-        all_match = True
-        not_matching = []
-        for s in subscripts:
-            if s.text is None:
-                continue
-            uid = s.attrib.get('uuid')
-            if uid != tab_uid:
-                continue
+        ctx_diff = difflib.context_diff(l1, l2)
+        diff_text = ''
+        for i in ctx_diff:
+            diff_text += i
 
-            text_match = (s.text == editor_text)
-            name_match = (s.attrib.get('name') == tabs['name'])
+        self.diff_editor = editor.Editor()
+        self.diff_editor.setPlainText(diff_text)
+        self.diff_editor.setWindowFlags(
+            QtCore.Qt.WindowStaysOnTopHint
+        )
 
-            if not all([text_match, name_match]):
-                all_match = False
-                not_matching.append((s, uid))
+        self.diff_editor.show()
 
-        if all_match:
-            return
+    def load_into_new_tab(self, s):
+        text = self.editor.toPlainText()
+        self.editor.replace_text(s.text)
+        self.tabs['text'] = s.text
+        self.autosave()
 
-        self.lock = True
-        mismatch_count = len(not_matching)
-        if mismatch_count != 1:
-            count = str(mismatch_count)
-            print('More than one mismatch! Found {0}'.format(count))
-            for s in not_matching:
-                uid = s.attrib.get('uuid')
-                name = s.attrib.get('name')
-                print(uid, name)
+        self.tabs.new_tab(
+            tab_name=self.tabs['name'],
+            tab_data={
+            'text'  : text,
+            'path'  : self.tabs['path'],
+            }
+        )
+        self.autosave()
 
-        for s, uid in not_matching:
-            # TODO: Display text/differences (difflib?)
-            Yes = QtWidgets.QMessageBox.Yes
-            No = QtWidgets.QMessageBox.No
-            msg = 'Document "{0}" not matching'\
-                  '\nPythonEditorHistory.xml "{1}"'\
-                  '\n\nClick Yes to update this text to '\
-                  'the saved version'\
-                  '\nor No to overwrite the saved document.'
+    def save_this_version(self, subscript):
+        text = self.editor.toPlainText()
+        subscript.text = text
+        self.tabs['text'] = text
+        self.autosave()
 
-            # TODO: or Save to New Tab
-            # 'The autosave for {0} is out of date.'
-            # [Load New Tab] [Save This Version] [Update From Autosave]
+    def update_from_autosave(self, subscript):
+        self.editor.replace_text(subscript.text)
+        self.tabs['text'] = subscript.text
+        self.autosave()
 
-            name = s.attrib.get('name')
-            msg = msg.format(tabs['name'], str(name))
-            ask = QtWidgets.QMessageBox.question
-            title = 'Load Autosave?'
-            reply = ask(self.editor, title, msg, Yes, No)
-            if reply == Yes:
-                self.editor.setPlainText(s.text)
-                self.tabs['text'] = s.text
-                if name is not None:
-                    index = self.tabs.currentIndex()
-                    self.tabs.setTabText(index, name)
-                self.autosave()
-            elif reply == No:
-                text = self.editor.toPlainText()
-                s.text = text
-                self.tabs['text'] = text
-                self.autosave()
-
-        # give the autosave 1500ms to complete
-        # before allowing comparison checks again
-        QtCore.QTimer.singleShot(1500, self.unlock)
-
-    def unlock(self):
-        self.lock = False
+    def check_diff_modified(self):
+        self.editor.modificationChanged.disconnect(
+            self.check_diff_modified
+        )
+        self.check_autosave_modified()
 
     def sync_tab_indices(self):
         """
@@ -515,6 +602,7 @@ class AutoSaveManager(QtCore.QObject):
             str(tabs.currentIndex()),
             tabs.get('path')
             )
+        self.editor.document().setModified(False)
         self.sync_tab_indices()
 
     @QtCore.Slot(str, str, str, str, object)
@@ -587,6 +675,9 @@ class AutoSaveManager(QtCore.QObject):
         file is closed, at which time a diff is
         attempted of the saved file and the
         autosave.
+
+        :param uid: Unique Identifier of
+                    subscript to save
         """
 
         # find the tab by uid
@@ -658,8 +749,8 @@ class AutoSaveManager(QtCore.QObject):
         c) we've discarded the document
         So it's safe to remove it.
 
-        :param uid: Unique Identifier of subscript
-        to remove
+        :param uid: Unique Identifier of
+                    subscript to remove
         """
         root, subscripts = parsexml('subscript')
 
@@ -683,7 +774,6 @@ class AutoSaveManager(QtCore.QObject):
             root.remove(s)
 
         writexml(root)
-
 
 
 class CouldNotCreateAutosave(Exception):
@@ -872,6 +962,8 @@ def writexml(root, path=AUTOSAVE_FILE):
     """
     data = ElementTree.tostring(root)
     data = data.decode('utf-8')
+
+    # for neatness in the xml file.
     data = data.replace('><subscript', '>\n<subscript')
     data = data.replace('</subscript><', '</subscript>\n<')
 
