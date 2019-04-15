@@ -212,6 +212,8 @@ class Editor(QtWidgets.QPlainTextEdit):
         signal.
         """
         FR = QtCore.Qt.FocusReason
+        # ignore PopupFocusReason as the
+        # autocomplete QListView triggers it.
         ignored_reasons = [
             FR.PopupFocusReason,
         ]
@@ -366,5 +368,13 @@ class Editor(QtWidgets.QPlainTextEdit):
             ).insertFromMimeData(mimeData)
 
     def showEvent(self, event):
-        self.setFocus(QtCore.Qt.MouseFocusReason)
+        """
+        Override to automatically set the
+        focus on the editor using
+        PopupFocusReason which won't
+        trigger the autosave.
+        """
         super(Editor, self).showEvent(event)
+        self.setFocus(
+            QtCore.Qt.PopupFocusReason
+        )
