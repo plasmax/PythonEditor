@@ -96,6 +96,7 @@ class Editor(QtWidgets.QPlainTextEdit):
         self._handle_shortcuts = handle_shortcuts
         self._features_initialised = False
         self._key_pressed = False
+        self.last_key_pressed = ''
 
         self.emit_text_changed = True
         self.textChanged.connect(
