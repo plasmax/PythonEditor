@@ -63,6 +63,7 @@
 
 
 #### Features - desired
+- [ ] down arrow should show tabs in searchable QListView side panel not QMenu
 - [ ] Open Containing Folder action - default to autosave dir if nothing else
 - [ ] Copy File Path action
 - [ ] /proc/<pid>/fd/1 & 2 - would these allow a cleaner way of reading stdout that
