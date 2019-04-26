@@ -161,6 +161,12 @@ class Tabs(QtWidgets.QTabBar):
 
     Current tab data can be easily
     indexed out of this class via Tabs[key].
+
+    FIXME: This is a GUI class. The data management
+    should happen within a data model. This class
+    should only serve as a view into that model,
+    to permit other views to similarly display the
+    model's content.
     """
     pen = QtGui.QPen()
     brush = QtGui.QBrush()
@@ -618,7 +624,7 @@ class Tabs(QtWidgets.QTabBar):
             data['text'],
             str(index),
             data.get('path')
-            )
+        )
         self.setTabData(index, data)
 
     @QtCore.Slot()
@@ -632,7 +638,6 @@ class Tabs(QtWidgets.QTabBar):
             if rect.contains(pos):
                 label = self.tabText(i)
                 self.removeTab(i)
-                # print('removing tab %s' % label)
 
     def removeTab(self, index):
         """
