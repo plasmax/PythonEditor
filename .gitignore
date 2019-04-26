@@ -12,3 +12,5 @@ test_code_objects.py
 *tost_code.py
 *.sublime-workspace
 *.sublime-project
+*.h
+*.cpp
