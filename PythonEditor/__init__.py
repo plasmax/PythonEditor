@@ -33,15 +33,24 @@ def main():
 
     if not os.environ.get('QT_PREFERRED_BINDING'):
         os.environ['QT_PREFERRED_BINDING'] = pyside
+        # this seems to not cause any crashes either
+        'PySide2:PySide:PyQt5:PyQt4'
 
     global ide
     from PythonEditor.ui import ide
 
-    # for convenience
-    global Qt
-    from ui import Qt
+    # for convenience;
     import sys
+    from ui import Qt
+
+    # enable "from Qt import x" and
     sys.modules['Qt'] = Qt
+
+    # enable "from Qt.QtCore import *"
+    for name in Qt.__all__:
+        sys.modules['Qt.{0}'.format(name)] = vars(Qt)[name]
+
+    # do not create .pyc files
     sys.dont_write_bytecode = True
 
 
