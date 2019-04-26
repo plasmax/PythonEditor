@@ -75,6 +75,12 @@ qt_import_snippet = (
     +'QtWidgets, QtGui, QtCore'
 )
 
+qt_star_import_snippet = (
+     'from Qt.QtWidgets import *\n'
+    +'from Qt.QtCore import *\n'
+    +'from Qt.QtGui import *'
+)
+
 SNIPPETS = {
     'class [snippet]':
         class_snippet,
@@ -100,6 +106,8 @@ SNIPPETS = {
         custom_widget_snippet,
     'Qt [snippet]':
         qt_import_snippet,
+    'Qt* [snippet]':
+        qt_star_import_snippet,
     'if [snippet]':
 		name_main_snippet,
     'pprint [snippet]' :
