@@ -1,48 +1,47 @@
-from Qt import QtWidgets, QtGui, QtCore
+from Qt.QtGui import *
+from Qt.QtCore import *
+from Qt.QtWidgets import *
 from PythonEditor.ui import editor
 
 #class MultiCursor(editor.Editor):
-class MultiCursor(QtWidgets.QPlainTextEdit):
+class MultiCursor(QPlainTextEdit):
     def paintEvent(self, event):
-        #super(MultiCursor, self).paintEvent(event)
-        #for s in self.multiSelections():
-        painter = QtGui.QPainter(self)
-        pen = QtGui.QPen(QtCore.Qt.yellow, 12, QtCore.Qt.SolidLine)
-        painter.setPen(pen)
-        painter.begin(self)
+        super(MultiCursor, self).paintEvent(event)
+        painter = QPainter(self.viewport())
         
-        for s in self.extraSelections():
-            #s = QtWidgets.QTextEdit.ExtraSelection
-            c = s.cursor
-            #c = QtGui.QTextCursor
-            #c.position()
-            cr = self.cursorRect(c)
-            QtCore.QRect
-            coords = cr.getCoords()
-            print coords
-            painter.drawLine(*coords)
+        '''
+        pen = QPen(Qt.yellow, 12, Qt.SolidLine)
+        painter.setPen(pen)
+        '''
+        for c in self.cursors():
+          block = c.block()
+          l = block.layout()
+          position=c.position()
+          width=2
+          l.drawCursor(
+            painter,
+            position, #QPointF
+            cursorPosition,#int
+            width#int
+            )
+
             cp = c.position()
             doc = self.document()
-            #QtGui.QTextDocument.draw
-            #print self.getPaintContext()
-            #QtGui.QAbstractTextDocumentLayout.PaintContext
-
-            #c.select(c.WordUnderCursor)
-            #QtGui.QTextLayout.drawCursor(painter, cr.center(), cp)
-            #painter.drawLine
-            #print c.selection().toPlainText()
-        #return super(MultiCursor, self).paintEvent(event)
-        painter.end()
-        super(MultiCursor, self).paintEvent(event)
     
     def mousePressEvent(self, event):
-        mods = QtWidgets.QApplication.keyboardModifiers()
-        if mods == QtCore.Qt.ControlModifier:
+        mods = QApplication.keyboardModifiers()
+        if mods == Qt.ControlModifier:
+          self.insert_cursor(
+            self.cursorForPosition(
+              event.pos()
+            )
+          )
+          '''
             selections = self.extraSelections()
             pos = event.pos()
             cursor = self.cursorForPosition(pos)
             cursor.select(cursor.WordUnderCursor)
-            sel = QtWidgets.QTextEdit.ExtraSelection()
+            sel = QTextEdit.ExtraSelection()
             sel.cursor = cursor
             colour = QtGui.QColor(191, 191, 191, 189)
             sel.format.setBackground(colour)
@@ -50,33 +49,32 @@ class MultiCursor(QtWidgets.QPlainTextEdit):
             setattr(sel, '__multicursor', True)
             selections.append(sel)
             self.setExtraSelections(selections)
+          '''
         return super(MultiCursor, self).mousePressEvent(event)
     
     def keyPressEvent(self, event):
-        if event.key() == QtCore.Qt.Key_Escape:
-            self.setExtraSelections([])
+        if event.key() == Qt.Key_Escape:
+            self._cursors=[]
         return super(MultiCursor, self).keyPressEvent(event)
 
-    def extraSelections(self, attr=None):
+    _cursors = []
+    def cursors(self):
         """
-        Let QPlainTextEdit.extraSelections
-        allow selection type filtering.
+        List of QTextCursors used to make
+        multi-edits.
         """
-        selections = super(MultiCursor, self).extraSelections()
-        if attr is None:
-            return selections
-        return filter(lambda x: hasattr(x, attr), selections)
+        return self._cursors
 
-    def multiSelections(self):
-        return self.extraSelections(attr='__multicursor')
+    def insert_cursor(self,cursor):
+      # sort cursors by position
+      # use new cursor position to
+      # figure out which index to 
+      # insert cursor in
+        self._cursors.insert(
+          index,
+          cursor
+        )
     
-    def setExtraSelections(self, selections, attr=None):
-        if attr is not None:
-            selections = filter(
-                lambda x: hasattr(x, attr), 
-                selections
-            )
-        return super(MultiCursor,self).setExtraSelections(selections)
         
 m = MultiCursor()
 m.show()
