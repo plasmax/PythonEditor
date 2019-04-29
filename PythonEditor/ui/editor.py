@@ -351,8 +351,8 @@ class Editor(QtWidgets.QPlainTextEdit):
             event.orientation() == vertical
         )
         CTRL = QtCore.Qt.ControlModifier
-        is_ctrl = (event.modifiers() == CTRL)
-        if is_ctrl and is_vertical:
+        ctrl_held = (event.modifiers() == CTRL)
+        if ctrl_held and is_vertical:
             return self.wheel_signal.emit(event)
         super(Editor, self).wheelEvent(event)
 
@@ -365,7 +365,7 @@ class Editor(QtWidgets.QPlainTextEdit):
         self.text_changed_signal.emit()
         super(
             Editor, self
-            ).insertFromMimeData(mimeData)
+        ).insertFromMimeData(mimeData)
 
     def showEvent(self, event):
         """
