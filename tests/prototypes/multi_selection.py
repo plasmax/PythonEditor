@@ -1,82 +1,86 @@
-from Qt import QtWidgets, QtGui, QtCore
+from Qt.QtGui import *
+from Qt.QtCore import *
+from Qt.QtWidgets import *
 from PythonEditor.ui import editor
 
-#class MultiCursor(editor.Editor):
-class MultiCursor(QtWidgets.QPlainTextEdit):
-    def paintEvent(self, event):
-        #super(MultiCursor, self).paintEvent(event)
-        #for s in self.multiSelections():
-        painter = QtGui.QPainter(self)
-        pen = QtGui.QPen(QtCore.Qt.yellow, 12, QtCore.Qt.SolidLine)
-        painter.setPen(pen)
-        painter.begin(self)
-        
-        for s in self.extraSelections():
-            #s = QtWidgets.QTextEdit.ExtraSelection
-            c = s.cursor
-            #c = QtGui.QTextCursor
-            #c.position()
-            cr = self.cursorRect(c)
-            QtCore.QRect
-            coords = cr.getCoords()
-            print coords
-            painter.drawLine(*coords)
-            cp = c.position()
-            doc = self.document()
-            #QtGui.QTextDocument.draw
-            #print self.getPaintContext()
-            #QtGui.QAbstractTextDocumentLayout.PaintContext
 
-            #c.select(c.WordUnderCursor)
-            #QtGui.QTextLayout.drawCursor(painter, cr.center(), cp)
-            #painter.drawLine
-            #print c.selection().toPlainText()
-        #return super(MultiCursor, self).paintEvent(event)
-        painter.end()
+#class MultiCursor(editor.Editor):
+class MultiCursor(QPlainTextEdit):
+    def paintEvent(self, event):
         super(MultiCursor, self).paintEvent(event)
-    
+        painter = QPainter(self.viewport())
+        offset = self.contentOffset() 
+        '''
+        pen = QPen(Qt.yellow, 12, Qt.SolidLine)
+        painter.setPen(pen)
+        '''
+        for c in self.cursors():
+          block = c.block()
+          l = block.layout()
+          l.drawCursor(
+            painter,
+            offset, # QPointF
+            c.position(),# int
+            2 # width:int
+          )
+
     def mousePressEvent(self, event):
-        mods = QtWidgets.QApplication.keyboardModifiers()
-        if mods == QtCore.Qt.ControlModifier:
-            selections = self.extraSelections()
-            pos = event.pos()
-            cursor = self.cursorForPosition(pos)
-            cursor.select(cursor.WordUnderCursor)
-            sel = QtWidgets.QTextEdit.ExtraSelection()
-            sel.cursor = cursor
-            colour = QtGui.QColor(191, 191, 191, 189)
-            sel.format.setBackground(colour)
-            sel.__multicursor = True
-            setattr(sel, '__multicursor', True)
-            selections.append(sel)
-            self.setExtraSelections(selections)
-        return super(MultiCursor, self).mousePressEvent(event)
+        app = QApplication
+        mods = app.keyboardModifiers()
+        if mods == Qt.ControlModifier:
+          self.add_cursor(
+            self.cursorForPosition(
+              event.pos()
+            )
+          )
+        return super(
+          MultiCursor, self
+        ).mousePressEvent(event)
     
     def keyPressEvent(self, event):
-        if event.key() == QtCore.Qt.Key_Escape:
-            self.setExtraSelections([])
-        return super(MultiCursor, self).keyPressEvent(event)
-
-    def extraSelections(self, attr=None):
-        """
-        Let QPlainTextEdit.extraSelections
-        allow selection type filtering.
-        """
-        selections = super(MultiCursor, self).extraSelections()
-        if attr is None:
-            return selections
-        return filter(lambda x: hasattr(x, attr), selections)
-
-    def multiSelections(self):
-        return self.extraSelections(attr='__multicursor')
-    
-    def setExtraSelections(self, selections, attr=None):
-        if attr is not None:
-            selections = filter(
-                lambda x: hasattr(x, attr), 
-                selections
+        if event.key() == Qt.Key_Escape:
+            self._cursors=[]
+            self.repaint()
+        elif (
+          event.key() in [
+            Qt.Key_Up,
+            Qt.Key_Down
+          ]
+          and event.modifiers() == Qt.ControlModifier|Qt.AltModifier
+          ):
+            self._cursors.append(
+              self.textCursor()
             )
-        return super(MultiCursor,self).setExtraSelections(selections)
+            
+        return super(
+            MultiCursor, self
+        ).keyPressEvent(event)
+
+    _cursors = []
+    def cursors(self):
+        """
+        List of QTextCursors used to make
+        multi-edits.
+        """
+        return self._cursors
+
+    def add_cursor(self, cursor):
+        self._cursors.append(
+          cursor
+        )
+    def keyPressMulti(self, event):
+        multi_keys = [
+          Qt.Key_Up,
+          Qt.Key_Down,
+          Qt.Key_Left,
+          Qt.Key_Right,
+        ]
+        k = event.key()
+        if k not in multi_keys:
+          return
+        for c in self.cursors():
+           c # insert key
+
         
 m = MultiCursor()
 m.show()
