@@ -623,7 +623,10 @@ class Actions(QtCore.QObject):
                 count = len(selectedText)
                 split_index = count-right_split
                 split_text = selectedText[split_index:]
-                newText = ' '*split_index + '#' + split_text
+                hash_symbol = '#'
+                if not split_text.strip().startswith('#'):
+                    hash_symbol = '# '
+                newText = ' '*split_index + hash_symbol + split_text
                 cursor.insertText(newText)
         else:
             for block in blocks:
@@ -632,7 +635,10 @@ class Actions(QtCore.QObject):
                     QtGui.QTextCursor.LineUnderCursor
                 )
                 selectedText = cursor.selectedText()
-                newText = str(selectedText).replace('#', '', 1)
+                if selectedText.strip().startswith('# '):
+                    newText = str(selectedText).replace('# ', '', 1)
+                elif selectedText.strip().startswith('#'):
+                    newText = str(selectedText).replace('#', '', 1)
                 cursor.insertText(newText)
 
     def move_blocks_up(self):
