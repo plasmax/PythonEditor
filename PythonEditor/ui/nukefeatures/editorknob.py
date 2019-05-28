@@ -7,7 +7,7 @@ class EditorKnob(Editor):
     and a method to execute from within node context (aka button)
     """
     def __init__(self, node=None):
-        super(EditorKnob, self).__init__(self)
+        super(EditorKnob, self).__init__()
         self.text_changed_signal.connect(self.valueChanged)
         self.node = node
         self.read()
