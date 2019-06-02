@@ -1083,23 +1083,62 @@ class Actions(QtCore.QObject):
             msg
         )
 
-    def open_module_file(self):
-        textCursor = self.editor.textCursor()
-        text = textCursor.selection().toPlainText()
-        if not text.strip():
+    def open_module_file(self, external=False):
+        path = get_selection_goto_path(
+            self.editor,
+            get_lineno=True
+        )
+        if path is None:
             return
 
-        obj = get_subobject(text)
-        open_module_file(obj)
+        if external:
+            # this assumes the external
+            # editor can handle paths
+            # with path:lineno
+            open_in_external_editor(path)
+        else:
+            lineno = None
+            name = os.path.basename(path)
+            if ':' in name:
+                parts = name.split(':')
+                if len(parts) != 2:
+                    return
+                name = parts[0]
+                path = os.path.join(
+                    os.path.dirname(path),
+                    name
+                )
+                lineno = parts[1]
+                try:
+                    lineno = int(lineno)
+                except Exception:
+                    return
+            open_action(
+                self.tabs,
+                self.editor,
+                path=path
+            )
+            goto_line(self.editor, lineno)
 
-    def open_module_directory(self):
-        textCursor = self.editor.textCursor()
-        text = textCursor.selection().toPlainText()
-        if not text.strip():
+
+    def open_module_directory(self, external=False):
+        print('open module dir')
+        path = get_selection_goto_path(
+            self.editor,
+            get_lineno=False
+        )
+        print(path)
+        if path is None:
             return
-
-        obj = get_subobject(text)
-        open_module_directory(obj)
+        folder = os.path.dirname(path)
+        if external:
+            open_in_external_editor(folder)
+        else:
+            open_action(
+                self.tabs,
+                self.editor,
+                path=folder
+            )
 
     def search(self):
         """
@@ -1501,7 +1540,10 @@ class GotoPalette(CommandPalette):
     def keyPressEvent(self, event):
         esc = QtCore.Qt.Key.Key_Escape
         if event.key() == esc:
-            self.goto_line(self.current_line)
+            goto_line(
+                self.editor,
+                self.current_line
+            )
             self.hide()
 
         if event.text().isalpha():
@@ -1514,25 +1556,27 @@ class GotoPalette(CommandPalette):
             lineno = int(self.text())
         except ValueError:
             return
-        self.goto_line(lineno)
+        goto_line(
+            self.editor,
+            lineno
+        )
 
-    def goto_line(self, lineno):
-        """
-        Sets the text cursor of the
-        editor to the given lineno.
-        """
-        editor = self.editor
-        count = editor.blockCount()
-        if lineno > count:
-            lineno = count
-        lineno = lineno-1
-        pos = editor.document(
-            ).findBlockByNumber(
-            lineno).position()
+def goto_line(editor, lineno):
+    """
+    Sets the text cursor of the
+    editor to the given lineno.
+    """
+    count = editor.blockCount()
+    if lineno > count:
+        lineno = count
+    lineno = lineno-1
+    pos = editor.document(
+        ).findBlockByNumber(
+        lineno).position()
 
-        cursor = editor.textCursor()
-        cursor.setPosition(pos)
-        editor.setTextCursor(cursor)
+    cursor = editor.textCursor()
+    cursor.setPosition(pos)
+    editor.setTextCursor(cursor)
 
 
 def make_action(name, widget, func):
@@ -1615,7 +1659,8 @@ def save_as_action(tabs, editor):
 
 def open_action(tabs, editor, path=''):
     """
-    Simple open file.
+    Simple open file into new tab.
+    Show a dialog if path is not provided.
     :tabs: TabBar
     :editor: Editor
     :path: optional path to file.
@@ -1625,7 +1670,8 @@ def open_action(tabs, editor, path=''):
         path, _ = o(tabs, "Open File")
         if not path:
             return
-    elif not os.path.isfile(path):
+
+    if not os.path.isfile(path):
         return
 
     with open(path, 'rt') as f:
@@ -1667,6 +1713,22 @@ def open_action(tabs, editor, path=''):
     # into the autosave in case the file is moved.
     tabs.contents_saved_signal.emit(uid)
 
+
+def get_selection_goto_path(editor, get_lineno=False):
+    obj = get_obj_from_selection(editor)
+    if obj is None:
+        return
+    return get_obj_goto_path(obj, get_lineno=get_lineno)
+
+
+def get_obj_from_selection(editor):
+    textCursor = editor.textCursor()
+    text = textCursor.selection().toPlainText()
+    if not text.strip():
+        return
+    return get_subobject(text)
+
+
 def get_subobject(text):
     """
     Walk down an object's hierarchy to retrieve
@@ -1688,74 +1750,64 @@ def get_subobject(text):
     return obj
 
 
-def open_module_file(obj):
+def get_obj_goto_path(obj, get_lineno=True):
     if inspect.isbuiltin(obj):
-        print(
-            '{!r} is a built-in {!s}'.format(
+        msg = '{!r} is a built-in {!s}'.format(
             obj, type(obj)
             )
-        )
+        print(msg)
         return
     try:
-        file = inspect.getfile(obj)
+        path = inspect.getfile(obj)
     except TypeError as e:
         if hasattr(obj, '__class__'):
             obj = obj.__class__
-            file = inspect.getfile(obj)
         else:
             print(e)
             return
+        try:
+            path = inspect.getfile(obj)
+        except TypeError as e:
+            print(e)
+            return
 
-    if file.endswith('.pyc'):
-        file = file.replace('.pyc', '.py')
+    if path.endswith('.pyc'):
+        path = path.replace('.pyc', '.py')
 
-    try:
-        lines, lineno = inspect.getsourcelines(obj)
-        file = file+':'+str(lineno)
-    except AttributeError, IOError:
-        pass
+    if get_lineno:
+        try:
+            lines, lineno = inspect.getsourcelines(obj)
+            path = '{!s}:{!s}'.format(path, lineno)
+        except AttributeError, IOError:
+            pass
 
-    print(file)
-
-    #TODO: this is a horrible hack to avoid circular imports
-    from PythonEditor.ui.features.autosavexml import get_external_editor_path
-
-    EXTERNAL_EDITOR_PATH = get_external_editor_path()
-    if (EXTERNAL_EDITOR_PATH
-            and os.path.isdir(os.path.dirname(EXTERNAL_EDITOR_PATH))):
-        subprocess.Popen([EXTERNAL_EDITOR_PATH, file])
+    return path
 
 
-def open_module_directory(obj):
-    file = inspect.getfile(obj).replace('.pyc', '.py')
-    folder = os.path.dirname(file)
-    print(folder)
-
-    autosavexml = sys.modules.get(
-        '.'.join([
-        'PythonEditor',
-        'ui',
-        'features',
-        'autosavexml'
-        ])
-    )
+def open_in_external_editor(*args, **kwargs):
+    """
+    Launch an external editor defined by an environment
+    variable and pass it the arguments as defined by
+    Popen.
+    """
+    # safety check that the module is imported
+    p = 'PythonEditor.ui.features.autosavexml'
+    autosavexml = sys.modules.get(p)
     if autosavexml is None:
         return
 
     eepath = autosavexml.get_external_editor_path
-
     EXTERNAL_EDITOR_PATH = eepath()
-    if (
-        EXTERNAL_EDITOR_PATH
-        and os.path.isdir(
-                os.path.dirname(
-                    EXTERNAL_EDITOR_PATH
-                )
-            )
-        ):
-        subprocess.Popen(
-            [EXTERNAL_EDITOR_PATH, folder]
-        )
+
+    if not EXTERNAL_EDITOR_PATH:
+        return
+    dn = os.path.dirname(EXTERNAL_EDITOR_PATH)
+    if not os.path.isdir(dn):
+        return
+
+    subprocess.Popen(
+        [EXTERNAL_EDITOR_PATH]+args, **kwargs
+    )
 
 
 def openDir(module):
