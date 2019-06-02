@@ -1,4 +1,4 @@
-from PythonEditor.ui.nukefeatures import nukedock
+from PythonEditor.app.nukefeatures import nukedock
 from PythonEditor.utils import constants
 from PythonEditor.ui.Qt import QtWidgets, QtCore
 
@@ -59,11 +59,11 @@ reload(PythonEditor)
 
 # Rerun menu setup
 # ------------------------------------------
-from PythonEditor.ui.nukefeatures import nukedock
+from PythonEditor.app.nukefeatures import nukedock
 reload(nukedock)
 nukedock.setup_dock()
 
-from PythonEditor.ui.nukefeatures import nukeinit
+from PythonEditor.app.nukefeatures import nukeinit
 reload(nukeinit)
 
 # Re-launch panel
@@ -81,7 +81,7 @@ nukescripts.panels.__panels["Python.Editor"].__call__(pane=dock)
 """
 
 IMPORT_CMD = '__import__("PythonEditor")'\
-    '.ui.nukefeatures.nukeinit.add_to_pane()'
+    '.app.nukefeatures.nukeinit.add_to_pane()'
 
 ICON_PATH = 'PythonEditor.png'
 
