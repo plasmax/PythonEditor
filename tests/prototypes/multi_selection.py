@@ -9,7 +9,7 @@ class MultiCursor(QPlainTextEdit):
     def paintEvent(self, event):
         super(MultiCursor, self).paintEvent(event)
         painter = QPainter(self.viewport())
-        offset = self.contentOffset() 
+        offset = self.contentOffset()
         '''
         pen = QPen(Qt.yellow, 12, Qt.SolidLine)
         painter.setPen(pen)
@@ -36,7 +36,7 @@ class MultiCursor(QPlainTextEdit):
         return super(
           MultiCursor, self
         ).mousePressEvent(event)
-    
+
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:
             self._cursors=[]
@@ -51,7 +51,7 @@ class MultiCursor(QPlainTextEdit):
             self._cursors.append(
               self.textCursor()
             )
-            
+
         return super(
             MultiCursor, self
         ).keyPressEvent(event)
@@ -68,6 +68,7 @@ class MultiCursor(QPlainTextEdit):
         self._cursors.append(
           cursor
         )
+
     def keyPressMulti(self, event):
         multi_keys = [
           Qt.Key_Up,
@@ -81,7 +82,7 @@ class MultiCursor(QPlainTextEdit):
         for c in self.cursors():
            c # insert key
 
-        
+
 m = MultiCursor()
 m.show()
 m.setPlainText("""

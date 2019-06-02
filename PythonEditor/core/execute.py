@@ -47,7 +47,7 @@ def mainexec(text, whole_text, verbosity=VERBOSITY_LOW):
             isinstance(namespace, dict),
             isinstance(__main__.__dict__, dict),
             hasattr(namespace, 'values')
-            ])
+        ])
 
         if not_dicts:
             return None
