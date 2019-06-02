@@ -1083,7 +1083,7 @@ class Actions(QtCore.QObject):
             msg
         )
 
-    def open_module_file(self, external=False):
+    def open_module_file(self):
         path = get_selection_goto_path(
             self.editor,
             get_lineno=True
@@ -1091,7 +1091,8 @@ class Actions(QtCore.QObject):
         if path is None:
             return
 
-        if external:
+        eepath = get_external_editor_path()
+        if eepath is not None:
             # this assumes the external
             # editor can handle paths
             # with path:lineno
@@ -1121,17 +1122,16 @@ class Actions(QtCore.QObject):
             goto_line(self.editor, lineno)
 
 
-    def open_module_directory(self, external=False):
-        print('open module dir')
+    def open_module_directory(self):
         path = get_selection_goto_path(
             self.editor,
             get_lineno=False
         )
-        print(path)
         if path is None:
             return
         folder = os.path.dirname(path)
-        if external:
+        eepath = autosavexml.get_external_editor_path()
+        if eepath is not None:
             open_in_external_editor(folder)
         else:
             open_action(
@@ -1773,15 +1773,29 @@ def get_obj_goto_path(obj, get_lineno=True):
 
     if path.endswith('.pyc'):
         path = path.replace('.pyc', '.py')
+    elif path.endswith('.pyd'):
+        path = path.replace('.pyd', '.py')
+
+    if not os.path.exists(path):
+        return
 
     if get_lineno:
         try:
             lines, lineno = inspect.getsourcelines(obj)
             path = '{!s}:{!s}'.format(path, lineno)
-        except AttributeError, IOError:
+        except Exception:#AttributeError, IOError:
             pass
 
     return path
+
+
+def get_external_editor_path():
+    # safety check that the module is imported
+    p = 'PythonEditor.ui.features.autosavexml'
+    autosavexml = sys.modules.get(p)
+    if autosavexml is None:
+        return
+    return autosavexml.get_external_editor_path()
 
 
 def open_in_external_editor(*args, **kwargs):
@@ -1790,14 +1804,7 @@ def open_in_external_editor(*args, **kwargs):
     variable and pass it the arguments as defined by
     Popen.
     """
-    # safety check that the module is imported
-    p = 'PythonEditor.ui.features.autosavexml'
-    autosavexml = sys.modules.get(p)
-    if autosavexml is None:
-        return
-
-    eepath = autosavexml.get_external_editor_path
-    EXTERNAL_EDITOR_PATH = eepath()
+    EXTERNAL_EDITOR_PATH = get_external_editor_path()
 
     if not EXTERNAL_EDITOR_PATH:
         return
@@ -1806,7 +1813,7 @@ def open_in_external_editor(*args, **kwargs):
         return
 
     subprocess.Popen(
-        [EXTERNAL_EDITOR_PATH]+args, **kwargs
+        [EXTERNAL_EDITOR_PATH]+list(args), **kwargs
     )
 
 
