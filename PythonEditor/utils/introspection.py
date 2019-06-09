@@ -4,25 +4,28 @@ from functools import partial
 
 from ctypes import c_int64 as mutable_int
 
+
 def test_sys_count(func):
     global count
     count = 0
     def msr(*args, **kwargs):
         global count
         count += 1
-        
+
     sys.setprofile(msr)
     func()
     sys.setprofile(None)
     print('Number of frame objects counted for {0}: {1}'.format(func,count))
 
+
 def increment(number):
     number.value += 1
+
 
 def get_called_code(func, *args, **kwargs):
     """
     Returns a string containing source code.
-    Sets a temporary profiling function that 
+    Sets a temporary profiling function that
     collects source code from all callables.
     """
     def trace_source(frame, event, arguments, source=[]):
@@ -43,9 +46,9 @@ def get_called_code(func, *args, **kwargs):
         except Exception as e:
             sys.setprofile(None)
             # print 'Trace Source Quitting on Error:', e
-        
+
     srccode = []
-    prof = partial(trace_source, source=srccode)       
+    prof = partial(trace_source, source=srccode)
 
     sys.setprofile(prof)
 
@@ -62,7 +65,7 @@ def get_called_code(func, *args, **kwargs):
         spacing = '\n'*3
         file_text = 'Filename: '
         count_text = 'Number of times called: '
-        string = '{0}# {1}{2}\n# {3}{4}\n{5}' 
+        string = '{0}# {1}{2}\n# {3}{4}\n{5}'
         return string.format(spacing,
                             file_text,
                             filename,
@@ -74,4 +77,4 @@ def get_called_code(func, *args, **kwargs):
     if source_code == '':
         print 'No source code could be retrieved.'
     return source_code
-    
+
