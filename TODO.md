@@ -3,7 +3,7 @@
 
 #### Bug fixes
 - [ ] Tab may duplicate on save
-- [ ] Close button should be persistent 
+- [ ] Close button should be persistent
       on the active tab.
 - [ ] Confirm overwrite file on save.
 - [ ] When editing a document across multiple instances, updating to latest autosave sometimes triggers twice.
@@ -76,7 +76,7 @@
 - [ ] Strip whitespace from line endings action
 - [ ] Meld diff between tabs and/or tab autosave update warning
 - [ ] debugger - needs a traceback parser and an editor view with a list like Pythonista
-- [ ] Move 'nukefeatures' into an app/nuke folder to make it program agnostic.
+- [x] Move 'nukefeatures' into an app folder to make it program agnostic.
       True agnosticism would require moving PythonEditorHistory.xml to the user home directory as well.
 - [ ] Tab close button [x] should appear on active tab only (like chrome)
       and change width of tab (in proportion to the name) when added (setTabButton, RightSide)
@@ -118,8 +118,9 @@
       on the Actions() class, which can be picked up by menus.
 - [x] Move tab to start/end
 - [x] Improve speed of loading tabs
-- [/] Set up an execution model where stdout, stderr and stdin are temporarily encapsulated within a context managing with
-      statement - is this a good idea? it means output will only be shown when text is executed from PythonEditor.
+- [/] Set up an execution model where stdout, stderr and stdin are temporarily encapsulated within
+      a context managing with statement - is this a good idea?
+      it means output will only be shown when text is executed from PythonEditor.
 - [x] Snippet file library (currently reads from a file called PythonEditor_snippets.json in .nuke dir if found.)
 - [x] Check if there's a better way to connect widgets/objects, synchronously
       (bypassing signal in cases where it's not wanted) - Resolved, starting to use DirectConnection
