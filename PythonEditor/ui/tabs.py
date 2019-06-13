@@ -494,6 +494,10 @@ class Tabs(QtWidgets.QTabBar):
 
             close_tab_func = partial(self.removeTab, i)
             menu.addAction('Close Tab', close_tab_func)
+
+            copy_file_path = partial(self.copy_tab_file_path, i)
+            menu.addAction('Copy File Path', copy_file_path)
+
             # Other ideas (TODO)
             """
             menu.addAction('Close Other Tabs', )
@@ -571,6 +575,20 @@ class Tabs(QtWidgets.QTabBar):
         self.name_edit.setFocus(
             QtCore.Qt.MouseFocusReason
         )
+
+    def copy_tab_file_path(self, index):
+        """
+        Copy the current tab's file path
+        (if it has one) to the clipboard.
+        """
+        data = self.tabData(index)
+        path = data.get('path')
+        if path is None:
+            return
+        clipboard = QtGui.QClipboard()
+        clipboard.setText(path)
+        print('path copied to clipboard:')
+        print(path)
 
     def move_to_first(self, index):
         """
