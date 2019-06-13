@@ -957,7 +957,7 @@ class Actions(QtCore.QObject):
 
     def select_between_brackets(self):
         """
-        Selects text between [] {} ()
+        Selects text between brackets ()
         TODO: implement [] and {}
         """
         textCursor = self.editor.textCursor()
