@@ -1,5 +1,6 @@
 from __future__ import print_function
 import os
+import re
 import sys
 
 from PythonEditor.core import streams
@@ -77,4 +78,19 @@ class Terminal(QtWidgets.QPlainTextEdit):
             clickedAnchor = self.anchorAt(e.pos())
             if clickedAnchor:
                 self.link_activated.emit(clickedAnchor)
+        elif (e.button() == QtCore.Qt.RightButton):
+            menu = self.createStandardContextMenu()
+            menu.addAction('Parse Last Traceback', self.parse_last_traceback)
+            menu.exec_(QtGui.QCursor().pos())
         super(Terminal, self).mousePressEvent(e)
+
+    def parse_last_traceback(self):
+        tb = self.toPlainText().split('Traceback')[-1]
+        pattern = re.compile(r'(File ")([\w\.\/]+)(", line )(\d+)')
+        text = ''
+        for _, fp, _, lineno in re.findall(pattern, tb):
+            text += 'sublime %s:%s' % (fp, lineno)
+            text += '\n'
+
+        print(text)
+        QtGui.QClipboard().setText(text)
