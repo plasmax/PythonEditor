@@ -388,7 +388,6 @@ class AutoSaveManager(QtCore.QObject):
         self.tabs['saved'] = False
 
     def show_diff_text_popup(self, subscript):
-        # global popup_bar
         popup_bar = QtWidgets.QWidget()
         self.popup_bar = popup_bar
         name = 'Document out of sync warning'
@@ -397,7 +396,6 @@ class AutoSaveManager(QtCore.QObject):
             QtWidgets.QHBoxLayout(popup_bar)
         )
 
-        # global label
         label = QtWidgets.QLabel()
         label.setText(
             'This tab is out of sync\n'\
@@ -406,7 +404,6 @@ class AutoSaveManager(QtCore.QObject):
         popup_bar.layout().addWidget(label)
 
         B = QtWidgets.QPushButton
-        # global new_button
         new_button    = B('Load into New Tab')
         new_button.setToolTip(
             'Click to load the text inside '\
@@ -414,20 +411,17 @@ class AutoSaveManager(QtCore.QObject):
             'updating the autosaved version '\
             'into the previous tab.'
         )
-        # global save_button
         save_button   = B('Save This Version')
         save_button.setToolTip(
             'Click to choose this version '\
             'as the version to save.'
         )
-        # global update_button
         update_button = B('Update From Autosave')
         update_button.setToolTip(
             'Load the version from the '\
             'autosave into this tab.'
         )
 
-        # global diff_button
         diff_button   = B('Show Diff')
         diff_button.setToolTip(
             'Show the difference between the two.'
@@ -437,9 +431,7 @@ class AutoSaveManager(QtCore.QObject):
             self.remove_existing_popups,
             name
         )
-        # self.remove_existing_popups(name)
 
-        # global layout
         layout = self.tabeditor.layout()
         layout.insertWidget(1, popup_bar)
 
