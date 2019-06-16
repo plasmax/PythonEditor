@@ -3,7 +3,9 @@ import StringIO
 import time
 import re
 
-from PythonEditor.ui.Qt import QtGui, QtCore
+from PythonEditor.ui.Qt import QtGui
+from PythonEditor.ui.Qt import QtCore
+from PythonEditor.ui.Qt import QtWidgets
 from PythonEditor.utils.debug import debug
 
 
@@ -117,10 +119,10 @@ class Highlight(QtGui.QSyntaxHighlighter):
         'BytesWarning'
     ]
     operatorKeywords = [
-        '=', '==', '!=', '<', '<=', '>', '>=',
-        '\+', '-', '\*', '/', '//', '\%', '\*\*',
-        '\+=', '-=', '\*=', '/=', '\%=',
-        '\^', '\|', '\&', '\~', '>>', '<<',
+        r'=', r'==', r'!=', r'<', r'<=', r'>', r'>=',
+        r'\+', r'-', r'\*', r'/', r'//', r'\%', r'\*\*',
+        r'\+=', r'-=', r'\*=', r'/=', r'\%=',
+        r'\^', r'\|', r'\&', r'\~', r'>>', r'<<',
     ]
     truthy = ['True', 'False', 'None']
 
