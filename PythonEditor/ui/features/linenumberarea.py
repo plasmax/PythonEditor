@@ -110,14 +110,16 @@ class LineNumberArea(QtWidgets.QWidget):
 
             if IN_NUKE:
                 bg = QtGui.QPalette.Background
-                lineColor = self.editor.palette().color(bg).darker(100)
+                colour = self.editor.palette().color(bg).darker(100)
             else:
-                lineColor = QtGui.QColor.fromRgbF(0.196078,
-                                                  0.196078,
-                                                  0.196078,
-                                                  0.500000)
+                colour = QtGui.QColor.fromRgbF(
+                    0.196078,
+                    0.196078,
+                    0.196078,
+                    0.500000
+                )
 
-            selection.format.setBackground(lineColor)
+            selection.format.setBackground(colour)
             selection.format.setProperty(
                 QtGui.QTextFormat.FullWidthSelection,
                 True

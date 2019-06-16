@@ -133,15 +133,25 @@ class Highlight(QtGui.QSyntaxHighlighter):
         self.editor = editor
         self.theme = themes['Monokai Smooth']
         self.set_style(self.theme)
+        self.make_rules()
+        self.selected_word = ''
+        self.connect_timers()
 
     def set_style(self, theme):
         self.styles = {
           feature: self.format(*style)
           for feature, style in theme.items()
         }
-        self.tri_single = (QtCore.QRegExp("'''"), 1, self.styles['comment'])
-        self.tri_double = (QtCore.QRegExp('"""'), 2, self.styles['comment'])
-        self.make_rules()
+        self.tri_single = (
+            QtCore.QRegExp("'''"),
+            1,
+            self.styles['comment']
+        )
+        self.tri_double = (
+            QtCore.QRegExp('"""'),
+            2,
+            self.styles['comment']
+        )
 
     def make_rules(self):
         # rules
@@ -186,40 +196,28 @@ class Highlight(QtGui.QSyntaxHighlighter):
         ]
 
         # Build a QRegExp for each pattern
-        self.rules = [(QtCore.QRegExp(pat), index, fmt)
-                      for (pat, index, fmt) in rules]
+        self.rules = [
+            (QtCore.QRegExp(pat), index, fmt)
+            for (pat, index, fmt) in rules
+        ]
 
-        self.setup_timers()
-
-    def setup_timers(self):
+    def connect_timers(self):
         """
-        Create the timer objects that
-        react to text_changed_signal and
+        Create timers that provide
+        delayed reactions to
+        text_changed_signal and
         selectionChanged signals.
         """
-        self.selected_word = ''
-        self.sel_timer = QtCore.QTimer()
-        self.sel_timer.setSingleShot(True)
-        self.sel_timer.setInterval(50)
-        self.sel_timer.timeout.connect(
-
-            self.highlight_same_words
-        )
+        self._word_highlight_block = False
         self.editor.selectionChanged.connect(
-            self.sel_timer.start
+            self.delayed_word_highlight
         )
 
-        self.text_timer = QtCore.QTimer()
-        self.text_timer.setSingleShot(True)
-        self.text_timer.setInterval(100)
-        self.text_timer.timeout.connect(
-            self.collect_words
-        )
-        self.editor.text_changed_signal.connect(
-            self.text_timer.start
-        )
-
-        self.collect_words()
+    def delayed_word_highlight(self):
+        if self._word_highlight_block:
+            return
+        QtCore.QTimer.singleShot(50, self.highlight_same_words)
+        self._word_highlight_block = True
 
     def format(self, rgb, style=''):
         """
@@ -284,31 +282,38 @@ class Highlight(QtGui.QSyntaxHighlighter):
         self.highlight_selected_word(text)
 
     def highlight_selected_word(self, text):
-        # highlight the selected word
+        """
+        Highlight other occurences of
+        the selected word in the text.
+        """
         if not self.selected_word:
             return
-
-        occurences = []
-        start = 0
-        for word in re.findall(self.selected_word, text):
-            if word == self.selected_word:
-                index = text.find(word, start)
-                start = index+1
-                occurences.append(index)
-        if not occurences:
+        word = self.selected_word
+        if word not in text:
             return
 
-        length = len(self.selected_word)
-        for index in occurences:
-            rgb, weight = self.theme['selected_word']
-            color = QtGui.QColor(*rgb)
-            textFormat = QtGui.QTextCharFormat()
-            textFormat.setBackground(color)
-            self.setFormat(
-                index,
-                length,
-                textFormat
-            )
+        extraSelections = self.editor.extraSelections()
+        rgb, weight = self.theme['selected_word']
+        color = QtGui.QColor(*rgb)
+
+        block = self.currentBlock()
+        pos = block.position()
+
+        cursor = self.editor.textCursor()
+        for m in re.finditer(word, text):
+            start = m.start()+pos
+            end = m.end()+pos
+
+            selection = QtWidgets.QTextEdit.ExtraSelection()
+            cursor.setPosition(start, QtGui.QTextCursor.MoveAnchor)
+            cursor.setPosition(end, QtGui.QTextCursor.KeepAnchor)
+            selection.cursor = cursor
+
+            selection.format.setForeground(QtCore.Qt.white)
+            selection.format.setBackground(color)
+            extraSelections.append(selection)
+
+        self.editor.setExtraSelections(extraSelections)
 
     def match_multiline(self, text, delimiter, in_state, style):
         """
@@ -341,24 +346,27 @@ class Highlight(QtGui.QSyntaxHighlighter):
             # Look for the next match
             start = delimiter.indexIn(text, start + length)
 
-        # Return True if still inside a multi-line string, False otherwise
-        if self.currentBlockState() == in_state:
-            return True
-        else:
-            return False
-
-    def collect_words(self):
-        self.words = re.findall(
-            r'\w\w+',
-            self.editor.toPlainText()
-        )
+        # Return True if still inside a multi-line string
+        return self.currentBlockState() == in_state
 
     def highlight_same_words(self):
+        """
+        When selection has changed;
+        if the selection is valid
+        and there are other similar
+        words in the text, highlight
+        those words.
+        """
+        self._word_highlight_block = False
         editor = self.editor
         cursor = editor.textCursor()
         self.selected_word = ''
         if cursor.hasSelection():
             text = cursor.selectedText()
-            if text in self.words:
+            words = re.findall(
+                r'\w\w+',
+                self.editor.toPlainText()
+            )
+            if text in words:
                 self.selected_word = text
         self.rehighlight()
