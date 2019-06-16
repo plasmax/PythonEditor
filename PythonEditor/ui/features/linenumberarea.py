@@ -131,12 +131,13 @@ class LineNumberArea(QtWidgets.QWidget):
 
     def resizeLineNo(self):
         cr = self.editor.contentsRect()
-        rect = QtCore.QRect(cr.left(),
-                            cr.top(),
-                            self.lineNumberAreaWidth(),
-                            cr.height())
+        rect = QtCore.QRect(
+            cr.left(),
+            cr.top(),
+            self.lineNumberAreaWidth(),
+            cr.height()
+        )
         self.setGeometry(rect)
-
 
     def highlight_cell_block(self):
         """
