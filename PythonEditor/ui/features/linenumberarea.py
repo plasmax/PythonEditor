@@ -154,16 +154,13 @@ class LineNumberArea(QtWidgets.QWidget):
             if not text.startswith('#&&'):
                 continue
             selection = QtWidgets.QTextEdit.ExtraSelection()
-            lineColor = QtGui.QColor.fromRgbF(1,
-                                              1,
-                                              1,
-                                              0.05)
-
-            selection.format.setBackground(lineColor)
+            colour = QtGui.QColor.fromRgbF(1, 1, 1, 0.05)
+            selection.format.setBackground(colour)
             selection.format.setProperty(
                 QtGui.QTextFormat.FullWidthSelection,
                 True
             )
+
             cursor = self.editor.textCursor()
             cursor.setPosition(block.position())
             selection.cursor = cursor
