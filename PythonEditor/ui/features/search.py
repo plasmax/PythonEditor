@@ -222,7 +222,7 @@ class FindContainer(QtWidgets.QWidget):
         self.find_button = QtWidgets.QPushButton('Find')
         layout.addWidget(self.find_button,0,1)
         self.previous_button = QtWidgets.QPushButton('Previous')
-        layout.addWidget(self.previous_button,0,2)
+        # layout.addWidget(self.previous_button,0,2)
 
         self.tabs = tabs
         if tabs is not None:
