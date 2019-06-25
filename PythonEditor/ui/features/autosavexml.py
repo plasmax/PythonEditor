@@ -490,7 +490,6 @@ class AutoSaveManager(QtCore.QObject):
         the class is instantiated on the tabeditor's
         parent class, pythoneditor.
         """
-        # global anim
         anim = QtCore.QPropertyAnimation(
             self.popup_bar,
             'maximumHeight'
@@ -502,6 +501,10 @@ class AutoSaveManager(QtCore.QObject):
         anim.start()
 
     def remove_existing_popups(self, name=None):
+        """
+        Remove widgets with objectName
+        "name" from the tabeditor layout.
+        """
         layout = self.tabeditor.layout()
         # first remove any previous widgets
         for i in range(layout.count()):
