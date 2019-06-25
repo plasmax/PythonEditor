@@ -1,7 +1,9 @@
 import sys
 import os
 
+
 PYTHON_EDITOR_MODULES = []
+
 
 class Finder(object):
     """
@@ -35,6 +37,8 @@ def add_to_meta_path():
 	sys.meta_path.append(Finder())
 add_to_meta_path()
 
+
+# imports here now that we are done modifying importer
 import imp
 from PythonEditor.ui.Qt import QtWidgets
 from PythonEditor.ui.Qt import QtCore
@@ -78,6 +82,14 @@ class IDE(QtWidgets.QWidget):
         for name in PYTHON_EDITOR_MODULES:
             mod = sys.modules.get(name)
             if mod is None:
+                continue
+
+            with open(mod.__file__, 'r') as f:
+                data = f.read()
+            try:
+                code = compile(data, mod.__file__, 'exec')
+            except SyntaxError as e:
+                print(e) # FIXME: streams won't catch this, find another way
                 continue
             try:
                 imp.reload(mod)
