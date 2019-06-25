@@ -12,6 +12,7 @@ import re
 import os
 import sys
 import uuid
+import time
 import json
 import inspect
 import __main__
@@ -22,7 +23,9 @@ from PythonEditor.ui.Qt import QtGui
 from PythonEditor.ui.Qt import QtCore
 
 from PythonEditor.utils import save
+from PythonEditor.utils import constants
 from PythonEditor.core import execute
+from PythonEditor.ui.features import search
 
 
 def load_actions_from_json():
@@ -66,7 +69,6 @@ def class_actions(cls):
             continue
         for action_name, attributes in widget_actions.items():
             yield widget, action_name, attributes
-
 
 
 class Actions(QtCore.QObject):
@@ -891,13 +893,14 @@ class Actions(QtCore.QObject):
         """
         Selects the word under cursor if no selection.
         If selection, selects next occurence of the same word.
-        TODO: 1) could optionally highlight all occurences of the word
-        and iterate to the next selection. 2) Would be nice if extra
+        TODO: Would be nice if extra
         selections could be made editable.
         """
         textCursor = self.editor.textCursor()
         if not textCursor.hasSelection():
-            textCursor.select(QtGui.QTextCursor.WordUnderCursor)
+            textCursor.select(
+                QtGui.QTextCursor.WordUnderCursor
+            )
             return self.editor.setTextCursor(textCursor)
 
         text = textCursor.selection().toPlainText()
@@ -918,21 +921,41 @@ class Actions(QtCore.QObject):
                 return
         next_end = next_start + word_len
 
-        textCursor.setPosition(next_start, QtGui.QTextCursor.MoveAnchor)
-        textCursor.setPosition(next_end, QtGui.QTextCursor.KeepAnchor)
+        textCursor.setPosition(
+            next_start,
+            QtGui.QTextCursor.MoveAnchor
+        )
+        textCursor.setPosition(
+            next_end,
+            QtGui.QTextCursor.KeepAnchor
+        )
         self.editor.setTextCursor(textCursor)
 
-        extraSelections = []
+        # set var on first call
+        last_call_time = getattr(
+            self,
+            '_last_call_time',
+            None
+        )
+        if last_call_time is None:
+            self._last_call_time = time.time()
 
-        selection = QtWidgets.QTextEdit.ExtraSelection()
+        since = time.time()-self._last_call_time
+        if since < 0.05:
+            # this will trigger a delay timer on the
+            # syntaxhighlighter to rehighlight later
+            self.editor.selectionChanged.emit()
+        else:
+            # now that the selection has changed,
+            # re-highlight the document
+            document = self.editor.document()
+            highlighter = document.findChild(
+                QtGui.QSyntaxHighlighter,
+                'Highlight'
+            )
+            highlighter.highlight_same_words()
 
-        lineColor = QtGui.QColor.fromRgbF(1, 1, 1, 0.3)
-        selection.format.setBackground(lineColor)
-        selection.cursor = self.editor.textCursor()
-        selection.cursor.setPosition(start_pos, QtGui.QTextCursor.MoveAnchor)
-        selection.cursor.setPosition(end_pos, QtGui.QTextCursor.KeepAnchor)
-        extraSelections.append(selection)
-        self.editor.setExtraSelections(extraSelections)
+        self._last_call_time = time.time()
 
     def hop_between_brackets(self):
         """
@@ -1140,18 +1163,36 @@ class Actions(QtCore.QObject):
                 path=folder
             )
 
-    def search(self):
+    def find(self):
         """
         Search the current document.
         """
-        self.find_palette = FindPalette(self.editor)
-        self.find_palette.show()
+        self.find_widget = search.FindContainer(
+            self.editor,
+            tabs=getattr(self, 'tabs', None),
+            replace=False
+        )
+        self.find_widget.show()
 
     def find_and_replace(self):
         """
-        Placeholder.
+        Show a find and replace dialog.
         """
-        pass
+        self.find_widget = search.FindContainer(
+            self.editor,
+            tabs=getattr(self, 'tabs', None),
+            replace=True
+        )
+        self.find_widget.show()
+
+    def escape_handler(self):
+        """
+        If the find dialog is open, close it.
+        """
+        search.remove_from_layout(
+            self.tabeditor.layout(),
+            'FindContainer',
+        )
 
     def reload_package(self):
         widget = self.tabeditor
@@ -1434,99 +1475,99 @@ class CommandPalette(QtWidgets.QLineEdit):
             self.hide()
         return False
 
+# ------------ Previous popup window, probably more useful for Find Definitions (Ctrl+R)
+# class FindPalette(CommandPalette):
+#     def __init__(self, editor):
+#         super(FindPalette, self).__init__(editor)
+#         words = list(set(re.findall(r'\w+', editor.toPlainText())))
+#         completer = QtWidgets.QCompleter(words)
+#         completer.highlighted.connect(self.find)
+#         self.setCompleter(completer)
 
-class FindPalette(CommandPalette):
-    def __init__(self, editor):
-        super(FindPalette, self).__init__(editor)
-        words = list(set(re.findall(r'\w+', editor.toPlainText())))
-        completer = QtWidgets.QCompleter(words)
-        completer.highlighted.connect(self.find)
-        self.setCompleter(completer)
+#         textCursor = editor.textCursor()
+#         if textCursor.hasSelection():
+#             text = textCursor.selectedText()
+#             self.setText(text)
 
-        textCursor = editor.textCursor()
-        if textCursor.hasSelection():
-            text = textCursor.selectedText()
-            self.setText(text)
+#     def keyPressEvent(self, event):
+#         enter_keys = [
+#             QtCore.Qt.Key.Key_Return,
+#             QtCore.Qt.Key.Key_Enter
+#         ]
+#         if event.key() not in enter_keys:
+#             super(
+#                 FindPalette, self
+#             ).keyPressEvent(event)
+#         elif event.modifiers() == QtCore.Qt.ControlModifier:
+#             self.hide()
+#             return
+#         elif self.completer().popup().isVisible():
+#             event.ignore()
+#             return
 
-    def keyPressEvent(self, event):
-        enter_keys = [
-            QtCore.Qt.Key.Key_Return,
-            QtCore.Qt.Key.Key_Enter
-        ]
-        if event.key() not in enter_keys:
-            super(
-                FindPalette, self
-            ).keyPressEvent(event)
-        elif event.modifiers() == QtCore.Qt.ControlModifier:
-            self.hide()
-            return
-        elif self.completer().popup().isVisible():
-            event.ignore()
-            return
+#         esc = QtCore.Qt.Key.Key_Escape
+#         if event.key() == esc:
+#             self.hide()
+#             return
 
-        esc = QtCore.Qt.Key.Key_Escape
-        if event.key() == esc:
-            self.hide()
-            return
+#         if event.key() in [
+#             QtCore.Qt.Key.Key_Shift,
+#             QtCore.Qt.Key.Key_Alt,
+#             QtCore.Qt.Key.Key_Control,
+#             QtCore.Qt.Key.Key_Meta,
+#             ]:
+#             return
 
-        if event.key() in [
-            QtCore.Qt.Key.Key_Shift,
-            QtCore.Qt.Key.Key_Alt,
-            QtCore.Qt.Key.Key_Control,
-            QtCore.Qt.Key.Key_Meta,
-            ]:
-            return
+#         text = self.text()
+#         editor = self.parent()
+#         cursor = editor.textCursor()
+#         pos = cursor.position()
+#         self.find(text)
 
-        text = self.text()
-        editor = self.parent()
-        cursor = editor.textCursor()
-        pos = cursor.position()
-        self.find(text)
+#     def lookup(self, text, text_cursor):
+#         """
+#         Reusable search.
+#         """
+#         document = self.parent().document()
 
-    def lookup(self, text, text_cursor):
-        """
-        Reusable search.
-        """
-        document = self.parent().document()
+#         # avoid jumps by placing cursor at:
+#         start_pos = text_cursor.StartOfWord
 
-        # avoid jumps by placing cursor at:
-        start_pos = text_cursor.StartOfWord
+#         if (text_cursor.hasSelection()
+#             and text_cursor.selection(
+#             ).toPlainText() == text):
 
-        if (text_cursor.hasSelection()
-            and text_cursor.selection(
-            ).toPlainText() == text):
+#             # move on if word already matched
+#             start_pos = text_cursor.EndOfWord
 
-            # move on if word already matched
-            start_pos = text_cursor.EndOfWord
+#         text_cursor.movePosition(start_pos)
+#         cursor = document.find(
+#             text,
+#             text_cursor,
+#             document.FindCaseSensitively
+#         )
+#         pos = cursor.position()
+#         if pos != -1:
+#             self.parent().setTextCursor(cursor)
+#             return True
 
-        text_cursor.movePosition(start_pos)
-        cursor = document.find(
-            text,
-            text_cursor,
-            document.FindCaseSensitively
-        )
-        pos = cursor.position()
-        if pos != -1:
-            self.parent().setTextCursor(cursor)
-            return True
+#     def find(self, text):
+#         """
+#         Select text in the parent editor.
+#         """
+#         text_cursor = self.parent().textCursor()
 
-    def find(self, text):
-        """
-        Select text in the parent editor.
-        """
-        text_cursor = self.parent().textCursor()
+#         # start the search from the current position
+#         if self.lookup(text, text_cursor):
+#             return
 
-        # start the search from the current position
-        if self.lookup(text, text_cursor):
-            return
-
-        # search from the beginning of the document
-        text_cursor = self.parent().textCursor()
-        text_cursor.setPosition(
-            0,
-            QtGui.QTextCursor.MoveAnchor
-        )
-        self.lookup(text, text_cursor)
+#         # search from the beginning of the document
+#         text_cursor = self.parent().textCursor()
+#         text_cursor.setPosition(
+#             0,
+#             QtGui.QTextCursor.MoveAnchor
+#         )
+#         self.lookup(text, text_cursor)
 
 
 class GotoPalette(CommandPalette):
@@ -1560,6 +1601,7 @@ class GotoPalette(CommandPalette):
             self.editor,
             lineno
         )
+
 
 def goto_line(editor, lineno):
     """

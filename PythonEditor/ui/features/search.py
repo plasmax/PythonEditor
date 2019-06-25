@@ -63,7 +63,7 @@ class FindPalette(EditLine):
         self.setCompleter(completer)
         self.editor = editor
         self.tabs = tabs
-        self.search_across_tabs = True
+        self.search_across_tabs = False
         self.find_flags = QtGui.QTextDocument.FindCaseSensitively
 
         textCursor = editor.textCursor()
