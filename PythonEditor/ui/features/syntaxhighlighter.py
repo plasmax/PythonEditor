@@ -297,6 +297,9 @@ class Highlight(QtGui.QSyntaxHighlighter):
         color = QtGui.QColor(*rgb)
 
         block = self.currentBlock()
+        if not block.isVisible():
+            return
+
         pos = block.position()
 
         cursor = self.editor.textCursor()
