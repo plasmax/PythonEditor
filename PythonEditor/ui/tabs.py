@@ -922,9 +922,20 @@ class TabEditor(QtWidgets.QWidget):
 
         self.editor.setPlainText(text)
 
-        cursor = self.editor.textCursor()
         if cursor_pos is not None:
+            block_pos, cursor_pos = cursor_pos
+
+            # set first block visible
+            cursor = self.editor.textCursor()
+            self.editor.moveCursor(cursor.End)
+            cursor.setPosition(block_pos)
+            self.editor.setTextCursor(cursor)
+
+            # restore cursor position
+            cursor = self.editor.textCursor()
             cursor.setPosition(cursor_pos)
+            self.editor.setTextCursor(cursor)
+
         if selection is not None:
             # TODO: this won't restore a selection
             # that starts from below and selects
@@ -939,14 +950,19 @@ class TabEditor(QtWidgets.QWidget):
                     end,
                     QtGui.QTextCursor.KeepAnchor
                 )
-        self.editor.setTextCursor(cursor)
+            self.editor.setTextCursor(cursor)
 
         # for the autosave check_document_modified
         self.tab_switched_signal.emit()
 
     def store_cursor_position(self):
-        cp = self.editor.textCursor().position()
-        self.tabs['cursor_pos'] = cp
+        editor = self.editor
+        cursor = editor.textCursor()
+        block = editor.firstVisibleBlock()
+        self.tabs['cursor_pos'] = (
+            block.position(),
+            cursor.position()
+            )
 
     def store_selection(self):
         tc = self.editor.textCursor()
