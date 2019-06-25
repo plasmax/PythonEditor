@@ -916,24 +916,21 @@ class TabEditor(QtWidgets.QWidget):
                     text = f.read()
                 data['text'] = text
 
+        # collect data before setting editor text
+        cursor_pos = self.tabs.get('cursor_pos')
+        selection = self.tabs.get('selection')
+
         self.editor.setPlainText(text)
 
-        if self.tabs.get('cursor_pos') is not None:
-            cursor = self.editor.textCursor()
-            pos = self.tabs['cursor_pos']
-            cursor.setPosition(pos)
-            self.editor.setTextCursor(cursor)
-
-        # for the autosave check_document_modified
-        self.tab_switched_signal.emit()
-
-        if self.tabs.get('selection') is not None:
+        cursor = self.editor.textCursor()
+        if cursor_pos is not None:
+            cursor.setPosition(cursor_pos)
+        if selection is not None:
             # TODO: this won't restore a selection
             # that starts from below and selects
             # upwards :( (yet)
-            has, start, end = self.tabs['selection']
+            has, start, end = selection
             if has:
-                cursor = self.editor.textCursor()
                 cursor.setPosition(
                     start,
                     QtGui.QTextCursor.MoveAnchor
@@ -942,7 +939,10 @@ class TabEditor(QtWidgets.QWidget):
                     end,
                     QtGui.QTextCursor.KeepAnchor
                 )
-                self.editor.setTextCursor(cursor)
+        self.editor.setTextCursor(cursor)
+
+        # for the autosave check_document_modified
+        self.tab_switched_signal.emit()
 
     def store_cursor_position(self):
         cp = self.editor.textCursor().position()
