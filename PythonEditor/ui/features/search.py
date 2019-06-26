@@ -24,6 +24,8 @@ def remove_from_layout(layout, objectName=None):
         if item is None:
             continue
         widget = item.widget()
+        if widget is None:
+            continue
         if widget.objectName() != objectName:
             continue
         layout.removeItem(item)
@@ -295,6 +297,8 @@ class FindContainer(QtWidgets.QWidget):
         if parent is None:
             return
         layout = parent.layout()
+        if layout is None:
+            return
         remove_from_layout(layout, self.objectName())
 
     def find_and_replace(self):
