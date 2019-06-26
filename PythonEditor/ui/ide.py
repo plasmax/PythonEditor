@@ -85,6 +85,8 @@ class IDE(QtWidgets.QWidget):
                 continue
 
             path = mod.__file__
+            if path.endswith('.pyc'):
+                path = path.replace('.pyc', '.py')
             if not os.path.isfile(path):
                 continue
             with open(path, 'r') as f:
