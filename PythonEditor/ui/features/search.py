@@ -81,7 +81,6 @@ class FindPalette(EditLine):
 
     def toggle_search_across_tabs(self):
         self.search_across_tabs = not self.search_across_tabs
-        print(self.search_across_tabs)
 
     def focusInEvent(self, event):
         super(FindPalette, self).focusInEvent(event)
@@ -228,7 +227,7 @@ class FindContainer(QtWidgets.QWidget):
         if tabs is not None:
             self.search_across_tabs_check = QtWidgets.QToolButton(
                 checkable=True,
-                checked=True
+                checked=False
             )
             self.search_across_tabs_check.setToolTip(
                 'Search across all open tabs'

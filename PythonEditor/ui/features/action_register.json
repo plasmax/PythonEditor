@@ -185,11 +185,18 @@
             "Method": "zoom_in",
             "Menu Location": "View"
         },
-        "Search": {
+        "Find": {
             "Shortcuts": [
                 "Ctrl+F"
             ],
-            "Method": "search",
+            "Method": "find",
+            "Menu Location": "Find"
+        },
+        "Find and Replace": {
+            "Shortcuts": [
+                "Ctrl+Shift+F"
+            ],
+            "Method": "find_and_replace",
             "Menu Location": "Find"
         },
         "Indent": {
@@ -219,6 +226,13 @@
             ],
             "Method": "tab_handler",
             "Menu Location": "Edit/Text"
+        },
+        "Escape Handler": {
+            "Shortcuts": [
+                "Escape"
+            ],
+            "Method": "escape_handler",
+            "Menu Location": ""
         },
         "Open Module Directory": {
             "Shortcuts": [],
