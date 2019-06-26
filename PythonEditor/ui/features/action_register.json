@@ -185,12 +185,26 @@
             "Method": "zoom_in",
             "Menu Location": "View"
         },
-        "Search": {
+        "Find": {
             "Shortcuts": [
                 "Ctrl+F"
             ],
-            "Method": "search",
-            "Menu Location": "Find"
+            "Method": "find",
+            "Menu Location": "Tools/Find"
+        },
+        "Find and Replace": {
+            "Shortcuts": [
+                "Ctrl+Shift+F"
+            ],
+            "Method": "find_and_replace",
+            "Menu Location": "Tools/Find"
+        },
+        "Close Find Dialog": {
+            "Shortcuts": [
+                "Escape"
+            ],
+            "Method": "escape_handler",
+            "Menu Location": "Tools/Find"
         },
         "Indent": {
             "Shortcuts": [
