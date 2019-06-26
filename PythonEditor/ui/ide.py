@@ -84,8 +84,15 @@ class IDE(QtWidgets.QWidget):
             if mod is None:
                 continue
 
-            with open(mod.__file__, 'r') as f:
+            path = mod.__file__
+            if not os.path.isfile(path):
+                continue
+            with open(path, 'r') as f:
                 data = f.read()
+            if '\x00' in data:
+                msg = 'Cannot load {0} due to Null bytes. Path:\n{1}'
+                print(msg.format(mod, path))
+                continue
             try:
                 code = compile(data, mod.__file__, 'exec')
             except SyntaxError as e:
@@ -94,10 +101,19 @@ class IDE(QtWidgets.QWidget):
             try:
                 imp.reload(mod)
             except ImportError:
-                msg = 'could not reload %s: %s'
-                print(msg % (name, mod))
+                msg = 'could not reload {0}: {1}'
+                print(msg.format(name, mod))
 
         QtCore.QTimer.singleShot(1, self.buildUI)
+        QtCore.QTimer.singleShot(10, self.set_editor_focus)
+
+    def set_editor_focus(self):
+        """
+        Set the focus inside the editor.
+        """
+        self.python_editor.tabeditor.editor.setFocus(
+            QtCore.Qt.MouseFocusReason
+        )
 
     def showEvent(self, event):
         """
