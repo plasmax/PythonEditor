@@ -362,7 +362,18 @@ class AutoCompleter(QtCore.QObject):
         if _obj is None or False:
             return
 
-        attrs = dir(_obj)
+        try:
+            attrs = dir(_obj)
+        except TypeError:
+            # found a case where __getattr__
+            # on a n _obj instance
+            # returned a string, rendering
+            # it uncallable. as a last resort,
+            # try getting the class attrs
+            try:
+                attrs = dir(_obj.__class__)
+            except Exception:
+                return
 
         methods = [
             a for a in attrs
