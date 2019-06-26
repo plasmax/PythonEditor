@@ -583,11 +583,14 @@ class Tabs(QtWidgets.QTabBar):
         """
         data = self.tabData(index)
         path = data.get('path')
-        if path is None:
+        if path is None or not path.strip():
+            print('No file path for "{0}".'.format(
+                data['name'])
+            )
             return
         clipboard = QtGui.QClipboard()
         clipboard.setText(path)
-        print('path copied to clipboard:')
+        print('Path copied to clipboard:')
         print(path)
 
     def move_to_first(self, index):
@@ -951,6 +954,7 @@ class TabEditor(QtWidgets.QWidget):
                     QtGui.QTextCursor.KeepAnchor
                 )
             self.editor.setTextCursor(cursor)
+        self.editor.setFocus(QtCore.Qt.MouseFocusReason)
 
         # for the autosave check_document_modified
         self.tab_switched_signal.emit()
