@@ -1197,10 +1197,14 @@ class Actions(QtCore.QObject):
             False
         )
         if find_widget:
-            search.remove_from_layout(
-                self.tabeditor.layout(),
-                'FindContainer',
-            )
+            parent = self.editor.parent()
+            if parent:
+                layout = parent.layout()
+                if layout:
+                    search.remove_from_layout(
+                        layout,
+                        'FindContainer',
+                    )
 
         # hide autocompletion popup
         completer = self.editor.findChild(
