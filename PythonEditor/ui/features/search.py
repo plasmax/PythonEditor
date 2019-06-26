@@ -36,7 +36,9 @@ class EditLine(QtWidgets.QLineEdit):
     def __init__(self, editor):
         super(EditLine, self).__init__(editor)
         self.editor = editor
-        self.setFont(constants.DEFAULT_FONT)
+        font = QtGui.QFont(constants.DEFAULT_FONT)
+        font.setPointSize(10)
+        self.setFont(font)
 
     def keyPressEvent(self, event):
         esc = QtCore.Qt.Key.Key_Escape
@@ -75,13 +77,18 @@ class FindPalette(EditLine):
         elif PREVIOUS_QUERY is not None:
             self.setText(PREVIOUS_QUERY)
         else:
-            self.setText('Type here to search...')
+            self.setText(
+                'Type here and press Enter to search...'
+            )
         self.setFocus(QtCore.Qt.MouseFocusReason)
         self.selectAll()
 
     def toggle_search_across_tabs(self):
         self.search_across_tabs = not self.search_across_tabs
-        print(self.search_across_tabs)
+        if self.search_across_tabs:
+            print('Searching across all tabs.')
+        else:
+            print('Searching in this tab only.')
 
     def focusInEvent(self, event):
         super(FindPalette, self).focusInEvent(event)
@@ -148,7 +155,6 @@ class FindPalette(EditLine):
 
     backwards = False
     def find_previous(self):
-        print('find previous')
         T = QtGui.QTextDocument
         self.backwards = True
         self.find_flags = T.FindCaseSensitively | T.FindBackward
@@ -192,6 +198,9 @@ class FindPalette(EditLine):
                 body = data['text']
                 if text in body:
                     self.tabs.setCurrentIndex(index)
+                    # compensate for editor taking focus when
+                    # switching tabs by regaining focus
+                    self.setFocus(QtCore.Qt.MouseFocusReason)
                     break
 
         # search from the beginning of the document
@@ -213,14 +222,13 @@ class FindContainer(QtWidgets.QWidget):
         layout = QtWidgets.QGridLayout(self)
         self.setLayout(layout)
 
-        self.layout().setContentsMargins(10,10,10,10)
         self.editor = editor
 
         self.find = FindPalette(editor, tabs=tabs)
-        layout.addWidget(self.find,0,0)
+        layout.addWidget(self.find,0,1)
 
         self.find_button = QtWidgets.QPushButton('Find')
-        layout.addWidget(self.find_button,0,1)
+        layout.addWidget(self.find_button,0,2)
         self.previous_button = QtWidgets.QPushButton('Previous')
         # layout.addWidget(self.previous_button,0,2)
 
@@ -233,16 +241,16 @@ class FindContainer(QtWidgets.QWidget):
             self.search_across_tabs_check.setToolTip(
                 'Search across all open tabs'
             )
-            layout.addWidget(self.search_across_tabs_check,1,2)
+            layout.addWidget(self.search_across_tabs_check,0,0)
             self.search_across_tabs_check.clicked.connect(
                 self.find.toggle_search_across_tabs
             )
 
         if replace:
             self.replace = EditLine(editor)
-            layout.addWidget(self.replace,1,0)
+            layout.addWidget(self.replace,1,1)
             self.replace_button = QtWidgets.QPushButton('Replace')
-            layout.addWidget(self.replace_button,1,1)
+            layout.addWidget(self.replace_button,1,2)
 
             self.replace_button.clicked.connect(self.find_and_replace)
             self.replace.enter_signal.connect(self.find_and_replace)
