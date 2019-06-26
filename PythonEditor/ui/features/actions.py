@@ -4,7 +4,7 @@ of the PythonEditor user interface. Widgets with the Actions
 class applied will have all the methods available on that
 class applied to the widget as actions, using an overridable
 JSON dictionary with shortcuts and menu locations to synchronize
-these actions accross menus and shortcuts, which are applied
+these actions across menus and shortcuts, which are applied
 in the shortcuts, contextmenu and menubar modules.
 """
 from __future__ import print_function
@@ -1187,12 +1187,33 @@ class Actions(QtCore.QObject):
 
     def escape_handler(self):
         """
-        If the find dialog is open, close it.
+        Override normal escape behaviour to
+        close dialogs and popups.
         """
-        search.remove_from_layout(
-            self.tabeditor.layout(),
-            'FindContainer',
+        # hide find dialog is open
+        find_widget = getattr(
+            self,
+            'find_widget',
+            False
         )
+        if find_widget:
+            parent = self.editor.parent()
+            if parent:
+                layout = parent.layout()
+                if layout:
+                    search.remove_from_layout(
+                        layout,
+                        'FindContainer',
+                    )
+
+        # hide autocompletion popup
+        completer = self.editor.findChild(
+            QtWidgets.QCompleter
+        )
+        popup = completer.popup()
+        if popup and popup.isVisible():
+            popup.hide()
+            return
 
     def reload_package(self):
         widget = self.tabeditor

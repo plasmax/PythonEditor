@@ -190,14 +190,21 @@
                 "Ctrl+F"
             ],
             "Method": "find",
-            "Menu Location": "Find"
+            "Menu Location": "Tools/Find"
         },
         "Find and Replace": {
             "Shortcuts": [
                 "Ctrl+Shift+F"
             ],
             "Method": "find_and_replace",
-            "Menu Location": "Find"
+            "Menu Location": "Tools/Find"
+        },
+        "Close Find Dialog": {
+            "Shortcuts": [
+                "Escape"
+            ],
+            "Method": "escape_handler",
+            "Menu Location": "Tools/Find"
         },
         "Indent": {
             "Shortcuts": [
