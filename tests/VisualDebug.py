@@ -47,18 +47,31 @@ class VisualDebug(QtWidgets.QWidget):
         for w in qApp.topLevelWidgets():  # extra stuff
             self.recurseWidgets(w, rootItem)
 
+    def get_property_safe(self, obj, attr_name, default=''):
+        """
+        Retrieves properties stored in callable methods.
+        """
+        if not hasattr(obj, attr_name):
+            return default
+
+        try:
+            method = getattr(obj, attr_name)
+            return method.__call__()
+        except Exception:
+            return default
+
     def getObjectInfo(self, widget, indent=0):
-        wintitle = (widget.windowTitle()
-                    if hasattr(widget, 'windowTitle') else '')
-        return [widget.metaObject().className(),
-                widget.objectName(),
-                wintitle,
-                (widget.text() if hasattr(widget, 'text') else ''),
-                (widget.title() if hasattr(widget, 'title') else ''),
-                widget.__repr__()]
+        return [
+            widget.metaObject().className(),
+            widget.objectName(),
+            self.get_property_safe(widget, 'windowTitle'),
+            self.get_property_safe(widget, 'text'),
+            self.get_property_safe(widget, 'title'),
+            widget.__repr__()
+        ]
 
     def recurseWidgets( self, widget , parent):
-        # later try and turn this into a generator pushed by a Qtimer
+        # TODO: later try and turn this into a generator pushed by a QTimer
         # treeInfo = {}
         def recursion(widget, parent):
             for child in widget.children():
