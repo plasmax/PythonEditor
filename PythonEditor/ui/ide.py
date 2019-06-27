@@ -107,12 +107,14 @@ class IDE(QtWidgets.QWidget):
                 print(msg.format(name, mod))
 
         QtCore.QTimer.singleShot(1, self.buildUI)
-        QtCore.QTimer.singleShot(10, self.set_editor_focus)
+        QtCore.QTimer.singleShot(100, self.set_editor_focus)
 
     def set_editor_focus(self):
         """
         Set the focus inside the editor.
         """
+        if not hasattr(self, 'python_editor'):
+            return
         self.python_editor.tabeditor.editor.setFocus(
             QtCore.Qt.MouseFocusReason
         )
