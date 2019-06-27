@@ -197,14 +197,14 @@
                 "Ctrl+Shift+F"
             ],
             "Method": "find_and_replace",
-            "Menu Location": "Tools/Find"
+            "Menu Location": "Tools/Find and Replace"
         },
-        "Close Find Dialog": {
+        "Escape Handler": {
             "Shortcuts": [
                 "Escape"
             ],
             "Method": "escape_handler",
-            "Menu Location": "Tools/Find"
+            "Menu Location": ""
         },
         "Indent": {
             "Shortcuts": [
