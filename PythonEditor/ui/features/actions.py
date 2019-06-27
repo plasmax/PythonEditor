@@ -1891,6 +1891,10 @@ def openDir(module):
 
 
 def find_menu_item(menu, item_name=''):
+    """
+    Search a menu's children for a menu
+    that has text or title given by item_name.
+    """
     for item in menu.children():
         if hasattr(item, 'text'):
             name = item.text()

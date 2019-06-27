@@ -41,7 +41,7 @@ class ContextMenu(QtCore.QObject):
                 continue
 
             menu = self.menu
-            if location != '':
+            if location.strip():
                 for name in location.split('/'):
                     item = actions.find_menu_item(menu, name)
                     if item is None:
