@@ -33,8 +33,13 @@ def remove_from_layout(layout, objectName=None):
 
 
 class EditLine(QtWidgets.QLineEdit):
+    """
+    Base class for search/replace widgets.
+    Emits signals on certain keystrokes
+    and sets defaults common to both.
+    """
     escape_signal = QtCore.Signal()
-    enter_signal = QtCore.Signal()
+    ctrl_enter_signal = QtCore.Signal()
     def __init__(self, editor):
         super(EditLine, self).__init__(editor)
         self.editor = editor
@@ -52,8 +57,10 @@ class EditLine(QtWidgets.QLineEdit):
             QtCore.Qt.Key.Key_Return,
             QtCore.Qt.Key.Key_Enter
         ]
-        if event.key() in enter_keys:
-            self.enter_signal.emit()
+        enter = event.key() in enter_keys
+        ctrl = event.modifiers() == QtCore.Qt.ControlModifier
+        if ctrl and enter:
+            self.ctrl_enter_signal.emit()
         super(EditLine, self).keyPressEvent(event)
 
 
@@ -215,12 +222,14 @@ class FindPalette(EditLine):
         self.editor.selectionChanged.emit()
 
 
-class FindContainer(QtWidgets.QWidget):
+class SearchPanel(QtWidgets.QWidget):
     """
+    Search panel that contains the
+    search/replace QLineEdits and QPushButtons.
     """
     def __init__(self, editor, tabs=None, replace=False):
-        super(FindContainer, self).__init__()
-        self.setObjectName('FindContainer')
+        super(SearchPanel, self).__init__()
+        self.setObjectName('SearchPanel')
         layout = QtWidgets.QGridLayout(self)
         self.setLayout(layout)
 
@@ -240,12 +249,19 @@ class FindContainer(QtWidgets.QWidget):
                 checkable=True,
                 checked=False
             )
+            icon = self.style().standardIcon(
+                QtWidgets.QStyle.SP_FileDialogContentsView
+            )
+            self.search_across_tabs_check.setIcon(icon)
             self.search_across_tabs_check.setToolTip(
                 'Search across all open tabs'
             )
             layout.addWidget(self.search_across_tabs_check,0,0)
             self.search_across_tabs_check.clicked.connect(
                 self.find.toggle_search_across_tabs
+            )
+            self.search_across_tabs_check.clicked.connect(
+                self.change_find_across_tabs_icon
             )
 
         if replace:
@@ -255,7 +271,7 @@ class FindContainer(QtWidgets.QWidget):
             layout.addWidget(self.replace_button,1,2)
 
             self.replace_button.clicked.connect(self.find_and_replace)
-            self.replace.enter_signal.connect(self.find_and_replace)
+            self.replace.ctrl_enter_signal.connect(self.find_and_replace)
             self.replace.escape_signal.connect(self.remove_from_tabeditor)
 
             if PREVIOUS_REPLACEMENT is not None:
@@ -265,11 +281,37 @@ class FindContainer(QtWidgets.QWidget):
             self.setTabOrder(self.find, self.replace)
             # self.setTabOrder(self.replace, self.find)
 
+        # self.close_button = QtWidgets.QToolButton()
+        self.close_button = QtWidgets.QPushButton()
+        icon = self.style().standardIcon(
+            QtWidgets.QStyle.SP_TitleBarCloseButton
+        )
+        self.close_button.setIcon(icon)
+        # self.close_button.setAutoRaise(True)
+        self.close_button.setFlat(True)
+        layout.addWidget(self.close_button,0,3)
         self.insert_self_in_parent()
 
         self.find.escape_signal.connect(self.remove_from_tabeditor)
         self.find_button.clicked.connect(self.find.find)
         self.previous_button.clicked.connect(self.find.find_previous)
+        self.close_button.clicked.connect(self.close)
+
+    def change_find_across_tabs_icon(self):
+        """
+        Give some visual feedback on the search
+        across tabs button.
+        """
+        button = self.search_across_tabs_check
+        if button.isChecked():
+            icon = self.style().standardIcon(
+                QtWidgets.QStyle.SP_FileDialogListView
+            )
+        else:
+            icon = self.style().standardIcon(
+                QtWidgets.QStyle.SP_FileDialogContentsView
+            )
+        button.setIcon(icon)
 
     def remember_replacement(self):
         global PREVIOUS_REPLACEMENT
@@ -277,8 +319,8 @@ class FindContainer(QtWidgets.QWidget):
 
     def insert_self_in_parent(self):
         """
-        encapsulate the editor in a parent widget
-        for the duration of this widgets' visibility.
+        Add the search panel to the editor's
+        parent widget's layout.
         """
         # remove any existing search panels first
         self.remove_from_tabeditor()
@@ -290,7 +332,7 @@ class FindContainer(QtWidgets.QWidget):
             self.parent_layout.insertWidget(index+1, self)
 
     def showEvent(self, event):
-        super(FindContainer, self).showEvent(event)
+        super(SearchPanel, self).showEvent(event)
 
     def remove_from_tabeditor(self):
         parent = self.editor.parent()
@@ -305,11 +347,12 @@ class FindContainer(QtWidgets.QWidget):
         pattern = self.find.text()
         if not pattern:
             return
-        replacement = self.replace.text()
+
         body = self.editor.toPlainText()
-        count = len(re.findall(pattern, body))
-        if count is 0:
+        if not pattern in body:
             return
+
+        replacement = self.replace.text()
 
         ## This is probably better if replacing over multiple tabs.
         # result = QtWidgets.QMessageBox.question(
@@ -324,6 +367,7 @@ class FindContainer(QtWidgets.QWidget):
         #     return
 
         cursor = self.editor.textCursor()
+        cursor.beginEditBlock()
         pos = cursor.position()
         cursor.movePosition(QtGui.QTextCursor.Start)
         self.editor.setTextCursor(cursor)
@@ -333,6 +377,7 @@ class FindContainer(QtWidgets.QWidget):
         # doc_length = ? # TODO
         # pos = max(0, min(pos, doc_length))
         cursor.setPosition(pos)
+        cursor.endEditBlock()
         if self.tabs is not None:
             index = self.tabs.currentIndex()
             data = self.tabs.tabData(index)
