@@ -1167,23 +1167,23 @@ class Actions(QtCore.QObject):
         """
         Search the current document.
         """
-        self.find_widget = search.FindContainer(
+        self.search_panel = search.SearchPanel(
             self.editor,
             tabs=getattr(self, 'tabs', None),
             replace=False
         )
-        self.find_widget.show()
+        self.search_panel.show()
 
     def find_and_replace(self):
         """
         Show a find and replace dialog.
         """
-        self.find_widget = search.FindContainer(
+        self.search_panel = search.SearchPanel(
             self.editor,
             tabs=getattr(self, 'tabs', None),
             replace=True
         )
-        self.find_widget.show()
+        self.search_panel.show()
 
     def escape_handler(self):
         """
@@ -1191,19 +1191,19 @@ class Actions(QtCore.QObject):
         close dialogs and popups.
         """
         # hide find dialog is open
-        find_widget = getattr(
+        search_panel = getattr(
             self,
-            'find_widget',
+            'search_panel',
             False
         )
-        if find_widget:
+        if search_panel:
             parent = self.editor.parent()
             if parent:
                 layout = parent.layout()
                 if layout:
                     search.remove_from_layout(
                         layout,
-                        'FindContainer',
+                        objectName='SearchPanel',
                     )
 
         # hide autocompletion popup
