@@ -55,10 +55,14 @@ def load_actions_from_json():
 
 def class_actions(cls):
     """
-    Convenience function to return all the
-    actions relevant to a class, such as the
-    Actions, ContextMenu, and MenuBar classes,
-    based on which widgets the actions refer to.
+    Parse the action_register.json file and
+    yield the widget name, action_name and
+    attributes of each action if the widget
+    is an attribute on the class.
+
+    :param cls: A class with widgets that are
+    listed in action_register.json. e.g.
+    Actions, ContextMenu, and MenuBar classes.
     """
     action_dict = load_actions_from_json()
     for widget_name, widget_actions in action_dict.items():
@@ -74,7 +78,8 @@ def class_actions(cls):
 class Actions(QtCore.QObject):
     """
     Collection of QActions that are
-    accessible for menu and shortcut registry.
+    accessible for menu and shortcut
+    registry.
     """
     # clear_output_signal = QtCore.Signal()
     exec_text_signal = QtCore.Signal()
@@ -1106,7 +1111,72 @@ class Actions(QtCore.QObject):
             msg
         )
 
+    def goto_definition(self):
+        """
+        Open the file at the line where
+        the object under the cursor
+        is defined.
+        """
+        cursor = self.editor.textCursor()
+        doc = self.editor.document()
+        pos = cursor.position()
+        block = doc.findBlock(pos)
+        text = block.text()
+        pos = pos-block.position()
+        for match in re.finditer(r'[\w+\.]+', text):
+           if match.start() <= pos <= match.end():
+               word = match.group(0)
+               break
+        else:
+            # no word found for cursor position
+            return
+
+        obj = get_subobject(word)
+        path = get_obj_goto_path(
+            obj,
+            get_lineno=True
+        )
+        if path is None:
+            # is the word defined in
+            # the current document?
+            last = word.split('.')[-1]
+            pattern = r'(?:(def|class)\s+)({0})'.format(last)
+            whole_text = self.editor.toPlainText()
+            match = re.search(pattern, whole_text)
+            if match:
+                start = match.start(2)
+                goto_position(self.editor, start)
+                return
+            msg = 'Could not find definition for "{0}"'.format(word)
+            print(msg)
+            return
+
+        lineno = None
+        name = os.path.basename(path)
+        if ':' in name:
+            parts = name.split(':')
+            if len(parts) != 2:
+                return
+            name = parts[0]
+            path = os.path.join(
+                os.path.dirname(path),
+                name
+            )
+            lineno = parts[1]
+            try:
+                lineno = int(lineno)
+            except Exception:
+                return
+        open_action(
+            self.tabs,
+            self.editor,
+            path=path
+        )
+        goto_line(self.editor, lineno)
+        self.editor.focus_in_signal.emit(None)
+
     def open_module_file(self):
+        """Goto definition in external editor."""
         path = get_selection_goto_path(
             self.editor,
             get_lineno=True
@@ -1120,30 +1190,6 @@ class Actions(QtCore.QObject):
             # editor can handle paths
             # with path:lineno
             open_in_external_editor(path)
-        else:
-            lineno = None
-            name = os.path.basename(path)
-            if ':' in name:
-                parts = name.split(':')
-                if len(parts) != 2:
-                    return
-                name = parts[0]
-                path = os.path.join(
-                    os.path.dirname(path),
-                    name
-                )
-                lineno = parts[1]
-                try:
-                    lineno = int(lineno)
-                except Exception:
-                    return
-            open_action(
-                self.tabs,
-                self.editor,
-                path=path
-            )
-            goto_line(self.editor, lineno)
-
 
     def open_module_directory(self):
         path = get_selection_goto_path(
@@ -1623,11 +1669,21 @@ class GotoPalette(CommandPalette):
             lineno
         )
 
+def goto_position(editor, pos):
+    """
+    Goto position in document.
+    """
+    cursor = editor.textCursor()
+    editor.moveCursor(cursor.End)
+    cursor.setPosition(pos)
+    editor.setTextCursor(cursor)
+
 
 def goto_line(editor, lineno):
     """
-    Sets the text cursor of the
-    editor to the given lineno.
+    Sets the text cursor to the
+    end of the document, then to
+    the given lineno.
     """
     count = editor.blockCount()
     if lineno > count:
@@ -1637,9 +1693,7 @@ def goto_line(editor, lineno):
         ).findBlockByNumber(
         lineno).position()
 
-    cursor = editor.textCursor()
-    cursor.setPosition(pos)
-    editor.setTextCursor(cursor)
+    goto_position(editor, pos)
 
 
 def make_action(name, widget, func):
@@ -1794,8 +1848,10 @@ def get_obj_from_selection(editor):
 
 def get_subobject(text):
     """
-    Walk down an object's hierarchy to retrieve
-    the object at the end of the chain.
+    Return a python object with variable
+    name :text: `str` from the __main__ namespace.
+    Walks down an object's dot hierarchy to retrieve
+    the object at the end of the dot-separated chain.
     """
     text = text.strip()
     if '.' not in text:
@@ -1814,6 +1870,16 @@ def get_subobject(text):
 
 
 def get_obj_goto_path(obj, get_lineno=True):
+    """
+    Return a path to the definition of the
+    given python object. If the definition for
+    the object cannot be located, try the
+    definition for the object's __class__ attr.
+
+    :param get_lineno: `bool`
+    If get_lineno is True, return path
+    in the format "/path/file.py:lineno"
+    """
     if inspect.isbuiltin(obj):
         msg = '{!r} is a built-in {!s}'.format(
             obj, type(obj)
@@ -1848,7 +1914,6 @@ def get_obj_goto_path(obj, get_lineno=True):
             path = '{!s}:{!s}'.format(path, lineno)
         except Exception:#AttributeError, IOError:
             pass
-
     return path
 
 

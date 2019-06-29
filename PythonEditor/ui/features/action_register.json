@@ -298,6 +298,13 @@
             "Method": "goto_line",
             "Menu Location": "Tools"
         },
+        "Goto Definition": {
+            "Shortcuts": [
+                "F12"
+            ],
+            "Method": "goto_definition",
+            "Menu Location": "Tools"
+        },
         "Print Type": {
             "Shortcuts": [
                 "Ctrl+Shift+T"
