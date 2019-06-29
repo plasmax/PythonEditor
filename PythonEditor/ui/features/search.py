@@ -265,6 +265,18 @@ class SearchPanel(QtWidgets.QWidget):
             )
 
         if replace:
+            self.replace_within_selection = False
+            self.replace_within_selection_check = QtWidgets.QToolButton(
+                checkable=True,
+                checked=False
+            )
+            self.replace_within_selection_check.setToolTip(
+                'Replace only within selection'
+            )
+            layout.addWidget(self.replace_within_selection_check,1,0)
+            self.replace_within_selection_check.clicked.connect(
+                self.toggle_replace_within_selection
+            )
             self.replace = EditLine(editor)
             layout.addWidget(self.replace,1,1)
             self.replace_button = QtWidgets.QPushButton('Replace')
@@ -296,6 +308,13 @@ class SearchPanel(QtWidgets.QWidget):
         self.find_button.clicked.connect(self.find.find)
         self.previous_button.clicked.connect(self.find.find_previous)
         self.close_button.clicked.connect(self.close)
+
+    def toggle_replace_within_selection(self):
+        button = self.replace_within_selection_check
+        if button.isChecked():
+            self.replace_within_selection = True
+        else:
+            self.replace_within_selection = False
 
     def change_find_across_tabs_icon(self):
         """
@@ -367,17 +386,32 @@ class SearchPanel(QtWidgets.QWidget):
         #     return
 
         cursor = self.editor.textCursor()
-        cursor.beginEditBlock()
-        pos = cursor.position()
-        cursor.movePosition(QtGui.QTextCursor.Start)
-        self.editor.setTextCursor(cursor)
-        while self.editor.find(pattern):
-            self.editor.textCursor().insertText(replacement)
+        if self.replace_within_selection:
+            if cursor.hasSelection():
+                selection = cursor.selection()
+                body = selection.toPlainText()
+                if not pattern in body:
+                    return
+                doc = self.editor.document()
+                cursor.beginEditBlock()
+                find_cursor = QtGui.QTextCursor(doc)
+                find_cursor.setPosition(cursor.selectionStart())
+                while not find_cursor.isNull():
+                    find_cursor = doc.find(pattern, find_cursor)
+                    find_cursor.insertText(replacement)
+                cursor.endEditBlock()
+        else:
+            cursor.beginEditBlock()
+            pos = cursor.position()
+            cursor.movePosition(QtGui.QTextCursor.Start)
+            self.editor.setTextCursor(cursor)
+            while self.editor.find(pattern):
+                self.editor.textCursor().insertText(replacement)
 
-        # doc_length = ? # TODO
-        # pos = max(0, min(pos, doc_length))
-        cursor.setPosition(pos)
-        cursor.endEditBlock()
+            # doc_length = ? # TODO
+            # pos = max(0, min(pos, doc_length))
+            cursor.setPosition(pos)
+            cursor.endEditBlock()
         if self.tabs is not None:
             index = self.tabs.currentIndex()
             data = self.tabs.tabData(index)
