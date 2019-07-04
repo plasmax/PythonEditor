@@ -58,8 +58,7 @@
       which should remember the settings
 - [x] Highlight line with error
 - [x] Read stdout/stderr on open
-- [ ] Add Script Editor buttons to Menu bar at top - especially fullscreen editor/output,
-      which should remember the settings
+- [ ] Echo commands to python editor.
 
 
 #### Features - desired
@@ -71,7 +70,7 @@
 - [ ] "Actions" - allow users to create and edit custom scripts that run on editor
       text and are added to the user actions config.
 - [ ] Backup PythonEditorHistory.xml button.
-- [ ] Search and Replace
+- [x] Search and Replace
 - [ ] QTreeView/QStandardItemModel snippet
 - [ ] Strip whitespace from line endings action
 - [ ] Meld diff between tabs and/or tab autosave update warning
@@ -81,13 +80,13 @@
 - [ ] Tab close button [x] should appear on active tab only (like chrome)
       and change width of tab (in proportion to the name) when added (setTabButton, RightSide)
 - [ ] Duplicate cursors
-- [ ] Search box at bottom of editor widget (with "all tabs" checkbox)
-- [ ] Search across all tabs
+- [x] Search box at bottom of editor widget (with "all tabs" checkbox)
+- [x] Search across all tabs
 - [ ] Autocomplete 'toNode', node.knob() and node[knob]
 - [ ] Autocomplete os.environ and other dicts
 - [ ] Projects - the new PYTHONEDITOR_AUTOSAVE_FILE env variable should help.
 - [ ] Goto Links in errors/regular paths in the editor
-- [ ] Hover over varibles to get definition goto, type info, short help()
+- [ ] Hover over variables to get definition goto, type info, short help()
 - [ ] Hover over paths in output window to get goto link
 - [ ] Paste into sublime subprocess.Popen('sublime -n --command paste', executable='/bin/tcsh', shell=True)
 - [ ] Warn if file has changed on disk (as with autosave when regaining tab focus)
