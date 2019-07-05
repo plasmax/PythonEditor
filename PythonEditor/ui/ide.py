@@ -1,5 +1,7 @@
-import sys
 import os
+import sys
+import imp
+import traceback
 
 
 PYTHON_EDITOR_MODULES = []
@@ -39,13 +41,12 @@ add_to_meta_path()
 
 
 # imports here now that we are done modifying importer
-import imp
-from PythonEditor.ui.Qt import QtWidgets
-from PythonEditor.ui.Qt import QtCore
+from PythonEditor.ui.Qt.QtWidgets import QWidget, QHBoxLayout
+from PythonEditor.ui.Qt.QtCore import QTimer, Qt
 from PythonEditor.ui import pythoneditor
 
 
-class IDE(QtWidgets.QWidget):
+class IDE(QWidget):
     """
     Container widget that allows the whole
     package to be reloaded.
@@ -53,7 +54,7 @@ class IDE(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super(IDE, self).__init__(parent)
         self.setLayout(
-            QtWidgets.QHBoxLayout(self)
+            QHBoxLayout(self)
         )
         self.layout().setContentsMargins(
             0, 0, 0, 0
@@ -97,8 +98,14 @@ class IDE(QtWidgets.QWidget):
                 continue
             try:
                 code = compile(data, mod.__file__, 'exec')
-            except SyntaxError as e:
-                print(e) # FIXME: streams won't catch this, find another way
+            except SyntaxError as error:
+                # FIXME: streams won't catch this, find another way
+                traceback.print_exc()
+                msg = 'Could not reload due to the following error:'
+                def print_error():
+                    print(msg)
+                    print(error)
+                QTimer.singleShot(100, print_error)
                 continue
             try:
                 imp.reload(mod)
@@ -106,8 +113,8 @@ class IDE(QtWidgets.QWidget):
                 msg = 'could not reload {0}: {1}'
                 print(msg.format(name, mod))
 
-        QtCore.QTimer.singleShot(1, self.buildUI)
-        QtCore.QTimer.singleShot(10, self.set_editor_focus)
+        QTimer.singleShot(1, self.buildUI)
+        QTimer.singleShot(10, self.set_editor_focus)
 
     def set_editor_focus(self):
         """
@@ -116,7 +123,7 @@ class IDE(QtWidgets.QWidget):
         if not hasattr(self, 'python_editor'):
             return
         self.python_editor.tabeditor.editor.setFocus(
-            QtCore.Qt.MouseFocusReason
+            Qt.MouseFocusReason
         )
 
     def showEvent(self, event):
