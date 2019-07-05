@@ -397,7 +397,7 @@ class SearchPanel(QtWidgets.QWidget):
                 find_cursor = QtGui.QTextCursor(doc)
                 find_cursor.setPosition(cursor.selectionStart())
                 while not find_cursor.isNull():
-                   find_cursor = doc.find(
+                    find_cursor = doc.find(
                         pattern, 
                         find_cursor, 
                         QtGui.QTextDocument.FindCaseSensitively
