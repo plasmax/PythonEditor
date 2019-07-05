@@ -196,8 +196,8 @@ class Tabs(QtWidgets.QTabBar):
                               )
     reset_tab_signal        = QtCore.Signal()
 
-    def __init__(self, *args):
-        super(Tabs, self).__init__(*args)
+    def __init__(self, parent=None):
+        super(Tabs, self).__init__(parent)
         self.tab_pressed = False
         self.setStyleSheet(TAB_STYLESHEET)
         self.setMovable(True)
