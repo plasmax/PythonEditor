@@ -397,7 +397,11 @@ class SearchPanel(QtWidgets.QWidget):
                 find_cursor = QtGui.QTextCursor(doc)
                 find_cursor.setPosition(cursor.selectionStart())
                 while not find_cursor.isNull():
-                    find_cursor = doc.find(pattern, find_cursor)
+                   find_cursor = doc.find(
+                        pattern, 
+                        find_cursor, 
+                        QtGui.QTextDocument.FindCaseSensitively
+                    )
                     find_cursor.insertText(replacement)
                 cursor.endEditBlock()
         else:
@@ -405,7 +409,8 @@ class SearchPanel(QtWidgets.QWidget):
             pos = cursor.position()
             cursor.movePosition(QtGui.QTextCursor.Start)
             self.editor.setTextCursor(cursor)
-            while self.editor.find(pattern):
+            flags = QtGui.QTextDocument.FindCaseSensitively
+            while self.editor.find(pattern, flags):
                 self.editor.textCursor().insertText(replacement)
 
             # doc_length = ? # TODO
