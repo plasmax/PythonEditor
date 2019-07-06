@@ -111,7 +111,7 @@ class Terminal(QtWidgets.QPlainTextEdit):
         to see if it contains a path to a
         file. If it does, return it.
         """
-        pattern = re.compile(r'([\w\-\.\/]+)(", line )(\d+)')
+        pattern = re.compile(r'([\w\-\.\/\\]+)(", line )(\d+)')
         path = ''
         for fp, _, lineno in re.findall(pattern, text):
             return ':'.join([fp, lineno])
