@@ -1199,7 +1199,7 @@ class Actions(QtCore.QObject):
         if path is None:
             return
         folder = os.path.dirname(path)
-        eepath = autosavexml.get_external_editor_path()
+        eepath = get_external_editor_path()
         if eepath is not None:
             open_in_external_editor(folder)
         else:
