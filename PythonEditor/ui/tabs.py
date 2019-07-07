@@ -205,6 +205,12 @@ class Tabs(QtWidgets.QTabBar):
         self.pressed_uid = ''
         self._hovered_index = -2
 
+        # # a stack for navigating positions
+        # # `list` of `tuples`
+        # # [(`str` tab_uid, `int` cursor_pos),]
+        # self.cursor_previous = []
+        # self.cursor_next = []
+
         cb = CloseButton(self)
         self.tab_close_button = cb
         cb.hide()
