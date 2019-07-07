@@ -98,9 +98,11 @@ class IDE(QWidget):
                 continue
             try:
                 code = compile(data, mod.__file__, 'exec')
-            except SyntaxError as error:
-                # FIXME: streams won't catch this, find another way
-                traceback.print_exc()
+            except SyntaxError:
+                # This message only shows in terminal
+                # if this environment variable is set:
+                # PYTHONEDITOR_CAPTURE_STARTUP_STREAMS
+                error = traceback.format_exc()
                 msg = 'Could not reload due to the following error:'
                 def print_error():
                     print(msg)
@@ -120,7 +122,17 @@ class IDE(QWidget):
         """
         Set the focus inside the editor.
         """
+        try:
+            retries = self.retries
+        except AttributeError:
+            self.retries = 0
+
+        if self.retries > 4:
+            return
+
         if not hasattr(self, 'python_editor'):
+            QTimer.singleShot(100, self.set_editor_focus)
+            self.retries += 1
             return
         self.python_editor.tabeditor.editor.setFocus(
             Qt.MouseFocusReason
