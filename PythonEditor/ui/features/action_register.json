@@ -415,7 +415,7 @@
             "Method": "show_preferences",
             "Menu Location": "Preferences"
         },
-        "Edit Shortcuts": {
+        "Show Shortcuts": {
             "Shortcuts": [],
             "Method": "show_shortcuts",
             "Menu Location": "Preferences"
