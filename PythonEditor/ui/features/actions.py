@@ -159,7 +159,8 @@ class Actions(QtCore.QObject):
     # -------------------------------------- #
     def offset_for_traceback(self, text=None):
         """
-        Offset text using newlines to get proper line ref in tracebacks.
+        Return text offset using newlines
+        to get proper line ref in tracebacks.
         """
         textCursor = self.editor.textCursor()
 
@@ -411,6 +412,7 @@ class Actions(QtCore.QObject):
         selected text downwards.
         """
         cursor = self.editor.textCursor()
+        cursor.beginEditBlock()
         if cursor.hasSelection():
             selected_text = cursor.selectedText()
             start = cursor.selectionStart()
@@ -451,6 +453,7 @@ class Actions(QtCore.QObject):
             cursor.insertText(
                 selected_text+'\n'+selected_text
             )
+        cursor.endEditBlock()
 
     def new_line_above(self):
         """
@@ -495,7 +498,7 @@ class Actions(QtCore.QObject):
             pos,
             QtGui.QTextCursor.KeepAnchor
         )
-        textCursor.insertText('')
+        textCursor.removeSelectedText()
 
     def delete_to_start_of_line(self):
         """
@@ -506,7 +509,7 @@ class Actions(QtCore.QObject):
         pos = textCursor.position()
         textCursor.movePosition(QtGui.QTextCursor.StartOfLine)
         textCursor.setPosition(pos, QtGui.QTextCursor.KeepAnchor)
-        textCursor.insertText('')
+        textCursor.removeSelectedText()
 
     def join_lines(self):
         """
@@ -514,12 +517,14 @@ class Actions(QtCore.QObject):
         newline at the end of the current line(s).
         """
         textCursor = self.editor.textCursor()
+        textCursor.beginEditBlock()
 
         blocks = self.get_selected_blocks(ignoreEmpty=False)
         if len(blocks) > 1:
             text = textCursor.selectedText()
             text = ' '.join(ln.strip() for ln in text.splitlines())
             textCursor.insertText(text)
+            textCursor.endEditBlock()
             return
 
         block = textCursor.block()
@@ -535,14 +540,17 @@ class Actions(QtCore.QObject):
             QtGui.QTextCursor.EndOfLine
         )
         new_pos = textCursor.position()+1
-        if new_pos >= self.editor.document().characterCount():
+        doc = self.editor.document()
+        doc_length = doc.characterCount()
+        if new_pos >= doc_length:
+            textCursor.endEditBlock()
             return
         textCursor.setPosition(
             new_pos,
             QtGui.QTextCursor.KeepAnchor
         )
 
-        textCursor.insertText('')
+        textCursor.removeSelectedText()
         textCursor.select(
             QtGui.QTextCursor.LineUnderCursor
         )
@@ -551,6 +559,7 @@ class Actions(QtCore.QObject):
             pos,
             QtGui.QTextCursor.MoveAnchor
         )
+        textCursor.endEditBlock()
 
         self.editor.setTextCursor(textCursor)
 
@@ -610,6 +619,8 @@ class Actions(QtCore.QObject):
         Toggles commenting out selected lines,
         or lines with cursor.
         """
+        textCursor = self.editor.textCursor()
+        textCursor.beginEditBlock()
         blocks = self.get_selected_blocks()
 
         # iterate through lines in doc commenting or uncommenting
@@ -646,6 +657,7 @@ class Actions(QtCore.QObject):
                 elif selectedText.strip().startswith('#'):
                     newText = str(selectedText).replace('#', '', 1)
                 cursor.insertText(newText)
+        textCursor.endEditBlock()
 
     def move_blocks_up(self):
         """
@@ -676,6 +688,7 @@ class Actions(QtCore.QObject):
 
         if new_start == 0:
             return
+        textCursor.beginEditBlock()
 
         textCursor.setPosition(
             new_start,
@@ -705,6 +718,7 @@ class Actions(QtCore.QObject):
             new_pos = pos+start_offset
             textCursor.setPosition(new_pos, QtGui.QTextCursor.MoveAnchor)
 
+        textCursor.endEditBlock()
         self.editor.setTextCursor(textCursor)
 
     def move_blocks_down(self):
@@ -714,6 +728,7 @@ class Actions(QtCore.QObject):
         restoreSelection = False
 
         textCursor = self.editor.textCursor()
+
         if textCursor.hasSelection():
             restoreSelection = True
 
@@ -733,6 +748,7 @@ class Actions(QtCore.QObject):
             return
 
         end_offset = new_end-end
+        textCursor.beginEditBlock()
 
         textCursor.setPosition(new_start, QtGui.QTextCursor.KeepAnchor)
         selectedText = textCursor.selectedText()
@@ -751,24 +767,33 @@ class Actions(QtCore.QObject):
             new_pos = pos-end_offset
             textCursor.setPosition(new_pos, QtGui.QTextCursor.MoveAnchor)
 
+        textCursor.endEditBlock()
         self.editor.setTextCursor(textCursor)
 
     def indent(self):
         """
         Indent Selected Text
         """
+        text_cursor = self.editor.textCursor()
+        text_cursor.beginEditBlock()
         blocks = self.get_selected_blocks()
         for block in blocks:
             cursor = QtGui.QTextCursor(block)
             cursor.movePosition(QtGui.QTextCursor.StartOfLine)
             cursor.insertText('    ')
+        text_cursor.endEditBlock()
 
     def unindent(self):
         """
         Unindent Selected Text
         TODO: Maintain original selection
-        and cursor position.
+        and cursor position. The selection
+        issue pretty much applies to all
+        these actions.
         """
+        text_cursor = self.editor.textCursor()
+        text_cursor.beginEditBlock()
+
         blocks = self.get_selected_blocks(ignoreEmpty=False)
         for block in blocks:
             cursor = QtGui.QTextCursor(block)
@@ -777,6 +802,8 @@ class Actions(QtCore.QObject):
             if lineText.startswith(' '):
                 newText = str(lineText[:4]).replace(' ', '') + lineText[4:]
                 cursor.insertText(newText)
+
+        text_cursor.endEditBlock()
 
     def wrap_text(self):
         """
@@ -815,12 +842,27 @@ class Actions(QtCore.QObject):
         selection to top of document.
         """
         textCursor = self.editor.textCursor()
+        textCursor.beginEditBlock()
         if not textCursor.hasSelection():
-            textCursor.select(QtGui.QTextCursor.LineUnderCursor)
-        text = textCursor.selectedText()
-        textCursor.insertText('')
+            textCursor.select(QtGui.QTextCursor.BlockUnderCursor)
+        text = textCursor.selectedText().strip()
+        textCursor.removeSelectedText()
+        textCursor.setPosition(0, QtGui.QTextCursor.MoveAnchor)
+        # if the start of the document isn't
+        # an empty line, insert a new line
+        textCursor.select(QtGui.QTextCursor.BlockUnderCursor)
+        first_line_not_empty = textCursor.selectedText().strip()
+        if first_line_not_empty:
+            text = text+'\n'
+        textCursor.clearSelection()
         textCursor.setPosition(0, QtGui.QTextCursor.MoveAnchor)
         textCursor.insertText(text)
+        if first_line_not_empty:
+            textCursor.setPosition(
+                textCursor.position()-1,
+                QtGui.QTextCursor.MoveAnchor
+            )
+        textCursor.endEditBlock()
         self.editor.setTextCursor(textCursor)
 
     def move_to_bottom(self):
@@ -829,13 +871,22 @@ class Actions(QtCore.QObject):
         selection to bottom of document.
         """
         textCursor = self.editor.textCursor()
+        textCursor.beginEditBlock()
         if not textCursor.hasSelection():
-            textCursor.select(QtGui.QTextCursor.LineUnderCursor)
+            textCursor.select(QtGui.QTextCursor.BlockUnderCursor)
         text = textCursor.selectedText()
         textCursor.insertText('')
-        end = len(self.editor.toPlainText())
+        whole_text = self.editor.toPlainText()
+        end = len(whole_text)
         textCursor.setPosition(end, QtGui.QTextCursor.MoveAnchor)
+        # if the end of the document isn't
+        # an empty line, insert a new line
+        textCursor.select(QtGui.QTextCursor.BlockUnderCursor)
+        if textCursor.selectedText().strip():
+            text = '\n'+text
+        textCursor.clearSelection()
         textCursor.insertText(text)
+        textCursor.endEditBlock()
         self.editor.setTextCursor(textCursor)
 
     # -------------------------------------- #
