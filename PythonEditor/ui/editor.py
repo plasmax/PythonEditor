@@ -8,9 +8,13 @@ per tab.
 import os
 import uuid
 import __main__
-from PythonEditor.ui.Qt import QtWidgets
-from PythonEditor.ui.Qt import QtGui
-from PythonEditor.ui.Qt import QtCore
+from PythonEditor.ui.Qt.QtWidgets import (
+    QPlainTextEdit, QMenu)
+from PythonEditor.ui.Qt.QtGui import (
+    QFocusEvent, QFocusEvent, QWheelEvent,
+    QKeyEvent, QResizeEvent, QFont)
+from PythonEditor.ui.Qt.QtCore import (
+    Signal, QTimer, Qt)
 
 from PythonEditor.utils import constants
 from PythonEditor.ui.dialogs import shortcuteditor
@@ -22,7 +26,7 @@ from PythonEditor.ui.features import autocompletion
 from PythonEditor.ui.features import contextmenu
 
 
-class Editor(QtWidgets.QPlainTextEdit):
+class Editor(QPlainTextEdit):
     """
     Code Editor widget. Extends QPlainTextEdit to
     provide (through separate modules):
@@ -41,18 +45,18 @@ class Editor(QtWidgets.QPlainTextEdit):
         '{', '}',
     ]
 
-    S = QtCore.Signal
+    S = Signal
     wrap_signal               = S(str)
     uuid_signal               = S(str)
-    return_signal             = S(QtGui.QKeyEvent)
-    focus_in_signal           = S(QtGui.QFocusEvent)
-    focus_out_signal          = S(QtGui.QFocusEvent)
-    post_key_pressed_signal   = S(QtGui.QKeyEvent)
-    wheel_signal              = S(QtGui.QWheelEvent)
-    key_pressed_signal        = S(QtGui.QKeyEvent)
-    shortcut_signal           = S(QtGui.QKeyEvent)
-    resize_signal             = S(QtGui.QResizeEvent)
-    context_menu_signal       = S(QtWidgets.QMenu)
+    return_signal             = S(QKeyEvent)
+    focus_in_signal           = S(QFocusEvent)
+    focus_out_signal          = S(QFocusEvent)
+    post_key_pressed_signal   = S(QKeyEvent)
+    wheel_signal              = S(QWheelEvent)
+    key_pressed_signal        = S(QKeyEvent)
+    shortcut_signal           = S(QKeyEvent)
+    resize_signal             = S(QResizeEvent)
+    context_menu_signal       = S(QMenu)
     tab_signal                = S()
     home_key_signal           = S()
     relay_clear_output_signal = S()
@@ -74,7 +78,7 @@ class Editor(QtWidgets.QPlainTextEdit):
         df = 'PYTHONEDITOR_DEFAULT_FONT'
         if os.getenv(df) is not None:
             DEFAULT_FONT = os.environ[df]
-        font = QtGui.QFont(DEFAULT_FONT)
+        font = QFont(DEFAULT_FONT)
         font.setPointSize(10)
         self.setFont(font)
         self.setMouseTracking(True)
@@ -125,7 +129,7 @@ class Editor(QtWidgets.QPlainTextEdit):
         )
         def set_text_changed_enabled():
             self.emit_text_changed = True
-        QtCore.QTimer.singleShot(
+        QTimer.singleShot(
             0,
             set_text_changed_enabled
         )
@@ -210,7 +214,7 @@ class Editor(QtWidgets.QPlainTextEdit):
         also want to signal from the tab switched
         signal.
         """
-        FR = QtCore.Qt.FocusReason
+        FR = Qt.FocusReason
         # ignore PopupFocusReason as the
         # autocomplete QListView triggers it.
         ignored_reasons = [
@@ -225,7 +229,7 @@ class Editor(QtWidgets.QPlainTextEdit):
             self.editingFinished.emit()
         self.text_changed_signal.emit()
 
-        FR = QtCore.Qt.FocusReason
+        FR = Qt.FocusReason
         ignored_reasons = [
             FR.PopupFocusReason,
         ]
@@ -344,12 +348,12 @@ class Editor(QtWidgets.QPlainTextEdit):
         """
         Restore focus and, if ctrl held, emit signal
         """
-        self.setFocus(QtCore.Qt.MouseFocusReason)
-        vertical = QtCore.Qt.Orientation.Vertical
+        self.setFocus(Qt.MouseFocusReason)
+        vertical = Qt.Orientation.Vertical
         is_vertical = (
             event.orientation() == vertical
         )
-        CTRL = QtCore.Qt.ControlModifier
+        CTRL = Qt.ControlModifier
         ctrl_held = (event.modifiers() == CTRL)
         if ctrl_held and is_vertical:
             return self.wheel_signal.emit(event)
@@ -375,5 +379,5 @@ class Editor(QtWidgets.QPlainTextEdit):
         """
         super(Editor, self).showEvent(event)
         self.setFocus(
-            QtCore.Qt.PopupFocusReason
+            Qt.PopupFocusReason
         )
