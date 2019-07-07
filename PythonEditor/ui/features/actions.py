@@ -80,6 +80,11 @@ class Actions(QtCore.QObject):
     Collection of QActions that are
     accessible for menu and shortcut
     registry.
+
+    :param pythoneditor: optional `QWidget` or `PythonEditor`
+    :param editor: required `QPlainTextEdit` or `Editor` class.
+    :param tabeditor: optional `QWidget` or `TabEditor`
+    :param terminal: optional `QPlainTextEdit` or `Terminal` class.
     """
     # clear_output_signal = QtCore.Signal()
     exec_text_signal = QtCore.Signal()
@@ -92,12 +97,6 @@ class Actions(QtCore.QObject):
             tabeditor=None,
             terminal=None,
         ):
-        """
-        :param pythoneditor:
-        :param editor:
-        :param tabeditor:
-        :param terminal:
-        """
         super(Actions, self).__init__()
         self.setObjectName('Actions')
 
