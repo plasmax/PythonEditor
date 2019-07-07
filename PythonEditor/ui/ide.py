@@ -134,9 +134,13 @@ class IDE(QWidget):
             QTimer.singleShot(100, self.set_editor_focus)
             self.retries += 1
             return
-        self.python_editor.tabeditor.editor.setFocus(
-            Qt.MouseFocusReason
-        )
+
+        editor = self.python_editor.tabeditor.editor
+        if not editor.isVisible():
+            QTimer.singleShot(100, self.set_editor_focus)
+            self.retries += 1
+            return
+        editor.focus_in_signal.emit()
 
     def showEvent(self, event):
         """

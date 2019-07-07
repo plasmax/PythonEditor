@@ -49,8 +49,8 @@ class Editor(QPlainTextEdit):
     wrap_signal               = S(str)
     uuid_signal               = S(str)
     return_signal             = S(QKeyEvent)
-    focus_in_signal           = S(QFocusEvent)
-    focus_out_signal          = S(QFocusEvent)
+    focus_in_signal           = S()
+    focus_out_signal          = S()
     post_key_pressed_signal   = S(QKeyEvent)
     wheel_signal              = S(QWheelEvent)
     key_pressed_signal        = S(QKeyEvent)
@@ -221,7 +221,7 @@ class Editor(QPlainTextEdit):
             FR.PopupFocusReason,
         ]
         if event.reason() not in ignored_reasons:
-            self.focus_in_signal.emit(event)
+            self.focus_in_signal.emit()
         super(Editor, self).focusInEvent(event)
 
     def focusOutEvent(self, event):
@@ -234,7 +234,7 @@ class Editor(QPlainTextEdit):
             FR.PopupFocusReason,
         ]
         if event.reason() not in ignored_reasons:
-            self.focus_out_signal.emit(event)
+            self.focus_out_signal.emit()
 
         super(Editor, self).focusOutEvent(event)
 

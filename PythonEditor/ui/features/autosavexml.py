@@ -284,7 +284,7 @@ class AutoSaveManager(QtCore.QObject):
         self.tabs['text'] = text
         self.tabs['saved'] = True
 
-    def check_autosave_modified(self, index=-1):
+    def check_autosave_modified(self):
         """
         On focus in event, check the xml (or
         the saved file if present) to see if

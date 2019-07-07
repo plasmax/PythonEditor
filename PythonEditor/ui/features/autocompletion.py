@@ -207,8 +207,8 @@ class AutoCompleter(QtCore.QObject):
             self._post_keyPressEvent
         )
 
-    @QtCore.Slot(QtGui.QFocusEvent)
-    def _focusInEvent(self, event):
+    @QtCore.Slot()
+    def _focusInEvent(self):
         """
         Connected to editor focusInEvent via signal.
         """
