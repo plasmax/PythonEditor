@@ -305,6 +305,13 @@
             "Method": "goto_definition",
             "Menu Location": "Tools"
         },
+        "Goto Last Position": {
+            "Shortcuts": [
+                "Alt+-"
+            ],
+            "Method": "goto_last_position",
+            "Menu Location": "Tools"
+        },
         "Print Type": {
             "Shortcuts": [
                 "Ctrl+Shift+T"
@@ -404,6 +411,11 @@
             "Shortcuts": [],
             "Method": "export_all_tabs_to_external_editor",
             "Menu Location": "File/Export"
+        },
+        "Backup PythonEditor History": {
+            "Shortcuts": [],
+            "Method": "backup_pythoneditor_history",
+            "Menu Location": "File/Backup PythonEditor History"
         },
         "About Python Editor": {
             "Shortcuts": [],

@@ -17,6 +17,9 @@ import json
 import inspect
 import __main__
 import subprocess
+from functools import wraps
+from datetime import datetime
+from shutil import copyfile
 
 from PythonEditor.ui.Qt import QtWidgets
 from PythonEditor.ui.Qt import QtGui
@@ -1161,6 +1164,26 @@ class Actions(QtCore.QObject):
             msg
         )
 
+    # def goto_last_position(self):
+    #     """
+    #     """
+    #     tabs = self.tabs
+
+    #     previous_positions = tabs.cursor_previous
+    #     if not previous_positions:
+    #         return
+    #     uid, pos = previous_positions.pop()
+    #     # check current tab uid
+    #     # if different, and other tab available, change tab
+    #     # while other tab not available, recurse goto_last_position
+    #     editor = self.editor
+    #     cursor = editor.textCursor()
+    #     editor.cursor_next.append(
+    #         cursor.position()
+    #     )
+    #     cursor.setPosition(pos)
+    #     editor.setTextCursor(cursor)
+
     def goto_definition(self):
         """
         Open the file at the line where
@@ -1474,6 +1497,12 @@ class Actions(QtCore.QObject):
     def export_all_tabs_to_external_editor(self):
         save.export_all_tabs_to_external_editor(self.tabs)
 
+    def backup_pythoneditor_history(self):
+        """
+        Create a backup of the PythonEditorHistory file.
+        """
+        backup_pythoneditor_history()
+
     def show_shortcuts(self):
         """
         Generates a popup dialog listing available shortcuts.
@@ -1482,6 +1511,7 @@ class Actions(QtCore.QObject):
 
     def show_preferences(self):
         """
+        Placeholder.
         Generates a popup dialog listing available preferences.
         """
         self.pythoneditor.preferenceseditor.show()
@@ -1981,7 +2011,7 @@ def open_in_external_editor(*args, **kwargs):
     Launch an external editor defined by an environment
     variable and pass it the arguments as defined by
     Popen.
-    """
+    """+subprocess.Popen.__doc__
     EXTERNAL_EDITOR_PATH = get_external_editor_path()
 
     if not EXTERNAL_EDITOR_PATH:
@@ -1993,6 +2023,18 @@ def open_in_external_editor(*args, **kwargs):
     subprocess.Popen(
         [EXTERNAL_EDITOR_PATH]+list(args), **kwargs
     )
+
+
+def backup_pythoneditor_history():
+    src = os.getenv('PYTHONEDITOR_AUTOSAVE_FILE')
+    path, ext = os.path.splitext(src)
+
+    now = datetime.now().strftime("%b-%d-%y-%H.%M.%S")
+    dst = path+'_'+now+ext
+
+    copyfile(src, dst)
+    print('Backup of Python Editor History created:')
+    print(dst)
 
 
 def openDir(module):
