@@ -28,6 +28,7 @@ if __name__ == '__main__':
         pyside = 'PySide'
 
     os.environ['QT_PREFERRED_BINDING'] = pyside
+    os.environ['PYTHONEDITOR_CAPTURE_STARTUP_STREAMS'] = '1'
 
     from PythonEditor.ui import ide
     from PythonEditor.ui.features import nukepalette
