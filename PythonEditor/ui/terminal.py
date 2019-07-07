@@ -5,41 +5,49 @@ import sys
 
 from PythonEditor.core import streams
 from PythonEditor.utils.constants import DEFAULT_FONT
-from PythonEditor.ui.Qt import QtGui, QtWidgets, QtCore
+from PythonEditor.ui.Qt.QtGui import (QFont,
+                                      QTextCursor,
+                                      QCursor,
+                                      QClipboard)
+from PythonEditor.ui.Qt.QtCore import (Qt,
+                                       Signal,
+                                       Slot,
+                                       QTimer)
+from PythonEditor.ui.Qt.QtWidgets import QPlainTextEdit
 from PythonEditor.utils.debug import debug
 from PythonEditor.ui.features.actions import get_external_editor_path
 from PythonEditor.ui.features.actions import open_in_external_editor
 
 
-class Terminal(QtWidgets.QPlainTextEdit):
+class Terminal(QPlainTextEdit):
     """ Output text display widget """
-    link_activated = QtCore.Signal(str)
+    link_activated = Signal(str)
 
     def __init__(self):
         super(Terminal, self).__init__()
 
         self.setObjectName('Terminal')
         self.setWindowFlags(
-            QtCore.Qt.WindowStaysOnTopHint
+            Qt.WindowStaysOnTopHint
         )
         self.setReadOnly(True)
         self.destroyed.connect(self.stop)
-        font = QtGui.QFont(DEFAULT_FONT)
+        font = QFont(DEFAULT_FONT)
         font.setPointSize(10)
         self.setFont(font)
 
         if os.getenv('PYTHONEDITOR_CAPTURE_STARTUP_STREAMS') == '1':
             self.setup()
         else:
-            QtCore.QTimer.singleShot(0, self.setup)
+            QTimer.singleShot(0, self.setup)
 
-    @QtCore.Slot(str)
+    @Slot(str)
     def receive(self, text):
         try:
             textCursor = self.textCursor()
             if bool(textCursor):
                 self.moveCursor(
-                    QtGui.QTextCursor.End
+                    QTextCursor.End
                 )
         except Exception:
             pass
@@ -76,14 +84,14 @@ class Terminal(QtWidgets.QPlainTextEdit):
             # pyqt doesn't use anchorAt
             return super(Terminal, self).mousePressEvent(event)
 
-        if (event.button() == QtCore.Qt.LeftButton):
+        if (event.button() == Qt.LeftButton):
             # TODO: this is for clicking on links, and
             # currently nothing receives the signal.
             clickedAnchor = self.anchorAt(event.pos())
             if clickedAnchor:
                 self.link_activated.emit(clickedAnchor)
 
-        elif (event.button() == QtCore.Qt.RightButton):
+        elif (event.button() == Qt.RightButton):
             menu = self.createStandardContextMenu()
             path_in_line = self.path_in_line(
                 self.line_from_event(event)
@@ -93,7 +101,7 @@ class Terminal(QtWidgets.QPlainTextEdit):
                     goto(path_in_line)
                 menu.addAction('Goto {0}'.format(path_in_line), _goto)
             menu.addAction('Parse Last Traceback', self.parse_last_traceback)
-            menu.exec_(QtGui.QCursor().pos())
+            menu.exec_(QCursor().pos())
 
         super(Terminal, self).mousePressEvent(event)
 
@@ -126,7 +134,7 @@ class Terminal(QtWidgets.QPlainTextEdit):
             text += '\n'
 
         print(text)
-        QtGui.QClipboard().setText(text)
+        QClipboard().setText(text)
 
 
 def goto(path):
