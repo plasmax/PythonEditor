@@ -2010,8 +2010,8 @@ def open_in_external_editor(*args, **kwargs):
     """
     Launch an external editor defined by an environment
     variable and pass it the arguments as defined by
-    Popen.
-    """+subprocess.Popen.__doc__
+    subprocess.Popen.
+    """
     EXTERNAL_EDITOR_PATH = get_external_editor_path()
 
     if not EXTERNAL_EDITOR_PATH:
