@@ -1164,25 +1164,27 @@ class Actions(QtCore.QObject):
             msg
         )
 
-    # def goto_last_position(self):
-    #     """
-    #     """
-    #     tabs = self.tabs
+    def goto_last_position(self):
+        """
+        Placeholder.
+        """
+        pass
+        # tabs = self.tabs
 
-    #     previous_positions = tabs.cursor_previous
-    #     if not previous_positions:
-    #         return
-    #     uid, pos = previous_positions.pop()
-    #     # check current tab uid
-    #     # if different, and other tab available, change tab
-    #     # while other tab not available, recurse goto_last_position
-    #     editor = self.editor
-    #     cursor = editor.textCursor()
-    #     editor.cursor_next.append(
-    #         cursor.position()
-    #     )
-    #     cursor.setPosition(pos)
-    #     editor.setTextCursor(cursor)
+        # previous_positions = tabs.cursor_previous
+        # if not previous_positions:
+        #     return
+        # uid, pos = previous_positions.pop()
+        # # check current tab uid
+        # # if different, and other tab available, change tab
+        # # while other tab not available, recurse goto_last_position
+        # editor = self.editor
+        # cursor = editor.textCursor()
+        # editor.cursor_next.append(
+        #     cursor.position()
+        # )
+        # cursor.setPosition(pos)
+        # editor.setTextCursor(cursor)
 
     def goto_definition(self):
         """
@@ -1246,7 +1248,7 @@ class Actions(QtCore.QObject):
             path=path
         )
         goto_line(self.editor, lineno)
-        self.editor.focus_in_signal.emit(None)
+        self.editor.focus_in_signal.emit()
 
     def open_module_file(self):
         """Goto definition in external editor."""
