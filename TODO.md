@@ -5,6 +5,7 @@
 - [ ] Tab may duplicate on save
 - [ ] Close button should be persistent
       on the active tab.
+- [ ] Sometimes wrong tab may be clicked
 - [ ] Confirm overwrite file on save.
 - [ ] When editing a document across multiple instances, updating to latest autosave sometimes triggers twice.
 - [ ] Alt-tabbing quickly away from and back to the editor causes an autosave message. call autosave() on focusOutEvent to ensure save.
@@ -59,6 +60,8 @@
 - [x] Highlight line with error
 - [x] Read stdout/stderr on open
 - [ ] Echo commands to python editor.
+- [ ] Add Script Editor buttons to Menu bar at top - especially fullscreen editor/output,
+      which should remember the settings
 
 
 #### Features - desired
@@ -79,9 +82,13 @@
       True agnosticism would require moving PythonEditorHistory.xml to the user home directory as well.
 - [ ] Tab close button [x] should appear on active tab only (like chrome)
       and change width of tab (in proportion to the name) when added (setTabButton, RightSide)
+- [x] Move all actions to actions.py and have shortcuts simply setShortcut()
+      on the Actions() class, which can be picked up by menus.
+- [x] Move tab to start/end
 - [ ] Duplicate cursors
 - [x] Search box at bottom of editor widget (with "all tabs" checkbox)
 - [x] Search across all tabs
+- [ ] Projects
 - [ ] Autocomplete 'toNode', node.knob() and node[knob]
 - [ ] Autocomplete os.environ and other dicts
 - [ ] Projects - the new PYTHONEDITOR_AUTOSAVE_FILE env variable should help.
