@@ -279,6 +279,15 @@ class Actions(QtCore.QObject):
         # check that the current line doesn't just have comments.
         if self.just_comments(text):
             return
+
+        # allow execution of function names so 
+        # they don't have to be rewritten to test
+        if text.startswith('def '):
+            text = text.replace('def ', '')
+            while text.endswith(':'):
+                text = text[:-1]
+            text = text.strip()
+
         text = self.offset_for_traceback(text=text)
 
         whole_text = '\n'+whole_text
@@ -1429,7 +1438,12 @@ class Actions(QtCore.QObject):
             )
 
     def save(self):
-        save_action(self.tabs, self.editor)
+        if hasattr(self, 'tabs'):
+            # update the tabs status
+            save_action(self.tabs, self.editor)
+        else:
+            text = self.editor.toPlainText()
+            save.save_as(text)
 
     def save_as(self):
         save_as_action(self.tabs, self.editor)
@@ -1825,6 +1839,7 @@ def toggle_backslashes(editor):
 
 def save_action(tabs, editor):
     """
+    Save editor to file and update tabs with path and saved status.
     """
     path = tabs.get('path')
     text = editor.toPlainText()
