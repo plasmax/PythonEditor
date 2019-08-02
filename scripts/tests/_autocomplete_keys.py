@@ -11,64 +11,19 @@ sys.path.append(PACKAGE_PATH)
 from PythonEditor.ui.Qt import QtWidgets, QtGui, QtCore, QtTest
 
 ignored_keys = [
-QtCore.Qt.Key_Excel,
-QtCore.Qt.Key_DOS,
-QtCore.Qt.Key_Dead_Belowdot,
-QtCore.Qt.Key_LaunchH,
-QtCore.Qt.Key_LaunchG,
-QtCore.Qt.Key_Dead_Caron,
-QtCore.Qt.Key_Hangul_Special,
-QtCore.Qt.Key_Hangul_Jamo,
-QtCore.Qt.Key_Dead_Voiced_Sound,
-QtCore.Qt.Key_OfficeHome,
-QtCore.Qt.Key_UWB,
-QtCore.Qt.Key_Katakana,
-QtCore.Qt.Key_Eisu_toggle,
-QtCore.Qt.Key_Zoom,
-QtCore.Qt.Key_Zenkaku,
-QtCore.Qt.Key_Save,
-QtCore.Qt.Key_WebCam,
-QtCore.Qt.Key_MenuKB,
-QtCore.Qt.Key_Video,
-QtCore.Qt.Key_Multi_key,
-QtCore.Qt.Key_Dead_Horn,
-QtCore.Qt.Key_Hangul_Hanja,
-QtCore.Qt.Key_Call,
-QtCore.Qt.Key_AudioForward,
-QtCore.Qt.Key_Ccedilla,
-QtCore.Qt.Key_Away,
-QtCore.Qt.Key_MenuPB,
-QtCore.Qt.Key_Hangul_Jeonja,
-QtCore.Qt.Key_Hankaku,
-QtCore.Qt.Key_Dead_Semivoiced_Sound,
-QtCore.Qt.Key_Dead_Tilde,
-QtCore.Qt.Key_ScreenSaver,
-QtCore.Qt.Key_Game,
-QtCore.Qt.Key_AudioRewind,
-QtCore.Qt.Key_Hangul_Banja,
-QtCore.Qt.Key_Ugrave,
-QtCore.Qt.Key_Printer,
-QtCore.Qt.Key_Xfer,
-QtCore.Qt.Key_AltGr,
-QtCore.Qt.Key_Kana_Lock,
-QtCore.Qt.Key_Subtitle,
-QtCore.Qt.Key_KeyboardBrightnessUp,
-QtCore.Qt.Key_Market,
-QtCore.Qt.Key_MediaPause,
-QtCore.Qt.Key_Suspend,
-QtCore.Qt.Key_Send,
-QtCore.Qt.Key_Travel,
-QtCore.Qt.Key_ApplicationLeft,
-QtCore.Qt.Key_Hiragana,
-QtCore.Qt.Key_TaskPane,
-QtCore.Qt.Key_MediaTogglePlayPause,
-QtCore.Qt.Key_LastNumberRedial,
-QtCore.Qt.Key_Muhenkan,
-QtCore.Qt.Key_Option,
-QtCore.Qt.Key_Phone,
-QtCore.Qt.Key_MailForward,
-QtCore.Qt.Key_ApplicationRight,
-QtCore.Qt.Key_Community,
+QtCore.Qt.Key_Excel, QtCore.Qt.Key_DOS, QtCore.Qt.Key_Dead_Belowdot, QtCore.Qt.Key_LaunchH, QtCore.Qt.Key_LaunchG,
+QtCore.Qt.Key_Dead_Caron, QtCore.Qt.Key_Hangul_Special, QtCore.Qt.Key_Hangul_Jamo, QtCore.Qt.Key_Dead_Voiced_Sound,
+QtCore.Qt.Key_OfficeHome, QtCore.Qt.Key_UWB, QtCore.Qt.Key_Katakana, QtCore.Qt.Key_Eisu_toggle, QtCore.Qt.Key_Zoom,
+QtCore.Qt.Key_Zenkaku, QtCore.Qt.Key_Save, QtCore.Qt.Key_WebCam, QtCore.Qt.Key_MenuKB, QtCore.Qt.Key_Video,
+QtCore.Qt.Key_Multi_key, QtCore.Qt.Key_Dead_Horn, QtCore.Qt.Key_Hangul_Hanja, QtCore.Qt.Key_Call,
+QtCore.Qt.Key_AudioForward, QtCore.Qt.Key_Ccedilla, QtCore.Qt.Key_Away, QtCore.Qt.Key_MenuPB, QtCore.Qt.Key_Hangul_Jeonja,
+QtCore.Qt.Key_Hankaku, QtCore.Qt.Key_Dead_Semivoiced_Sound, QtCore.Qt.Key_Dead_Tilde, QtCore.Qt.Key_ScreenSaver,
+QtCore.Qt.Key_Game, QtCore.Qt.Key_AudioRewind, QtCore.Qt.Key_Hangul_Banja, QtCore.Qt.Key_Ugrave, QtCore.Qt.Key_Printer,
+QtCore.Qt.Key_Xfer, QtCore.Qt.Key_AltGr, QtCore.Qt.Key_Kana_Lock, QtCore.Qt.Key_Subtitle,
+QtCore.Qt.Key_KeyboardBrightnessUp, QtCore.Qt.Key_Market, QtCore.Qt.Key_MediaPause, QtCore.Qt.Key_Suspend,
+QtCore.Qt.Key_Send, QtCore.Qt.Key_Travel, QtCore.Qt.Key_ApplicationLeft, QtCore.Qt.Key_Hiragana, QtCore.Qt.Key_TaskPane,
+QtCore.Qt.Key_MediaTogglePlayPause, QtCore.Qt.Key_LastNumberRedial, QtCore.Qt.Key_Muhenkan, QtCore.Qt.Key_Option,
+QtCore.Qt.Key_Phone, QtCore.Qt.Key_MailForward, QtCore.Qt.Key_ApplicationRight, QtCore.Qt.Key_Community,
 QtCore.Qt.Key_LightBulb,
 QtCore.Qt.Key_Hangul_PreHanja,
 QtCore.Qt.Key_Hangul_Romaja,
@@ -432,21 +387,25 @@ QtCore.Qt.Key.Key_Question,
 QtCore.Qt.Key.Key_AsciiTilde,
 QtCore.Qt.Key.Key_Underscore,
 ]
-for k in QtCore.Qt.Key.values.values():
-	# if k in already_tested:
-	# 	continue
-	if k in ignored_keys:
-		continue
-	a = QtTest.QTest.keyToAscii(k)
-	if a == b'\x00':
-		continue
 
-	try:
+
+def test_decode_keys():
+	"""
+	Test that keys can be decoded to ascii
+	(for Shortcut Overrides)
+	"""
+	for k in QtCore.Qt.Key.values.values():
+		if k in ignored_keys:
+			continue
+		a = QtTest.QTest.keyToAscii(k)
+		if a == b'\x00':
+			continue
+
 		a = str(a).decode('ascii')
-	except UnicodeDecodeError:
-		continue
-
-	print k, a
+		# try:
+		# except UnicodeDecodeError:
+		# 	continue
+		# print k, a
 
 
 """

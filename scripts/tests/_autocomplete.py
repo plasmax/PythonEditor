@@ -33,21 +33,21 @@ class TestEditor(editor.Editor):
         self._changed = False
         self.wait_for_autocomplete = True
         self.autocomplete = autocompletion.AutoCompleter(self)
-        
-if __name__ == '__main__':
-    """
-    For testing outside of nuke.
-    """
-    try:
-        app = QtWidgets.QApplication(sys.argv)
-    except RuntimeError:
-        # for running inside and outside of Nuke
-        app = QtWidgets.QApplication.instance()
 
-    e = TestEditor()
-    app.setPalette(nukepalette.getNukePalette())
-    e.show()
-    e.resize(500, 800)
-    plastique = QtWidgets.QStyleFactory.create('Plastique')
-    QtWidgets.QApplication.setStyle(plastique)
-    sys.exit(app.exec_())
+if __name__ == '__main__':
+    # """
+    # For testing outside of nuke.
+    # """
+    # try:
+    #     app = QtWidgets.QApplication(sys.argv)
+    # except RuntimeError:
+    #     # for running inside and outside of Nuke
+    #     app = QtWidgets.QApplication.instance()
+
+    # e = TestEditor()
+    # app.setPalette(nukepalette.getNukePalette())
+    # e.show()
+    # e.resize(500, 800)
+    # plastique = QtWidgets.QStyleFactory.create('Plastique')
+    # QtWidgets.QApplication.setStyle(plastique)
+    # sys.exit(app.exec_())

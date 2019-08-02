@@ -1,3 +1,4 @@
+# exploratory testing
 from PythonEditor.ui.Qt import QtWidgets, QtGui, QtCore
 
 widgets = QtWidgets.QApplication.topLevelWidgets()
