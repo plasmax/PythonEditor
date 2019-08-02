@@ -60,7 +60,6 @@ class PythonEditor(QtWidgets.QWidget):
             editor=self.editor,
             tabeditor=self.tabeditor,
             terminal=self.terminal,
-            use_tabs=True
         )
 
         self.menubar = menubar.MenuBar(self)

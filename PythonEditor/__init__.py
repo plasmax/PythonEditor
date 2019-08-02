@@ -3,21 +3,21 @@ PythonEditor by Max Last.
 
 The object Hierarchy is:
 IDE
-    PythonEditor
-        TabEditor
-            Tabs
-            Editor
-                AutoCompleter
-                AutoSaveManager
-                LineNumberArea
-                ShortcutHandler
-                Highlight
-        Terminal
-        MenuBar
-        ObjectInspector
-        PreferencesEditor
-        ShortcutEditor
-        Actions
+  PythonEditor
+    TabEditor
+      Tabs
+      Editor
+        AutoCompleter
+        AutoSaveManager
+        LineNumberArea
+        ShortcutHandler
+        Highlight
+    Terminal
+    MenuBar
+    ObjectInspector
+    PreferencesEditor
+    ShortcutEditor
+    Actions
 """
 
 def main():
@@ -39,7 +39,9 @@ def main():
     global ide
     from PythonEditor.ui import ide
 
-    # for convenience
+    # for convenience - FIXME: this
+    # should be developer-only or at least
+    # disableable
     import sys
     from ui import Qt
 
@@ -58,9 +60,9 @@ def nuke_menu_setup(nuke_menu=False, node_menu=False, pane_menu=True):
     """
     If in Nuke, setup menu.
 
-    :param nuke_menu: Add menu items to the main Nuke menu.
-    :param node_menu: Add menu item to the Node menu.
-    :param pane_menu: Add menu item to the Pane menu.
+    :param nuke_menu: `bool` Add menu items to the main Nuke menu.
+    :param node_menu: `bool` Add menu item to the Node menu.
+    :param pane_menu: `bool` Add menu item to the Pane menu.
     """
     try:
         import nuke
@@ -71,12 +73,10 @@ def nuke_menu_setup(nuke_menu=False, node_menu=False, pane_menu=True):
         from PythonEditor.app.nukefeatures import nukeinit
         nukeinit.setup(nuke_menu=nuke_menu, node_menu=node_menu, pane_menu=pane_menu)
     except Exception as e:
-        msg = """
-        Sorry! There has been an error loading PythonEditor:
-        {0}
-        Please contact tsalxam@gmail.com with the error details.
-        """.format(e)
-        print(msg)
+        import traceback
+        print('Sorry! There has been an error loading PythonEditor:')
+        traceback.print_exc()
+        print('Please contact tsalxam@gmail.com with the above error details.')
 
 try:
     main()

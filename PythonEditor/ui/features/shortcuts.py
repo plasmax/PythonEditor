@@ -41,25 +41,19 @@ def key_to_sequence(key):
 class ShortcutHandler(QtCore.QObject):
     """
     Shortcut Manager with custom signals.
-    """
-    exec_text_signal = QtCore.Signal()
 
+    :param editor: required `QPlainTextEdit` or `Editor` class.
+    :param tabeditor: optional `QWidget` or `TabEditor`
+    :param terminal: optional `QPlainTextEdit` or `Terminal` class.
+    """
     def __init__(
             self,
             editor=None,
             tabeditor=None,
             terminal=None,
-            use_tabs=True
         ):
-        """
-        :param editor:
-        :param tabeditor:
-        :param terminal:
-        :param use_tabs:
-        """
         super(ShortcutHandler, self).__init__()
         self.setObjectName('ShortcutHandler')
-        self.use_tabs = use_tabs
         self._installed = False
 
         if editor is None:

@@ -114,9 +114,7 @@ def print_traceback(whole_text, error):
     :param error: python exception object
     :type whole_text: str
     :type error: exceptions.Exception
-
     """
-    # text_lines = whole_text.splitlines()
     text_lines = whole_text.split('\n')
     num_lines = len(text_lines)
 
