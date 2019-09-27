@@ -96,6 +96,8 @@ class ListView(QListView):
     def __init__(self):
         super(ListView, self).__init__()
         self.setDragDropMode(QListView.InternalMove)
+        # self.setMovement(QListView.Snap)
+        # self.setAcceptsDrops(True)
 
     @Slot(int, int)
     def row_moved(self, _from, to):
