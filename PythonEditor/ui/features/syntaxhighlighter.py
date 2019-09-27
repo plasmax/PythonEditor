@@ -131,7 +131,7 @@ class Highlight(QtGui.QSyntaxHighlighter):
 
         self.setObjectName('Highlight')
         self.editor = editor
-        self.theme = themes['Monokai Smooth']
+        self.theme = themes['Monokai']
         self.set_style(self.theme)
         self.make_rules()
         self.selected_word = ''
