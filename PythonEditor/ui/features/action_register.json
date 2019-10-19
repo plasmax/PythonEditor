@@ -3,7 +3,8 @@
         "New Tab": {
             "Shortcuts": [
                 "Ctrl+T",
-                "Ctrl+Shift+N"
+                "Ctrl+Shift+N",
+                "Ctrl+N"
             ],
             "Menu Location": "File",
             "Method": "new_tab"
