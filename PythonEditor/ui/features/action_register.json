@@ -150,6 +150,11 @@
             "Method": "save_as",
             "Menu Location": "File"
         },
+        "Save Snippet": {
+            "Shortcuts": [],
+            "Method": "save_snippet",
+            "Menu Location": "File"
+        },
         "Toggle Backslashes": {
             "Shortcuts": [
                 "Ctrl+\\"
@@ -253,6 +258,27 @@
             ],
             "Method": "move_blocks_up",
             "Menu Location": "Edit/Line"
+        },
+        "Reload Wrap": {
+            "Shortcuts": [
+                "Ctrl+R"
+            ],
+            "Method": "add_reload_module_command",
+            "Menu Location": "Edit/Text"
+        },
+        "Prepend Import": {
+            "Shortcuts": [
+                "Ctrl+I"
+            ],
+            "Method": "prepend_import_statement",
+            "Menu Location": "Edit/Text"
+        },
+        "Loop Format": {
+            "Shortcuts": [
+                "Ctrl+Shift+L"
+            ],
+            "Method": "loop_format",
+            "Menu Location": "Edit/Text"
         },
         "Clear Output": {
             "Shortcuts": [
