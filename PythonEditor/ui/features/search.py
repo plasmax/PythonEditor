@@ -205,6 +205,8 @@ class FindPalette(EditLine):
             for index in indices:
                 data = self.tabs.tabData(index)
                 body = data['text']
+                if not body:
+                    continue
                 if text in body:
                     self.tabs.setCurrentIndex(index)
                     # compensate for editor taking focus when

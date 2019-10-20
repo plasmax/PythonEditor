@@ -123,16 +123,17 @@ def locate_snippet_file():
     dictionary.
     """
     global SNIPPETS
+    snippet_path = os.path.join(
+        NUKE_DIR,
+        'PythonEditor_snippets.json'
+    )
+    if not os.path.isfile(snippet_path):
+        return
     try:
-        snippet_path = os.path.join(
-            NUKE_DIR,
-            'PythonEditor_snippets.json'
-        )
-        if os.path.isfile(snippet_path):
-            with open(snippet_path, 'r') as f:
-                data = f.read()
-            user_snippets = json.loads(data)
-            SNIPPETS.update(**user_snippets)
+        with open(snippet_path, 'r') as f:
+            data = f.read()
+        user_snippets = json.loads(data)
+        SNIPPETS.update(**user_snippets)
     except Exception as e:
         debug(e)
 

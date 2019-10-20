@@ -29,6 +29,8 @@ from PythonEditor.utils import save
 from PythonEditor.utils import constants
 from PythonEditor.core import execute
 from PythonEditor.ui.features import search
+from PythonEditor.ui.features import autocompletion
+from PythonEditor.utils.constants import NUKE_DIR
 
 
 def load_actions_from_json():
@@ -1373,6 +1375,46 @@ class Actions(QtCore.QObject):
         elif text:
             exec('help('+text+')', __main__.__dict__)
 
+    def prepend_import_statement(self):
+        """
+        Format the currently selected text 
+        by prepending an import statement.
+        """
+        cursor = self.editor.textCursor()
+        selection = cursor.selection()
+        text = selection.toPlainText().strip()
+        if not text:
+            text = ''
+        text = 'import {0}'.format(text)
+        cursor.insertText(text)
+
+    def loop_format(self):
+        """
+        Format the currently selected text 
+        into a for loop.
+        """
+        cursor = self.editor.textCursor()
+        selection = cursor.selection()
+        text = selection.toPlainText().strip()
+        if not text:
+            return
+        item = text[:-1]
+        text = 'for {0} in {1}:\n    {0}'.format(item, text)
+        cursor.insertText(text)
+
+    def add_reload_module_command(self):
+        """
+        Format the currently selected text 
+        with a reload() command.
+        """
+        cursor = self.editor.textCursor()
+        selection = cursor.selection()
+        text = selection.toPlainText().strip()
+        if not text:
+            return
+        text = 'reload({0})'.format(text)
+        cursor.insertText(text)
+
     def print_type(self):
         """
         Prints type
@@ -1453,6 +1495,9 @@ class Actions(QtCore.QObject):
 
     def open(self):
         open_action(self.tabs, self.editor)
+
+    def save_snippet(self):
+        save_snippet(self.editor)
 
     def clear_output(self):
         if hasattr(self, 'terminal'):
@@ -1963,6 +2008,7 @@ def get_subobject(text):
         return
 
     for name in text.split('.')[1:]:
+        name = name.replace('(', '').replace(')','')
         obj = getattr(obj, name)
         if obj is None:
             return
@@ -2055,6 +2101,43 @@ def backup_pythoneditor_history():
     copyfile(src, dst)
     print('Backup of Python Editor History created:')
     print(dst)
+
+
+def get_snippet_name():
+    text, ok = QtWidgets.QInputDialog.getText(
+        QtWidgets.QWidget(), 
+        'Snippet Name', 
+        'Name your snippet.\nNo spaces and it must end in " [snippet]" (without quotes).', 
+        QtWidgets.QLineEdit.EchoMode.Normal,
+        ' [snippet]'
+    )
+    if not ok:
+        return
+    text = text.strip()
+    if not text.endswith(' [snippet]'):
+        raise Exception('Snippet name must end with " [snippet]" (without quotes')
+    return (text)
+
+
+def save_snippet(editor):
+    snippet_path = os.path.join(
+        NUKE_DIR,
+        'PythonEditor_snippets.json'
+    )
+    if os.path.isfile(snippet_path):
+        with open(snippet_path, 'r') as fd:
+            data = json.load(fd)
+    else:
+        data = {}
+    name = get_snippet_name()
+    if not name:
+        return
+    textCursor = editor.textCursor()
+    text = textCursor.selection().toPlainText()
+    data[name] = text
+    with open(snippet_path, 'w') as fd:
+        fd.write(json.dumps(data, indent=2))
+    autocompletion.locate_snippet_file()
 
 
 def openDir(module):

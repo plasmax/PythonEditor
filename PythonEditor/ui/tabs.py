@@ -949,6 +949,7 @@ class TabEditor(QtWidgets.QWidget):
             # TODO: this won't restore a selection
             # that starts from below and selects
             # upwards :( (yet)
+            cursor = self.editor.textCursor()
             has, start, end = selection
             if has:
                 cursor.setPosition(
