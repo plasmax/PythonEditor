@@ -84,15 +84,16 @@ class Actions(QtCore.QObject):
     """
     Collection of QActions that are
     accessible for menu and shortcut
-    registry. The widgets provided as
-    parameters have their appropriate
-    actions loaded and applied.
+    registry.
 
     :param pythoneditor: optional `QWidget` or `PythonEditor`
     :param editor: required `QPlainTextEdit` or `Editor` class.
     :param tabeditor: optional `QWidget` or `TabEditor`
     :param terminal: optional `QPlainTextEdit` or `Terminal` class.
     """
+    # clear_output_signal = QtCore.Signal()
+    exec_text_signal = QtCore.Signal()
+
     actions = {}
     def __init__(
             self,
@@ -106,8 +107,7 @@ class Actions(QtCore.QObject):
 
         if editor is None:
             raise Exception(
-            'A text editor is a minimum '
-            'requirement for this class.'
+            'A text editor is necessary for this class.'
             )
         self.editor = editor
 
@@ -175,18 +175,17 @@ class Actions(QtCore.QObject):
         selection_offset = textCursor.selectionStart()
         doc = self.editor.document()
         block_num = doc.findBlock(selection_offset).blockNumber()
-        text = str('\n' * block_num) + text
+        text = '\n' * block_num + text
         return text
 
     def exec_text(self, text, whole_text):
         """
-        Execute `text` as code. Highlight
-        any lines on which errors were detected.
+        Execute whatever text is passed into this function.
 
         :text: the actual text to be executed
-        :whole_text: the whole text for context
-        and full traceback
+        :whole_text: the whole text for context and full traceback
         """
+        self.exec_text_signal.emit()
         error_line_numbers = execute.mainexec(text, whole_text)
         if error_line_numbers is None:
             return
@@ -194,14 +193,12 @@ class Actions(QtCore.QObject):
             self.highlight_errored_lines(error_line_numbers)
 
     def exec_handler(self):
-        """Handles trigger for execution of code
-        (typically Ctrl+Enter).
+        """
         If text is selected, call exec on that text.
         If no text is selected, look for cells bordered
-        by the symbols #&& and execute text between those
-        borders.
+        by the symbols #&& and execute text between those borders.
         """
-        cursor = self.editor.textCursor()
+        textCursor = self.editor.textCursor()
         whole_text = self.editor.toPlainText()
         if not whole_text.strip():
             return
@@ -211,8 +208,8 @@ class Actions(QtCore.QObject):
             return
 
         # execute only selection
-        if cursor.hasSelection():
-            text = cursor.selection().toPlainText()
+        if textCursor.hasSelection():
+            text = textCursor.selection().toPlainText()
             if not text.strip():
                 return
             # check that the selected text doesn't just have comments.
@@ -271,21 +268,21 @@ class Actions(QtCore.QObject):
         Calls exec() with the text of the line the cursor is on.
         Calls lstrip on current line text to allow exec of indented text.
         """
-        cursor = self.editor.textCursor()
+        textCursor = self.editor.textCursor()
         whole_text = self.editor.toPlainText()
 
-        if cursor.hasSelection():
+        if textCursor.hasSelection():
             return self.exec_handler()
 
-        cursor.select(QtGui.QTextCursor.BlockUnderCursor)
-        text = cursor.selection().toPlainText().lstrip()
+        textCursor.select(QtGui.QTextCursor.BlockUnderCursor)
+        text = textCursor.selection().toPlainText().lstrip()
         if not text:
             return
         # check that the current line doesn't just have comments.
         if self.just_comments(text):
             return
 
-        # allow execution of function names so
+        # allow execution of function names so 
         # they don't have to be rewritten to test
         if text.startswith('def '):
             text = text.replace('def ', '')
@@ -1377,7 +1374,7 @@ class Actions(QtCore.QObject):
 
     def prepend_import_statement(self):
         """
-        Format the currently selected text
+        Format the currently selected text 
         by prepending an import statement.
         """
         cursor = self.editor.textCursor()
@@ -1390,7 +1387,7 @@ class Actions(QtCore.QObject):
 
     def loop_format(self):
         """
-        Format the currently selected text
+        Format the currently selected text 
         into a for loop.
         """
         cursor = self.editor.textCursor()
@@ -1404,7 +1401,7 @@ class Actions(QtCore.QObject):
 
     def add_reload_module_command(self):
         """
-        Format the currently selected text
+        Format the currently selected text 
         with a reload() command.
         """
         cursor = self.editor.textCursor()
@@ -2105,10 +2102,9 @@ def backup_pythoneditor_history():
 
 def get_snippet_name():
     text, ok = QtWidgets.QInputDialog.getText(
-        QtWidgets.QWidget(),
-        'Snippet Name',
-        ('Name your snippet.\nNo spaces and it '
-        'must end in " [snippet]" (without quotes).'),
+        QtWidgets.QWidget(), 
+        'Snippet Name', 
+        'Name your snippet.\nNo spaces and it must end in " [snippet]" (without quotes).', 
         QtWidgets.QLineEdit.EchoMode.Normal,
         ' [snippet]'
     )
@@ -2116,10 +2112,7 @@ def get_snippet_name():
         return
     text = text.strip()
     if not text.endswith(' [snippet]'):
-        raise Exception(
-        'Snippet name must end with " [snippet]" '
-        '(without quotes)'
-        )
+        raise Exception('Snippet name must end with " [snippet]" (without quotes')
     return (text)
 
 
