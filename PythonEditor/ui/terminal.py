@@ -19,6 +19,8 @@ from PythonEditor.ui.features.actions import get_external_editor_path
 from PythonEditor.ui.features.actions import open_in_external_editor
 
 
+STARTUP = 'PYTHONEDITOR_CAPTURE_STARTUP_STREAMS'
+
 class Terminal(QPlainTextEdit):
     """ Output text display widget """
     link_activated = Signal(str)
@@ -36,7 +38,7 @@ class Terminal(QPlainTextEdit):
         font.setPointSize(10)
         self.setFont(font)
 
-        if os.getenv('PYTHONEDITOR_CAPTURE_STARTUP_STREAMS') == '1':
+        if os.getenv(STARTUP) == '1':
             self.setup()
         else:
             QTimer.singleShot(0, self.setup)
