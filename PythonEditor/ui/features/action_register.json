@@ -417,8 +417,6 @@
             "Method": "delete_to_end_of_line",
             "Menu Location": "Edit/Text"
         },
-
-
         "Save Selected Text": {
             "Shortcuts": [],
             "Method": "save_selected_text",
