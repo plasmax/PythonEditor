@@ -107,7 +107,8 @@ class Actions(QtCore.QObject):
 
         if editor is None:
             raise Exception(
-            'A text editor is necessary for this class.'
+            'A text editor is a minimum '
+            'requirement for this class.'
             )
         self.editor = editor
 
@@ -1374,7 +1375,7 @@ class Actions(QtCore.QObject):
 
     def prepend_import_statement(self):
         """
-        Format the currently selected text 
+        Format the currently selected text
         by prepending an import statement.
         """
         cursor = self.editor.textCursor()
@@ -1387,7 +1388,7 @@ class Actions(QtCore.QObject):
 
     def loop_format(self):
         """
-        Format the currently selected text 
+        Format the currently selected text
         into a for loop.
         """
         cursor = self.editor.textCursor()
@@ -1401,7 +1402,7 @@ class Actions(QtCore.QObject):
 
     def add_reload_module_command(self):
         """
-        Format the currently selected text 
+        Format the currently selected text
         with a reload() command.
         """
         cursor = self.editor.textCursor()
@@ -2102,9 +2103,10 @@ def backup_pythoneditor_history():
 
 def get_snippet_name():
     text, ok = QtWidgets.QInputDialog.getText(
-        QtWidgets.QWidget(), 
-        'Snippet Name', 
-        'Name your snippet.\nNo spaces and it must end in " [snippet]" (without quotes).', 
+        QtWidgets.QWidget(),
+        'Snippet Name',
+        ('Name your snippet.\nNo spaces and it '
+        'must end in " [snippet]" (without quotes).'),
         QtWidgets.QLineEdit.EchoMode.Normal,
         ' [snippet]'
     )
@@ -2112,7 +2114,10 @@ def get_snippet_name():
         return
     text = text.strip()
     if not text.endswith(' [snippet]'):
-        raise Exception('Snippet name must end with " [snippet]" (without quotes')
+        raise Exception(
+        'Snippet name must end with " [snippet]" '
+        '(without quotes)'
+        )
     return (text)
 
 

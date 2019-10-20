@@ -45,23 +45,22 @@ class Editor(QPlainTextEdit):
         '{', '}',
     ]
 
-    S = Signal
-    wrap_signal               = S(str)
-    uuid_signal               = S(str)
-    return_signal             = S(QKeyEvent)
-    focus_in_signal           = S()
-    focus_out_signal          = S()
-    post_key_pressed_signal   = S(QKeyEvent)
-    wheel_signal              = S(QWheelEvent)
-    key_pressed_signal        = S(QKeyEvent)
-    shortcut_signal           = S(QKeyEvent)
-    resize_signal             = S(QResizeEvent)
-    context_menu_signal       = S(QMenu)
-    tab_signal                = S()
-    home_key_signal           = S()
-    relay_clear_output_signal = S()
-    editingFinished           = S()
-    text_changed_signal       = S()
+    wrap_signal               = Signal(str)
+    uuid_signal               = Signal(str)
+    return_signal             = Signal(QKeyEvent)
+    focus_in_signal           = Signal()
+    focus_out_signal          = Signal()
+    post_key_pressed_signal   = Signal(QKeyEvent)
+    wheel_signal              = Signal(QWheelEvent)
+    key_pressed_signal        = Signal(QKeyEvent)
+    shortcut_signal           = Signal(QKeyEvent)
+    resize_signal             = Signal(QResizeEvent)
+    context_menu_signal       = Signal(QMenu)
+    tab_signal                = Signal()
+    home_key_signal           = Signal()
+    relay_clear_output_signal = Signal()
+    editingFinished           = Signal()
+    text_changed_signal       = Signal()
 
     def __init__(
             self,
