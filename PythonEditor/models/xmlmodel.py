@@ -1,6 +1,4 @@
-# import os
 import json
-# import tempfile
 
 from PythonEditor.ui.Qt.QtCore import (
     Qt, QMimeData, Signal)
