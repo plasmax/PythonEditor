@@ -84,16 +84,15 @@ class Actions(QtCore.QObject):
     """
     Collection of QActions that are
     accessible for menu and shortcut
-    registry.
+    registry. The widgets provided as
+    parameters have their appropriate
+    actions loaded and applied.
 
     :param pythoneditor: optional `QWidget` or `PythonEditor`
     :param editor: required `QPlainTextEdit` or `Editor` class.
     :param tabeditor: optional `QWidget` or `TabEditor`
     :param terminal: optional `QPlainTextEdit` or `Terminal` class.
     """
-    # clear_output_signal = QtCore.Signal()
-    exec_text_signal = QtCore.Signal()
-
     actions = {}
     def __init__(
             self,
@@ -176,17 +175,18 @@ class Actions(QtCore.QObject):
         selection_offset = textCursor.selectionStart()
         doc = self.editor.document()
         block_num = doc.findBlock(selection_offset).blockNumber()
-        text = '\n' * block_num + text
+        text = str('\n' * block_num) + text
         return text
 
     def exec_text(self, text, whole_text):
         """
-        Execute whatever text is passed into this function.
+        Execute `text` as code. Highlight
+        any lines on which errors were detected.
 
         :text: the actual text to be executed
-        :whole_text: the whole text for context and full traceback
+        :whole_text: the whole text for context
+        and full traceback
         """
-        self.exec_text_signal.emit()
         error_line_numbers = execute.mainexec(text, whole_text)
         if error_line_numbers is None:
             return
@@ -194,12 +194,14 @@ class Actions(QtCore.QObject):
             self.highlight_errored_lines(error_line_numbers)
 
     def exec_handler(self):
-        """
+        """Handles trigger for execution of code
+        (typically Ctrl+Enter).
         If text is selected, call exec on that text.
         If no text is selected, look for cells bordered
-        by the symbols #&& and execute text between those borders.
+        by the symbols #&& and execute text between those
+        borders.
         """
-        textCursor = self.editor.textCursor()
+        cursor = self.editor.textCursor()
         whole_text = self.editor.toPlainText()
         if not whole_text.strip():
             return
@@ -209,8 +211,8 @@ class Actions(QtCore.QObject):
             return
 
         # execute only selection
-        if textCursor.hasSelection():
-            text = textCursor.selection().toPlainText()
+        if cursor.hasSelection():
+            text = cursor.selection().toPlainText()
             if not text.strip():
                 return
             # check that the selected text doesn't just have comments.
@@ -269,21 +271,21 @@ class Actions(QtCore.QObject):
         Calls exec() with the text of the line the cursor is on.
         Calls lstrip on current line text to allow exec of indented text.
         """
-        textCursor = self.editor.textCursor()
+        cursor = self.editor.textCursor()
         whole_text = self.editor.toPlainText()
 
-        if textCursor.hasSelection():
+        if cursor.hasSelection():
             return self.exec_handler()
 
-        textCursor.select(QtGui.QTextCursor.BlockUnderCursor)
-        text = textCursor.selection().toPlainText().lstrip()
+        cursor.select(QtGui.QTextCursor.BlockUnderCursor)
+        text = cursor.selection().toPlainText().lstrip()
         if not text:
             return
         # check that the current line doesn't just have comments.
         if self.just_comments(text):
             return
 
-        # allow execution of function names so 
+        # allow execution of function names so
         # they don't have to be rewritten to test
         if text.startswith('def '):
             text = text.replace('def ', '')

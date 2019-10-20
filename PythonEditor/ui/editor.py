@@ -144,11 +144,10 @@ class Editor(QPlainTextEdit):
 
         if self._handle_shortcuts:
             actions.Actions(
-                editor=self,
+                editor=self
             )
             shortcuts.ShortcutHandler(
-                editor=self,
-                use_tabs=False
+                editor=self
             )
 
     def _handle_textChanged(self):
