@@ -1,6 +1,8 @@
 *.pyc
+*.pytest_cache
 TODO.txt
 _tests/
+_experiments/
 _deprecated/
 _old
 *.nk
