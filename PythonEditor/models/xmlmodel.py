@@ -5,7 +5,7 @@ from PythonEditor.ui.Qt.QtCore import (
 from PythonEditor.ui.Qt.QtGui import (
     QStandardItem, QStandardItemModel)
 from PythonEditor.ui.features import autosavexml
-from xml.etree import cElementTree as ElementTree
+from xml.etree import cElementTree as ETree
 
 
 class XMLModel(QStandardItemModel):
@@ -24,7 +24,7 @@ class XMLModel(QStandardItemModel):
 
     def store_data(self, item):
         text = item.text()
-        element = ElementTree.Element('subscript')
+        element = ETree.Element('subscript')
         element.text = text
 
     def flags(self, index):
@@ -68,8 +68,7 @@ class XMLModel(QStandardItemModel):
         return mimeData
 
     def stringList(self):
-        """
-        List of document names.
+        """ List of document names.
         """
         names = []
         for i in range(self.rowCount()):

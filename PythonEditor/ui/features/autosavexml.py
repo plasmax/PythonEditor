@@ -1028,15 +1028,16 @@ def remove_empty_autosaves():
     """
     root, subscripts = parsexml('subscript')
     for s in subscripts:
-        if not s.text:
-            path = s.attrib.get('path')
-            if path is None:
-                root.remove(s)
-                continue
-            if not os.path.isfile(path):
-                root.remove(s)
-                continue
-            s.attrib['name'] = os.path.basename(path)
+        if s.text:
+            continue
+        path = s.attrib.get('path')
+        if path is None:
+            root.remove(s)
+            continue
+        if not os.path.isfile(path):
+            root.remove(s)
+            continue
+        s.attrib['name'] = os.path.basename(path)
     writexml(root)
 
 
