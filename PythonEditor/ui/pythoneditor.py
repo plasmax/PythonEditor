@@ -34,9 +34,6 @@ class PythonEditor(QtWidgets.QWidget):
         if parent is not None:
             self.setParent(parent)
 
-        self.construct_ui()
-
-    def construct_ui(self):
         layout = QtWidgets.QVBoxLayout(self)
         layout.setObjectName(
             'PythonEditor_MainLayout'
