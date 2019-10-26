@@ -1,3 +1,14 @@
+""" The IDE is a top-level container class that
+houses the pythoneditor interface. The point of this
+class is to make all subsequent modules fully reloadable from
+within the PythonEditor UI for development purposes.
+
+Example usage:
+from PythonEditor.ui import ide
+
+integrated_development_environment = ide.IDE()
+integrated_development_environment.show()
+"""
 import os
 import sys
 import imp
@@ -6,10 +17,9 @@ import traceback
 
 PYTHON_EDITOR_MODULES = []
 
-
+# define this before importing PythonEditor modules.
 class Finder(object):
-    """
-    Keep track of pythoneditor modules loaded
+    """ Keep track of pythoneditor modules loaded
     so that they can be reloaded in the same order.
     """
     _can_delete = True
@@ -47,9 +57,8 @@ from PythonEditor.ui import pythoneditor
 
 
 class IDE(QWidget):
-    """
-    Container widget that allows the whole
-    package to be reloaded.
+    """ Container widget that allows the whole
+    package to be reloaded, apart from this module.
     """
     def __init__(self, parent=None):
         super(IDE, self).__init__(parent)
@@ -69,8 +78,7 @@ class IDE(QWidget):
         self.layout().addWidget(self.python_editor)
 
     def reload_package(self):
-        """
-        Reloads the whole package (except for
+        """ Reloads the whole package (except for
         this module), in an order that does not
         cause errors.
         """
@@ -119,8 +127,7 @@ class IDE(QWidget):
         QTimer.singleShot(10, self.set_editor_focus)
 
     def set_editor_focus(self):
-        """
-        Set the focus inside the editor.
+        """ Set the focus inside the editor.
         """
         try:
             retries = self.retries
@@ -143,8 +150,7 @@ class IDE(QWidget):
         editor.focus_in_signal.emit()
 
     def showEvent(self, event):
-        """
-        Hack to get rid of margins
+        """ Hack to get rid of margins
         automatically put in place
         by Nuke Dock Window.
         """
