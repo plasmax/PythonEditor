@@ -1,14 +1,18 @@
-"""
-Contains a TabView class designed to represent
-a one-dimensional array of data. Behaves like
-a QListView and is meant to work in sync with it.
-The TabView class is data-agnostic. All methods
-to do with the saving of data are now implemented
+""" The TabView class is designed to represent
+a one-dimensional array of data. It behaves like
+a QListView and is meant to work in sync with other
+views. The TabView class is data-agnostic. All methods
+to do with the saving of data are implemented
 on the model.
 """
 from PythonEditor.ui.Qt.QtWidgets import QTabBar, QListView
 from PythonEditor.ui.Qt.QtCore import Slot
 from PythonEditor.ui.Qt.QtGui import QStandardItemModel, QStandardItem
+
+
+def ismodel(model):
+    """ Type check for QStandardItemModel. """
+    return isinstance(model, QStandardItemModel)
 
 
 class TabView(QTabBar):
@@ -29,15 +33,12 @@ class TabView(QTabBar):
 
     _model = None
     def setModel(self, model):
-        if not isinstance(
-                model,
-                QStandardItemModel
-            ):
-                raise TypeError(
-                    "setModel(model) argument must be a {!r}, not '{!r}'".format(
-                        QStandardItemModel, type(model)
-                    )
-                )
+        if not ismodel(model):
+            raise TypeError(
+                "setModel(model) argument must "
+                "be a {!r}, not '{!r}'".format(
+                 QStandardItemModel, type(model))
+            )
         m = self.model()
         if m is not None:
             m.itemChanged.disconnect(
