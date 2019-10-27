@@ -2,10 +2,11 @@
 All modifications to the PythonEditor.xml
 file are done through this module.
 
-All the out points of this module:
-- line 62 in init_file_header
+Functions that write to the autosave file:
+- create_empty_autosave
+- writexml
+- fix_broken_xml
 """
-
 from __future__ import unicode_literals
 from __future__ import print_function
 
@@ -16,7 +17,7 @@ import warnings
 import tempfile
 import difflib
 from functools import partial
-from xml.etree import cElementTree as ElementTree
+from xml.etree import cElementTree as ETree
 
 from PythonEditor.ui.Qt import QtCore, QtWidgets
 from PythonEditor.ui import editor
@@ -25,9 +26,9 @@ from PythonEditor.utils.debug import debug
 from PythonEditor.utils.constants import NUKE_DIR
 
 
-def isdir(path):
+def parent_isdir(file_path):
     return os.path.isdir(
-    os.path.dirname(path)
+    os.path.dirname(file_path)
     )
 
 
@@ -39,8 +40,7 @@ def haspermissions(path):
 
 
 def define_autosave_path():
-    """
-    Allow users to define a custom
+    """ Allow users to define a custom
     xml file path via an environment
     variable.
     """
@@ -50,9 +50,9 @@ def define_autosave_path():
         'PYTHONEDITOR_AUTOSAVE_FILE'
     )
     if (AUTOSAVE_FILE is None
-        or not isdir(AUTOSAVE_FILE)
+        or not parent_isdir(AUTOSAVE_FILE)
         ):
-        if not isdir(NUKE_DIR):
+        if not os.path.isdir(NUKE_DIR):
             NUKE_DIR = os.path.expanduser('~')
         AUTOSAVE_FILE = os.path.join(
             NUKE_DIR,
@@ -614,7 +614,7 @@ class AutoSaveManager(QtCore.QObject):
                 sub = s
                 break
         else:
-            sub = ElementTree.Element('subscript')
+            sub = ETree.Element('subscript')
             root.append(sub)
 
         sub.attrib['uuid'] = uid
@@ -635,7 +635,7 @@ class AutoSaveManager(QtCore.QObject):
         """
         root, index_elements = parsexml('current_index')
         if len(index_elements) == 0:
-            ci = ElementTree.Element('current_index')
+            ci = ETree.Element('current_index')
             root.append(ci)
         else:
             ci = index_elements[0]
@@ -775,40 +775,41 @@ class CouldNotCreateAutosave(Exception):
     pass
 
 
-def create_autosave_file():
+def autosave_can_be_parsed():
+    """ Return True if the autosave file
+    is writable and not corrupted.
     """
-    Create the autosave file into which
+    global AUTOSAVE_FILE
+    xmlp = ETree.XMLParser(encoding="utf-8")
+    try:
+        parser = ETree.parse(AUTOSAVE_FILE, xmlp)
+        return True
+    except Exception:
+        return False
+
+
+def create_autosave_file():
+    """ Create the autosave file into which
     PythonEditor stores all tab contents.
     """
-    # look for the autosave
+    global AUTOSAVE_FILE
+    if autosave_can_be_parsed():
+        return True
     if os.path.isfile(AUTOSAVE_FILE):
+        fix_broken_xml()
+        if autosave_can_be_parsed():
+            return True
+        raise CouldNotCreateAutosave()
 
-        # if the autosave file is empty, write header
-        # FIXME: can this be an os.stat/get file size?
-        # Furthermore, what if it's not empty but has a
-        # corrupted header? What are the methods for
-        # data preservation?
-        with open(AUTOSAVE_FILE, 'r') as f:
-            is_empty = not bool(f.read().strip())
-        if is_empty:
-            init_file_header()
-    else:
-
-        # if file not found, check if directory exists
-        if not os.path.isdir(NUKE_DIR):
-            # filehandle, filepath = tempfile.mkstemp()
-            # FIXME: set os.environ['PYTHONEDITOR_AUTOSAVE_FILE'] and define_autosave_path()
-            # msg = 'Directory %s does not exist, saving to %s' % (NUKE_DIR, filepath)
-            msg = 'Directory {0} does not exist'.format(NUKE_DIR)
-            raise CouldNotCreateAutosave(msg)
-        else:
-            init_file_header()
-    return True
+    try:
+        create_empty_autosave()
+        return True
+    except Exception as error:
+        raise CouldNotCreateAutosave(error)
 
 
-def init_file_header():
-    """
-    Write the default file header into the xml file.
+def create_empty_autosave():
+    """ Write the default file header into the xml file.
     Overwrites any existing file.
     """
     with open(AUTOSAVE_FILE, 'w') as f:
@@ -818,7 +819,7 @@ def init_file_header():
 def get_editor_xml():
     if not create_autosave_file():
         return
-    parser = ElementTree.parse(AUTOSAVE_FILE)
+    parser = ETree.parse(AUTOSAVE_FILE)
     root = parser.getroot()
     editor_elements = root.findall('external_editor_path')
     return root, editor_elements
@@ -880,7 +881,7 @@ def set_external_editor_path(path=None, ask_user=False):
         editor_path = path
         os.environ['EXTERNAL_EDITOR_PATH'] = editor_path
 
-        element = ElementTree.Element('external_editor_path')
+        element = ETree.Element('external_editor_path')
         element.text = path
         root.append(element)
 
@@ -923,18 +924,17 @@ def remove_control_characters(s):
 
 
 def parsexml(element_name, path=AUTOSAVE_FILE):
-    """
-    Retrieve the root and a list of <element_name>
+    """ Retrieve the root and a list of <element_name>
     elements from a given xml file.
     """
     if not create_autosave_file():
         return
 
     try:
-        xmlp = ElementTree.XMLParser(encoding="utf-8")
-        parser = ElementTree.parse(path, xmlp)
-    except ElementTree.ParseError as e:
-        print('ElementTree.ParseError', e)
+        xmlp = ETree.XMLParser(encoding="utf-8")
+        parser = ETree.parse(path, xmlp)
+    except ETree.ParseError as e:
+        print('ETree.ParseError', e)
         parser = fix_broken_xml(path)
 
     root = parser.getroot()
@@ -944,8 +944,7 @@ def parsexml(element_name, path=AUTOSAVE_FILE):
 
 TEMP_FILE = None
 def writexml(root, path=AUTOSAVE_FILE):
-    """
-    Attempt to write xml element
+    """ Attempt to write xml element
     to a file as a string. If the
     save fails, write to a temporary
     file instead.
@@ -955,7 +954,7 @@ def writexml(root, path=AUTOSAVE_FILE):
     :param path: The path to save to.
     :type  path: <type 'str'>
     """
-    data = ElementTree.tostring(root)
+    data = ETree.tostring(root)
     data = data.decode('utf-8')
 
     # for neatness in the xml file.
@@ -987,8 +986,7 @@ def writexml(root, path=AUTOSAVE_FILE):
 
 
 def fix_broken_xml(path=AUTOSAVE_FILE):
-    """
-    Removes unwanted characters and
+    """ Removes unwanted characters and
     (in case necessary in future
     implementations..) fixes other
     parsing errors with the xml file.
@@ -1001,15 +999,15 @@ def fix_broken_xml(path=AUTOSAVE_FILE):
     with open(path, 'wt') as f:
         f.write(safe_string)
 
-    xmlp = ElementTree.XMLParser(encoding="utf-8")
+    xmlp = ETree.XMLParser(encoding="utf-8")
     try:
-        parser = ElementTree.parse(path, xmlp)
-    except ElementTree.ParseError:
+        parser = ETree.parse(path, xmlp)
+    except ETree.ParseError:
         print('Fatal Error with xml structure. A backup of your autosave has been made.')
         backup_autosave_file(path, content)
-        init_file_header()
-        xmlp = ElementTree.XMLParser(encoding="utf-8")
-        parser = ElementTree.parse(path, xmlp)
+        create_empty_autosave()
+        xmlp = ETree.XMLParser(encoding="utf-8")
+        parser = ETree.parse(path, xmlp)
         print(parser)
     return parser
 
