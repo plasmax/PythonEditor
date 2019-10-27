@@ -67,6 +67,7 @@
 
 
 #### Features - desired
+- [ ] Shortcuts Editor should be searchable
 - [ ] down arrow should show tabs in searchable QListView side panel not QMenu
 - [ ] Open Containing Folder action - default to autosave dir if nothing else
 - [ ] Copy File Path action
