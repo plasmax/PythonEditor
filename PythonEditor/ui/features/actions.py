@@ -362,26 +362,25 @@ class Actions(QtCore.QObject):
         return self.indent_next_line()
 
     def indent_next_line(self):
-        """
-        Match next line indentation to current line
+        """ Match next line indentation to current line
         If ':' is character in cursor position and
         current line contains non-whitespace
         characters, add an extra four spaces.
         """
-        textCursor = self.editor.textCursor()
-        text = textCursor.block().text()
-        indentCount = len(text) - len(text.lstrip(' '))
+        cursor = self.editor.textCursor()
+        block = cursor.block()
+        text = block.text()
+        pos = cursor.position()-block.position()
+        text = text[:pos]
+        indentCount = len(text)-len(text.lstrip(' '))
 
         doc = self.editor.document()
-        if doc.characterAt(textCursor.position()-1) == ':':
+        if doc.characterAt(cursor.position()-1) == ':':
             indentCount = indentCount + 4
-
         insertion = '\n'+' '*indentCount
-        if len(text.strip()) == 0:
-            insertion = '\n'
 
-        textCursor.insertText(insertion)
-        self.editor.setTextCursor(textCursor)
+        cursor.insertText(insertion)
+        self.editor.setTextCursor(cursor)
 
         return True
 
@@ -1504,29 +1503,32 @@ class Actions(QtCore.QObject):
             self.terminal.clear()
 
     def jump_to_start(self):
-        """
-        Jump to first character in line.
-        If at first character, jump to
+        """ Jump to first non-whitespace character 
+        in line. If at first character, jump to
         start of line.
         """
-        textCursor = self.editor.textCursor()
-        init_pos = textCursor.position()
-        textCursor.select(
+        cursor = self.editor.textCursor()
+        init_pos = cursor.position()
+        cursor.select(
             QtGui.QTextCursor.LineUnderCursor
         )
-        text = textCursor.selection().toPlainText()
-        textCursor.movePosition(
+        text = cursor.selection().toPlainText()
+        cursor.movePosition(
             QtGui.QTextCursor.StartOfLine
         )
-        pos = textCursor.position()
-        offset = len(text)-len(text.lstrip())
-        new_pos = pos+offset
+        pos = cursor.position()
+        if len(text.strip()):
+            offset = len(text)-len(text.lstrip())
+            new_pos = pos+offset
+        else:
+            block = cursor.block()
+            new_pos = block.position()
         if new_pos != init_pos:
-            textCursor.setPosition(
+            cursor.setPosition(
                 new_pos,
                 QtGui.QTextCursor.MoveAnchor
             )
-        self.editor.setTextCursor(textCursor)
+        self.editor.setTextCursor(cursor)
 
     def wheel_zoom(self, event):
         """
