@@ -1,3 +1,6 @@
+import sys
+from os.path import dirname
+
 from PythonEditor.app.nukefeatures import nukedock
 from PythonEditor.core import streams
 from PythonEditor.utils import constants
@@ -114,6 +117,11 @@ def add_nuke_menu():
     """
     Adds a "Panels" menu to the Nuke menubar.
     """
+    try:
+        package_dir = dirname(dirname(sys.modules['PythonEditor'].__file__))
+        nuke.pluginAddPath(package_dir)
+    except Exception as error:
+        print(error)
     panelMenu = nuke.menu('Nuke').addMenu('Panels')
     panelMenu.addCommand('Python Editor',
                          IMPORT_CMD,
