@@ -26,6 +26,15 @@ from PythonEditor.utils.debug import debug
 from PythonEditor.utils.constants import NUKE_DIR
 
 
+def is_file(path):
+    """ Safe is_file.
+    """
+    try:
+        return os.path.isfile(path)
+    except Exception:
+        return False
+
+
 def parent_isdir(file_path):
     return os.path.isdir(
     os.path.dirname(file_path)
@@ -116,8 +125,7 @@ class AutoSaveManager(QtCore.QObject):
         self.connect_signals()
 
     def connect_signals(self):
-        """
-        Connects the editor, tabeditor
+        """ Connects the editor, tabeditor
         and tab signals to this class
         """
         editor = self.editor
@@ -152,8 +160,7 @@ class AutoSaveManager(QtCore.QObject):
         )
 
     def save_timer(self):
-        """
-        On text_changed_signal, if no text present, save immediately.
+        """ On text_changed_signal, if no text present, save immediately.
         Else, start a timer that will trigger autosave after
         a brief pause in typing.
         """
@@ -174,8 +181,7 @@ class AutoSaveManager(QtCore.QObject):
             self.autosave_timer.start()
 
     def setup_save_timer(self, interval=500):
-        """
-        Initialise the autosave timer.
+        """ Initialise the autosave timer.
         :param interval: autosave interval in milliseconds
         :type interval: int
         """
@@ -184,16 +190,14 @@ class AutoSaveManager(QtCore.QObject):
         self.autosave_timer.setInterval(interval)
 
     def autosave_handler(self):
-        """
-        Autosave timeout triggers this.
+        """ Autosave timeout triggers this.
         """
         self.autosave_timer_waiting = False
         if self.editor.document().isModified():
             self.autosave()
 
     def readautosave(self):
-        """
-        Sets editor text content. First checks the
+        """ Sets editor text content. First checks the
         autosave file for <subscript> elements and
         creates a tab per element.
         """
@@ -222,17 +226,15 @@ class AutoSaveManager(QtCore.QObject):
             name = s.attrib.get('name')
             data = s.attrib.copy()
 
+            data['text'] = s.text
             # if there's no text saved,
             # but there is a path, try and
             # get the file contents
             if not s.text:
                 path = s.attrib.get('path')
-                if path is not None:
-                    if os.path.isfile(path):
-                        with open(path, 'r') as f:
-                            data['text'] = f.read()
-
-            data['text'] = s.text
+                if is_file(path):
+                    with open(path, 'r') as f:
+                        data['text'] = f.read()
 
             if standard_tabs:
                 self.tabs.new_tab(tab_name=name)
@@ -249,13 +251,13 @@ class AutoSaveManager(QtCore.QObject):
                 self.tabs.setTabToolTip(i, path) # and if this changes?
 
         # try and get the index of the current tab from the last session
-        index = self.tabs.count()
+        index = self.tabs.count()-1
         root, index_elements = parsexml('current_index')
         for index_element in index_elements:
             current_index = int(index_element.text)
-            out_of_range = -1 < index < self.tabs.count()
-            if not out_of_range:
+            if current_index in range(0, index):
                 index = current_index
+                break
 
         # set tab and editor contents.
         self.tabs.setCurrentIndex(index)
@@ -602,15 +604,12 @@ class AutoSaveManager(QtCore.QObject):
 
     @QtCore.Slot(str, str, str, str, object)
     def save_by_uuid(self, uid, name, text, index, path=None):
-        """
-        Only update a specific subscript given by uuid.
+        """ Only update a specific subscript given by uuid.
         """
         root, subscripts = parsexml('subscript')
 
-        found = False
         for s in subscripts:
             if s.attrib.get('uuid') == uid:
-                found = True
                 sub = s
                 break
         else:
@@ -662,8 +661,7 @@ class AutoSaveManager(QtCore.QObject):
 
     @QtCore.Slot(object)
     def handle_document_save(self, uid):
-        """
-        After saving the editor's contents,
+        """ After saving the editor's contents,
         store the path to the saved file in the
         autosave attributes. The text contents
         are retained in the autosave until the
@@ -674,7 +672,6 @@ class AutoSaveManager(QtCore.QObject):
         :param uid: Unique Identifier of
                     subscript to save
         """
-
         # find the tab by uid
         index = -1
         if self.tabs['uuid'] != uid:
@@ -691,16 +688,33 @@ class AutoSaveManager(QtCore.QObject):
             data = self.tabs.tabData(index)
 
         path = data.get('path')
-        if (path is not None
-            and os.path.isfile(path)
-            ):
-            root, subscripts = parsexml('subscript')
-            for s in subscripts:
+        if not is_file(path):
+            return
 
-                if s.attrib.get('uuid') != uid:
-                    continue
-
-                s.attrib['path'] = path
+        root, subscripts = parsexml('subscript')
+        # we first look for an existing 
+        # subscript that matches the uid
+        for s in subscripts:
+            if s.attrib.get('uuid') != uid:
+                continue
+            s.attrib['path'] = path
+            break
+        else:
+            # if none is found we create 
+            # a new subscript
+            self.save_by_uuid(
+                uid,
+                self.tabs['name'],
+                '', # don't save text unless document modified
+                    # which it won't be on first open
+                str(self.tabs.currentIndex()),
+                path
+            )
+            data['saved'] = True
+            self.tabs.setTabData(index, data)
+            # FIXME: this doesn't save the 'saved' attrib of the tab at this point
+            # and doesn't reload the document correctly. check the readautosave.
+            return
         data['saved'] = True
         self.tabs.setTabData(index, data)
         writexml(root)
@@ -711,8 +725,7 @@ class AutoSaveManager(QtCore.QObject):
 
     @QtCore.Slot(int)
     def handle_tab_close(self, tab_index):
-        """
-        Called on tabCloseRequested
+        """ Called on tabCloseRequested
         Note: if this slot is called via tabCloseRequested,
         the tab will have already been closed, so the tab_index
         will point to a different tab.
@@ -786,6 +799,38 @@ def autosave_can_be_parsed():
         return True
     except Exception:
         return False
+
+
+# FIXME: redefined below. this is the deprecated version.
+# test functionality is the same and delete this version.
+def create_autosave_file():
+    """ Create the autosave file into which
+    PythonEditor stores all tab contents.
+    """
+    # look for the autosave
+    if os.path.isfile(AUTOSAVE_FILE):
+
+        # if the autosave file is empty, write header
+        # FIXME: can this be an os.stat/get file size?
+        # Furthermore, what if it's not empty but has a
+        # corrupted header? What are the methods for
+        # data preservation?
+        with open(AUTOSAVE_FILE, 'r') as f:
+            is_empty = not bool(f.read().strip())
+        if is_empty:
+            create_empty_autosave()
+    else:
+
+        # if file not found, check if directory exists
+        if not os.path.isdir(NUKE_DIR):
+            # filehandle, filepath = tempfile.mkstemp()
+            # FIXME: set os.environ['PYTHONEDITOR_AUTOSAVE_FILE'] and define_autosave_path()
+            # msg = 'Directory %s does not exist, saving to %s' % (NUKE_DIR, filepath)
+            msg = 'Directory {0} does not exist'.format(NUKE_DIR)
+            raise CouldNotCreateAutosave(msg)
+        else:
+            create_empty_autosave()
+    return True
 
 
 def create_autosave_file():
