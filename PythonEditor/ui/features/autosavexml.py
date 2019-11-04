@@ -78,8 +78,7 @@ XML_HEADER = '<?xml version="1.0" encoding="UTF-8"?>'
 
 
 class AutoSaveManager(QtCore.QObject):
-    """
-    Simple xml text storage.
+    """ Simple xml text storage.
 
     TODO: Test that these rules are being followed.
     # Reads when:
