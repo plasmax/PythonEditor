@@ -159,18 +159,18 @@ class Actions(QtCore.QObject):
     # ---------------         -------------- #
     # -------------------------------------- #
     def offset_for_traceback(self, text=None):
-        """
-        Return text offset using newlines
+        """ Return text with prepended newlines
         to get proper line ref in tracebacks.
         """
-        textCursor = self.editor.textCursor()
+        cursor = self.editor.textCursor()
 
         if text is None:
-            text = textCursor.selection().toPlainText()
+            text = cursor.selection().toPlainText()
 
-        selection_offset = textCursor.selectionStart()
+        selection_offset = cursor.selectionStart()
         doc = self.editor.document()
-        block_num = doc.findBlock(selection_offset).blockNumber()
+        block = doc.findBlock(selection_offset)
+        block_num = block.blockNumber()
         text = str('\n' * block_num) + text
         return text
 
