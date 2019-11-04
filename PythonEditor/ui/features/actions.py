@@ -1959,6 +1959,7 @@ def open_action(tabs, editor, path=''):
         'path'  : path,
         'date'  : '', # need the file's date
         'saved' : True, # read-only
+        'original_text' : text,
     }
 
     tabs.new_tab(tab_name=tab_name, tab_data=data)

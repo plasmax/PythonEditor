@@ -159,17 +159,9 @@ class AutoSaveManager(QtCore.QObject):
         )
 
     def save_timer(self):
-        """ On text_changed_signal, if no text present, save immediately.
-        Else, start a timer that will trigger autosave after
-        a brief pause in typing.
+        """ Start a timer that will trigger the
+        autosave after a brief pause in typing.
         """
-        # FIXME: so this was set up to allow quick clearing of
-        # documents so that the tab could be closed immediately
-        # afterwards. however, it caused a problem somewhere so
-        # was commented out. I don't remember where.
-        # if not self.editor.toPlainText().strip():
-        #     return self.autosave()
-
         self.autosave_timer_waiting = True
         if self.autosave_timer.isActive():
             self.autosave_timer.stop()
@@ -217,9 +209,6 @@ class AutoSaveManager(QtCore.QObject):
             autosaves.append((i, s))
             i += 1
 
-        standard_tabs = False
-        draw_own_close_btn = True
-        draw_own_tab = False
         # storing autosave into new tabs
         for i, s in autosaves:
             name = s.attrib.get('name')
@@ -233,21 +222,21 @@ class AutoSaveManager(QtCore.QObject):
                 path = s.attrib.get('path')
                 if is_file(path):
                     with open(path, 'r') as f:
-                        data['text'] = f.read()
+                        text = f.read()
+                    data['text'] = text
+                    # set original text property
+                    # to allow reverting back to
+                    # the original, or comparison
+                    # on file save/tab close.
+                    data['original_text'] = text
+                    data['saved'] = True
 
-            if standard_tabs:
-                self.tabs.new_tab(tab_name=name)
-            elif draw_own_close_btn:
-                # tab_name = name+' '*5
-                tab_name = name
-                self.tabs.new_tab(tab_name=tab_name, tab_data=data) # hax for enough space for close button :'(
-            elif draw_own_tab:
-                tab_name = name+' '*5
-                self.tabs.new_tab(tab_name=' '*len(tab_name))
+            tab_name = name
+            self.tabs.new_tab(tab_name=tab_name, tab_data=data)
 
             path = data.get('path')
             if path is not None:
-                self.tabs.setTabToolTip(i, path) # and if this changes?
+                self.tabs.setTabToolTip(i, path) # and if the file is moved?
 
         # try and get the index of the current tab from the last session
         index = self.tabs.count()-1
@@ -654,7 +643,7 @@ class AutoSaveManager(QtCore.QObject):
                 data['text'],
                 str(i),
                 data.get('path')
-                )
+            )
         self.store_current_index()
         self.sync_tab_indices()
 
@@ -691,7 +680,7 @@ class AutoSaveManager(QtCore.QObject):
             return
 
         root, subscripts = parsexml('subscript')
-        # we first look for an existing 
+        # we first look for an existing
         # subscript that matches the uid
         for s in subscripts:
             if s.attrib.get('uuid') != uid:
@@ -699,20 +688,21 @@ class AutoSaveManager(QtCore.QObject):
             s.attrib['path'] = path
             break
         else:
-            # if none is found we create 
+            # if none is found we create
             # a new subscript
+            index = self.tabs.currentIndex()
+            name = self.tabs['name']
             self.save_by_uuid(
                 uid,
-                self.tabs['name'],
+                name,
                 '', # don't save text unless document modified
                     # which it won't be on first open
-                str(self.tabs.currentIndex()),
+                str(index),
                 path
             )
             data['saved'] = True
+            # FIXME: 'saved' attrib of the tab is modified by self.tabs.save_text_in_tab after this, triggered by the editor text_changed_signal
             self.tabs.setTabData(index, data)
-            # FIXME: this doesn't save the 'saved' attrib of the tab at this point
-            # and doesn't reload the document correctly. check the readautosave.
             return
         data['saved'] = True
         self.tabs.setTabData(index, data)

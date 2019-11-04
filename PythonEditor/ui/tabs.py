@@ -992,17 +992,18 @@ class TabEditor(QtWidgets.QWidget):
         if self.tabs.count() == 0:
             self.new_tab()
 
-        if self.tabs.get('saved'):
+        saved = self.tabs.get('saved')
+        original_text = self.tabs.get('original_text')
+        if saved and not original_text:
             # keep original text in case
             # revert is required
             text = self.tabs['text']
             self.tabs['original_text'] = text
             self.tabs['saved'] = False
             self.tabs.repaint()
-        elif self.tabs.get(
-            'original_text') is not None:
+        elif original_text is not None:
             text = self.editor.toPlainText()
-            if self.tabs['original_text'] == text:
+            if original_text == text:
                 self.tabs['saved'] = True
                 self.tabs.repaint()
 
