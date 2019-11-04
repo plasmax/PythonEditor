@@ -225,6 +225,9 @@ class Editor(QPlainTextEdit):
     def focusOutEvent(self, event):
         if self._changed:
             self.editingFinished.emit()
+
+        # emit text changed to store the
+        # latest text within the tab
         self.text_changed_signal.emit()
 
         FR = Qt.FocusReason

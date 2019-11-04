@@ -2,7 +2,9 @@
 
 
 #### Bug fixes
-- [ ] When pressing enter when cursor is here `|    "` the line double-indents. 
+- [ ] Sometimes the shortcuthandler doesn't override - perhaps when editor doesn't gain focus correctly
+- [ ] If script is saved as text somewhere and not edited, a warning message still shows up on close.
+- [ ] When pressing enter when cursor is here `|    "` the line double-indents.
 - [ ] Shift-enter does not correctly create a new line in the editor and line number display on the left.
 - [ ] Tab may duplicate on save
 - [ ] Close button should be persistent

@@ -718,9 +718,8 @@ class Tabs(QtWidgets.QTabBar):
         self.tab_close_signal.emit(data['uuid'])
 
     def prompt_user_to_save(self, index):
-        """
-        Ask the user if they wish to close a tab
-        that has unsaved contents.
+        """ Ask the user if they wish to close
+        a tab that has unsaved contents.
         """
         name = self.tabText(index)
         msg_box = QtWidgets.QMessageBox()

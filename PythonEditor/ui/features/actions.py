@@ -34,8 +34,7 @@ from PythonEditor.utils.constants import NUKE_DIR
 
 
 def load_actions_from_json():
-    """
-    Return a dictionary from reading the
+    """ Return a dictionary from reading the
     JSON file that stores action names and
     their attributes.
     """
@@ -59,8 +58,7 @@ def load_actions_from_json():
 
 
 def class_actions(cls):
-    """
-    Parse the action_register.json file and
+    """ Parse the action_register.json file and
     yield the widget name, action_name and
     attributes of each action if the widget
     is an attribute on the class.
@@ -81,8 +79,7 @@ def class_actions(cls):
 
 
 class Actions(QtCore.QObject):
-    """
-    Collection of QActions that are
+    """ Collection of QActions that are
     accessible for menu and shortcut
     registry. The widgets provided as
     parameters have their appropriate
@@ -128,8 +125,7 @@ class Actions(QtCore.QObject):
         self.create_actions()
 
     def create_actions(self):
-        """
-        Find methods on this class that have the
+        """ Find methods on this class that have the
         same names as those registered in the
         json file(s) where actions are stored.
         """
@@ -179,8 +175,7 @@ class Actions(QtCore.QObject):
         return text
 
     def exec_text(self, text, whole_text):
-        """
-        Execute `text` as code. Highlight
+        """ Execute `text` as code. Highlight
         any lines on which errors were detected.
 
         :text: the actual text to be executed
@@ -194,7 +189,7 @@ class Actions(QtCore.QObject):
             self.highlight_errored_lines(error_line_numbers)
 
     def exec_handler(self):
-        """Handles trigger for execution of code
+        """ Handles trigger for execution of code
         (typically Ctrl+Enter).
         If text is selected, call exec on that text.
         If no text is selected, look for cells bordered
@@ -307,9 +302,8 @@ class Actions(QtCore.QObject):
         self.highlight_errored_lines(error_line_numbers)
 
     def just_comments(self, text):
-        """
-        Check that the given text doesn't
-        just contain comments.
+        """ Check that the given text
+        doesn't just contain comments.
         """
         lines = text.strip().splitlines()
         for line in lines:
@@ -321,8 +315,8 @@ class Actions(QtCore.QObject):
         return True
 
     def highlight_errored_lines(self, error_line_numbers):
-        """
-        Draw a red background on any lines that caused an error.
+        """ Draw a red background on
+        any lines that caused an error.
         """
         extraSelections = self.editor.extraSelections()
 
@@ -356,8 +350,7 @@ class Actions(QtCore.QObject):
     # ---------------         -------------- #
     # -------------------------------------- #
     def return_handler(self):
-        """
-        New line with auto-indentation.
+        """ New line with auto-indentation.
         """
         return self.indent_next_line()
 
@@ -386,8 +379,7 @@ class Actions(QtCore.QObject):
 
     @QtCore.Slot()
     def cut_line(self):
-        """
-        If no text selected, cut whole
+        """ If no text selected, cut whole
         current line to clipboard.
         """
         textCursor = self.editor.textCursor()
@@ -1503,7 +1495,7 @@ class Actions(QtCore.QObject):
             self.terminal.clear()
 
     def jump_to_start(self):
-        """ Jump to first non-whitespace character 
+        """ Jump to first non-whitespace character
         in line. If at first character, jump to
         start of line.
         """
