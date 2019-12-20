@@ -346,6 +346,13 @@
             "Method": "print_type",
             "Menu Location": "Tools/Object"
         },
+        "Pretty Print": {
+            "Shortcuts": [
+                "Ctrl+P"
+            ],
+            "Method": "pretty_print",
+            "Menu Location": "Tools/Object"
+        },
         "Command Palette": {
             "Shortcuts": [
                 "Ctrl+P"
