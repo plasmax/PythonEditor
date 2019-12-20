@@ -688,7 +688,8 @@ class AutoCompleter(QtCore.QObject):
                 QtCore.Qt.Key_Return,
                 QtCore.Qt.Key_Escape,
                 QtCore.Qt.Key_Tab,
-                QtCore.Qt.Key_Backtab
+                QtCore.Qt.Key_Backtab,
+                QtCore.Qt.Key_CapsLock,
             ):
                 event.ignore()
                 e = self.editor
