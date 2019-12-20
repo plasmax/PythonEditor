@@ -20,6 +20,7 @@ import subprocess
 from functools import wraps
 from datetime import datetime
 from shutil import copyfile
+from pprint import pprint
 
 from PythonEditor.ui.Qt import QtWidgets
 from PythonEditor.ui.Qt import QtGui
@@ -1351,9 +1352,8 @@ class Actions(QtCore.QObject):
         widget.reload_package()
 
     def print_help(self):
-        """
-        Prints documentation for selected text if
-        it currently represents a python object.
+        """ Prints documentation for selected text 
+        if it currently represents a python object.
         """
         cursor = self.editor.textCursor()
         selection = cursor.selection()
@@ -1365,6 +1365,20 @@ class Actions(QtCore.QObject):
             print(obj.__doc__)
         elif text:
             exec('help('+text+')', __main__.__dict__)
+
+    def pretty_print(self):
+        """ Pretty print selected text if it
+        represents a python object.
+        """
+        cursor = self.editor.textCursor()
+        selection = cursor.selection()
+        text = selection.toPlainText().strip()
+        if not text:
+            return
+        try:
+            exec('pprint('+text+')', __main__.__dict__)
+        except Exception as error:
+            print(error)
 
     def prepend_import_statement(self):
         """
