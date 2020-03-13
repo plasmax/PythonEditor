@@ -1376,7 +1376,8 @@ class Actions(QtCore.QObject):
         if not text:
             return
         try:
-            exec('pprint('+text+')', __main__.__dict__)
+            cmd = 'print( __import__("json").dumps({}, indent=2) )'
+            exec(cmd.format(text), __main__.__dict__)
         except Exception as error:
             print(error)
 
