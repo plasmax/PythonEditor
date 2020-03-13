@@ -1,7 +1,11 @@
 # Python Editor TODO list
 
 
-#### Bug fixes
+#### Bug reports
+- [ ] autocomplete doesn't pick up all variables such as asset.properties.value_dict
+- [ ] Startup doesn't redirect streams correctly if panel doesn't open in workspace automatically on startup
+- [ ] In Nuke 11.3v5, closing a tab by clicking the close Button can crash Nuke
+- [ ] Right- clicking in the output widget produces two context menus in Nuke 11+
 - [ ] Sometimes the shortcuthandler doesn't override - perhaps when editor doesn't gain focus correctly
 - [ ] If script is saved as text somewhere and not edited, a warning message still shows up on close.
 - [ ] When pressing enter when cursor is here `|    "` the line double-indents.
