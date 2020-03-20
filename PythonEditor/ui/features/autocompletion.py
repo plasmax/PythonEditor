@@ -75,6 +75,12 @@ qt_import_snippet = (
     +'QtWidgets, QtGui, QtCore'
 )
 
+qt_star_import_snippet = (
+     'from Qt.QtWidgets import *\n'
+    +'from Qt.QtCore import *\n'
+    +'from Qt.QtGui import *'
+)
+
 SNIPPETS = {
     'class [snippet]':
         class_snippet,
@@ -100,6 +106,8 @@ SNIPPETS = {
         custom_widget_snippet,
     'Qt [snippet]':
         qt_import_snippet,
+    'Qt* [snippet]':
+        qt_star_import_snippet,
     'if [snippet]':
 		name_main_snippet,
     'pprint [snippet]' :
@@ -115,16 +123,17 @@ def locate_snippet_file():
     dictionary.
     """
     global SNIPPETS
+    snippet_path = os.path.join(
+        NUKE_DIR,
+        'PythonEditor_snippets.json'
+    )
+    if not os.path.isfile(snippet_path):
+        return
     try:
-        snippet_path = os.path.join(
-            NUKE_DIR,
-            'PythonEditor_snippets.json'
-        )
-        if os.path.isfile(snippet_path):
-            with open(snippet_path, 'r') as f:
-                data = f.read()
-            user_snippets = json.loads(data)
-            SNIPPETS.update(**user_snippets)
+        with open(snippet_path, 'r') as f:
+            data = f.read()
+        user_snippets = json.loads(data)
+        SNIPPETS.update(**user_snippets)
     except Exception as e:
         debug(e)
 
@@ -199,8 +208,8 @@ class AutoCompleter(QtCore.QObject):
             self._post_keyPressEvent
         )
 
-    @QtCore.Slot(QtGui.QFocusEvent)
-    def _focusInEvent(self, event):
+    @QtCore.Slot()
+    def _focusInEvent(self):
         """
         Connected to editor focusInEvent via signal.
         """
@@ -354,7 +363,18 @@ class AutoCompleter(QtCore.QObject):
         if _obj is None or False:
             return
 
-        attrs = dir(_obj)
+        try:
+            attrs = dir(_obj)
+        except TypeError:
+            # found a case where __getattr__
+            # on a n _obj instance
+            # returned a string, rendering
+            # it uncallable. as a last resort,
+            # try getting the class attrs
+            try:
+                attrs = dir(_obj.__class__)
+            except Exception:
+                return
 
         methods = [
             a for a in attrs
@@ -668,7 +688,8 @@ class AutoCompleter(QtCore.QObject):
                 QtCore.Qt.Key_Return,
                 QtCore.Qt.Key_Escape,
                 QtCore.Qt.Key_Tab,
-                QtCore.Qt.Key_Backtab
+                QtCore.Qt.Key_Backtab,
+                QtCore.Qt.Key_CapsLock,
             ):
                 event.ignore()
                 e = self.editor

@@ -4,7 +4,7 @@ of the PythonEditor user interface. Widgets with the Actions
 class applied will have all the methods available on that
 class applied to the widget as actions, using an overridable
 JSON dictionary with shortcuts and menu locations to synchronize
-these actions accross menus and shortcuts, which are applied
+these actions across menus and shortcuts, which are applied
 in the shortcuts, contextmenu and menubar modules.
 """
 from __future__ import print_function
@@ -12,22 +12,30 @@ import re
 import os
 import sys
 import uuid
+import time
 import json
 import inspect
 import __main__
 import subprocess
+from functools import wraps
+from datetime import datetime
+from shutil import copyfile
+from pprint import pprint
 
 from PythonEditor.ui.Qt import QtWidgets
 from PythonEditor.ui.Qt import QtGui
 from PythonEditor.ui.Qt import QtCore
 
 from PythonEditor.utils import save
+from PythonEditor.utils import constants
 from PythonEditor.core import execute
+from PythonEditor.ui.features import search
+from PythonEditor.ui.features import autocompletion
+from PythonEditor.utils.constants import NUKE_DIR
 
 
 def load_actions_from_json():
-    """
-    Return a dictionary from reading the
+    """ Return a dictionary from reading the
     JSON file that stores action names and
     their attributes.
     """
@@ -51,11 +59,14 @@ def load_actions_from_json():
 
 
 def class_actions(cls):
-    """
-    Convenience function to return all the
-    actions relevant to a class, such as the
-    Actions, ContextMenu, and MenuBar classes,
-    based on which widgets the actions refer to.
+    """ Parse the action_register.json file and
+    yield the widget name, action_name and
+    attributes of each action if the widget
+    is an attribute on the class.
+
+    :param cls: A class with widgets that are
+    listed in action_register.json. e.g.
+    Actions, ContextMenu, and MenuBar classes.
     """
     action_dict = load_actions_from_json()
     for widget_name, widget_actions in action_dict.items():
@@ -68,15 +79,18 @@ def class_actions(cls):
             yield widget, action_name, attributes
 
 
-
 class Actions(QtCore.QObject):
-    """
-    Collection of QActions that are
-    accessible for menu and shortcut registry.
-    """
-    # clear_output_signal = QtCore.Signal()
-    exec_text_signal = QtCore.Signal()
+    """ Collection of QActions that are
+    accessible for menu and shortcut
+    registry. The widgets provided as
+    parameters have their appropriate
+    actions loaded and applied.
 
+    :param pythoneditor: optional `QWidget` or `PythonEditor`
+    :param editor: required `QPlainTextEdit` or `Editor` class.
+    :param tabeditor: optional `QWidget` or `TabEditor`
+    :param terminal: optional `QPlainTextEdit` or `Terminal` class.
+    """
     actions = {}
     def __init__(
             self,
@@ -85,18 +99,13 @@ class Actions(QtCore.QObject):
             tabeditor=None,
             terminal=None,
         ):
-        """
-        :param pythoneditor:
-        :param editor:
-        :param tabeditor:
-        :param terminal:
-        """
         super(Actions, self).__init__()
         self.setObjectName('Actions')
 
         if editor is None:
             raise Exception(
-            'A text editor is necessary for this class.'
+            'A text editor is a minimum '
+            'requirement for this class.'
             )
         self.editor = editor
 
@@ -117,8 +126,7 @@ class Actions(QtCore.QObject):
         self.create_actions()
 
     def create_actions(self):
-        """
-        Find methods on this class that have the
+        """ Find methods on this class that have the
         same names as those registered in the
         json file(s) where actions are stored.
         """
@@ -152,28 +160,29 @@ class Actions(QtCore.QObject):
     # ---------------         -------------- #
     # -------------------------------------- #
     def offset_for_traceback(self, text=None):
+        """ Return text with prepended newlines
+        to get proper line ref in tracebacks.
         """
-        Offset text using newlines to get proper line ref in tracebacks.
-        """
-        textCursor = self.editor.textCursor()
+        cursor = self.editor.textCursor()
 
         if text is None:
-            text = textCursor.selection().toPlainText()
+            text = cursor.selection().toPlainText()
 
-        selection_offset = textCursor.selectionStart()
+        selection_offset = cursor.selectionStart()
         doc = self.editor.document()
-        block_num = doc.findBlock(selection_offset).blockNumber()
-        text = '\n' * block_num + text
+        block = doc.findBlock(selection_offset)
+        block_num = block.blockNumber()
+        text = str('\n' * block_num) + text
         return text
 
     def exec_text(self, text, whole_text):
-        """
-        Execute whatever text is passed into this function.
+        """ Execute `text` as code. Highlight
+        any lines on which errors were detected.
 
         :text: the actual text to be executed
-        :whole_text: the whole text for context and full traceback
+        :whole_text: the whole text for context
+        and full traceback
         """
-        self.exec_text_signal.emit()
         error_line_numbers = execute.mainexec(text, whole_text)
         if error_line_numbers is None:
             return
@@ -181,12 +190,14 @@ class Actions(QtCore.QObject):
             self.highlight_errored_lines(error_line_numbers)
 
     def exec_handler(self):
-        """
+        """ Handles trigger for execution of code
+        (typically Ctrl+Enter).
         If text is selected, call exec on that text.
         If no text is selected, look for cells bordered
-        by the symbols #&& and execute text between those borders.
+        by the symbols #&& and execute text between those
+        borders.
         """
-        textCursor = self.editor.textCursor()
+        cursor = self.editor.textCursor()
         whole_text = self.editor.toPlainText()
         if not whole_text.strip():
             return
@@ -196,8 +207,8 @@ class Actions(QtCore.QObject):
             return
 
         # execute only selection
-        if textCursor.hasSelection():
-            text = textCursor.selection().toPlainText()
+        if cursor.hasSelection():
+            text = cursor.selection().toPlainText()
             if not text.strip():
                 return
             # check that the selected text doesn't just have comments.
@@ -256,19 +267,28 @@ class Actions(QtCore.QObject):
         Calls exec() with the text of the line the cursor is on.
         Calls lstrip on current line text to allow exec of indented text.
         """
-        textCursor = self.editor.textCursor()
+        cursor = self.editor.textCursor()
         whole_text = self.editor.toPlainText()
 
-        if textCursor.hasSelection():
+        if cursor.hasSelection():
             return self.exec_handler()
 
-        textCursor.select(QtGui.QTextCursor.BlockUnderCursor)
-        text = textCursor.selection().toPlainText().lstrip()
+        cursor.select(QtGui.QTextCursor.BlockUnderCursor)
+        text = cursor.selection().toPlainText().lstrip()
         if not text:
             return
         # check that the current line doesn't just have comments.
         if self.just_comments(text):
             return
+
+        # allow execution of function names so
+        # they don't have to be rewritten to test
+        if text.startswith('def '):
+            text = text.replace('def ', '')
+            while text.endswith(':'):
+                text = text[:-1]
+            text = text.strip()
+
         text = self.offset_for_traceback(text=text)
 
         whole_text = '\n'+whole_text
@@ -283,9 +303,8 @@ class Actions(QtCore.QObject):
         self.highlight_errored_lines(error_line_numbers)
 
     def just_comments(self, text):
-        """
-        Check that the given text doesn't
-        just contain comments.
+        """ Check that the given text
+        doesn't just contain comments.
         """
         lines = text.strip().splitlines()
         for line in lines:
@@ -297,8 +316,8 @@ class Actions(QtCore.QObject):
         return True
 
     def highlight_errored_lines(self, error_line_numbers):
-        """
-        Draw a red background on any lines that caused an error.
+        """ Draw a red background on
+        any lines that caused an error.
         """
         extraSelections = self.editor.extraSelections()
 
@@ -332,39 +351,36 @@ class Actions(QtCore.QObject):
     # ---------------         -------------- #
     # -------------------------------------- #
     def return_handler(self):
-        """
-        New line with auto-indentation.
+        """ New line with auto-indentation.
         """
         return self.indent_next_line()
 
     def indent_next_line(self):
-        """
-        Match next line indentation to current line
+        """ Match next line indentation to current line
         If ':' is character in cursor position and
         current line contains non-whitespace
         characters, add an extra four spaces.
         """
-        textCursor = self.editor.textCursor()
-        text = textCursor.block().text()
-        indentCount = len(text) - len(text.lstrip(' '))
+        cursor = self.editor.textCursor()
+        block = cursor.block()
+        text = block.text()
+        pos = cursor.position()-block.position()
+        text = text[:pos]
+        indentCount = len(text)-len(text.lstrip(' '))
 
         doc = self.editor.document()
-        if doc.characterAt(textCursor.position()-1) == ':':
+        if doc.characterAt(cursor.position()-1) == ':':
             indentCount = indentCount + 4
-
         insertion = '\n'+' '*indentCount
-        if len(text.strip()) == 0:
-            insertion = '\n'
 
-        textCursor.insertText(insertion)
-        self.editor.setTextCursor(textCursor)
+        cursor.insertText(insertion)
+        self.editor.setTextCursor(cursor)
 
         return True
 
     @QtCore.Slot()
     def cut_line(self):
-        """
-        If no text selected, cut whole
+        """ If no text selected, cut whole
         current line to clipboard.
         """
         textCursor = self.editor.textCursor()
@@ -405,6 +421,7 @@ class Actions(QtCore.QObject):
         selected text downwards.
         """
         cursor = self.editor.textCursor()
+        cursor.beginEditBlock()
         if cursor.hasSelection():
             selected_text = cursor.selectedText()
             start = cursor.selectionStart()
@@ -445,6 +462,7 @@ class Actions(QtCore.QObject):
             cursor.insertText(
                 selected_text+'\n'+selected_text
             )
+        cursor.endEditBlock()
 
     def new_line_above(self):
         """
@@ -489,7 +507,7 @@ class Actions(QtCore.QObject):
             pos,
             QtGui.QTextCursor.KeepAnchor
         )
-        textCursor.insertText('')
+        textCursor.removeSelectedText()
 
     def delete_to_start_of_line(self):
         """
@@ -500,7 +518,7 @@ class Actions(QtCore.QObject):
         pos = textCursor.position()
         textCursor.movePosition(QtGui.QTextCursor.StartOfLine)
         textCursor.setPosition(pos, QtGui.QTextCursor.KeepAnchor)
-        textCursor.insertText('')
+        textCursor.removeSelectedText()
 
     def join_lines(self):
         """
@@ -508,12 +526,14 @@ class Actions(QtCore.QObject):
         newline at the end of the current line(s).
         """
         textCursor = self.editor.textCursor()
+        textCursor.beginEditBlock()
 
         blocks = self.get_selected_blocks(ignoreEmpty=False)
         if len(blocks) > 1:
             text = textCursor.selectedText()
             text = ' '.join(ln.strip() for ln in text.splitlines())
             textCursor.insertText(text)
+            textCursor.endEditBlock()
             return
 
         block = textCursor.block()
@@ -529,14 +549,17 @@ class Actions(QtCore.QObject):
             QtGui.QTextCursor.EndOfLine
         )
         new_pos = textCursor.position()+1
-        if new_pos >= self.editor.document().characterCount():
+        doc = self.editor.document()
+        doc_length = doc.characterCount()
+        if new_pos >= doc_length:
+            textCursor.endEditBlock()
             return
         textCursor.setPosition(
             new_pos,
             QtGui.QTextCursor.KeepAnchor
         )
 
-        textCursor.insertText('')
+        textCursor.removeSelectedText()
         textCursor.select(
             QtGui.QTextCursor.LineUnderCursor
         )
@@ -545,6 +568,7 @@ class Actions(QtCore.QObject):
             pos,
             QtGui.QTextCursor.MoveAnchor
         )
+        textCursor.endEditBlock()
 
         self.editor.setTextCursor(textCursor)
 
@@ -604,6 +628,8 @@ class Actions(QtCore.QObject):
         Toggles commenting out selected lines,
         or lines with cursor.
         """
+        textCursor = self.editor.textCursor()
+        textCursor.beginEditBlock()
         blocks = self.get_selected_blocks()
 
         # iterate through lines in doc commenting or uncommenting
@@ -623,7 +649,10 @@ class Actions(QtCore.QObject):
                 count = len(selectedText)
                 split_index = count-right_split
                 split_text = selectedText[split_index:]
-                newText = ' '*split_index + '#' + split_text
+                hash_symbol = '#'
+                if not split_text.strip().startswith('#'):
+                    hash_symbol = '# '
+                newText = ' '*split_index + hash_symbol + split_text
                 cursor.insertText(newText)
         else:
             for block in blocks:
@@ -632,8 +661,12 @@ class Actions(QtCore.QObject):
                     QtGui.QTextCursor.LineUnderCursor
                 )
                 selectedText = cursor.selectedText()
-                newText = str(selectedText).replace('#', '', 1)
+                if selectedText.strip().startswith('# '):
+                    newText = str(selectedText).replace('# ', '', 1)
+                elif selectedText.strip().startswith('#'):
+                    newText = str(selectedText).replace('#', '', 1)
                 cursor.insertText(newText)
+        textCursor.endEditBlock()
 
     def move_blocks_up(self):
         """
@@ -664,6 +697,7 @@ class Actions(QtCore.QObject):
 
         if new_start == 0:
             return
+        textCursor.beginEditBlock()
 
         textCursor.setPosition(
             new_start,
@@ -693,6 +727,7 @@ class Actions(QtCore.QObject):
             new_pos = pos+start_offset
             textCursor.setPosition(new_pos, QtGui.QTextCursor.MoveAnchor)
 
+        textCursor.endEditBlock()
         self.editor.setTextCursor(textCursor)
 
     def move_blocks_down(self):
@@ -702,6 +737,7 @@ class Actions(QtCore.QObject):
         restoreSelection = False
 
         textCursor = self.editor.textCursor()
+
         if textCursor.hasSelection():
             restoreSelection = True
 
@@ -721,6 +757,7 @@ class Actions(QtCore.QObject):
             return
 
         end_offset = new_end-end
+        textCursor.beginEditBlock()
 
         textCursor.setPosition(new_start, QtGui.QTextCursor.KeepAnchor)
         selectedText = textCursor.selectedText()
@@ -739,24 +776,33 @@ class Actions(QtCore.QObject):
             new_pos = pos-end_offset
             textCursor.setPosition(new_pos, QtGui.QTextCursor.MoveAnchor)
 
+        textCursor.endEditBlock()
         self.editor.setTextCursor(textCursor)
 
     def indent(self):
         """
         Indent Selected Text
         """
+        text_cursor = self.editor.textCursor()
+        text_cursor.beginEditBlock()
         blocks = self.get_selected_blocks()
         for block in blocks:
             cursor = QtGui.QTextCursor(block)
             cursor.movePosition(QtGui.QTextCursor.StartOfLine)
             cursor.insertText('    ')
+        text_cursor.endEditBlock()
 
     def unindent(self):
         """
         Unindent Selected Text
         TODO: Maintain original selection
-        and cursor position.
+        and cursor position. The selection
+        issue pretty much applies to all
+        these actions.
         """
+        text_cursor = self.editor.textCursor()
+        text_cursor.beginEditBlock()
+
         blocks = self.get_selected_blocks(ignoreEmpty=False)
         for block in blocks:
             cursor = QtGui.QTextCursor(block)
@@ -765,6 +811,8 @@ class Actions(QtCore.QObject):
             if lineText.startswith(' '):
                 newText = str(lineText[:4]).replace(' ', '') + lineText[4:]
                 cursor.insertText(newText)
+
+        text_cursor.endEditBlock()
 
     def wrap_text(self):
         """
@@ -803,12 +851,27 @@ class Actions(QtCore.QObject):
         selection to top of document.
         """
         textCursor = self.editor.textCursor()
+        textCursor.beginEditBlock()
         if not textCursor.hasSelection():
-            textCursor.select(QtGui.QTextCursor.LineUnderCursor)
-        text = textCursor.selectedText()
-        textCursor.insertText('')
+            textCursor.select(QtGui.QTextCursor.BlockUnderCursor)
+        text = textCursor.selectedText().strip()
+        textCursor.removeSelectedText()
+        textCursor.setPosition(0, QtGui.QTextCursor.MoveAnchor)
+        # if the start of the document isn't
+        # an empty line, insert a new line
+        textCursor.select(QtGui.QTextCursor.BlockUnderCursor)
+        first_line_not_empty = textCursor.selectedText().strip()
+        if first_line_not_empty:
+            text = text+'\n'
+        textCursor.clearSelection()
         textCursor.setPosition(0, QtGui.QTextCursor.MoveAnchor)
         textCursor.insertText(text)
+        if first_line_not_empty:
+            textCursor.setPosition(
+                textCursor.position()-1,
+                QtGui.QTextCursor.MoveAnchor
+            )
+        textCursor.endEditBlock()
         self.editor.setTextCursor(textCursor)
 
     def move_to_bottom(self):
@@ -817,13 +880,22 @@ class Actions(QtCore.QObject):
         selection to bottom of document.
         """
         textCursor = self.editor.textCursor()
+        textCursor.beginEditBlock()
         if not textCursor.hasSelection():
-            textCursor.select(QtGui.QTextCursor.LineUnderCursor)
+            textCursor.select(QtGui.QTextCursor.BlockUnderCursor)
         text = textCursor.selectedText()
         textCursor.insertText('')
-        end = len(self.editor.toPlainText())
+        whole_text = self.editor.toPlainText()
+        end = len(whole_text)
         textCursor.setPosition(end, QtGui.QTextCursor.MoveAnchor)
+        # if the end of the document isn't
+        # an empty line, insert a new line
+        textCursor.select(QtGui.QTextCursor.BlockUnderCursor)
+        if textCursor.selectedText().strip():
+            text = '\n'+text
+        textCursor.clearSelection()
         textCursor.insertText(text)
+        textCursor.endEditBlock()
         self.editor.setTextCursor(textCursor)
 
     # -------------------------------------- #
@@ -885,13 +957,14 @@ class Actions(QtCore.QObject):
         """
         Selects the word under cursor if no selection.
         If selection, selects next occurence of the same word.
-        TODO: 1) could optionally highlight all occurences of the word
-        and iterate to the next selection. 2) Would be nice if extra
+        TODO: Would be nice if extra
         selections could be made editable.
         """
         textCursor = self.editor.textCursor()
         if not textCursor.hasSelection():
-            textCursor.select(QtGui.QTextCursor.WordUnderCursor)
+            textCursor.select(
+                QtGui.QTextCursor.WordUnderCursor
+            )
             return self.editor.setTextCursor(textCursor)
 
         text = textCursor.selection().toPlainText()
@@ -912,21 +985,41 @@ class Actions(QtCore.QObject):
                 return
         next_end = next_start + word_len
 
-        textCursor.setPosition(next_start, QtGui.QTextCursor.MoveAnchor)
-        textCursor.setPosition(next_end, QtGui.QTextCursor.KeepAnchor)
+        textCursor.setPosition(
+            next_start,
+            QtGui.QTextCursor.MoveAnchor
+        )
+        textCursor.setPosition(
+            next_end,
+            QtGui.QTextCursor.KeepAnchor
+        )
         self.editor.setTextCursor(textCursor)
 
-        extraSelections = []
+        # set var on first call
+        last_call_time = getattr(
+            self,
+            '_last_call_time',
+            None
+        )
+        if last_call_time is None:
+            self._last_call_time = time.time()
 
-        selection = QtWidgets.QTextEdit.ExtraSelection()
+        since = time.time()-self._last_call_time
+        if since < 0.05:
+            # this will trigger a delay timer on the
+            # syntaxhighlighter to rehighlight later
+            self.editor.selectionChanged.emit()
+        else:
+            # now that the selection has changed,
+            # re-highlight the document
+            document = self.editor.document()
+            highlighter = document.findChild(
+                QtGui.QSyntaxHighlighter,
+                'Highlight'
+            )
+            highlighter.highlight_same_words()
 
-        lineColor = QtGui.QColor.fromRgbF(1, 1, 1, 0.3)
-        selection.format.setBackground(lineColor)
-        selection.cursor = self.editor.textCursor()
-        selection.cursor.setPosition(start_pos, QtGui.QTextCursor.MoveAnchor)
-        selection.cursor.setPosition(end_pos, QtGui.QTextCursor.KeepAnchor)
-        extraSelections.append(selection)
-        self.editor.setExtraSelections(extraSelections)
+        self._last_call_time = time.time()
 
     def hop_between_brackets(self):
         """
@@ -951,7 +1044,7 @@ class Actions(QtCore.QObject):
 
     def select_between_brackets(self):
         """
-        Selects text between [] {} ()
+        Selects text between brackets ()
         TODO: implement [] and {}
         """
         textCursor = self.editor.textCursor()
@@ -1077,36 +1170,177 @@ class Actions(QtCore.QObject):
             msg
         )
 
-    def open_module_file(self):
-        textCursor = self.editor.textCursor()
-        text = textCursor.selection().toPlainText()
-        if not text.strip():
-            return
-
-        obj = get_subobject(text)
-        open_module_file(obj)
-
-    def open_module_directory(self):
-        textCursor = self.editor.textCursor()
-        text = textCursor.selection().toPlainText()
-        if not text.strip():
-            return
-
-        obj = get_subobject(text)
-        open_module_directory(obj)
-
-    def search(self):
-        """
-        Search the current document.
-        """
-        self.find_palette = FindPalette(self.editor)
-        self.find_palette.show()
-
-    def find_and_replace(self):
+    def goto_last_position(self):
         """
         Placeholder.
         """
         pass
+        # tabs = self.tabs
+
+        # previous_positions = tabs.cursor_previous
+        # if not previous_positions:
+        #     return
+        # uid, pos = previous_positions.pop()
+        # # check current tab uid
+        # # if different, and other tab available, change tab
+        # # while other tab not available, recurse goto_last_position
+        # editor = self.editor
+        # cursor = editor.textCursor()
+        # editor.cursor_next.append(
+        #     cursor.position()
+        # )
+        # cursor.setPosition(pos)
+        # editor.setTextCursor(cursor)
+
+    def goto_definition(self):
+        """
+        Open the file at the line where
+        the object under the cursor
+        is defined.
+        """
+        cursor = self.editor.textCursor()
+        doc = self.editor.document()
+        pos = cursor.position()
+        block = doc.findBlock(pos)
+        text = block.text()
+        pos = pos-block.position()
+        for match in re.finditer(r'[\w+\.]+', text):
+           if match.start() <= pos <= match.end():
+               word = match.group(0)
+               break
+        else:
+            # no word found for cursor position
+            return
+
+        obj = get_subobject(word)
+        path = get_obj_goto_path(
+            obj,
+            get_lineno=True
+        )
+        if path is None:
+            # is the word defined in
+            # the current document?
+            last = word.split('.')[-1]
+            pattern = r'(?:(def|class)\s+)({0})'.format(last)
+            whole_text = self.editor.toPlainText()
+            match = re.search(pattern, whole_text)
+            if match:
+                start = match.start(2)
+                goto_position(self.editor, start)
+                return
+            msg = 'Could not find definition for "{0}"'.format(word)
+            print(msg)
+            return
+
+        lineno = None
+        name = os.path.basename(path)
+        if ':' in name:
+            parts = name.split(':')
+            if len(parts) != 2:
+                return
+            name = parts[0]
+            path = os.path.join(
+                os.path.dirname(path),
+                name
+            )
+            lineno = parts[1]
+            try:
+                lineno = int(lineno)
+            except Exception:
+                return
+        open_action(
+            self.tabs,
+            self.editor,
+            path=path
+        )
+        goto_line(self.editor, lineno)
+        self.editor.focus_in_signal.emit()
+
+    def open_module_file(self):
+        """Goto definition in external editor."""
+        path = get_selection_goto_path(
+            self.editor,
+            get_lineno=True
+        )
+        if path is None:
+            return
+
+        eepath = get_external_editor_path()
+        if eepath is not None:
+            # this assumes the external
+            # editor can handle paths
+            # with path:lineno
+            open_in_external_editor(path)
+
+    def open_module_directory(self):
+        path = get_selection_goto_path(
+            self.editor,
+            get_lineno=False
+        )
+        if path is None:
+            return
+        folder = os.path.dirname(path)
+        eepath = get_external_editor_path()
+        if eepath is not None:
+            open_in_external_editor(folder)
+        else:
+            open_action(
+                self.tabs,
+                self.editor,
+                path=folder
+            )
+
+    def find(self):
+        """
+        Search the current document.
+        """
+        self.search_panel = search.SearchPanel(
+            self.editor,
+            tabs=getattr(self, 'tabs', None),
+            replace=False
+        )
+        self.search_panel.show()
+
+    def find_and_replace(self):
+        """
+        Show a find and replace dialog.
+        """
+        self.search_panel = search.SearchPanel(
+            self.editor,
+            tabs=getattr(self, 'tabs', None),
+            replace=True
+        )
+        self.search_panel.show()
+
+    def escape_handler(self):
+        """
+        Override normal escape behaviour to
+        close dialogs and popups.
+        """
+        # hide find dialog is open
+        search_panel = getattr(
+            self,
+            'search_panel',
+            False
+        )
+        if search_panel:
+            parent = self.editor.parent()
+            if parent:
+                layout = parent.layout()
+                if layout:
+                    search.remove_from_layout(
+                        layout,
+                        objectName='SearchPanel',
+                    )
+
+        # hide autocompletion popup
+        completer = self.editor.findChild(
+            QtWidgets.QCompleter
+        )
+        popup = completer.popup()
+        if popup and popup.isVisible():
+            popup.hide()
+            return
 
     def reload_package(self):
         widget = self.tabeditor
@@ -1118,9 +1352,8 @@ class Actions(QtCore.QObject):
         widget.reload_package()
 
     def print_help(self):
-        """
-        Prints documentation for selected text if
-        it currently represents a python object.
+        """ Prints documentation for selected text 
+        if it currently represents a python object.
         """
         cursor = self.editor.textCursor()
         selection = cursor.selection()
@@ -1132,6 +1365,61 @@ class Actions(QtCore.QObject):
             print(obj.__doc__)
         elif text:
             exec('help('+text+')', __main__.__dict__)
+
+    def pretty_print(self):
+        """ Pretty print selected text if it
+        represents a python object.
+        """
+        cursor = self.editor.textCursor()
+        selection = cursor.selection()
+        text = selection.toPlainText().strip()
+        if not text:
+            return
+        try:
+            cmd = 'print( __import__("json").dumps({}, indent=2) )'
+            exec(cmd.format(text), __main__.__dict__)
+        except Exception as error:
+            print(error)
+
+    def prepend_import_statement(self):
+        """
+        Format the currently selected text
+        by prepending an import statement.
+        """
+        cursor = self.editor.textCursor()
+        selection = cursor.selection()
+        text = selection.toPlainText().strip()
+        if not text:
+            text = ''
+        text = 'import {0}'.format(text)
+        cursor.insertText(text)
+
+    def loop_format(self):
+        """
+        Format the currently selected text
+        into a for loop.
+        """
+        cursor = self.editor.textCursor()
+        selection = cursor.selection()
+        text = selection.toPlainText().strip()
+        if not text:
+            return
+        item = text[:-1]
+        text = 'for {0} in {1}:\n    {0}'.format(item, text)
+        cursor.insertText(text)
+
+    def add_reload_module_command(self):
+        """
+        Format the currently selected text
+        with a reload() command.
+        """
+        cursor = self.editor.textCursor()
+        selection = cursor.selection()
+        text = selection.toPlainText().strip()
+        if not text:
+            return
+        text = 'reload({0})'.format(text)
+        cursor.insertText(text)
 
     def print_type(self):
         """
@@ -1201,7 +1489,12 @@ class Actions(QtCore.QObject):
             )
 
     def save(self):
-        save_action(self.tabs, self.editor)
+        if hasattr(self, 'tabs'):
+            # update the tabs status
+            save_action(self.tabs, self.editor)
+        else:
+            text = self.editor.toPlainText()
+            save.save_as(text)
 
     def save_as(self):
         save_as_action(self.tabs, self.editor)
@@ -1209,34 +1502,40 @@ class Actions(QtCore.QObject):
     def open(self):
         open_action(self.tabs, self.editor)
 
+    def save_snippet(self):
+        save_snippet(self.editor)
+
     def clear_output(self):
         if hasattr(self, 'terminal'):
             self.terminal.clear()
 
     def jump_to_start(self):
-        """
-        Jump to first character in line.
-        If at first character, jump to
+        """ Jump to first non-whitespace character
+        in line. If at first character, jump to
         start of line.
         """
-        textCursor = self.editor.textCursor()
-        init_pos = textCursor.position()
-        textCursor.select(
+        cursor = self.editor.textCursor()
+        init_pos = cursor.position()
+        cursor.select(
             QtGui.QTextCursor.LineUnderCursor
         )
-        text = textCursor.selection().toPlainText()
-        textCursor.movePosition(
+        text = cursor.selection().toPlainText()
+        cursor.movePosition(
             QtGui.QTextCursor.StartOfLine
         )
-        pos = textCursor.position()
-        offset = len(text)-len(text.lstrip())
-        new_pos = pos+offset
+        pos = cursor.position()
+        if len(text.strip()):
+            offset = len(text)-len(text.lstrip())
+            new_pos = pos+offset
+        else:
+            block = cursor.block()
+            new_pos = block.position()
         if new_pos != init_pos:
-            textCursor.setPosition(
+            cursor.setPosition(
                 new_pos,
                 QtGui.QTextCursor.MoveAnchor
             )
-        self.editor.setTextCursor(textCursor)
+        self.editor.setTextCursor(cursor)
 
     def wheel_zoom(self, event):
         """
@@ -1271,6 +1570,12 @@ class Actions(QtCore.QObject):
     def export_all_tabs_to_external_editor(self):
         save.export_all_tabs_to_external_editor(self.tabs)
 
+    def backup_pythoneditor_history(self):
+        """
+        Create a backup of the PythonEditorHistory file.
+        """
+        backup_pythoneditor_history()
+
     def show_shortcuts(self):
         """
         Generates a popup dialog listing available shortcuts.
@@ -1279,6 +1584,7 @@ class Actions(QtCore.QObject):
 
     def show_preferences(self):
         """
+        Placeholder.
         Generates a popup dialog listing available preferences.
         """
         self.pythoneditor.preferenceseditor.show()
@@ -1389,99 +1695,99 @@ class CommandPalette(QtWidgets.QLineEdit):
             self.hide()
         return False
 
+# ------------ Previous popup window, probably more useful for Find Definitions (Ctrl+R)
+# class FindPalette(CommandPalette):
+#     def __init__(self, editor):
+#         super(FindPalette, self).__init__(editor)
+#         words = list(set(re.findall(r'\w+', editor.toPlainText())))
+#         completer = QtWidgets.QCompleter(words)
+#         completer.highlighted.connect(self.find)
+#         self.setCompleter(completer)
 
-class FindPalette(CommandPalette):
-    def __init__(self, editor):
-        super(FindPalette, self).__init__(editor)
-        words = list(set(re.findall(r'\w+', editor.toPlainText())))
-        completer = QtWidgets.QCompleter(words)
-        completer.highlighted.connect(self.find)
-        self.setCompleter(completer)
+#         textCursor = editor.textCursor()
+#         if textCursor.hasSelection():
+#             text = textCursor.selectedText()
+#             self.setText(text)
 
-        textCursor = editor.textCursor()
-        if textCursor.hasSelection():
-            text = textCursor.selectedText()
-            self.setText(text)
+#     def keyPressEvent(self, event):
+#         enter_keys = [
+#             QtCore.Qt.Key.Key_Return,
+#             QtCore.Qt.Key.Key_Enter
+#         ]
+#         if event.key() not in enter_keys:
+#             super(
+#                 FindPalette, self
+#             ).keyPressEvent(event)
+#         elif event.modifiers() == QtCore.Qt.ControlModifier:
+#             self.hide()
+#             return
+#         elif self.completer().popup().isVisible():
+#             event.ignore()
+#             return
 
-    def keyPressEvent(self, event):
-        enter_keys = [
-            QtCore.Qt.Key.Key_Return,
-            QtCore.Qt.Key.Key_Enter
-        ]
-        if event.key() not in enter_keys:
-            super(
-                FindPalette, self
-            ).keyPressEvent(event)
-        elif event.modifiers() == QtCore.Qt.ControlModifier:
-            self.hide()
-            return
-        elif self.completer().popup().isVisible():
-            event.ignore()
-            return
+#         esc = QtCore.Qt.Key.Key_Escape
+#         if event.key() == esc:
+#             self.hide()
+#             return
 
-        esc = QtCore.Qt.Key.Key_Escape
-        if event.key() == esc:
-            self.hide()
-            return
+#         if event.key() in [
+#             QtCore.Qt.Key.Key_Shift,
+#             QtCore.Qt.Key.Key_Alt,
+#             QtCore.Qt.Key.Key_Control,
+#             QtCore.Qt.Key.Key_Meta,
+#             ]:
+#             return
 
-        if event.key() in [
-            QtCore.Qt.Key.Key_Shift,
-            QtCore.Qt.Key.Key_Alt,
-            QtCore.Qt.Key.Key_Control,
-            QtCore.Qt.Key.Key_Meta,
-            ]:
-            return
+#         text = self.text()
+#         editor = self.parent()
+#         cursor = editor.textCursor()
+#         pos = cursor.position()
+#         self.find(text)
 
-        text = self.text()
-        editor = self.parent()
-        cursor = editor.textCursor()
-        pos = cursor.position()
-        self.find(text)
+#     def lookup(self, text, text_cursor):
+#         """
+#         Reusable search.
+#         """
+#         document = self.parent().document()
 
-    def lookup(self, text, text_cursor):
-        """
-        Reusable search.
-        """
-        document = self.parent().document()
+#         # avoid jumps by placing cursor at:
+#         start_pos = text_cursor.StartOfWord
 
-        # avoid jumps by placing cursor at:
-        start_pos = text_cursor.StartOfWord
+#         if (text_cursor.hasSelection()
+#             and text_cursor.selection(
+#             ).toPlainText() == text):
 
-        if (text_cursor.hasSelection()
-            and text_cursor.selection(
-            ).toPlainText() == text):
+#             # move on if word already matched
+#             start_pos = text_cursor.EndOfWord
 
-            # move on if word already matched
-            start_pos = text_cursor.EndOfWord
+#         text_cursor.movePosition(start_pos)
+#         cursor = document.find(
+#             text,
+#             text_cursor,
+#             document.FindCaseSensitively
+#         )
+#         pos = cursor.position()
+#         if pos != -1:
+#             self.parent().setTextCursor(cursor)
+#             return True
 
-        text_cursor.movePosition(start_pos)
-        cursor = document.find(
-            text,
-            text_cursor,
-            document.FindCaseSensitively
-        )
-        pos = cursor.position()
-        if pos != -1:
-            self.parent().setTextCursor(cursor)
-            return True
+#     def find(self, text):
+#         """
+#         Select text in the parent editor.
+#         """
+#         text_cursor = self.parent().textCursor()
 
-    def find(self, text):
-        """
-        Select text in the parent editor.
-        """
-        text_cursor = self.parent().textCursor()
+#         # start the search from the current position
+#         if self.lookup(text, text_cursor):
+#             return
 
-        # start the search from the current position
-        if self.lookup(text, text_cursor):
-            return
-
-        # search from the beginning of the document
-        text_cursor = self.parent().textCursor()
-        text_cursor.setPosition(
-            0,
-            QtGui.QTextCursor.MoveAnchor
-        )
-        self.lookup(text, text_cursor)
+#         # search from the beginning of the document
+#         text_cursor = self.parent().textCursor()
+#         text_cursor.setPosition(
+#             0,
+#             QtGui.QTextCursor.MoveAnchor
+#         )
+#         self.lookup(text, text_cursor)
 
 
 class GotoPalette(CommandPalette):
@@ -1495,7 +1801,10 @@ class GotoPalette(CommandPalette):
     def keyPressEvent(self, event):
         esc = QtCore.Qt.Key.Key_Escape
         if event.key() == esc:
-            self.goto_line(self.current_line)
+            goto_line(
+                self.editor,
+                self.current_line
+            )
             self.hide()
 
         if event.text().isalpha():
@@ -1508,25 +1817,36 @@ class GotoPalette(CommandPalette):
             lineno = int(self.text())
         except ValueError:
             return
-        self.goto_line(lineno)
+        goto_line(
+            self.editor,
+            lineno
+        )
 
-    def goto_line(self, lineno):
-        """
-        Sets the text cursor of the
-        editor to the given lineno.
-        """
-        editor = self.editor
-        count = editor.blockCount()
-        if lineno > count:
-            lineno = count
-        lineno = lineno-1
-        pos = editor.document(
-            ).findBlockByNumber(
-            lineno).position()
+def goto_position(editor, pos):
+    """
+    Goto position in document.
+    """
+    cursor = editor.textCursor()
+    editor.moveCursor(cursor.End)
+    cursor.setPosition(pos)
+    editor.setTextCursor(cursor)
 
-        cursor = editor.textCursor()
-        cursor.setPosition(pos)
-        editor.setTextCursor(cursor)
+
+def goto_line(editor, lineno):
+    """
+    Sets the text cursor to the
+    end of the document, then to
+    the given lineno.
+    """
+    count = editor.blockCount()
+    if lineno > count:
+        lineno = count
+    lineno = lineno-1
+    pos = editor.document(
+        ).findBlockByNumber(
+        lineno).position()
+
+    goto_position(editor, pos)
 
 
 def make_action(name, widget, func):
@@ -1576,6 +1896,7 @@ def toggle_backslashes(editor):
 
 def save_action(tabs, editor):
     """
+    Save editor to file and update tabs with path and saved status.
     """
     path = tabs.get('path')
     text = editor.toPlainText()
@@ -1609,7 +1930,8 @@ def save_as_action(tabs, editor):
 
 def open_action(tabs, editor, path=''):
     """
-    Simple open file.
+    Simple open file into new tab.
+    Show a dialog if path is not provided.
     :tabs: TabBar
     :editor: Editor
     :path: optional path to file.
@@ -1619,7 +1941,8 @@ def open_action(tabs, editor, path=''):
         path, _ = o(tabs, "Open File")
         if not path:
             return
-    elif not os.path.isfile(path):
+
+    if not os.path.isfile(path):
         return
 
     with open(path, 'rt') as f:
@@ -1651,6 +1974,7 @@ def open_action(tabs, editor, path=''):
         'path'  : path,
         'date'  : '', # need the file's date
         'saved' : True, # read-only
+        'original_text' : text,
     }
 
     tabs.new_tab(tab_name=tab_name, tab_data=data)
@@ -1661,10 +1985,28 @@ def open_action(tabs, editor, path=''):
     # into the autosave in case the file is moved.
     tabs.contents_saved_signal.emit(uid)
 
+
+def get_selection_goto_path(editor, get_lineno=False):
+    obj = get_obj_from_selection(editor)
+    if obj is None:
+        return
+    return get_obj_goto_path(obj, get_lineno=get_lineno)
+
+
+def get_obj_from_selection(editor):
+    textCursor = editor.textCursor()
+    text = textCursor.selection().toPlainText()
+    if not text.strip():
+        return
+    return get_subobject(text)
+
+
 def get_subobject(text):
     """
-    Walk down an object's hierarchy to retrieve
-    the object at the end of the chain.
+    Return a python object with variable
+    name :text: `str` from the __main__ namespace.
+    Walks down an object's dot hierarchy to retrieve
+    the object at the end of the dot-separated chain.
     """
     text = text.strip()
     if '.' not in text:
@@ -1676,80 +2018,140 @@ def get_subobject(text):
         return
 
     for name in text.split('.')[1:]:
+        name = name.replace('(', '').replace(')','')
         obj = getattr(obj, name)
         if obj is None:
             return
     return obj
 
 
-def open_module_file(obj):
+def get_obj_goto_path(obj, get_lineno=True):
+    """
+    Return a path to the definition of the
+    given python object. If the definition for
+    the object cannot be located, try the
+    definition for the object's __class__ attr.
+
+    :param get_lineno: `bool`
+    If get_lineno is True, return path
+    in the format "/path/file.py:lineno"
+    """
     if inspect.isbuiltin(obj):
-        print(
-            '{!r} is a built-in {!s}'.format(
+        msg = '{!r} is a built-in {!s}'.format(
             obj, type(obj)
             )
-        )
+        print(msg)
         return
     try:
-        file = inspect.getfile(obj)
+        path = inspect.getfile(obj)
     except TypeError as e:
         if hasattr(obj, '__class__'):
             obj = obj.__class__
-            file = inspect.getfile(obj)
         else:
             print(e)
             return
+        try:
+            path = inspect.getfile(obj)
+        except TypeError as e:
+            print(e)
+            return
 
-    if file.endswith('.pyc'):
-        file = file.replace('.pyc', '.py')
+    if path.endswith('.pyc'):
+        path = path.replace('.pyc', '.py')
+    elif path.endswith('.pyd'):
+        path = path.replace('.pyd', '.py')
 
-    try:
-        lines, lineno = inspect.getsourcelines(obj)
-        file = file+':'+str(lineno)
-    except AttributeError, IOError:
-        pass
-
-    print(file)
-
-    #TODO: this is a horrible hack to avoid circular imports
-    from PythonEditor.ui.features.autosavexml import get_external_editor_path
-
-    EXTERNAL_EDITOR_PATH = get_external_editor_path()
-    if (EXTERNAL_EDITOR_PATH
-            and os.path.isdir(os.path.dirname(EXTERNAL_EDITOR_PATH))):
-        subprocess.Popen([EXTERNAL_EDITOR_PATH, file])
-
-
-def open_module_directory(obj):
-    file = inspect.getfile(obj).replace('.pyc', '.py')
-    folder = os.path.dirname(file)
-    print(folder)
-
-    autosavexml = sys.modules.get(
-        '.'.join([
-        'PythonEditor',
-        'ui',
-        'features',
-        'autosavexml'
-        ])
-    )
-    if autosavexml is None:
+    if not os.path.exists(path):
         return
 
-    eepath = autosavexml.get_external_editor_path
+    if get_lineno:
+        try:
+            lines, lineno = inspect.getsourcelines(obj)
+            path = '{!s}:{!s}'.format(path, lineno)
+        except Exception:#AttributeError, IOError:
+            pass
+    return path
 
-    EXTERNAL_EDITOR_PATH = eepath()
-    if (
-        EXTERNAL_EDITOR_PATH
-        and os.path.isdir(
-                os.path.dirname(
-                    EXTERNAL_EDITOR_PATH
-                )
-            )
-        ):
-        subprocess.Popen(
-            [EXTERNAL_EDITOR_PATH, folder]
+
+def get_external_editor_path():
+    # safety check that the module is imported
+    p = 'PythonEditor.ui.features.autosavexml'
+    autosavexml = sys.modules.get(p)
+    if autosavexml is None:
+        return
+    return autosavexml.get_external_editor_path()
+
+
+def open_in_external_editor(*args, **kwargs):
+    """
+    Launch an external editor defined by an environment
+    variable and pass it the arguments as defined by
+    subprocess.Popen.
+    """
+    EXTERNAL_EDITOR_PATH = get_external_editor_path()
+
+    if not EXTERNAL_EDITOR_PATH:
+        return
+    dn = os.path.dirname(EXTERNAL_EDITOR_PATH)
+    if not os.path.isdir(dn):
+        return
+
+    subprocess.Popen(
+        [EXTERNAL_EDITOR_PATH]+list(args), **kwargs
+    )
+
+
+def backup_pythoneditor_history():
+    src = os.getenv('PYTHONEDITOR_AUTOSAVE_FILE')
+    path, ext = os.path.splitext(src)
+
+    now = datetime.now().strftime("%b-%d-%y-%H.%M.%S")
+    dst = path+'_'+now+ext
+
+    copyfile(src, dst)
+    print('Backup of Python Editor History created:')
+    print(dst)
+
+
+def get_snippet_name():
+    text, ok = QtWidgets.QInputDialog.getText(
+        QtWidgets.QWidget(),
+        'Snippet Name',
+        ('Name your snippet.\nNo spaces and it '
+        'must end in " [snippet]" (without quotes).'),
+        QtWidgets.QLineEdit.EchoMode.Normal,
+        ' [snippet]'
+    )
+    if not ok:
+        return
+    text = text.strip()
+    if not text.endswith(' [snippet]'):
+        raise Exception(
+        'Snippet name must end with " [snippet]" '
+        '(without quotes)'
         )
+    return (text)
+
+
+def save_snippet(editor):
+    snippet_path = os.path.join(
+        NUKE_DIR,
+        'PythonEditor_snippets.json'
+    )
+    if os.path.isfile(snippet_path):
+        with open(snippet_path, 'r') as fd:
+            data = json.load(fd)
+    else:
+        data = {}
+    name = get_snippet_name()
+    if not name:
+        return
+    textCursor = editor.textCursor()
+    text = textCursor.selection().toPlainText()
+    data[name] = text
+    with open(snippet_path, 'w') as fd:
+        fd.write(json.dumps(data, indent=2))
+    autocompletion.locate_snippet_file()
 
 
 def openDir(module):
@@ -1763,6 +2165,10 @@ def openDir(module):
 
 
 def find_menu_item(menu, item_name=''):
+    """
+    Search a menu's children for a menu
+    that has text or title given by item_name.
+    """
     for item in menu.children():
         if hasattr(item, 'text'):
             name = item.text()

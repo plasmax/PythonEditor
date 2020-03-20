@@ -3,7 +3,8 @@
         "New Tab": {
             "Shortcuts": [
                 "Ctrl+T",
-                "Ctrl+Shift+N"
+                "Ctrl+Shift+N",
+                "Ctrl+N"
             ],
             "Menu Location": "File",
             "Method": "new_tab"
@@ -149,6 +150,11 @@
             "Method": "save_as",
             "Menu Location": "File"
         },
+        "Save Snippet": {
+            "Shortcuts": [],
+            "Method": "save_snippet",
+            "Menu Location": "File"
+        },
         "Toggle Backslashes": {
             "Shortcuts": [
                 "Ctrl+\\"
@@ -185,12 +191,19 @@
             "Method": "zoom_in",
             "Menu Location": "View"
         },
-        "Search": {
+        "Find..": {
             "Shortcuts": [
                 "Ctrl+F"
             ],
-            "Method": "search",
-            "Menu Location": "Find"
+            "Method": "find",
+            "Menu Location": "Find/Find.."
+        },
+        "Find and Replace": {
+            "Shortcuts": [
+                "Ctrl+Shift+F"
+            ],
+            "Method": "find_and_replace",
+            "Menu Location": "Find/Find and Replace"
         },
         "Indent": {
             "Shortcuts": [
@@ -220,6 +233,13 @@
             "Method": "tab_handler",
             "Menu Location": "Edit/Text"
         },
+        "Escape Handler": {
+            "Shortcuts": [
+                "Escape"
+            ],
+            "Method": "escape_handler",
+            "Menu Location": "View"
+        },
         "Open Module Directory": {
             "Shortcuts": [],
             "Method": "open_module_directory",
@@ -238,6 +258,27 @@
             ],
             "Method": "move_blocks_up",
             "Menu Location": "Edit/Line"
+        },
+        "Reload Wrap": {
+            "Shortcuts": [
+                "Ctrl+R"
+            ],
+            "Method": "add_reload_module_command",
+            "Menu Location": "Edit/Text"
+        },
+        "Prepend Import": {
+            "Shortcuts": [
+                "Ctrl+I"
+            ],
+            "Method": "prepend_import_statement",
+            "Menu Location": "Edit/Text"
+        },
+        "Loop Format": {
+            "Shortcuts": [
+                "Ctrl+Shift+L"
+            ],
+            "Method": "loop_format",
+            "Menu Location": "Edit/Text"
         },
         "Clear Output": {
             "Shortcuts": [
@@ -284,11 +325,32 @@
             "Method": "goto_line",
             "Menu Location": "Tools"
         },
+        "Goto Definition": {
+            "Shortcuts": [
+                "F12"
+            ],
+            "Method": "goto_definition",
+            "Menu Location": "Tools"
+        },
+        "Goto Last Position": {
+            "Shortcuts": [
+                "Alt+-"
+            ],
+            "Method": "goto_last_position",
+            "Menu Location": "Tools"
+        },
         "Print Type": {
             "Shortcuts": [
                 "Ctrl+Shift+T"
             ],
             "Method": "print_type",
+            "Menu Location": "Tools/Object"
+        },
+        "Pretty Print": {
+            "Shortcuts": [
+                "Ctrl+P"
+            ],
+            "Method": "pretty_print",
             "Menu Location": "Tools/Object"
         },
         "Command Palette": {
@@ -362,8 +424,6 @@
             "Method": "delete_to_end_of_line",
             "Menu Location": "Edit/Text"
         },
-
-
         "Save Selected Text": {
             "Shortcuts": [],
             "Method": "save_selected_text",
@@ -384,6 +444,11 @@
             "Method": "export_all_tabs_to_external_editor",
             "Menu Location": "File/Export"
         },
+        "Backup PythonEditor History": {
+            "Shortcuts": [],
+            "Method": "backup_pythoneditor_history",
+            "Menu Location": "File/Backup PythonEditor History"
+        },
         "About Python Editor": {
             "Shortcuts": [],
             "Method": "show_about",
@@ -394,7 +459,7 @@
             "Method": "show_preferences",
             "Menu Location": "Preferences"
         },
-        "Edit Shortcuts": {
+        "Show Shortcuts": {
             "Shortcuts": [],
             "Method": "show_shortcuts",
             "Menu Location": "Preferences"

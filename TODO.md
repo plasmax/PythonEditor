@@ -1,10 +1,19 @@
 # Python Editor TODO list
 
 
-#### Bug fixes
+#### Bug reports
+- [ ] autocomplete doesn't pick up all variables such as asset.properties.value_dict
+- [ ] Startup doesn't redirect streams correctly if panel doesn't open in workspace automatically on startup
+- [ ] In Nuke 11.3v5, closing a tab by clicking the close Button can crash Nuke
+- [ ] Right- clicking in the output widget produces two context menus in Nuke 11+
+- [ ] Sometimes the shortcuthandler doesn't override - perhaps when editor doesn't gain focus correctly
+- [ ] If script is saved as text somewhere and not edited, a warning message still shows up on close.
+- [ ] When pressing enter when cursor is here `|    "` the line double-indents.
+- [ ] Shift-enter does not correctly create a new line in the editor and line number display on the left.
 - [ ] Tab may duplicate on save
-- [ ] Close button should be persistent 
+- [ ] Close button should be persistent
       on the active tab.
+- [ ] Sometimes wrong tab may be clicked
 - [ ] Confirm overwrite file on save.
 - [ ] When editing a document across multiple instances, updating to latest autosave sometimes triggers twice.
 - [ ] Alt-tabbing quickly away from and back to the editor causes an autosave message. call autosave() on focusOutEvent to ensure save.
@@ -58,11 +67,14 @@
       which should remember the settings
 - [x] Highlight line with error
 - [x] Read stdout/stderr on open
+- [ ] Echo commands to python editor.
 - [ ] Add Script Editor buttons to Menu bar at top - especially fullscreen editor/output,
       which should remember the settings
 
 
 #### Features - desired
+- [ ] Shortcuts Editor should be searchable
+- [ ] down arrow should show tabs in searchable QListView side panel not QMenu
 - [ ] Open Containing Folder action - default to autosave dir if nothing else
 - [ ] Copy File Path action
 - [ ] /proc/<pid>/fd/1 & 2 - would these allow a cleaner way of reading stdout that
@@ -70,23 +82,27 @@
 - [ ] "Actions" - allow users to create and edit custom scripts that run on editor
       text and are added to the user actions config.
 - [ ] Backup PythonEditorHistory.xml button.
-- [ ] Search and Replace
+- [x] Search and Replace
 - [ ] QTreeView/QStandardItemModel snippet
 - [ ] Strip whitespace from line endings action
 - [ ] Meld diff between tabs and/or tab autosave update warning
 - [ ] debugger - needs a traceback parser and an editor view with a list like Pythonista
-- [ ] Move 'nukefeatures' into an app/nuke folder to make it program agnostic.
+- [x] Move 'nukefeatures' into an app folder to make it program agnostic.
       True agnosticism would require moving PythonEditorHistory.xml to the user home directory as well.
 - [ ] Tab close button [x] should appear on active tab only (like chrome)
       and change width of tab (in proportion to the name) when added (setTabButton, RightSide)
+- [x] Move all actions to actions.py and have shortcuts simply setShortcut()
+      on the Actions() class, which can be picked up by menus.
+- [x] Move tab to start/end
 - [ ] Duplicate cursors
-- [ ] Search box at bottom of editor widget (with "all tabs" checkbox)
-- [ ] Search across all tabs
+- [x] Search box at bottom of editor widget (with "all tabs" checkbox)
+- [x] Search across all tabs
+- [ ] Projects
 - [ ] Autocomplete 'toNode', node.knob() and node[knob]
 - [ ] Autocomplete os.environ and other dicts
 - [ ] Projects - the new PYTHONEDITOR_AUTOSAVE_FILE env variable should help.
 - [ ] Goto Links in errors/regular paths in the editor
-- [ ] Hover over varibles to get definition goto, type info, short help()
+- [ ] Hover over variables to get definition goto, type info, short help()
 - [ ] Hover over paths in output window to get goto link
 - [ ] Paste into sublime subprocess.Popen('sublime -n --command paste', executable='/bin/tcsh', shell=True)
 - [ ] Warn if file has changed on disk (as with autosave when regaining tab focus)
@@ -117,8 +133,9 @@
       on the Actions() class, which can be picked up by menus.
 - [x] Move tab to start/end
 - [x] Improve speed of loading tabs
-- [/] Set up an execution model where stdout, stderr and stdin are temporarily encapsulated within a context managing with
-      statement - is this a good idea? it means output will only be shown when text is executed from PythonEditor.
+- [/] Set up an execution model where stdout, stderr and stdin are temporarily encapsulated within
+      a context managing with statement - is this a good idea?
+      it means output will only be shown when text is executed from PythonEditor.
 - [x] Snippet file library (currently reads from a file called PythonEditor_snippets.json in .nuke dir if found.)
 - [x] Check if there's a better way to connect widgets/objects, synchronously
       (bypassing signal in cases where it's not wanted) - Resolved, starting to use DirectConnection

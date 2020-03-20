@@ -1,11 +1,25 @@
-import sys
+""" The IDE is a top-level container class that
+houses the pythoneditor interface. The point of this
+class is to make all subsequent modules fully reloadable from
+within the PythonEditor UI for development purposes.
+
+Example usage:
+from PythonEditor.ui import ide
+
+integrated_development_environment = ide.IDE()
+integrated_development_environment.show()
+"""
 import os
+import sys
+import imp
+import traceback
+
 
 PYTHON_EDITOR_MODULES = []
 
+# define this before importing PythonEditor modules.
 class Finder(object):
-    """
-    Keep track of pythoneditor modules loaded
+    """ Keep track of pythoneditor modules loaded
     so that they can be reloaded in the same order.
     """
     _can_delete = True
@@ -35,21 +49,21 @@ def add_to_meta_path():
 	sys.meta_path.append(Finder())
 add_to_meta_path()
 
-import imp
-from PythonEditor.ui.Qt import QtWidgets
-from PythonEditor.ui.Qt import QtCore
+
+# imports here now that we are done modifying importer
+from PythonEditor.ui.Qt.QtWidgets import QWidget, QHBoxLayout
+from PythonEditor.ui.Qt.QtCore import QTimer, Qt
 from PythonEditor.ui import pythoneditor
 
 
-class IDE(QtWidgets.QWidget):
-    """
-    Container widget that allows the whole
-    package to be reloaded.
+class IDE(QWidget):
+    """ Container widget that allows the whole
+    package to be reloaded, apart from this module.
     """
     def __init__(self, parent=None):
         super(IDE, self).__init__(parent)
         self.setLayout(
-            QtWidgets.QHBoxLayout(self)
+            QHBoxLayout(self)
         )
         self.layout().setContentsMargins(
             0, 0, 0, 0
@@ -64,8 +78,7 @@ class IDE(QtWidgets.QWidget):
         self.layout().addWidget(self.python_editor)
 
     def reload_package(self):
-        """
-        Reloads the whole package (except for
+        """ Reloads the whole package (except for
         this module), in an order that does not
         cause errors.
         """
@@ -79,17 +92,65 @@ class IDE(QtWidgets.QWidget):
             mod = sys.modules.get(name)
             if mod is None:
                 continue
+
+            path = mod.__file__
+            if path.endswith('.pyc'):
+                path = path.replace('.pyc', '.py')
+            if not os.path.isfile(path):
+                continue
+            with open(path, 'r') as f:
+                data = f.read()
+            if '\x00' in data:
+                msg = 'Cannot load {0} due to Null bytes. Path:\n{1}'
+                print(msg.format(mod, path))
+                continue
+            try:
+                code = compile(data, mod.__file__, 'exec')
+            except SyntaxError:
+                # This message only shows in terminal
+                # if this environment variable is set:
+                # PYTHONEDITOR_CAPTURE_STARTUP_STREAMS
+                error = traceback.format_exc()
+                msg = 'Could not reload due to the following error:'
+                def print_error():
+                    print(msg)
+                    print(error)
+                QTimer.singleShot(100, print_error)
+                continue
             try:
                 imp.reload(mod)
             except ImportError:
-                msg = 'could not reload %s: %s'
-                print(msg % (name, mod))
+                msg = 'could not reload {0}: {1}'
+                print(msg.format(name, mod))
 
-        QtCore.QTimer.singleShot(1, self.buildUI)
+        QTimer.singleShot(1, self.buildUI)
+        QTimer.singleShot(10, self.set_editor_focus)
+
+    def set_editor_focus(self):
+        """ Set the focus inside the editor.
+        """
+        try:
+            retries = self.retries
+        except AttributeError:
+            self.retries = 0
+
+        if self.retries > 4:
+            return
+
+        if not hasattr(self, 'python_editor'):
+            QTimer.singleShot(100, self.set_editor_focus)
+            self.retries += 1
+            return
+
+        editor = self.python_editor.tabeditor.editor
+        if not editor.isVisible():
+            QTimer.singleShot(100, self.set_editor_focus)
+            self.retries += 1
+            return
+        editor.focus_in_signal.emit()
 
     def showEvent(self, event):
-        """
-        Hack to get rid of margins
+        """ Hack to get rid of margins
         automatically put in place
         by Nuke Dock Window.
         """

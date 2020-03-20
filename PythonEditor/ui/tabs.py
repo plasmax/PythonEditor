@@ -161,6 +161,12 @@ class Tabs(QtWidgets.QTabBar):
 
     Current tab data can be easily
     indexed out of this class via Tabs[key].
+
+    FIXME: This is a GUI class. The data management
+    should happen within a data model. This class
+    should only serve as a view into that model,
+    to permit other views to similarly display the
+    model's content.
     """
     pen = QtGui.QPen()
     brush = QtGui.QBrush()
@@ -190,14 +196,20 @@ class Tabs(QtWidgets.QTabBar):
                               )
     reset_tab_signal        = QtCore.Signal()
 
-    def __init__(self, *args):
-        super(Tabs, self).__init__(*args)
+    def __init__(self, parent=None):
+        super(Tabs, self).__init__(parent)
         self.tab_pressed = False
         self.setStyleSheet(TAB_STYLESHEET)
         self.setMovable(True)
         self.setExpanding(False)
         self.pressed_uid = ''
         self._hovered_index = -2
+
+        # # a stack for navigating positions
+        # # `list` of `tuples`
+        # # [(`str` tab_uid, `int` cursor_pos),]
+        # self.cursor_previous = []
+        # self.cursor_next = []
 
         cb = CloseButton(self)
         self.tab_close_button = cb
@@ -488,6 +500,10 @@ class Tabs(QtWidgets.QTabBar):
 
             close_tab_func = partial(self.removeTab, i)
             menu.addAction('Close Tab', close_tab_func)
+
+            copy_file_path = partial(self.copy_tab_file_path, i)
+            menu.addAction('Copy File Path', copy_file_path)
+
             # Other ideas (TODO)
             """
             menu.addAction('Close Other Tabs', )
@@ -566,6 +582,23 @@ class Tabs(QtWidgets.QTabBar):
             QtCore.Qt.MouseFocusReason
         )
 
+    def copy_tab_file_path(self, index):
+        """
+        Copy the current tab's file path
+        (if it has one) to the clipboard.
+        """
+        data = self.tabData(index)
+        path = data.get('path')
+        if path is None or not path.strip():
+            print('No file path for "{0}".'.format(
+                data['name'])
+            )
+            return
+        clipboard = QtGui.QClipboard()
+        clipboard.setText(path)
+        print('Path copied to clipboard:')
+        print(path)
+
     def move_to_first(self, index):
         """
         Move the current tab to the first position.
@@ -618,7 +651,7 @@ class Tabs(QtWidgets.QTabBar):
             data['text'],
             str(index),
             data.get('path')
-            )
+        )
         self.setTabData(index, data)
 
     @QtCore.Slot()
@@ -632,7 +665,6 @@ class Tabs(QtWidgets.QTabBar):
             if rect.contains(pos):
                 label = self.tabText(i)
                 self.removeTab(i)
-                # print('removing tab %s' % label)
 
     def removeTab(self, index):
         """
@@ -686,9 +718,8 @@ class Tabs(QtWidgets.QTabBar):
         self.tab_close_signal.emit(data['uuid'])
 
     def prompt_user_to_save(self, index):
-        """
-        Ask the user if they wish to close a tab
-        that has unsaved contents.
+        """ Ask the user if they wish to close
+        a tab that has unsaved contents.
         """
         name = self.tabText(index)
         msg_box = QtWidgets.QMessageBox()
@@ -893,24 +924,33 @@ class TabEditor(QtWidgets.QWidget):
                     text = f.read()
                 data['text'] = text
 
+        # collect data before setting editor text
+        cursor_pos = self.tabs.get('cursor_pos')
+        selection = self.tabs.get('selection')
+
         self.editor.setPlainText(text)
 
-        if self.tabs.get('cursor_pos') is not None:
+        if cursor_pos is not None:
+            block_pos, cursor_pos = cursor_pos
+
+            # set first block visible
             cursor = self.editor.textCursor()
-            pos = self.tabs['cursor_pos']
-            cursor.setPosition(pos)
+            self.editor.moveCursor(cursor.End)
+            cursor.setPosition(block_pos)
             self.editor.setTextCursor(cursor)
 
-        # for the autosave check_document_modified
-        self.tab_switched_signal.emit()
+            # restore cursor position
+            cursor = self.editor.textCursor()
+            cursor.setPosition(cursor_pos)
+            self.editor.setTextCursor(cursor)
 
-        if self.tabs.get('selection') is not None:
+        if selection is not None:
             # TODO: this won't restore a selection
             # that starts from below and selects
             # upwards :( (yet)
-            has, start, end = self.tabs['selection']
+            cursor = self.editor.textCursor()
+            has, start, end = selection
             if has:
-                cursor = self.editor.textCursor()
                 cursor.setPosition(
                     start,
                     QtGui.QTextCursor.MoveAnchor
@@ -919,11 +959,20 @@ class TabEditor(QtWidgets.QWidget):
                     end,
                     QtGui.QTextCursor.KeepAnchor
                 )
-                self.editor.setTextCursor(cursor)
+            self.editor.setTextCursor(cursor)
+        self.editor.setFocus(QtCore.Qt.MouseFocusReason)
+
+        # for the autosave check_document_modified
+        self.tab_switched_signal.emit()
 
     def store_cursor_position(self):
-        cp = self.editor.textCursor().position()
-        self.tabs['cursor_pos'] = cp
+        editor = self.editor
+        cursor = editor.textCursor()
+        block = editor.firstVisibleBlock()
+        self.tabs['cursor_pos'] = (
+            block.position(),
+            cursor.position()
+            )
 
     def store_selection(self):
         tc = self.editor.textCursor()
@@ -943,17 +992,18 @@ class TabEditor(QtWidgets.QWidget):
         if self.tabs.count() == 0:
             self.new_tab()
 
-        if self.tabs.get('saved'):
+        saved = self.tabs.get('saved')
+        original_text = self.tabs.get('original_text')
+        if saved and not original_text:
             # keep original text in case
             # revert is required
             text = self.tabs['text']
             self.tabs['original_text'] = text
             self.tabs['saved'] = False
             self.tabs.repaint()
-        elif self.tabs.get(
-            'original_text') is not None:
+        elif original_text is not None:
             text = self.editor.toPlainText()
-            if self.tabs['original_text'] == text:
+            if original_text == text:
                 self.tabs['saved'] = True
                 self.tabs.repaint()
 

@@ -2,10 +2,11 @@
 All modifications to the PythonEditor.xml
 file are done through this module.
 
-All the out points of this module:
-- line 62 in init_file_header
+Functions that write to the autosave file:
+- create_empty_autosave
+- writexml
+- fix_broken_xml
 """
-
 from __future__ import unicode_literals
 from __future__ import print_function
 
@@ -16,7 +17,7 @@ import warnings
 import tempfile
 import difflib
 from functools import partial
-from xml.etree import cElementTree as ElementTree
+from xml.etree import cElementTree as ETree
 
 from PythonEditor.ui.Qt import QtCore, QtWidgets
 from PythonEditor.ui import editor
@@ -25,9 +26,18 @@ from PythonEditor.utils.debug import debug
 from PythonEditor.utils.constants import NUKE_DIR
 
 
-def isdir(path):
+def is_file(path):
+    """ Safe is_file.
+    """
+    try:
+        return os.path.isfile(path)
+    except Exception:
+        return False
+
+
+def parent_isdir(file_path):
     return os.path.isdir(
-    os.path.dirname(path)
+    os.path.dirname(file_path)
     )
 
 
@@ -39,8 +49,7 @@ def haspermissions(path):
 
 
 def define_autosave_path():
-    """
-    Allow users to define a custom
+    """ Allow users to define a custom
     xml file path via an environment
     variable.
     """
@@ -50,9 +59,9 @@ def define_autosave_path():
         'PYTHONEDITOR_AUTOSAVE_FILE'
     )
     if (AUTOSAVE_FILE is None
-        or not isdir(AUTOSAVE_FILE)
+        or not parent_isdir(AUTOSAVE_FILE)
         ):
-        if not isdir(NUKE_DIR):
+        if not os.path.isdir(NUKE_DIR):
             NUKE_DIR = os.path.expanduser('~')
         AUTOSAVE_FILE = os.path.join(
             NUKE_DIR,
@@ -69,8 +78,7 @@ XML_HEADER = '<?xml version="1.0" encoding="UTF-8"?>'
 
 
 class AutoSaveManager(QtCore.QObject):
-    """
-    Simple xml text storage.
+    """ Simple xml text storage.
 
     TODO: Test that these rules are being followed.
     # Reads when:
@@ -116,8 +124,7 @@ class AutoSaveManager(QtCore.QObject):
         self.connect_signals()
 
     def connect_signals(self):
-        """
-        Connects the editor, tabeditor
+        """ Connects the editor, tabeditor
         and tab signals to this class
         """
         editor = self.editor
@@ -152,18 +159,9 @@ class AutoSaveManager(QtCore.QObject):
         )
 
     def save_timer(self):
+        """ Start a timer that will trigger the
+        autosave after a brief pause in typing.
         """
-        On text_changed_signal, if no text present, save immediately.
-        Else, start a timer that will trigger autosave after
-        a brief pause in typing.
-        """
-        # FIXME: so this was set up to allow quick clearing of
-        # documents so that the tab could be closed immediately
-        # afterwards. however, it caused a problem somewhere so
-        # was commented out. I don't remember where.
-        # if not self.editor.toPlainText().strip():
-        #     return self.autosave()
-
         self.autosave_timer_waiting = True
         if self.autosave_timer.isActive():
             self.autosave_timer.stop()
@@ -174,8 +172,7 @@ class AutoSaveManager(QtCore.QObject):
             self.autosave_timer.start()
 
     def setup_save_timer(self, interval=500):
-        """
-        Initialise the autosave timer.
+        """ Initialise the autosave timer.
         :param interval: autosave interval in milliseconds
         :type interval: int
         """
@@ -184,16 +181,14 @@ class AutoSaveManager(QtCore.QObject):
         self.autosave_timer.setInterval(interval)
 
     def autosave_handler(self):
-        """
-        Autosave timeout triggers this.
+        """ Autosave timeout triggers this.
         """
         self.autosave_timer_waiting = False
         if self.editor.document().isModified():
             self.autosave()
 
     def readautosave(self):
-        """
-        Sets editor text content. First checks the
+        """ Sets editor text content. First checks the
         autosave file for <subscript> elements and
         creates a tab per element.
         """
@@ -214,48 +209,43 @@ class AutoSaveManager(QtCore.QObject):
             autosaves.append((i, s))
             i += 1
 
-        standard_tabs = False
-        draw_own_close_btn = True
-        draw_own_tab = False
         # storing autosave into new tabs
         for i, s in autosaves:
             name = s.attrib.get('name')
             data = s.attrib.copy()
 
+            data['text'] = s.text
             # if there's no text saved,
             # but there is a path, try and
             # get the file contents
             if not s.text:
                 path = s.attrib.get('path')
-                if path is not None:
-                    if os.path.isfile(path):
-                        with open(path, 'r') as f:
-                            data['text'] = f.read()
+                if is_file(path):
+                    with open(path, 'r') as f:
+                        text = f.read()
+                    data['text'] = text
+                    # set original text property
+                    # to allow reverting back to
+                    # the original, or comparison
+                    # on file save/tab close.
+                    data['original_text'] = text
+                    data['saved'] = True
 
-            data['text'] = s.text
-
-            if standard_tabs:
-                self.tabs.new_tab(tab_name=name)
-            elif draw_own_close_btn:
-                # tab_name = name+' '*5
-                tab_name = name
-                self.tabs.new_tab(tab_name=tab_name, tab_data=data) # hax for enough space for close button :'(
-            elif draw_own_tab:
-                tab_name = name+' '*5
-                self.tabs.new_tab(tab_name=' '*len(tab_name))
+            tab_name = name
+            self.tabs.new_tab(tab_name=tab_name, tab_data=data)
 
             path = data.get('path')
             if path is not None:
-                self.tabs.setTabToolTip(i, path) # and if this changes?
+                self.tabs.setTabToolTip(i, path) # and if the file is moved?
 
         # try and get the index of the current tab from the last session
-        index = self.tabs.count()
+        index = self.tabs.count()-1
         root, index_elements = parsexml('current_index')
         for index_element in index_elements:
             current_index = int(index_element.text)
-            out_of_range = -1 < index < self.tabs.count()
-            if not out_of_range:
+            if current_index in range(0, index):
                 index = current_index
+                break
 
         # set tab and editor contents.
         self.tabs.setCurrentIndex(index)
@@ -284,7 +274,7 @@ class AutoSaveManager(QtCore.QObject):
         self.tabs['text'] = text
         self.tabs['saved'] = True
 
-    def check_autosave_modified(self, index=-1):
+    def check_autosave_modified(self):
         """
         On focus in event, check the xml (or
         the saved file if present) to see if
@@ -388,7 +378,6 @@ class AutoSaveManager(QtCore.QObject):
         self.tabs['saved'] = False
 
     def show_diff_text_popup(self, subscript):
-        # global popup_bar
         popup_bar = QtWidgets.QWidget()
         self.popup_bar = popup_bar
         name = 'Document out of sync warning'
@@ -397,7 +386,6 @@ class AutoSaveManager(QtCore.QObject):
             QtWidgets.QHBoxLayout(popup_bar)
         )
 
-        # global label
         label = QtWidgets.QLabel()
         label.setText(
             'This tab is out of sync\n'\
@@ -406,7 +394,6 @@ class AutoSaveManager(QtCore.QObject):
         popup_bar.layout().addWidget(label)
 
         B = QtWidgets.QPushButton
-        # global new_button
         new_button    = B('Load into New Tab')
         new_button.setToolTip(
             'Click to load the text inside '\
@@ -414,20 +401,17 @@ class AutoSaveManager(QtCore.QObject):
             'updating the autosaved version '\
             'into the previous tab.'
         )
-        # global save_button
         save_button   = B('Save This Version')
         save_button.setToolTip(
             'Click to choose this version '\
             'as the version to save.'
         )
-        # global update_button
         update_button = B('Update From Autosave')
         update_button.setToolTip(
             'Load the version from the '\
             'autosave into this tab.'
         )
 
-        # global diff_button
         diff_button   = B('Show Diff')
         diff_button.setToolTip(
             'Show the difference between the two.'
@@ -437,9 +421,7 @@ class AutoSaveManager(QtCore.QObject):
             self.remove_existing_popups,
             name
         )
-        # self.remove_existing_popups(name)
 
-        # global layout
         layout = self.tabeditor.layout()
         layout.insertWidget(1, popup_bar)
 
@@ -498,7 +480,6 @@ class AutoSaveManager(QtCore.QObject):
         the class is instantiated on the tabeditor's
         parent class, pythoneditor.
         """
-        # global anim
         anim = QtCore.QPropertyAnimation(
             self.popup_bar,
             'maximumHeight'
@@ -510,6 +491,10 @@ class AutoSaveManager(QtCore.QObject):
         anim.start()
 
     def remove_existing_popups(self, name=None):
+        """
+        Remove widgets with objectName
+        "name" from the tabeditor layout.
+        """
         layout = self.tabeditor.layout()
         # first remove any previous widgets
         for i in range(layout.count()):
@@ -607,19 +592,16 @@ class AutoSaveManager(QtCore.QObject):
 
     @QtCore.Slot(str, str, str, str, object)
     def save_by_uuid(self, uid, name, text, index, path=None):
-        """
-        Only update a specific subscript given by uuid.
+        """ Only update a specific subscript given by uuid.
         """
         root, subscripts = parsexml('subscript')
 
-        found = False
         for s in subscripts:
             if s.attrib.get('uuid') == uid:
-                found = True
                 sub = s
                 break
         else:
-            sub = ElementTree.Element('subscript')
+            sub = ETree.Element('subscript')
             root.append(sub)
 
         sub.attrib['uuid'] = uid
@@ -640,7 +622,7 @@ class AutoSaveManager(QtCore.QObject):
         """
         root, index_elements = parsexml('current_index')
         if len(index_elements) == 0:
-            ci = ElementTree.Element('current_index')
+            ci = ETree.Element('current_index')
             root.append(ci)
         else:
             ci = index_elements[0]
@@ -661,14 +643,13 @@ class AutoSaveManager(QtCore.QObject):
                 data['text'],
                 str(i),
                 data.get('path')
-                )
+            )
         self.store_current_index()
         self.sync_tab_indices()
 
     @QtCore.Slot(object)
     def handle_document_save(self, uid):
-        """
-        After saving the editor's contents,
+        """ After saving the editor's contents,
         store the path to the saved file in the
         autosave attributes. The text contents
         are retained in the autosave until the
@@ -679,7 +660,6 @@ class AutoSaveManager(QtCore.QObject):
         :param uid: Unique Identifier of
                     subscript to save
         """
-
         # find the tab by uid
         index = -1
         if self.tabs['uuid'] != uid:
@@ -696,16 +676,34 @@ class AutoSaveManager(QtCore.QObject):
             data = self.tabs.tabData(index)
 
         path = data.get('path')
-        if (path is not None
-            and os.path.isfile(path)
-            ):
-            root, subscripts = parsexml('subscript')
-            for s in subscripts:
+        if not is_file(path):
+            return
 
-                if s.attrib.get('uuid') != uid:
-                    continue
-
-                s.attrib['path'] = path
+        root, subscripts = parsexml('subscript')
+        # we first look for an existing
+        # subscript that matches the uid
+        for s in subscripts:
+            if s.attrib.get('uuid') != uid:
+                continue
+            s.attrib['path'] = path
+            break
+        else:
+            # if none is found we create
+            # a new subscript
+            index = self.tabs.currentIndex()
+            name = self.tabs['name']
+            self.save_by_uuid(
+                uid,
+                name,
+                '', # don't save text unless document modified
+                    # which it won't be on first open
+                str(index),
+                path
+            )
+            data['saved'] = True
+            # FIXME: 'saved' attrib of the tab is modified by self.tabs.save_text_in_tab after this, triggered by the editor text_changed_signal
+            self.tabs.setTabData(index, data)
+            return
         data['saved'] = True
         self.tabs.setTabData(index, data)
         writexml(root)
@@ -716,8 +714,7 @@ class AutoSaveManager(QtCore.QObject):
 
     @QtCore.Slot(int)
     def handle_tab_close(self, tab_index):
-        """
-        Called on tabCloseRequested
+        """ Called on tabCloseRequested
         Note: if this slot is called via tabCloseRequested,
         the tab will have already been closed, so the tab_index
         will point to a different tab.
@@ -780,9 +777,23 @@ class CouldNotCreateAutosave(Exception):
     pass
 
 
-def create_autosave_file():
+def autosave_can_be_parsed():
+    """ Return True if the autosave file
+    is writable and not corrupted.
     """
-    Create the autosave file into which
+    global AUTOSAVE_FILE
+    xmlp = ETree.XMLParser(encoding="utf-8")
+    try:
+        parser = ETree.parse(AUTOSAVE_FILE, xmlp)
+        return True
+    except Exception:
+        return False
+
+
+# FIXME: redefined below. this is the deprecated version.
+# test functionality is the same and delete this version.
+def create_autosave_file():
+    """ Create the autosave file into which
     PythonEditor stores all tab contents.
     """
     # look for the autosave
@@ -796,7 +807,7 @@ def create_autosave_file():
         with open(AUTOSAVE_FILE, 'r') as f:
             is_empty = not bool(f.read().strip())
         if is_empty:
-            init_file_header()
+            create_empty_autosave()
     else:
 
         # if file not found, check if directory exists
@@ -807,13 +818,32 @@ def create_autosave_file():
             msg = 'Directory {0} does not exist'.format(NUKE_DIR)
             raise CouldNotCreateAutosave(msg)
         else:
-            init_file_header()
+            create_empty_autosave()
     return True
 
 
-def init_file_header():
+def create_autosave_file():
+    """ Create the autosave file into which
+    PythonEditor stores all tab contents.
     """
-    Write the default file header into the xml file.
+    global AUTOSAVE_FILE
+    if autosave_can_be_parsed():
+        return True
+    if os.path.isfile(AUTOSAVE_FILE):
+        fix_broken_xml()
+        if autosave_can_be_parsed():
+            return True
+        raise CouldNotCreateAutosave()
+
+    try:
+        create_empty_autosave()
+        return True
+    except Exception as error:
+        raise CouldNotCreateAutosave(error)
+
+
+def create_empty_autosave():
+    """ Write the default file header into the xml file.
     Overwrites any existing file.
     """
     with open(AUTOSAVE_FILE, 'w') as f:
@@ -823,7 +853,7 @@ def init_file_header():
 def get_editor_xml():
     if not create_autosave_file():
         return
-    parser = ElementTree.parse(AUTOSAVE_FILE)
+    parser = ETree.parse(AUTOSAVE_FILE)
     root = parser.getroot()
     editor_elements = root.findall('external_editor_path')
     return root, editor_elements
@@ -885,7 +915,7 @@ def set_external_editor_path(path=None, ask_user=False):
         editor_path = path
         os.environ['EXTERNAL_EDITOR_PATH'] = editor_path
 
-        element = ElementTree.Element('external_editor_path')
+        element = ETree.Element('external_editor_path')
         element.text = path
         root.append(element)
 
@@ -928,18 +958,17 @@ def remove_control_characters(s):
 
 
 def parsexml(element_name, path=AUTOSAVE_FILE):
-    """
-    Retrieve the root and a list of <element_name>
+    """ Retrieve the root and a list of <element_name>
     elements from a given xml file.
     """
     if not create_autosave_file():
         return
 
     try:
-        xmlp = ElementTree.XMLParser(encoding="utf-8")
-        parser = ElementTree.parse(path, xmlp)
-    except ElementTree.ParseError as e:
-        print('ElementTree.ParseError', e)
+        xmlp = ETree.XMLParser(encoding="utf-8")
+        parser = ETree.parse(path, xmlp)
+    except ETree.ParseError as e:
+        print('ETree.ParseError', e)
         parser = fix_broken_xml(path)
 
     root = parser.getroot()
@@ -949,8 +978,7 @@ def parsexml(element_name, path=AUTOSAVE_FILE):
 
 TEMP_FILE = None
 def writexml(root, path=AUTOSAVE_FILE):
-    """
-    Attempt to write xml element
+    """ Attempt to write xml element
     to a file as a string. If the
     save fails, write to a temporary
     file instead.
@@ -960,7 +988,7 @@ def writexml(root, path=AUTOSAVE_FILE):
     :param path: The path to save to.
     :type  path: <type 'str'>
     """
-    data = ElementTree.tostring(root)
+    data = ETree.tostring(root)
     data = data.decode('utf-8')
 
     # for neatness in the xml file.
@@ -992,8 +1020,7 @@ def writexml(root, path=AUTOSAVE_FILE):
 
 
 def fix_broken_xml(path=AUTOSAVE_FILE):
-    """
-    Removes unwanted characters and
+    """ Removes unwanted characters and
     (in case necessary in future
     implementations..) fixes other
     parsing errors with the xml file.
@@ -1006,15 +1033,15 @@ def fix_broken_xml(path=AUTOSAVE_FILE):
     with open(path, 'wt') as f:
         f.write(safe_string)
 
-    xmlp = ElementTree.XMLParser(encoding="utf-8")
+    xmlp = ETree.XMLParser(encoding="utf-8")
     try:
-        parser = ElementTree.parse(path, xmlp)
-    except ElementTree.ParseError:
+        parser = ETree.parse(path, xmlp)
+    except ETree.ParseError:
         print('Fatal Error with xml structure. A backup of your autosave has been made.')
         backup_autosave_file(path, content)
-        init_file_header()
-        xmlp = ElementTree.XMLParser(encoding="utf-8")
-        parser = ElementTree.parse(path, xmlp)
+        create_empty_autosave()
+        xmlp = ETree.XMLParser(encoding="utf-8")
+        parser = ETree.parse(path, xmlp)
         print(parser)
     return parser
 
@@ -1033,15 +1060,16 @@ def remove_empty_autosaves():
     """
     root, subscripts = parsexml('subscript')
     for s in subscripts:
-        if not s.text:
-            path = s.attrib.get('path')
-            if path is None:
-                root.remove(s)
-                continue
-            if not os.path.isfile(path):
-                root.remove(s)
-                continue
-            s.attrib['name'] = os.path.basename(path)
+        if s.text:
+            continue
+        path = s.attrib.get('path')
+        if path is None:
+            root.remove(s)
+            continue
+        if not os.path.isfile(path):
+            root.remove(s)
+            continue
+        s.attrib['name'] = os.path.basename(path)
     writexml(root)
 
 

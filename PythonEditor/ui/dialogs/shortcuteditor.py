@@ -14,6 +14,7 @@ class ShortcutEditor(QtWidgets.QTreeView):
             terminal=None
         ):
         super(ShortcutEditor, self).__init__()
+        self.setWindowTitle('Shortcuts')
 
         model = QtGui.QStandardItemModel()
         self.setModel(model)

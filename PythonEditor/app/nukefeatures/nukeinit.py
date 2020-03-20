@@ -1,4 +1,8 @@
-from PythonEditor.ui.nukefeatures import nukedock
+import sys
+from os.path import dirname
+
+from PythonEditor.app.nukefeatures import nukedock
+from PythonEditor.core import streams
 from PythonEditor.utils import constants
 from PythonEditor.ui.Qt import QtWidgets, QtCore
 
@@ -59,11 +63,11 @@ reload(PythonEditor)
 
 # Rerun menu setup
 # ------------------------------------------
-from PythonEditor.ui.nukefeatures import nukedock
+from PythonEditor.app.nukefeatures import nukedock
 reload(nukedock)
 nukedock.setup_dock()
 
-from PythonEditor.ui.nukefeatures import nukeinit
+from PythonEditor.app.nukefeatures import nukeinit
 reload(nukeinit)
 
 # Re-launch panel
@@ -81,7 +85,7 @@ nukescripts.panels.__panels["Python.Editor"].__call__(pane=dock)
 """
 
 IMPORT_CMD = '__import__("PythonEditor")'\
-    '.ui.nukefeatures.nukeinit.add_to_pane()'
+    '.app.nukefeatures.nukeinit.add_to_pane()'
 
 ICON_PATH = 'PythonEditor.png'
 
@@ -113,6 +117,11 @@ def add_nuke_menu():
     """
     Adds a "Panels" menu to the Nuke menubar.
     """
+    try:
+        package_dir = dirname(dirname(sys.modules['PythonEditor'].__file__))
+        nuke.pluginAddPath(package_dir)
+    except Exception as error:
+        print(error)
     panelMenu = nuke.menu('Nuke').addMenu('Panels')
     panelMenu.addCommand('Python Editor',
                          IMPORT_CMD,

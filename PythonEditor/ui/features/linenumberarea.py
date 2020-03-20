@@ -1,4 +1,6 @@
-from PythonEditor.ui.Qt import QtGui, QtCore, QtWidgets
+from PythonEditor.ui.Qt import QtGui
+from PythonEditor.ui.Qt import QtCore
+from PythonEditor.ui.Qt import QtWidgets
 from PythonEditor.utils.constants import IN_NUKE
 
 
@@ -108,14 +110,16 @@ class LineNumberArea(QtWidgets.QWidget):
 
             if IN_NUKE:
                 bg = QtGui.QPalette.Background
-                lineColor = self.editor.palette().color(bg).darker(100)
+                colour = self.editor.palette().color(bg).darker(100)
             else:
-                lineColor = QtGui.QColor.fromRgbF(0.196078,
-                                                  0.196078,
-                                                  0.196078,
-                                                  0.500000)
+                colour = QtGui.QColor.fromRgbF(
+                    0.196078,
+                    0.196078,
+                    0.196078,
+                    0.500000
+                )
 
-            selection.format.setBackground(lineColor)
+            selection.format.setBackground(colour)
             selection.format.setProperty(
                 QtGui.QTextFormat.FullWidthSelection,
                 True
@@ -129,12 +133,13 @@ class LineNumberArea(QtWidgets.QWidget):
 
     def resizeLineNo(self):
         cr = self.editor.contentsRect()
-        rect = QtCore.QRect(cr.left(),
-                            cr.top(),
-                            self.lineNumberAreaWidth(),
-                            cr.height())
+        rect = QtCore.QRect(
+            cr.left(),
+            cr.top(),
+            self.lineNumberAreaWidth(),
+            cr.height()
+        )
         self.setGeometry(rect)
-
 
     def highlight_cell_block(self):
         """
@@ -149,16 +154,13 @@ class LineNumberArea(QtWidgets.QWidget):
             if not text.startswith('#&&'):
                 continue
             selection = QtWidgets.QTextEdit.ExtraSelection()
-            lineColor = QtGui.QColor.fromRgbF(1,
-                                              1,
-                                              1,
-                                              0.05)
-
-            selection.format.setBackground(lineColor)
+            colour = QtGui.QColor.fromRgbF(1, 1, 1, 0.05)
+            selection.format.setBackground(colour)
             selection.format.setProperty(
                 QtGui.QTextFormat.FullWidthSelection,
                 True
             )
+
             cursor = self.editor.textCursor()
             cursor.setPosition(block.position())
             selection.cursor = cursor

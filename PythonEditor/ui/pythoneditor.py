@@ -1,3 +1,14 @@
+""" This module contains the main PythonEditor.
+It has all the functionality of PythonEditor
+except the ability to fully reload the whole package,
+which is kept in the container object.
+
+Example usage:
+from PythonEditor.ui import pythoneditor
+
+python_editor = pythoneditor.PythonEditor()
+python_editor.show()
+"""
 from PythonEditor.ui.Qt import QtWidgets, QtCore
 from PythonEditor.ui import terminal
 from PythonEditor.ui import tabs
@@ -10,8 +21,7 @@ from PythonEditor.ui.dialogs import shortcuteditor
 
 
 class PythonEditor(QtWidgets.QWidget):
-    """
-    Main widget. Sets up layout
+    """ Main widget. Sets up layout
     and connects some signals.
     """
     def __init__(self, parent=None):
@@ -24,9 +34,6 @@ class PythonEditor(QtWidgets.QWidget):
         if parent is not None:
             self.setParent(parent)
 
-        self.construct_ui()
-
-    def construct_ui(self):
         layout = QtWidgets.QVBoxLayout(self)
         layout.setObjectName(
             'PythonEditor_MainLayout'
@@ -60,7 +67,6 @@ class PythonEditor(QtWidgets.QWidget):
             editor=self.editor,
             tabeditor=self.tabeditor,
             terminal=self.terminal,
-            use_tabs=True
         )
 
         self.menubar = menubar.MenuBar(self)

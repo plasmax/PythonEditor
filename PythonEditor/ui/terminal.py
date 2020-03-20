@@ -1,42 +1,55 @@
 from __future__ import print_function
 import os
+import re
 import sys
 
 from PythonEditor.core import streams
 from PythonEditor.utils.constants import DEFAULT_FONT
-from PythonEditor.ui.Qt import QtGui, QtWidgets, QtCore
+from PythonEditor.ui.Qt.QtGui import (QFont,
+                                      QTextCursor,
+                                      QCursor,
+                                      QClipboard)
+from PythonEditor.ui.Qt.QtCore import (Qt,
+                                       Signal,
+                                       Slot,
+                                       QTimer)
+from PythonEditor.ui.Qt.QtWidgets import QPlainTextEdit
 from PythonEditor.utils.debug import debug
+from PythonEditor.ui.features.actions import get_external_editor_path
+from PythonEditor.ui.features.actions import open_in_external_editor
 
 
-class Terminal(QtWidgets.QPlainTextEdit):
+STARTUP = 'PYTHONEDITOR_CAPTURE_STARTUP_STREAMS'
+
+class Terminal(QPlainTextEdit):
     """ Output text display widget """
-    link_activated = QtCore.Signal(str)
+    link_activated = Signal(str)
 
     def __init__(self):
         super(Terminal, self).__init__()
 
         self.setObjectName('Terminal')
         self.setWindowFlags(
-            QtCore.Qt.WindowStaysOnTopHint
+            Qt.WindowStaysOnTopHint
         )
         self.setReadOnly(True)
         self.destroyed.connect(self.stop)
-        font = QtGui.QFont(DEFAULT_FONT)
+        font = QFont(DEFAULT_FONT)
         font.setPointSize(10)
         self.setFont(font)
 
-        if os.getenv('PYTHONEDITOR_CAPTURE_STARTUP_STREAMS') == '1':
+        if os.getenv(STARTUP) == '1':
             self.setup()
         else:
-            QtCore.QTimer.singleShot(0, self.setup)
+            QTimer.singleShot(0, self.setup)
 
-    @QtCore.Slot(str)
+    @Slot(str)
     def receive(self, text):
         try:
             textCursor = self.textCursor()
             if bool(textCursor):
                 self.moveCursor(
-                    QtGui.QTextCursor.End
+                    QTextCursor.End
                 )
         except Exception:
             pass
@@ -68,13 +81,70 @@ class Terminal(QtWidgets.QPlainTextEdit):
 
         self.speaker.emitter.connect(self.receive)
 
-    def mousePressEvent(self, e):
+    def mousePressEvent(self, event):
         if not hasattr(self, 'anchorAt'):
             # pyqt doesn't use anchorAt
-            return super(Terminal, self).mousePressEvent(e)
+            return super(Terminal, self).mousePressEvent(event)
 
-        if (e.button() == QtCore.Qt.LeftButton):
-            clickedAnchor = self.anchorAt(e.pos())
+        if (event.button() == Qt.LeftButton):
+            # TODO: this is for clicking on links, and
+            # currently nothing receives the signal.
+            clickedAnchor = self.anchorAt(event.pos())
             if clickedAnchor:
                 self.link_activated.emit(clickedAnchor)
-        super(Terminal, self).mousePressEvent(e)
+
+        elif (event.button() == Qt.RightButton):
+            menu = self.createStandardContextMenu()
+            path_in_line = self.path_in_line(
+                self.line_from_event(event)
+            )
+            if path_in_line:
+                def _goto():
+                    goto(path_in_line)
+                menu.addAction('Goto {0}'.format(path_in_line), _goto)
+            menu.addAction('Parse Last Traceback', self.parse_last_traceback)
+            menu.exec_(QCursor().pos())
+
+        super(Terminal, self).mousePressEvent(event)
+
+    def line_from_event(self, event):
+        pos = event.pos()
+        cursor = self.cursorForPosition(pos)
+        cursor.select(cursor.BlockUnderCursor)
+        selection = cursor.selection()
+        text = selection.toPlainText().strip()
+        return text
+
+    def path_in_line(self, text):
+        """
+        Parse the line under the cursor
+        to see if it contains a path to a
+        file. If it does, return it.
+        """
+        pattern = re.compile(r'([\w\-\.\/\\]+)(", line )(\d+)')
+        path = ''
+        for fp, _, lineno in re.findall(pattern, text):
+            return ':'.join([fp, lineno])
+        return None
+
+    def parse_last_traceback(self):
+        tb = self.toPlainText().split('Traceback')[-1]
+        pattern = re.compile(r'(File ")([\w\.\/]+)(", line )(\d+)')
+        text = ''
+        for _, fp, _, lineno in re.findall(pattern, tb):
+            text += 'sublime '+':'.join([fp, lineno])
+            text += '\n'
+
+        print(text)
+        QClipboard().setText(text)
+
+
+def goto(path):
+    eepath = get_external_editor_path()
+    if eepath is not None:
+        # this assumes the external
+        # editor can handle paths
+        # with path:lineno
+        print('Going to:')
+        print(path)
+        open_in_external_editor(path)

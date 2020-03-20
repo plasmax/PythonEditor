@@ -47,7 +47,7 @@ def mainexec(text, whole_text, verbosity=VERBOSITY_LOW):
             isinstance(namespace, dict),
             isinstance(__main__.__dict__, dict),
             hasattr(namespace, 'values')
-            ])
+        ])
 
         if not_dicts:
             return None
@@ -114,9 +114,7 @@ def print_traceback(whole_text, error):
     :param error: python exception object
     :type whole_text: str
     :type error: exceptions.Exception
-
     """
-    # text_lines = whole_text.splitlines()
     text_lines = whole_text.split('\n')
     num_lines = len(text_lines)
 

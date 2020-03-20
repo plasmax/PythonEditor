@@ -100,7 +100,7 @@ def pythonKnobEdit():
 
 
 testing = """
-from PythonEditor.ui.nukefeatures import nodepanels
+from PythonEditor.app.nukefeatures import nodepanels
 reload(nodepanels)
 
 #to delete
@@ -113,8 +113,10 @@ for index, info in enumerate(knobChangeds):
     if func.func_name == 'pythonKnobEdit':
         del knobChangeds[index]
 
-nuke.callbacks.addKnobChanged(pythonKnobEdit,
-                              args=(),
-                              kwargs={},
-                              nodeClass='*',
-                              node=None)
+nuke.callbacks.addKnobChanged(
+    pythonKnobEdit,
+    args=(),
+    kwargs={},
+    nodeClass='*',
+    node=None
+)
