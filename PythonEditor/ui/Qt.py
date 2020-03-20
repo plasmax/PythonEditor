@@ -42,15 +42,17 @@ import sys
 import types
 import shutil
 import importlib
+import json
 
 
-__version__ = "1.2.1"
+__version__ = "1.2.5"
 
 # Enable support for `from Qt import *`
 __all__ = []
 
 # Flags from environment variables
 QT_VERBOSE = bool(os.getenv("QT_VERBOSE"))
+QT_PREFERRED_BINDING_JSON = os.getenv("QT_PREFERRED_BINDING_JSON", "")
 QT_PREFERRED_BINDING = os.getenv("QT_PREFERRED_BINDING", "")
 QT_SIP_API_HINT = os.getenv("QT_SIP_API_HINT")
 
@@ -679,6 +681,22 @@ _common_members = {
     ]
 }
 
+""" Missing members
+
+This mapping describes members that have been deprecated
+in one or more bindings and have been left out of the
+_common_members mapping.
+
+The member can provide an extra details string to be
+included in exceptions and warnings.
+"""
+
+_missing_members = {
+    "QtGui": {
+        "QMatrix": "Deprecated in PyQt5",
+    },
+}
+
 
 def _qInstallMessageHandler(handler):
     """Install a message handler that works in all bindings
@@ -1005,6 +1023,7 @@ _misplaced_members = {
         "QtCore.qInstallMessageHandler": [
             "QtCompat.qInstallMessageHandler", _qInstallMessageHandler
         ],
+        "QtWidgets.QStyleOptionViewItem": "QtCompat.QStyleOptionViewItemV4",
     },
     "PyQt5": {
         "QtCore.pyqtProperty": "QtCore.Property",
@@ -1030,6 +1049,7 @@ _misplaced_members = {
         "QtCore.qInstallMessageHandler": [
             "QtCompat.qInstallMessageHandler", _qInstallMessageHandler
         ],
+        "QtWidgets.QStyleOptionViewItem": "QtCompat.QStyleOptionViewItemV4",
     },
     "PySide": {
         "QtGui.QAbstractProxyModel": "QtCore.QAbstractProxyModel",
@@ -1063,6 +1083,7 @@ _misplaced_members = {
         "QtCore.qInstallMsgHandler": [
             "QtCompat.qInstallMessageHandler", _qInstallMessageHandler
         ],
+        "QtGui.QStyleOptionViewItemV4": "QtCompat.QStyleOptionViewItemV4",
     },
     "PyQt4": {
         "QtGui.QAbstractProxyModel": "QtCore.QAbstractProxyModel",
@@ -1098,6 +1119,7 @@ _misplaced_members = {
         "QtCore.qInstallMsgHandler": [
             "QtCompat.qInstallMessageHandler", _qInstallMessageHandler
         ],
+        "QtGui.QStyleOptionViewItemV4": "QtCompat.QStyleOptionViewItemV4",
     }
 }
 
@@ -1488,13 +1510,13 @@ def _pyqt5():
     extras = ["uic"]
 
     try:
-        import sip
+        # Relevant to PyQt5 5.11 and above
+        from PyQt5 import sip
         extras += ["sip"]
     except ImportError:
 
-        # Relevant to PyQt5 5.11 and above
         try:
-            from PyQt5 import sip
+            import sip
             extras += ["sip"]
         except ImportError:
             sip = None
@@ -1642,7 +1664,11 @@ def _none():
 
 def _log(text):
     if QT_VERBOSE:
-        sys.stdout.write(text + "\n")
+        sys.stdout.write("Qt.py [info]: %s\n" % text)
+
+
+def _warn(text):
+    sys.stderr.write("Qt.py [warning]: %s\n" % text)
 
 
 def _convert(lines):
@@ -1730,12 +1756,67 @@ def _cli(args):
         sys.stdout.write("Successfully converted \"%s\"\n" % args.convert)
 
 
+class MissingMember(object):
+    """
+    A placeholder type for a missing Qt object not
+    included in Qt.py
+
+    Args:
+        name (str): The name of the missing type
+        details (str): An optional custom error message
+    """
+    ERR_TMPL = ("{} is not a common object across PySide2 "
+                "and the other Qt bindings. It is not included "
+                "as a common member in the Qt.py layer")
+
+    def __init__(self, name, details=''):
+        self.__name = name
+        self.__err = self.ERR_TMPL.format(name)
+
+        if details:
+            self.__err = "{}: {}".format(self.__err, details)
+
+    def __repr__(self):
+        return "<{}: {}>".format(self.__class__.__name__, self.__name)
+
+    def __getattr__(self, name):
+        raise NotImplementedError(self.__err)
+
+    def __call__(self, *a, **kw):
+        raise NotImplementedError(self.__err)
+
+
 def _install():
-    # Default order (customise order and content via QT_PREFERRED_BINDING)
+    # Default order (customize order and content via QT_PREFERRED_BINDING)
     default_order = ("PySide2", "PyQt5", "PySide", "PyQt4")
-    preferred_order = list(
-        b for b in QT_PREFERRED_BINDING.split(os.pathsep) if b
-    )
+    preferred_order = None
+    if QT_PREFERRED_BINDING_JSON:
+        # A per-vendor preferred binding customization was defined
+        # This should be a dictionary of the full Qt.py module namespace to
+        # apply binding settings to. The "default" key can be used to apply
+        # custom bindings to all modules not explicitly defined. If the json
+        # data is invalid this will raise a exception.
+        # Example:
+        #   {"mylibrary.vendor.Qt": ["PySide2"], "default":["PyQt5","PyQt4"]}
+        try:
+            preferred_bindings = json.loads(QT_PREFERRED_BINDING_JSON)
+        except ValueError:
+            # Python 2 raises ValueError, Python 3 raises json.JSONDecodeError
+            # a subclass of ValueError
+            _warn("Failed to parse QT_PREFERRED_BINDING_JSON='%s'"
+                  % QT_PREFERRED_BINDING_JSON)
+            _warn("Falling back to default preferred order")
+        else:
+            preferred_order = preferred_bindings.get(__name__)
+            # If no matching binding was used, optionally apply a default.
+            if preferred_order is None:
+                preferred_order = preferred_bindings.get("default", None)
+    if preferred_order is None:
+        # If a json preferred binding was not used use, respect the
+        # QT_PREFERRED_BINDING environment variable if defined.
+        preferred_order = list(
+            b for b in QT_PREFERRED_BINDING.split(os.pathsep) if b
+        )
 
     order = preferred_order or default_order
 
@@ -1796,6 +1877,22 @@ def _install():
                 continue
 
             setattr(our_submodule, member, their_member)
+
+    # Install missing member placeholders
+    for name, members in _missing_members.items():
+        our_submodule = getattr(Qt, name)
+
+        for member in members:
+
+            # If the submodule already has this member installed,
+            # either by the common members, or the site config,
+            # then skip installing this one over it.
+            if hasattr(our_submodule, member):
+                continue
+
+            placeholder = MissingMember("{}.{}".format(name, member),
+                                        details=members[member])
+            setattr(our_submodule, member, placeholder)
 
     # Enable direct import of QtCompat
     sys.modules['Qt.QtCompat'] = Qt.QtCompat
