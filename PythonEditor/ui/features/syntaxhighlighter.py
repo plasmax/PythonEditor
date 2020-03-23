@@ -1,6 +1,8 @@
 import tokenize
-import StringIO
-import time
+try:
+    from StringIO import StringIO ## for Python 2
+except ImportError:
+    from io import StringIO ## for Python 3
 import re
 
 from PythonEditor.ui.Qt import QtGui
@@ -251,7 +253,7 @@ class Highlight(QtGui.QSyntaxHighlighter):
                 index = expression.indexIn(text, index + length)
 
         if '#' in text:
-            s = StringIO.StringIO(text)
+            s = StringIO(text)
             g = tokenize.generate_tokens(s.readline)
             try:
                 for toktype, tok, start, end, line in g:
