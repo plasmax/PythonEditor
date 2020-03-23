@@ -419,7 +419,7 @@ class AutoCompleter(QtCore.QObject):
         TODO: Substring matching
         """
         cp = self.completer
-        variables = __main__.__dict__.keys()
+        variables = list(__main__.__dict__.keys())
 
         # add words except the word under the cursor
         word = self.word_under_cursor()
@@ -431,11 +431,11 @@ class AutoCompleter(QtCore.QObject):
 
         variables = [
             variables
-            + keyword.kwlist
+            + list(keyword.kwlist)
             + list(SNIPPETS.keys())
             + dir(__builtins__)
-            + KEYWORDS
-            + words
+            + list(KEYWORDS)
+            + list(words)
         ]
 
         variables = sorted(
