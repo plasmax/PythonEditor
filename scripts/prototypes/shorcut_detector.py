@@ -126,5 +126,5 @@ k.show()
 
 #&& # test 2
 for key in QtCore.Qt.Key.values.values():
-    print key_to_shortcut(key)
+    print(key_to_shortcut(key))
 #&&

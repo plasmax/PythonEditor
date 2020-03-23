@@ -74,7 +74,7 @@ filt = Filt(target=QtWidgets.QApplication.instance())
             return result
         except Exception:
             self.quit()
-            print full_stack()
+            print(full_stack())
             return True
         else:
             return False
@@ -86,7 +86,7 @@ filt = Filt(target=QtWidgets.QApplication.instance())
         return False
 
     def quit(self):
-        print self.__class__, 'exiting'
+        print(self.__class__, 'exiting')
         self.silent_quit()
 
     def remove_event_filter(self):
@@ -102,7 +102,7 @@ class InfoFilter(GenericEventFilter):
     Example Filter that prints object and event information.
     """
     def event_filter(self, obj, event):
-        print obj.metaObject().className(), event.type()
+        print(obj.metaObject().className(), event.type())
         return False
 
 

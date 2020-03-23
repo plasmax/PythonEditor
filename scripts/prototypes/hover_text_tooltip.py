@@ -17,16 +17,16 @@ class HoverText(QtWidgets.QPlainTextEdit):
     def mousePressEvent(self, event):
         super(HoverText, self).mousePressEvent(event)
         if self._cur_path:
-            print self._cur_path
+            print(self._cur_path)
         
     def enterEvent(self, event):
         self.mouse_in = True
-        print 'in'
+        print('in')
         super(HoverText, self).enterEvent(event)
     
     def leaveEvent(self, event):
         self.mouse_in = False
-        print 'out'
+        print('out')
         super(HoverText, self).leaveEvent(event)
 
     def mouseMoveEvent(self, event):

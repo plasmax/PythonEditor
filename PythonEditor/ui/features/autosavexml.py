@@ -1082,5 +1082,5 @@ def get_element_tab_index(subscript):
     tab_index = subscript.attrib.get('tab_index')
     try:
         return int(tab_index)
-    except TypeError, ValueError:
+    except (TypeError, ValueError):
         return 1

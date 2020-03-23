@@ -288,7 +288,7 @@ class Shortcuts(QtCore.QObject):
             if func is None:
                 return False
 
-            print combo, func
+            print(combo, func)
             event.accept()
             try:
                 func(self.widget)

@@ -196,7 +196,7 @@ class Tabs(QtWidgets.QTabBar):
                 if rect.contains(pt):
                     rqt = self.tab_close_button_rect(i)
                     if rqt.contains(pt):
-                        print 'clicked close on tab %s %s' % (i, self.tabText(i))
+                        print('clicked close on tab %s %s' % (i, self.tabText(i)))
                         self.removeTab(i) # this should emit a close signal like the current tabwidget
                         return
 
@@ -274,7 +274,7 @@ class Tabs(QtWidgets.QTabBar):
 """
 for e in dir(Tabs):
     if 'event' in e.lower():
-        print e
+        print(e)
 """
 
 
@@ -400,7 +400,7 @@ def check_changed():
     for s in subscripts:
         if s.attrib.get('uuid') == tabs['uuid']:
             if tabs['text'] != s.text:
-                print 'updated text!'
+                print('updated text!')
                 # this is where we'll actually write
                 # the text to the autosave
 

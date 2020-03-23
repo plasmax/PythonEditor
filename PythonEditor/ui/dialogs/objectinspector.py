@@ -52,7 +52,7 @@ class ObjectInspector(QtWidgets.QWidget):
                          for i in [key, value]]
                 rootItem.appendRow(items)
             except Exception, e:
-                print key, value, e
+                print(key, value, e)
 
     def start_timer(self):
         """

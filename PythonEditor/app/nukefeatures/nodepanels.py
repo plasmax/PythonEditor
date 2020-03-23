@@ -66,7 +66,7 @@ def addTextKnobs(node):
     also appears that this causes segmentation faults
     probably because of pointers to missing or already deleted widgets.
     """
-    print node.name()
+    print(node.name())
 
     np_list = [w for w in QtWidgets.QApplication.instance().allWidgets()
                if w.objectName() == node.name()]
@@ -76,7 +76,7 @@ def addTextKnobs(node):
         return
 
     sw = np.findChild(QtWidgets.QStackedWidget, 'qt_tabwidget_stackedwidget')
-    print sw
+    print(sw)
     tw = sw.parent()
     pyk = PyKnobs([k for k in node.allKnobs() if 'py' in k.Class().lower()])
     tw.addTab(pyk, 'Python Knobs')

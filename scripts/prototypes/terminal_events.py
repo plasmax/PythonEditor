@@ -33,7 +33,7 @@ sys.stderrRedirector = lambda x: None
 
 class Loader(object):
     def load_module(self, name):
-        print name
+        print(name)
         try:
             from _fnpython import stderrRedirector, outputRedirector
             sys.outputRedirector = outputRedirector

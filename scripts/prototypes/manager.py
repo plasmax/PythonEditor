@@ -152,7 +152,7 @@ class Manager(QtWidgets.QWidget):
         if not os.path.isdir(path):
             return
         path = path+os.altsep
-        print path
+        print(path)
         self.browser.set_model(path)
 
     def find_file_tab(self, path):
@@ -237,7 +237,7 @@ class Manager(QtWidgets.QWidget):
         """
         Slot for editor document modificationChanged
         """
-        print changed, 'set tab italic!'
+        print(changed, 'set tab italic!')
         size = 20, 20
         if changed:
             size = 10, 10

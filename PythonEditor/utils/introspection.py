@@ -75,6 +75,6 @@ def get_called_code(func, *args, **kwargs):
 
     source_code = ''.join([info(*a) for a in srccode])
     if source_code == '':
-        print 'No source code could be retrieved.'
+        print('No source code could be retrieved.')
     return source_code
 

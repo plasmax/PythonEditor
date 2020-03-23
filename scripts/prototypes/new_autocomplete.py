@@ -5,7 +5,7 @@ for k in dir(QtCore.Qt):
     try:
         key_list[int(getattr(QtCore.Qt, k))] = k
     except TypeError:
-        print k
+        print(k)
 
 class Editor(QtWidgets.QPlainTextEdit):
     block_key_press = False
@@ -38,7 +38,7 @@ class Completer(QtWidgets.QCompleter):
         self.setParent(self.editor)
         self.setWidget(self.editor)
         self.activated.connect(self.insert_completion)
-        print globals().keys()
+        print(globals().keys())
         self.set_list(globals().keys())
         
         
@@ -61,7 +61,7 @@ class Completer(QtWidgets.QCompleter):
         return word
         
     def insert_completion(self, text):
-        print text
+        print(text)
     
     def show_popup(self):
         """
@@ -75,7 +75,7 @@ class Completer(QtWidgets.QCompleter):
 
     def key_press_event(self, event):
         
-        print key_list[int(event.key())]
+        print(k)ey_list[int(event.key())]
         complete_keys = [
                         QtCore.Qt.Key_Enter,
                         QtCore.Qt.Key_Return,
@@ -100,7 +100,7 @@ class Completer(QtWidgets.QCompleter):
             return
 
         current_word = self.word_under_cursor()+event.text()
-        print 'Current word:', current_word
+        print('Current word:', current_word)
         self.setCompletionPrefix(current_word)
         self.popup().setCurrentIndex(self.completionModel().index(0, 0))
         self.show_popup()

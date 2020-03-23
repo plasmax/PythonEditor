@@ -33,7 +33,7 @@ class VirtualModule(object):
 
 class Loader(object):
     def load_module(self, name):
-        print name
+        print(name)
         try:
             from _fnpython import stderrRedirector, outputRedirector
             sys.outputRedirector = outputRedirector
@@ -235,7 +235,7 @@ class Terminal(QtWidgets.QPlainTextEdit):
         super(Terminal, self).hideEvent(event)
 
     def closeEvent(self, event):
-        print 'closing'
+        print('closing')
         super(Terminal, self).closeEvent(event)
 
 

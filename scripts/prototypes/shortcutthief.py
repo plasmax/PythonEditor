@@ -44,10 +44,10 @@ def remove_panel(PANEL_NAME):
 class ShortcutThief(eventfilters.GenericEventFilter):
     def event_filter(self, obj, event):
         if event.type() == event.Shortcut:
-            print 'mine!'
+            print('mine!')
             key = event.key()
-            print key
-            print key_to_shortcut(key)
+            print(key)
+            print(key)_to_shortcut(key)
             if obj != self.parent():
                 event.ignore()
                 return True
@@ -59,7 +59,7 @@ class  Edits(QtWidgets.QPlainTextEdit):
     def focusInEvent(self, event):
         self.thief = ShortcutThief()
         self.thief.setParent(self)
-        print self.thief
+        print(self.thief)
         super(Edits, self).focusInEvent(event)
 
     def focusOutEvent(self, event):
@@ -78,7 +78,7 @@ e = Edits()
 e.show()
 
 def edit_func():
-    print 'EDITOR!'
+    print('EDITOR!')
 
 a = QtWidgets.QAction(e)
 a.triggered.connect(edit_func)

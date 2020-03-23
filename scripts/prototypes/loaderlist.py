@@ -25,7 +25,7 @@ class LoaderList(QtWidgets.QListView): #WIP name
             item = self._model.item(index.row(), index.column())
             #print item
             a = item.data(QtCore.Qt.UserRole+1)
-            print a
+            print(a)
             #self.emit_text.emit(text)
             self.emit_tab.emit(a)
             #if index.column() == 0:

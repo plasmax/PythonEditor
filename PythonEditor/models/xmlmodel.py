@@ -73,7 +73,7 @@ class XMLModel(QStandardItemModel):
         names = []
         for i in range(self.rowCount()):
             name = self.item(i,0).text()
-            print name
+            print(name)
             names.append(name)
         return names
 
@@ -86,7 +86,7 @@ class XMLModel(QStandardItemModel):
             row -= 1
         elif row == -1:
             row = self.rowCount()
-        print take_row, '->', row
+        print(take_row, '->', row)
         self.insertRow(row, items)
         self.row_moved.emit(take_row, row)
         return True

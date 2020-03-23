@@ -245,7 +245,7 @@ class Completer(QtWidgets.QCompleter):
             if (re.match('[a-zA-Z0-9_]', object_to_inspect[0]) is None):
                 return
 
-            print 'Object to inspect: %s' % object_to_inspect
+            print('Object to inspect: %s' % object_to_inspect)
             obj = __main__.__dict__.get(object_to_inspect)
             if obj is None:
                 namespace = __main__.__dict__.copy()
@@ -253,9 +253,9 @@ class Completer(QtWidgets.QCompleter):
                     exec('__obj__ = %s' % object_to_inspect, namespace)
                     obj = namespace['__obj__']
                 except Exception as e:
-                    print 'Cannot recover object %s' % object_to_inspect
+                    print('Cannot recover object %s' % object_to_inspect)
                     return
-            print 'Recovered object %s: %s' % (object_to_inspect, obj)
+            print('Recovered object %s: %s' % (object_to_inspect, obj))
 
 
             if c in list('\'"'):
@@ -316,7 +316,7 @@ class Completer(QtWidgets.QCompleter):
         else:
             current_word = ''
 
-        print 'Current word:', current_word
+        print('Current word:', current_word)
         self.setCompletionPrefix(current_word)
         self.popup().setCurrentIndex(self.completionModel().index(0, 0))
         self.show_popup()
