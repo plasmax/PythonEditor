@@ -1376,10 +1376,18 @@ class Actions(QtCore.QObject):
         if not text:
             return
         try:
+            # try json first as it's nicer
             cmd = 'print( __import__("json").dumps({}, indent=2) )'
             exec(cmd.format(text), __main__.__dict__)
         except Exception as error:
-            print(error)
+            # fall back to pprint
+            try:
+                cmd = '__import__("pprint").pprint({})'
+                exec(cmd.format(text), __main__.__dict__)
+            except Exception as error:
+                print(error)
+                import traceback
+                traceback.print_exc()
 
     def prepend_import_statement(self):
         """
