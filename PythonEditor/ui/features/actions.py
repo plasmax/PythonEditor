@@ -819,7 +819,7 @@ class Actions(QtCore.QObject):
         Wrap selected text in brackets
         or quotes of type "key".
         """
-        key = unicode(self.editor.last_key_pressed)
+        key = str(self.editor.last_key_pressed)
         key_in, key_out = None, None
         if key in [u'\'', u'"']:
             key_in = key
