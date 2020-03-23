@@ -42,10 +42,19 @@ os.environ[PDF] = 'Consolas'
 _ide = ide.IDE()
 app.setPalette(nukepalette.getNukePalette())
 _ide.showMaximized()
-plastique = QtWidgets.QStyleFactory.create(
-    'Plastique'
-)
-QtWidgets.QApplication.setStyle(plastique)
+
+# Plastique isn't available on Windows, so try multiple styles.
+styles = QtWidgets.QStyleFactory.keys()
+style_found = False
+for style_name in ['Plastique', 'Fusion']:
+    if style_name in styles:
+        print('Setting style to:', style_name)
+        style_found = True
+        break
+
+if style_found:
+    style = QtWidgets.QStyleFactory.create(style_name)
+    QtWidgets.QApplication.setStyle(style)
 
 print(
     'PythonEditor import time: %.04f seconds'
