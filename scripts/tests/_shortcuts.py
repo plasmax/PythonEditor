@@ -197,8 +197,8 @@ def test_modifier_keys():
     assert QtCore.Qt.Modifier.META == QtCore.Qt.MetaModifier
 
     for s in get_shortcuts():
-        print '\n',s
-        print shortcut_to_key_and_modifiers(s)
+        print('\n',s)
+        print(shortcut_to_key_and_modifiers(s))
 
 
 def test_key_from_shortcut():
@@ -210,7 +210,7 @@ def test_key_from_shortcut():
 
         for mod in QtCore.Qt.Modifier.values.values():
             if mod & ky == k:
-                print mod, ky, k
+                print(mod, ky, k)
 
 def test_all_shortcuts():
     """
@@ -542,12 +542,12 @@ def test_shortcuts(editor):
         ky = QtCore.Qt.Key.values.get(lookup)
         if ky is None:
             ky = QtTest.QTest.asciiToKey(letter)
-            print 'failed to find %s, using %s' % (lookup, ky)
+            print('failed to find %s, using %s' % (lookup, ky))
 
         combo = ky | modifiers
         print '#----------------------'
-        print 'translated:', QtGui.QKeySequence(combo).toString()
-        print '\nTesting:', shortcut, ky
+        print('translated:', QtGui.QKeySequence(combo).toString())
+        print('\nTesting:', shortcut, ky)
 
         editor.setFocus(
             QtCore.Qt.MouseFocusReason
@@ -564,8 +564,8 @@ def test_shortcuts(editor):
         # TODO: here is where we test for input vs expected result.
         print '#------------',
         if not COMBO_FOUND:
-            print 'KEY NOT WORKING!'
+            print('KEY NOT WORKING!')
             raise Exception('KEY NOT WORKING!')
         else:
-            print 'passed.'
+            print('passed.')
 

@@ -22,11 +22,11 @@ class TabComboList(QtWidgets.QComboBox):
         #self.setCompleter(cpl)
         
     def emit_list_index(self, index):
-        print index
-        print self._names[index]
+        print(index)
+        print(self._names[index])
     
     def handle_activated(self, index):
-        print 'activated', index
+        print('activated', index)
         self.tabs.tabs.setCurrentIndex(index)
         
     def keyPressEvent(self, event):

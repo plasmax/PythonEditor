@@ -123,14 +123,14 @@ class Shortcuts(object):
             #if curr | which == which 
             if curr & which == which 
         )
-        print modz
+        print(modz)
         #for m, k in modifiers.items():
             #if m in event.modifiers():
         combo = 0
         for k in modz:
             combo |= k
         combo |= event.key()
-        print event.key() == QtCore.Qt.Key_Down
+        print(event.key() == QtCore.Qt.Key_Down)
         #QtCore.Qt.Key.values[QtCore.Qt.DownArrow
         #print event.key()
 
@@ -152,15 +152,15 @@ class Shortcuts(object):
 
         global COMBO_FOUND
         COMBO_FOUND = False
-        print repr(combo)
+        print(repr(combo))
         if combo in self.shortcuts:
             event.accept()
             self.editor.key_handled = True
             for k, v in QtCore.Qt.Key.values.items():
                 if v == event.key():
-                    print v, 
+                    print(v, )
                     break
-            print combo
+            print(combo)
             COMBO_FOUND = True
             
             return
@@ -241,12 +241,12 @@ def test_shortcuts():
         ky = QtCore.Qt.Key.values.get(lookup)
         if ky is None:
             ky = QtTest.QTest.asciiToKey(letter)
-            print 'failed to find %s, using %s' % (lookup, ky)
+            print('failed to find %s, using %s' % (lookup, ky))
     
         combo = ky | modifiers
         print '#----------------------'
-        print QtGui.QKeySequence(combo).toString()
-        print '\nTesting:', shortcut, ky
+        print(QtGui.QKeySequence(combo).toString())
+        print('\nTesting:', shortcut, ky)
 
         GLOBAL_EDITOR.setFocus(
             QtCore.Qt.MouseFocusReason
@@ -268,10 +268,10 @@ def test_shortcuts():
         #)
         print '#------------', 
         if not COMBO_FOUND:
-            print 'KEY NOT WORKING!'
+            print('KEY NOT WORKING!')
             raise Exception('KEY NOT WORKING!')
         else:
-            print 'passed.'
+            print('passed.')
         yield
         
 

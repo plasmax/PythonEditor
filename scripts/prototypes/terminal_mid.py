@@ -35,7 +35,7 @@ class VirtualModule(object):
 
 class Loader(object):
     def load_module(self, name):
-        print name
+        print(name)
         from _fnpython import stderrRedirector, outputRedirector
         sys.stdout.SERedirect = outputRedirector
         sys.stderr.SERedirect = stderrRedirector
