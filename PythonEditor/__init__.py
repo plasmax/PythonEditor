@@ -42,6 +42,10 @@ def main():
     # should be developer-only or at least
     # disableable
     import sys
+
+    # do not create .pyc files
+    sys.dont_write_bytecode = True
+
     from ui import Qt
 
     # enable "from Qt import x" and
@@ -50,9 +54,6 @@ def main():
     # enable "from Qt.QtCore import *"
     for name in Qt.__all__:
         sys.modules['Qt.{0}'.format(name)] = vars(Qt)[name]
-
-    # do not create .pyc files
-    sys.dont_write_bytecode = True
 
 
 def _print_load_error(error):
