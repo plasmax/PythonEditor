@@ -1,6 +1,6 @@
 """ PythonEditor by Max Last.
 
-The object Hierarchy is:
+The object hierarchy is:
 IDE
   PythonEditor
     TabEditor
