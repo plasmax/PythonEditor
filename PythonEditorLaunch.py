@@ -14,11 +14,10 @@ start = time.time()
 
 try:
     import nuke
-    pyside = bool(
-        'PySide'
-        if (nuke.NUKE_VERSION_MAJOR < 11)
-        else 'PySide2'
-    )
+    if nuke.NUKE_VERSION_MAJOR < 11:
+        pyside = 'PySide'
+    else:
+        pyside = 'PySide2'
 except ImportError:
     pyside = 'PySide2'
 

@@ -38,7 +38,6 @@ def setup_dock():
 
       """
 
-
       class Panel( PythonPanel ):
 
         def __init__(self, widget, name, id):

@@ -4,15 +4,20 @@
 #### Bug reports
 - [ ] autocomplete doesn't pick up all variables such as asset.properties.value_dict
 
+Within Nuke
+- [ ] Startup doesn't redirect streams correctly if panel doesn't open in workspace automatically on startup.
+      Steps to reproduce this bug:
+      1) Save a workspace that doesn't include PythonEditor on startup (any default will do).
+      2) Open a Script Editor and attempt to print to the output. Nothing should appear after # Result.
+      3) Open PythonEditor. Streams will be captured and redirected correctly, and the Script Editor once again prints things out.
+
+- [ ] Sometimes the shortcuthandler doesn't override - perhaps when editor doesn't gain focus correctly
+- [ ] Shift-enter does not correctly create a new line in the editor and line number display on the left.
+
 Nuke 11 specific
-- [ ] Startup doesn't redirect streams correctly if panel doesn't open in workspace automatically on startup
 - [ ] In Nuke 11.3v5, closing a tab by clicking the close Button can crash Nuke
 - [ ] Workspace doesn't properly recover on Nuke 11
 - [ ] Right-clicking in the output widget produces two context menus in Nuke 11+
-
-Within Nuke
-- [ ] Sometimes the shortcuthandler doesn't override - perhaps when editor doesn't gain focus correctly
-- [ ] Shift-enter does not correctly create a new line in the editor and line number display on the left.
 
 Other
 - [ ] Tab may duplicate on save.

@@ -6,11 +6,9 @@ from PythonEditor.core import streams
 from PythonEditor.utils import constants
 from PythonEditor.ui.Qt import QtWidgets, QtCore
 
-IN_NUKE_GUI_MODE = True
 try:
     import nuke
-    if not nuke.GUI:
-        IN_NUKE_GUI_MODE = False
+    IN_NUKE_GUI_MODE = nuke.GUI
 except ImportError:
     IN_NUKE_GUI_MODE = False
 

@@ -50,8 +50,7 @@ themes = {
 
 
 class Highlight(QtGui.QSyntaxHighlighter):
-    """
-    Modified, simplified version of some code
+    """ Modified, simplified version of some code
     that Wouter Gilsing found and modified when researching.
     wiki.python.org/moin/PyQt/Python%20syntax%20highlighting
     """
