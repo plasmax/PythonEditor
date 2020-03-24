@@ -196,7 +196,7 @@ def add_to_pane():
 
     # is the active pane one of the ones we want to add Python Editor to?
     dock = nuke.thisPane()
-    candidates = ['Properties.1', 'Viewer.1',  'DAG.1']
+    candidates = ['Viewer.1', 'Properties.1', 'DAG.1']
 
     for tab_name in candidates:
         pane = nuke.getPaneFor(tab_name)
