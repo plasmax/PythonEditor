@@ -1,10 +1,8 @@
 """ This module augments Nuke's default stdout/stderr 
 stream redirectors with ones that use Qt's Signal/Slot mechanism.
 These redirectors also output to Nuke's original outputRedirector
-The redirectors also output to Nuke's original outputRedirector
 and stderrRedirector which display text in the native Script Editor.
 """
-
 from __future__ import print_function
 import sys
 
@@ -19,7 +17,6 @@ class Loader(object):
     """ When the Finder object in sys.meta_path 
     returns this object, attempt to load Nuke's default
     redirectors and store them in the sys module.
-    Afterwards, always return the Mock module.
     """
     def load_module(self, name):
         try:

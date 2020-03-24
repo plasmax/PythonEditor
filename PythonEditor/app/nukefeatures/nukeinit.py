@@ -89,8 +89,7 @@ ICON_PATH = 'PythonEditor.png'
 
 
 def setup(nuke_menu=False, node_menu=False, pane_menu=True):
-    """
-    PythonEditor requires the pane menu to be setup in order to
+    """ PythonEditor requires the pane menu to be setup in order to
     be accessible to the user (without launching the panel
     programmatically). The nuke_menu and node_menu exist as optional
     extras.
@@ -112,37 +111,43 @@ def setup(nuke_menu=False, node_menu=False, pane_menu=True):
 
 
 def add_nuke_menu():
-    """
-    Adds a "Panels" menu to the Nuke menubar.
+    """ Adds a "Panels" menu to the Nuke menubar.
     """
     try:
         package_dir = dirname(dirname(sys.modules['PythonEditor'].__file__))
         nuke.pluginAddPath(package_dir)
     except Exception as error:
         print(error)
-    panelMenu = nuke.menu('Nuke').addMenu('Panels')
-    panelMenu.addCommand('Python Editor',
-                         IMPORT_CMD,
-                         icon=ICON_PATH)
 
-    panelMenu.addCommand('[dev] Fully Reload Python Editor',
-                         RELOAD_CMD,
-                         icon=ICON_PATH)
+    nuke_menu = nuke.menu('Nuke')
+    panel_menu = nuke_menu.addMenu('Panels')
+    panel_menu.addCommand(
+        'Python Editor',
+        IMPORT_CMD,
+        icon=ICON_PATH
+    )
+
+    panel_menu.addCommand(
+        '[dev] Fully Reload Python Editor',
+        RELOAD_CMD,
+        icon=ICON_PATH
+    )
 
 
 def add_node_menu():
+    """ Adds a menu item to the Node Menu.
     """
-    Adds a menu item to the Node Menu.
-    """
-    nuke.menu('Nodes').addCommand('Py',
-                              IMPORT_CMD,
-                              shortcut='\\',
-                              icon=ICON_PATH)
+    node_menu = nuke.menu('Nodes')
+    node_menu.addCommand(
+        'Py',
+        IMPORT_CMD,
+        shortcut='\\',
+        icon=ICON_PATH
+    )
 
 
 def capture_ui_state():
-    """
-    Get the current workspace layout.
+    """ Get the current workspace layout.
     """
     ui_state = {}
     pythoneditor_panel = None
@@ -166,13 +171,12 @@ def focus_on_panel(ui_state, panel_name=PANEL_NAME):
 
 
 def add_to_pane():
-    """
-    Locates a panel and adds it to one
+    """ Locates a panel and adds it to one
     of the main dock windows in order
     of preference.
 
     BUG: This now seems to disagree greatly with the "Reload Package"
-    feature, causing many segfault.
+    feature, causing many a segfault.
     """
     ui_state = capture_ui_state()
     if focus_on_panel(ui_state):
