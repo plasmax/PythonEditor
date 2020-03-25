@@ -58,12 +58,12 @@ class PyKnobEdit(editor.Editor):
 
 @QtCore.Slot(object)
 def addTextKnobs(node):
-    """
-    Finds node panel widget and adds some
+    """ Finds node panel widget and adds some
     extra widgets to it that act like knobs.
     TODO: find node panels in Properties bin.
     also appears that this causes segmentation faults
-    probably because of pointers to missing or already deleted widgets.
+    probably because of pointers to missing or already 
+    deleted widgets.
     """
     print(node.name())
 
@@ -86,6 +86,7 @@ def addTextKnobs(node):
     # for k in node.allKnobs():
     #     if 'py' in k.Class().lower():
     #         stw.addTab(PyKnobEdit(k), k.name())
+
 
 def pythonKnobEdit():
     if nuke.thisKnob().name() == 'showPanel':  # TODO: is there a 'knob added' knobchanged?

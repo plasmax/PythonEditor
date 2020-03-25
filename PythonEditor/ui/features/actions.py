@@ -1,5 +1,4 @@
-"""
-The actions module houses the majority of the functionality
+""" The actions module houses the majority of the functionality
 of the PythonEditor user interface. Widgets with the Actions
 class applied will have all the methods available on that
 class applied to the widget as actions, using an overridable
