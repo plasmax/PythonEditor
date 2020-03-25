@@ -2,7 +2,6 @@ import sys
 from os.path import dirname
 
 from PythonEditor.app.nukefeatures import nukedock
-from PythonEditor.core import streams
 from PythonEditor.utils import constants
 from PythonEditor.ui.Qt import QtWidgets, QtCore
 

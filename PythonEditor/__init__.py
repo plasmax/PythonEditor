@@ -35,18 +35,14 @@ def main():
         # this seems to not cause any crashes either
         'PySide2:PySide:PyQt5:PyQt4'
 
-    global ide
-    from PythonEditor.ui import ide
+    # do not create .pyc files
+    import sys
+    sys.dont_write_bytecode = True
 
     # for convenience - FIXME: this
     # should be developer-only or at least
     # disableable
-    import sys
-
-    # do not create .pyc files
-    sys.dont_write_bytecode = True
-
-    from ui import Qt
+    from PythonEditor.ui import Qt
 
     # enable "from Qt import x" and
     sys.modules['Qt'] = Qt
