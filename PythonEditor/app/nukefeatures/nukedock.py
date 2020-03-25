@@ -1,65 +1,33 @@
 
 
-def setup_dock():
+def setup_dock(shortcut=None):
+    """ Register the PythonEditor interface
+    as a Nuke docked panel.
+    """
     try:
-        import nukescripts
+        import nuke
+        from nukescripts import PythonPanel, registerPanel
     except ImportError:
         return
 
-    globals().update(**nukescripts.__dict__) # basically from nukescripts import *
+    # register the panel manually, expressly for
+    # the purpose of redefining the nested addToPane
+    # function to take a pane parameter.
+    class Panel(PythonPanel):
+        def __init__(self, widget, name, _id):
+            PythonPanel.__init__(self, name, _id)
+            self.custom_knob = nuke.PyCustom_Knob(
+                name, '',
+                '__import__("nukescripts").panels.WidgetKnob('+widget+')'
+            )
+            self.addKnob(self.custom_knob)
 
-    def registerWidgetAsPanel ( widget, name, id, create = False ):
-      """registerWidgetAsPanel(widget, name, id, create) -> PythonPanel
+    widget = '__import__("PythonEditor.ui.ide", fromlist=["IDE"]).IDE'
+    name = 'Python Editor'
+    _id = 'Python.Editor'
+    def add_panel(pane=None):
+        return Panel(widget, name, _id).addToPane(pane=pane)
 
-        Wraps and registers a widget to be used in a Nuke panel.
-
-        widget - should be a string of the class for the widget
-        name - is is the name as it will appear on the Pane menu
-        id - should the the unique ID for this widget panel
-        create - if this is set to true a new NukePanel will be returned that wraps this widget
-
-        Example ( using PyQt )
-
-        import nuke
-        import PyQt4.QtCore as QtCore
-        import PyQt4.QtGui as QtGui
-        from nukescripts import panels
-
-        class NukeTestWindow(QtGui.QWidget):
-          def __init__(self, parent=None):
-            QtGui.QWidget.__init__(self, parent)
-            self.setLayout( QtGui.QVBoxLayout() )
-            self.myTable    = QtGui.QTableWidget( )
-            self.myTable.header = ['Date', 'Files', 'Size', 'Path' ]
-            self.myTable.size = [ 75, 375, 85, 600 ]
-            self.layout().addWidget( self.myTable )
-
-        nukescripts.registerWidgetAsPanel('NukeTestWindow', 'NukeTestWindow', 'uk.co.thefoundry.NukeTestWindow' )
-
-      """
-
-      class Panel( PythonPanel ):
-
-        def __init__(self, widget, name, id):
-          PythonPanel.__init__(self, name, id )
-          self.customKnob = nuke.PyCustom_Knob( name, "", "__import__('nukescripts').panels.WidgetKnob(" + widget + ")" )
-          self.addKnob( self.customKnob  )
-
-      def addPanel(pane=None):
-        return Panel( widget, name, id ).addToPane(pane=pane)
-
-      menu = nuke.menu('Pane')
-      menu.addCommand( name, addPanel)
-      registerPanel( id, addPanel )
-
-      if ( create ):
-        return Panel( widget, name, id )
-      else:
-        return None
-
-    if nukescripts.panels.__panels.get('Python.Editor') is not None:
-        del nukescripts.panels.__panels['Python.Editor']
-
-    registerWidgetAsPanel('__import__("PythonEditor").ide.IDE',
-                          "Python Editor",
-                          'Python.Editor')
+    menu = nuke.menu('Pane')
+    menu.addCommand(name, add_panel, shortcut=shortcut)
+    registerPanel(_id, add_panel)
