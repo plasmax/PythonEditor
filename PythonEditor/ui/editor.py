@@ -94,7 +94,7 @@ class Editor(QPlainTextEdit):
             uid = str(uuid.uuid4())
         self.shortcut_overrode_keyevent = False
         self._changed = False
-        self.wait_for_autocomplete = False
+        self.autocomplete_overriding = False
         self._handle_shortcuts = handle_shortcuts
         self._features_initialised = False
         self._key_pressed = False
@@ -138,7 +138,7 @@ class Editor(QPlainTextEdit):
 
         # TODO: add a new autocompleter
         # that uses DirectConnection.
-        self.wait_for_autocomplete = True
+        self.autocomplete_overriding = True
         AC = autocompletion.AutoCompleter
         self.autocomplete = AC(self)
 
@@ -258,7 +258,10 @@ class Editor(QPlainTextEdit):
             event.ignore()
             return
 
-        if self.wait_for_autocomplete:
+        # print('Editor: {!r} has been pressed.'.format(event.text()))
+        if self.autocomplete_overriding:
+            # let the autocomplete handle the
+            # key press (i.e. complete the text)
             self.key_pressed_signal.emit(event)
             return
 
@@ -268,6 +271,7 @@ class Editor(QPlainTextEdit):
             event.accept()
             return
 
+        # print('Editor: {!r} will be entered.'.format(event.text()))
         super(Editor, self).keyPressEvent(event)
         self.post_key_pressed_signal.emit(event)
 
@@ -277,7 +281,7 @@ class Editor(QPlainTextEdit):
             # when the key released is F5
             # (reload app)
             return
-        self.wait_for_autocomplete = True
+        self.autocomplete_overriding = True
         super(Editor, self).keyReleaseEvent(event)
 
     def contextMenuEvent(self, event):

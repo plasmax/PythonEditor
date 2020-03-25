@@ -664,17 +664,18 @@ class AutoCompleter(QtCore.QObject):
 
         self.editor.setTextCursor(textCursor)
 
+    def set_override(self, state):
+        self.editor.autocomplete_overriding = state
+
     @QtCore.Slot(QtGui.QKeyEvent)
     def _pre_keyPressEvent(self, event):
         """
         Called before QPlainTextEdit.keyPressEvent
         TODO:
-        - Complete defined names
-            (parse for "name =" thing)
-        - Complete class names (parse for "self.")
-        - Complete snippets
-        - Hide popup if no completions available
+        - Complete class properties/methods
+          (parse for "self.")
         """
+        # print('  Autocomplete: pre keypress')
         cp = self.completer
         completing = (
             cp
@@ -692,8 +693,7 @@ class AutoCompleter(QtCore.QObject):
                 QtCore.Qt.Key_CapsLock,
             ):
                 event.ignore()
-                e = self.editor
-                e.wait_for_autocomplete = True
+                self.set_override(True)
                 return True
 
         NOMOD = QtCore.Qt.NoModifier
@@ -720,11 +720,10 @@ class AutoCompleter(QtCore.QObject):
                     self.complete_object()
                     # assuming this should be
                     # here too but untested
-                    e = self.editor
-                    e.wait_for_autocomplete = True
+                    self.set_override(True)
                     return True
 
-        self.editor.wait_for_autocomplete = False
+        self.set_override(False)
         self.editor.keyPressEvent(event)
 
     @QtCore.Slot(QtGui.QKeyEvent)
@@ -732,17 +731,17 @@ class AutoCompleter(QtCore.QObject):
         """
         Called after QPlainTextEdit.keyPressEvent
         """
+        # print('    Autocomplete: post keypress.')
         cp = self.completer
-        if (
+        #if event.text() in [':', '!', '.']:
+        if event.text() == '.':
             # things to autocomplete on
-            event.text() in [':', '!', '.']
-            ):
             # TODO: this should hide
             # on a lot more characters!
             if cp.popup():
                 cp.popup().hide()
             self.complete_object()
-            self.editor.wait_for_autocomplete = True
+            self.set_override(True)
             return True
         elif event.text() in ['"', "'"]:
             # autocomplete node knob names
@@ -820,7 +819,8 @@ class AutoCompleter(QtCore.QObject):
             else:
                 self.complete_variables()
 
-        self.editor.wait_for_autocomplete = True
+        self.set_override(True)
+
 
 
 # from tabtabtab by Ben Dickson
