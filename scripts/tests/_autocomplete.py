@@ -31,7 +31,7 @@ class TestEditor(editor.Editor):
     def __init__(self):
         super(editor.Editor, self).__init__()
         self._changed = False
-        self.wait_for_autocomplete = True
+        self.autocomplete_overriding = True
         self.autocomplete = autocompletion.AutoCompleter(self)
 
 if __name__ == '__main__':

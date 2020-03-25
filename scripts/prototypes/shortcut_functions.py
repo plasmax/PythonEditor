@@ -161,7 +161,7 @@ def indent_next_line(code_edit):
     if len(line.strip()) == 0:
         insertion = '\n'
 
-    if not getattr(code_edit, 'wait_for_autocomplete', False):
+    if not getattr(code_edit, 'autocomplete_overriding', False):
         textCursor.insertText(insertion)
         code_edit.setTextCursor(textCursor)
 
