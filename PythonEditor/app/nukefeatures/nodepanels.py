@@ -26,8 +26,7 @@ class PyKnobs(QtWidgets.QWidget):
 
 
 class PyKnobEdit(editor.Editor):
-    """
-    Editor that automatically updates knobs.
+    """ Editor that automatically updates knobs.
     """
     def __init__(self, knob):
         super(PyKnobEdit, self).__init__()
