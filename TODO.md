@@ -2,6 +2,7 @@
 
 
 #### Bug reports
+- [ ] Sometimes (so far only tested on standalone and in windows...) Ctrl+H will cause the interface to freeze as it is awaiting user input to reveal more information in the program terminal.
 - [ ] autocomplete doesn't pick up all variables such as asset.properties.value_dict
 
 Within Nuke
