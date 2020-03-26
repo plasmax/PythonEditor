@@ -11,9 +11,13 @@ integrated_development_environment.show()
 """
 import os
 import sys
-import imp
 import traceback
 
+if (sys.version_info.major >= 3
+    and sys.version_info.minor >= 4):
+    from importlib import reload as reload_module
+else:
+    from imp import reload as reload_module
 
 PYTHON_EDITOR_MODULES = []
 
@@ -118,7 +122,7 @@ class IDE(QWidget):
                 QTimer.singleShot(100, print_error)
                 continue
             try:
-                imp.reload(mod)
+                reload_module(mod)
             except ImportError:
                 msg = 'could not reload {0}: {1}'
                 print(msg.format(name, mod))
