@@ -1351,19 +1351,50 @@ class Actions(QtCore.QObject):
         widget.reload_package()
 
     def print_help(self):
-        """ Prints documentation for selected text 
+        """ Prints documentation for selected text
         if it currently represents a python object.
         """
-        cursor = self.editor.textCursor()
+        # this action is registered with
+        # both the editor and terminal
+        if hasattr(self, 'terminal') and self.terminal.hasFocus():
+            cursor = self.terminal.textCursor()
+        else:
+            cursor = self.editor.textCursor()
+
         selection = cursor.selection()
         text = selection.toPlainText().strip()
         if not text:
             return
-        obj = __main__.__dict__.get(text)
-        if obj is not None:
-            print(obj.__doc__)
-        elif text:
-            exec('help('+text+')', __main__.__dict__)
+        cmd = 'help({})'.format(text)
+
+        # make sure the beginning of the help 
+        # is visible in the terminal
+        if hasattr(self, 'terminal'):
+            cursor = self.terminal.textCursor()
+            cursor.movePosition(QtGui.QTextCursor.End)
+            block = cursor.block()
+
+        # set environment variable TERM
+        # to force pydoc to use plainpager
+        TERM = os.environ.get('TERM')
+        os.environ['TERM'] = 'dumb'
+        try:
+            exec(cmd, __main__.__dict__)
+        except SyntaxError:
+            try:
+                cmd = 'help("{}")'.format(text)
+                exec(cmd, __main__.__dict__)
+            except Exception:
+                pass
+        finally:
+            if TERM is None:
+                del os.environ['TERM']
+            else:
+                os.environ['TERM'] = TERM
+
+        if hasattr(self, 'terminal'):
+            cursor.setPosition(block.position())
+            self.terminal.setTextCursor(cursor)
 
     def pretty_print(self):
         """ Pretty print selected text if it

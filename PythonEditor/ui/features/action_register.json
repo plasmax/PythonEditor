@@ -40,6 +40,13 @@
             ],
             "Method": "clear_output",
             "Menu Location": "View"
+        },
+        "Print Help": {
+            "Shortcuts": [
+                "Ctrl+H"
+            ],
+            "Method": "print_help",
+            "Menu Location": "Tools/Object"
         }
     },
     "editor": {
