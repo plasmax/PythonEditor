@@ -58,11 +58,11 @@ class Highlight(QtGui.QSyntaxHighlighter):
         'self', 'cls', 'args', 'kwargs'
     ]
     keywords = [
-        'and', 'assert', 'break', 'continue',
+        'and', 'as', 'assert', 'async', 'await', 'break', 'continue',
         'del', 'elif', 'else', 'except', 'exec', 'finally',
         'for', 'from', 'global', 'if', 'import', 'in',
-        'is', 'lambda', 'not', 'or', 'pass', 'print', 'as',
-        'raise', 'return', 'try', 'while', 'yield', 'with'
+        'is', 'lambda', 'nonlocal', 'not', 'or', 'pass', 'print', 
+        'raise', 'return', 'try', 'while', 'with', 'yield'
     ]
     instantiators = [
         'def', 'class'
