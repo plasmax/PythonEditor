@@ -205,6 +205,13 @@
             "Method": "find",
             "Menu Location": "Find/Find.."
         },
+        "Find Across Tabs": {
+            "Shortcuts": [
+                "Ctrl+Alt+F"
+            ],
+            "Method": "find_across_tabs",
+            "Menu Location": "Find/Find Across Tabs"
+        },
         "Find and Replace": {
             "Shortcuts": [
                 "Ctrl+Shift+F"
@@ -278,6 +285,13 @@
                 "Ctrl+I"
             ],
             "Method": "prepend_import_statement",
+            "Menu Location": "Edit/Text"
+        },
+        "Insert Cell Break": {
+            "Shortcuts": [
+                "Ctrl+#"
+            ],
+            "Method": "cell_break",
             "Menu Location": "Edit/Text"
         },
         "Loop Format": {
@@ -387,6 +401,27 @@
                 "Ctrl+H"
             ],
             "Method": "print_help",
+            "Menu Location": "Tools/Object"
+        },
+        "Print Vars": {
+            "Shortcuts": [
+                "Alt+V"
+            ],
+            "Method": "print_vars",
+            "Menu Location": "Tools/Object"
+        },
+        "Print Source": {
+            "Shortcuts": [
+                "Alt+S"
+            ],
+            "Method": "print_source",
+            "Menu Location": "Tools/Object"
+        },
+        "Print Import Statement": {
+            "Shortcuts": [
+                "Alt+I"
+            ],
+            "Method": "print_import_statement",
             "Menu Location": "Tools/Object"
         },
         "Duplicate Lines": {
