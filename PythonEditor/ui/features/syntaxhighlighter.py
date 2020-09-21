@@ -117,8 +117,41 @@ class Highlight(QtGui.QSyntaxHighlighter):
         'FutureWarning',
         'ImportWarning',
         'UnicodeWarning',
-        'BytesWarning'
+        'BytesWarning',
+
+        # lazy of me: types are
+        # here too because they
+        # are highlighted the same
+        'basestring',
+        'bool',
+        'buffer',
+        'bytearray',
+        'bytes',
+        'classmethod',
+        'complex',
+        'dict',
+        'enumerate',
+        'file',
+        'float',
+        'frozenset',
+        'int',
+        'list',
+        'long',
+        'memoryview',
+        'object',
+        'property',
+        'reversed',
+        'set',
+        'slice',
+        'staticmethod',
+        'str',
+        'super',
+        'tuple',
+        'type',
+        'unicode',
+        'xrange',
     ]
+
     operatorKeywords = [
         r'=', r'==', r'!=', r'<', r'<=', r'>', r'>=',
         r'\+', r'-', r'\*', r'/', r'//', r'\%', r'\*\*',
