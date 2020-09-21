@@ -50,9 +50,13 @@ def load_actions_from_json():
     with open(actions_path, 'r') as f:
         action_dict = json.load(f)
 
-    # TODO:
-    # search for user-defined PythonEditorShortcuts.json
-    # (or perhaps in XML) that allow dictionary updates here.
+    # allow users to define their own shortcuts
+    user_path = '~/.nuke/PythonEditorShortcuts.json'
+    user_path = os.path.expanduser(user_path)
+    if os.path.exists(user_path):
+        with open(actions_path, 'r') as f:
+            user_action_dict = json.load(f)
+        action_dict.update(**user_action_dict)
 
     return action_dict
 
@@ -1156,13 +1160,13 @@ class Actions(QtCore.QObject):
         Show about message with version
         info for pythoneditor.
         """
-        from PythonEditor._version import __version__
+        from PythonEditor._version import __version__, __date__
         msg = (
-            'PythonEditor version {0}\n\n'.format(__version__)
+            'PythonEditor version {0}, updated {1}.\n\n'
             + 'Written by Max Last.\n'
             + 'Please email feedback to: '
             + 'tsalxam@gmail.com'
-        )
+        ).format(__version__, __date__)
         QtWidgets.QMessageBox.about(
             self.editor,
             'About PythonEditor',
@@ -1300,6 +1304,18 @@ class Actions(QtCore.QObject):
         )
         self.search_panel.show()
 
+    def find_across_tabs(self):
+        """
+        Search across all tabs.
+        """
+        self.search_panel = search.SearchPanel(
+            self.editor,
+            tabs=getattr(self, 'tabs', None),
+            replace=False
+        )
+        self.search_panel.show()
+        self.search_panel.search_across_tabs_check.click()
+
     def find_and_replace(self):
         """
         Show a find and replace dialog.
@@ -1350,10 +1366,28 @@ class Actions(QtCore.QObject):
             widget = parent
         widget.reload_package()
 
-    def print_help(self):
-        """ Prints documentation for selected text
-        if it currently represents a python object.
+    def print_import_statement(self):
+        """ Given a python object, attempt to
+        construct an import statement as a string.
         """
+        # TODO: needs a version
+        # where it collects all the 
+        # "from PySide.QtBlahBlah import *" 
+        # into single imports at the top of the script
+        text = self._get_selected_text()
+        thing = __main__.__dict__.get(text)
+        if thing is None:
+            return
+        module = inspect.getmodule(thing).__name__
+        if 'PySide' in module:
+            name = thing.__name__
+        else:
+            name = thing.__class__.__name__
+        statement = 'from %s import %s' % (module, name)
+        statement = 'from %s import %s' % (module, text)
+        print(statement)
+
+    def _get_selected_text(self):
         # this action is registered with
         # both the editor and terminal
         if hasattr(self, 'terminal') and self.terminal.hasFocus():
@@ -1363,6 +1397,13 @@ class Actions(QtCore.QObject):
 
         selection = cursor.selection()
         text = selection.toPlainText().strip()
+        return text
+
+    def print_help(self):
+        """ Prints documentation for selected text
+        if it currently represents a python object.
+        """
+        text = self._get_selected_text()
         if not text:
             return
         cmd = 'help({})'.format(text)
@@ -1419,6 +1460,45 @@ class Actions(QtCore.QObject):
                 import traceback
                 traceback.print_exc()
 
+    def print_vars(self):
+        """Pretty print vars
+        for selected text.
+        """
+        text = self._get_selected_text()
+        try:
+            # try json first as it's nicer
+            cmd = 'print( __import__("json").dumps(vars({}), indent=2) )'
+            exec(cmd.format(text), __main__.__dict__)
+        except Exception as error:
+            # fall back to pprint
+            try:
+                cmd = '__import__("pprint").pprint(vars({}), indent=2)'
+                exec(cmd.format(text), __main__.__dict__)
+            except Exception as error:
+                print(error)
+                import traceback
+                traceback.print_exc()
+
+    def print_source(self):
+        """Print source code
+        for selected object.
+        """
+        text = self._get_selected_text()
+        if not text.strip():
+            return
+        try:
+            # try json first as it's nicer
+            cmd = 'print( __import__("inspect").getsource({}))'
+            exec(cmd.format(text), __main__.__dict__)
+        except Exception as error:
+            try:
+                cmd = 'print( __import__("inspect").getsource({}.__class__))'
+                exec(cmd.format(text), __main__.__dict__)
+            except Exception as error:
+                print(error)
+                import traceback
+                traceback.print_exc()
+
     def prepend_import_statement(self):
         """
         Format the currently selected text
@@ -1430,6 +1510,21 @@ class Actions(QtCore.QObject):
         if not text:
             text = ''
         text = 'import {0}'.format(text)
+        cursor.insertText(text)
+
+    def cell_break(self):
+        """
+        Insert a cell break #&&
+        which means only code inside lines
+        starting with #&& will be executed.
+        """
+        cursor = self.editor.textCursor()
+        selection = cursor.selection()
+        text = selection.toPlainText().strip()
+        if text:
+            text = '\n#&&\n%s\n#&&' % text
+        else:
+            text = '#&&'
         cursor.insertText(text)
 
     def loop_format(self):
