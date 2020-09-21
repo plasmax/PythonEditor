@@ -68,6 +68,8 @@ class FindPalette(EditLine):
     def __init__(self, editor, tabs=None):
         super(FindPalette, self).__init__(editor)
         self.setObjectName('FindPalette')
+        text = 'Type here and press Enter to search...'
+        self.setPlaceholderText(text)
         words = list(set(re.findall(r'\w+', editor.toPlainText())))
         completer = QtWidgets.QCompleter(words)
         completer.highlighted.connect(self.find)
@@ -85,15 +87,12 @@ class FindPalette(EditLine):
             PREVIOUS_QUERY = text
         elif PREVIOUS_QUERY is not None:
             self.setText(PREVIOUS_QUERY)
-        else:
-            self.setText(
-                'Type here and press Enter to search...'
-            )
         self.setFocus(QtCore.Qt.MouseFocusReason)
         self.selectAll()
 
     def toggle_search_across_tabs(self):
         self.search_across_tabs = not self.search_across_tabs
+        self.setFocus(QtCore.Qt.MouseFocusReason)
         if self.search_across_tabs:
             print('Searching across all tabs.')
         else:
@@ -293,15 +292,12 @@ class SearchPanel(QtWidgets.QWidget):
 
             self.replace.textChanged.connect(self.remember_replacement)
             self.setTabOrder(self.find, self.replace)
-            # self.setTabOrder(self.replace, self.find)
 
-        # self.close_button = QtWidgets.QToolButton()
         self.close_button = QtWidgets.QPushButton()
         icon = self.style().standardIcon(
             QtWidgets.QStyle.SP_TitleBarCloseButton
         )
         self.close_button.setIcon(icon)
-        # self.close_button.setAutoRaise(True)
         self.close_button.setFlat(True)
         layout.addWidget(self.close_button,0,3)
         self.insert_self_in_parent()
