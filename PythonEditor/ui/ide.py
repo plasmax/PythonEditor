@@ -151,6 +151,8 @@ class IDE(QWidget):
             QTimer.singleShot(100, self.set_editor_focus)
             self.retries += 1
             return
+
+        # trigger the autosave.
         editor.focus_in_signal.emit()
 
     def showEvent(self, event):
