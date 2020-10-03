@@ -23,7 +23,6 @@ STARTUP = 'PYTHONEDITOR_CAPTURE_STARTUP_STREAMS'
 
 class Terminal(QPlainTextEdit):
     """ Output text display widget """
-    link_activated = Signal(str)
 
     def __init__(self):
         super(Terminal, self).__init__()
@@ -81,31 +80,17 @@ class Terminal(QPlainTextEdit):
 
         self.speaker.emitter.connect(self.receive)
 
-    def mousePressEvent(self, event):
-        if not hasattr(self, 'anchorAt'):
-            # pyqt doesn't use anchorAt
-            return super(Terminal, self).mousePressEvent(event)
-
-        if (event.button() == Qt.LeftButton):
-            # TODO: this is for clicking on links, and
-            # currently nothing receives the signal.
-            clickedAnchor = self.anchorAt(event.pos())
-            if clickedAnchor:
-                self.link_activated.emit(clickedAnchor)
-
-        elif (event.button() == Qt.RightButton):
-            menu = self.createStandardContextMenu()
-            path_in_line = self.path_in_line(
-                self.line_from_event(event)
-            )
-            if path_in_line:
-                def _goto():
-                    goto(path_in_line)
-                menu.addAction('Goto {0}'.format(path_in_line), _goto)
-            menu.addAction('Parse Last Traceback', self.parse_last_traceback)
-            menu.exec_(QCursor().pos())
-
-        super(Terminal, self).mousePressEvent(event)
+    def contextMenuEvent(self, event):
+        menu = self.createStandardContextMenu()
+        path_in_line = self.path_in_line(
+            self.line_from_event(event)
+        )
+        if path_in_line:
+            def _goto():
+                goto(path_in_line)
+            menu.addAction('Goto {0}'.format(path_in_line), _goto)
+        menu.addAction('Parse Last Traceback', self.parse_last_traceback)
+        menu.exec_(QCursor().pos())
 
     def line_from_event(self, event):
         pos = event.pos()
