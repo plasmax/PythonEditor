@@ -10,11 +10,24 @@ import time
 import os
 import uuid
 from functools import partial
+
+from PythonEditor.ui.Qt.QtCore import (
+    QSize, QEvent, QPoint, Signal,
+    QTimer, Slot, Qt)
+
+from PythonEditor.ui.Qt.QtGui import (
+    QPainter, QColor, QPalette, QPen,
+    QBrush, QClipboard, QCursor,
+    QTextCursor)
+
+from PythonEditor.ui.Qt.QtWidgets import (
+    QAbstractButton, QStyle, QStyleOption,
+    QTabBar, QToolButton, QMenu,
+    QLineEdit, QMessageBox, QWidget,
+    QVBoxLayout, QHBoxLayout, QComboBox)
+
 from PythonEditor.utils import save
 from PythonEditor.utils.debug import debug
-from PythonEditor.ui.Qt import QtWidgets
-from PythonEditor.ui.Qt import QtGui
-from PythonEditor.ui.Qt import QtCore
 from PythonEditor.ui.features import autosavexml
 from PythonEditor.ui import editor
 
@@ -24,20 +37,110 @@ QTabBar::tab {
     height: 24px;
     min-width: 100px;
 }
+
+QTabBar QToolButton {
+    background-color: rgba(255, 255, 255, 0);
+}
+
+QTabBar QToolButton::right-arrow:enabled {
+    background-color: rgba(255, 255, 255, 0);
+    border:0;
+}
+
+QTabBar QToolButton::right-arrow:disabled {
+   background-color: rgba(255, 255, 255, 0);
+   border:0;
+}
+
+QTabBar QToolButton::left-arrow:enabled {
+    background-color: rgba(255, 255, 255, 0);
+    border:0;
+}
+
+QTabBar QToolButton::left-arrow:disabled {
+    background-color: rgba(255, 255, 255, 0);
+    border:0;
+}
+
+QTabBar::tear {
+    width: 0px;
+    border: none;
+}
+
+QToolButton {
+    color: grey;
+    border-radius: 0px;
+    padding: 2px;
+}
+
+QToolButton:hover {
+    color: rgb(0, 255, 64);
+    border-radius: 1px;
+    padding: 0px;
+}
 """
 
 
-class CloseButton(QtWidgets.QAbstractButton):
-    close_clicked_signal = QtCore.Signal(
-                            QtCore.QPoint
-                           )
+# more stylesheet examples
+"""
+QPushButton,QToolButton {
+
+  background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #fdfbf7, stop: 1 #cfccc7);
+  border-width: 1px;
+  border-color: #8f8f91;
+  border-style: solid;
+  border-radius: 3px;
+  padding: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+QToolButton[popupMode="1"] {
+
+  padding-right: 18px;
+}
+
+QToolButton::menu-button {
+
+  border-width: 1px;
+  border-color: #8f8f91;
+  border-style: solid;
+  border-top-right-radius: 3px;
+  border-bottom-right-radius: 3px;
+  /* 16px width + 2 * 1px for border = 18px allocated above */
+  width: 16px;
+}
+
+QPushButton:hover,QToolButton:hover {
+
+  border-top-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #b2afaa, stop: 0.5 #4847a1, stop: 1 #7e7cb6);
+  border-radius: 1px;
+  border-top-width: 3px;
+  border-bottom-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #7e7cb6, stop: 0.5 #4847a1, stop: 1 #b2afaa);
+  border-bottom-width: 3px;
+  background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #e4e0e1, stop: 1 #cfcbcd);
+}
+
+QPushButton:pressed,QToolButton:pressed {
+
+  background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #cfcbcd, stop: 1 #e4e0e1);
+  border-width: 1px;
+  border-color: #8f8f91;
+}
+
+QPushButton:focus,QToolButton:focus {
+
+  outline: none;
+}
+"""
+
+class CloseButton(QAbstractButton):
+    close_clicked_signal = Signal(QPoint)
     def __init__(self, parent=None):
-        super(
-            CloseButton, self
-            ).__init__(
+        super(CloseButton, self).__init__(
             parent=parent
         )
-        self.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.setFocusPolicy(Qt.NoFocus)
         self.setToolTip('Close Tab')
         self.resize(self.sizeHint())
         self.tab_saved = False
@@ -45,16 +148,16 @@ class CloseButton(QtWidgets.QAbstractButton):
     def sizeHint(self):
         self.ensurePolished()
         width = self.style().pixelMetric(
-            QtWidgets.QStyle.PM_TabCloseIndicatorWidth,
+            QStyle.PM_TabCloseIndicatorWidth,
             None,
             self
         )
         height = self.style().pixelMetric(
-            QtWidgets.QStyle.PM_TabCloseIndicatorHeight,
+            QStyle.PM_TabCloseIndicatorHeight,
             None,
             self
         )
-        return QtCore.QSize(width, height)
+        return QSize(width, height)
 
     def enterEvent(self, event):
         if self.isEnabled():
@@ -67,21 +170,15 @@ class CloseButton(QtWidgets.QAbstractButton):
         super(CloseButton, self).leaveEvent(event)
 
     def mousePressEvent(self, event):
-        super(
-            CloseButton,
-            self
-            ).mousePressEvent(event)
+        super(CloseButton, self).mousePressEvent(event)
         parent_pos = self.mapToParent(event.pos())
         self.close_clicked_signal.emit(parent_pos)
 
     def paintEvent(self, event):
-        """
-        Adapted from qttabbar.cpp
-        """
-        p = QtGui.QPainter(self)
-        opt = QtWidgets.QStyleOption()
+        """Adapted from qttabbar.cpp"""
+        p = QPainter(self)
+        opt = QStyleOption()
         opt.initFrom(self)
-        QStyle = QtWidgets.QStyle
         opt.state |= QStyle.State_AutoRaise
         hovered = False
         if (self.isEnabled()
@@ -98,11 +195,11 @@ class CloseButton(QtWidgets.QAbstractButton):
 
         if isinstance(
                 self.parent(),
-                QtWidgets.QTabBar
+                QTabBar
             ):
             tb = self.parent()
             index = tb.currentIndex()
-            BP = QtWidgets.QTabBar.ButtonPosition
+            BP = QTabBar.ButtonPosition
             position = BP(
                 tb.style().styleHint(
                 QStyle.SH_TabBar_CloseButtonPosition,
@@ -114,7 +211,7 @@ class CloseButton(QtWidgets.QAbstractButton):
                 opt.state |= QStyle.State_Selected
 
         self.style().drawPrimitive(
-            QtWidgets.QStyle.PE_IndicatorTabClose,
+            QStyle.PE_IndicatorTabClose,
             opt,
             p,
             self
@@ -126,7 +223,7 @@ class CloseButton(QtWidgets.QAbstractButton):
         """
         if self.tab_saved or hovered:
             self.style().drawPrimitive(
-            QtWidgets.QStyle.PE_IndicatorTabClose, opt, p, self)
+            QStyle.PE_IndicatorTabClose, opt, p, self)
         else:
             font = p.font()
             font.setPointSize(9)
@@ -136,16 +233,16 @@ class CloseButton(QtWidgets.QAbstractButton):
             rect.adjust(0,-1,0,0)
 
             palette = self.palette()
-            # brush = QtGui.QBrush(
-            #     QtGui.QColor(0.1, 0.1, 0.1, 1),
-            #     QtCore.Qt.SolidPattern
+            # brush = QBrush(
+            #     QColor(0.1, 0.1, 0.1, 1),
+            #     Qt.SolidPattern
             #     )
             # palette.setBrush(
-            #     QtGui.QPalette.ColorRole.Text,
+            #     QPalette.ColorRole.Text,
             #     brush
             #     )
             # palette.setBrush(
-            #     QtGui.QPalette.ColorRole.BrightText,
+            #     QPalette.ColorRole.BrightText,
             #     brush
             #     )
 
@@ -154,7 +251,7 @@ class CloseButton(QtWidgets.QAbstractButton):
         """
 
 
-class Tabs(QtWidgets.QTabBar):
+class Tabs(QTabBar):
     """
     Make tabs fast by overriding the
     paintEvent to draw close buttons.
@@ -168,33 +265,29 @@ class Tabs(QtWidgets.QTabBar):
     to permit other views to similarly display the
     model's content.
     """
-    pen = QtGui.QPen()
-    brush = QtGui.QBrush()
+    pen = QPen()
+    brush = QBrush()
     mouse_over_rect = False
     over_button = -1
     start_move_index = -1
 
     # for autosave purposes:
-    contents_saved_signal   = QtCore.Signal(
-                                str
-                              )
+    contents_saved_signal   = Signal(str)
     # in case we receive a ctrl+shift+w signal
     # to close the tab:
-    tab_close_signal        = QtCore.Signal(
-                                str
-                              )
-    tab_renamed_signal      = QtCore.Signal(
+    tab_close_signal        = Signal(str)
+    tab_renamed_signal      = Signal(
                                 str,
                                 str,
                                 str,
                                 str,
                                 object
                               )
-    tab_repositioned_signal = QtCore.Signal(
+    tab_repositioned_signal = Signal(
                                 int,
                                 int
                               )
-    reset_tab_signal        = QtCore.Signal()
+    reset_tab_signal        = Signal()
 
     def __init__(self, parent=None):
         super(Tabs, self).__init__(parent)
@@ -218,7 +311,7 @@ class Tabs(QtWidgets.QTabBar):
             self.clicked_close
         )
 
-    @QtCore.Slot(str)
+    @Slot(str)
     def new_tab(self, tab_name=None, tab_data={}):
         """
         Creates a new tab.
@@ -283,7 +376,7 @@ class Tabs(QtWidgets.QTabBar):
         rect = self.rect()
         lB, rB = [
             c for c in self.children()
-            if isinstance(c, QtWidgets.QToolButton)
+            if isinstance(c, QToolButton)
         ]
         side_button_width = lB.width()+rB.width()+15
         rect.adjust(0,0, -side_button_width, 0)
@@ -300,7 +393,7 @@ class Tabs(QtWidgets.QTabBar):
             return False
 
         try:
-            QE = QtCore.QEvent
+            QE = QEvent
         except AttributeError:
             return True
 
@@ -312,7 +405,7 @@ class Tabs(QtWidgets.QTabBar):
             ]:
             self.handle_close_button_display(event)
 
-        elif event.type() == QtCore.QEvent.ToolTip:
+        elif event.type() == QEvent.ToolTip:
             pos = self.mapFromGlobal(
                 self.cursor().pos()
             )
@@ -357,7 +450,7 @@ class Tabs(QtWidgets.QTabBar):
                 tcb = self.tab_close_button
                 tcb.tab_saved = ts
 
-        elif e.type() == QtCore.QEvent.HoverMove:
+        elif e.type() == QEvent.HoverMove:
             pos = e.pos()
             i = self.tabAt(pos)
             if i != self._hovered_index:
@@ -371,10 +464,10 @@ class Tabs(QtWidgets.QTabBar):
                     tcb = self.tab_close_button
                     tcb.tab_saved = ts
 
-        elif e.type() == QtCore.QEvent.HoverLeave:
+        elif e.type() == QEvent.HoverLeave:
             self.tab_close_button.hide()
 
-        elif e.type() == QtCore.QEvent.Paint:
+        elif e.type() == QEvent.Paint:
             if hasattr(self, 'name_edit'):
                 if self.name_edit.isVisible():
                     self.tab_close_button.hide()
@@ -410,7 +503,7 @@ class Tabs(QtWidgets.QTabBar):
         y = rect.center().y()-(btn.height()/2)
         if i != self.currentIndex():
             y += 2
-        btn_pos = QtCore.QPoint(x, y)
+        btn_pos = QPoint(x, y)
 
         btn.move(btn_pos)
         btn.raise_()
@@ -426,7 +519,7 @@ class Tabs(QtWidgets.QTabBar):
         """
         # this doesn't cover wacom...
         # might need tabletPressEvent
-        if event.button() == QtCore.Qt.LeftButton:
+        if event.button() == Qt.LeftButton:
             self.tab_pressed = True
             pt = event.pos()
             i = self.tabAt(pt)
@@ -460,7 +553,7 @@ class Tabs(QtWidgets.QTabBar):
         """
         if self.count() == 0:
             return
-        if event.buttons() == QtCore.Qt.LeftButton:
+        if event.buttons() == Qt.LeftButton:
             i = self.currentIndex()
             if (not hasattr(self, 'pressedIndex')
                 or self.pressedIndex != i):
@@ -476,7 +569,7 @@ class Tabs(QtWidgets.QTabBar):
     def mouseReleaseEvent(self, event):
         self.tab_pressed = False
         i = self.tabAt(event.pos())
-        if event.button() == QtCore.Qt.LeftButton:
+        if event.button() == Qt.LeftButton:
             if i == -1:
                 i = self.currentIndex()
             if (i != self.start_move_index):
@@ -486,8 +579,8 @@ class Tabs(QtWidgets.QTabBar):
                 )
             self.handle_close_button_display(event)
 
-        elif event.button() == QtCore.Qt.RightButton:
-            menu = QtWidgets.QMenu()
+        elif event.button() == Qt.RightButton:
+            menu = QMenu()
 
             rename = partial(self._show_name_edit, i)
             menu.addAction('Rename', rename)
@@ -512,9 +605,9 @@ class Tabs(QtWidgets.QTabBar):
             menu.addAction('Pin Tab', )
             """
 
-            menu.exec_(QtGui.QCursor().pos())
+            menu.exec_(QCursor().pos())
 
-        elif event.button() == QtCore.Qt.MiddleButton:
+        elif event.button() == Qt.MiddleButton:
             if i != -1:
                 self.removeTab(i)
 
@@ -523,7 +616,7 @@ class Tabs(QtWidgets.QTabBar):
             ).mouseReleaseEvent(event)
 
     def mouseDoubleClickEvent(self, event):
-        if event.button() == QtCore.Qt.LeftButton:
+        if event.button() == Qt.LeftButton:
             self.show_name_edit(event)
         return super(
             Tabs, self
@@ -556,7 +649,7 @@ class Tabs(QtWidgets.QTabBar):
         self.tab_text = label
         self.tab_index = index
 
-        self.name_edit = QtWidgets.QLineEdit(self)
+        self.name_edit = QLineEdit(self)
         self.name_edit.resize(
             rect.width(),
             rect.height()-7
@@ -579,7 +672,7 @@ class Tabs(QtWidgets.QTabBar):
         )
 
         self.name_edit.setFocus(
-            QtCore.Qt.MouseFocusReason
+            Qt.MouseFocusReason
         )
 
     def copy_tab_file_path(self, index):
@@ -594,7 +687,7 @@ class Tabs(QtWidgets.QTabBar):
                 data['name'])
             )
             return
-        clipboard = QtGui.QClipboard()
+        clipboard = QClipboard()
         clipboard.setText(path)
         print('Path copied to clipboard:')
         print(path)
@@ -654,11 +747,11 @@ class Tabs(QtWidgets.QTabBar):
         )
         self.setTabData(index, data)
 
-    @QtCore.Slot()
+    @Slot()
     def remove_current_tab(self):
         self.removeTab(self.currentIndex())
 
-    @QtCore.Slot(QtCore.QPoint)
+    @Slot(QPoint)
     def clicked_close(self, pos):
         for i in range(self.count()):
             rect = self.tabRect(i)
@@ -722,7 +815,7 @@ class Tabs(QtWidgets.QTabBar):
         a tab that has unsaved contents.
         """
         name = self.tabText(index)
-        msg_box = QtWidgets.QMessageBox()
+        msg_box = QMessageBox()
         msg_box.setWindowTitle('Save changes?')
         msg_box.setText(
             '%s has not been saved to a file.'
@@ -757,12 +850,12 @@ class Tabs(QtWidgets.QTabBar):
         return True
 
 
-class TabEditor(QtWidgets.QWidget):
+class TabEditor(QWidget):
     """
     A psuedo-QTabWidget that contains
     a QTabBar and a single Editor.
     """
-    tab_switched_signal = QtCore.Signal()
+    tab_switched_signal = Signal()
 
     def __init__(self, parent=None):
         super(TabEditor, self).__init__(parent)
@@ -770,35 +863,51 @@ class TabEditor(QtWidgets.QWidget):
             self.setParent(parent)
 
         self.setLayout(
-            QtWidgets.QVBoxLayout(self)
+            QVBoxLayout(self)
         )
         self.layout().setContentsMargins(0,0,0,0)
 
-        self.tab_widget = QtWidgets.QWidget()
-        twl = QtWidgets.QHBoxLayout(
+        self.tab_widget = QWidget()
+        twl = QHBoxLayout(
             self.tab_widget
         )
         self.tab_widget_layout = twl
         self.tab_widget_layout.setContentsMargins(
             0,0,0,0
         )
+
+        lb = QToolButton()
+        self.tab_left_button = lb
+        lb.setArrowType(Qt.LeftArrow)
+        lb.setAutoRaise(True)
+        lb.setToolTip('Go to previous tab.')
+        self.tab_widget_layout.addWidget(lb)
+        self.tab_left_button.clicked.connect(self.tab_left)
+
         self.tabs = Tabs()
         self.tab_widget_layout.addWidget(self.tabs)
 
+        rb = QToolButton()
+        self.tab_right_button = rb
+        rb.setArrowType(Qt.RightArrow)
+        rb.setAutoRaise(True)
+        rb.setToolTip('Go to next tab.')
+        self.tab_widget_layout.addWidget(rb)
+        self.tab_right_button.clicked.connect(self.tab_right)
+
         # add corner buttons
-        tb = QtWidgets.QToolButton()
+        tb = QToolButton()
         self.tab_list_button = tb
-        tb.setArrowType(QtCore.Qt.DownArrow)
+        tb.setArrowType(Qt.DownArrow)
         tb.setToolTip(
             'Click for a list of tabs.'
         )
         tb.setAutoRaise(True)
-        tb.setFixedSize(24, 24)
         self.tab_list_button.clicked.connect(
             self.show_tab_menu
         )
 
-        nb = QtWidgets.QToolButton()
+        nb = QToolButton()
         self.new_tab_button = nb
         nb.setToolTip(
             'Click to add a new tab.'
@@ -816,6 +925,7 @@ class TabEditor(QtWidgets.QWidget):
             self.tab_widget_layout.addWidget(button)
 
         self.editor = editor.Editor(
+            parent=self,
             handle_shortcuts=False
         )
 
@@ -825,10 +935,12 @@ class TabEditor(QtWidgets.QWidget):
         # Give the autosave a chance to load all
         # tabs before connecting signals between
         # tabs and editor.
-        QtCore.QTimer.singleShot(
+        QTimer.singleShot(
             0,
             self.connect_signals
         )
+
+        self.setStyleSheet(TAB_STYLESHEET)
 
     def connect_signals(self):
         """
@@ -837,6 +949,9 @@ class TabEditor(QtWidgets.QWidget):
         """
         self.tabs.currentChanged.connect(
             self.set_editor_contents
+        )
+        self.tabs.currentChanged.connect(
+            self.check_hide_arrows
         )
         self.tabs.tab_close_signal.connect(
             self.empty_if_last_tab_closed
@@ -856,33 +971,65 @@ class TabEditor(QtWidgets.QWidget):
             self.save_text_in_tab
         )
 
+    def check_hide_arrows(self, index):
+        if index == 0:
+            self.tab_left_button.hide()
+        elif index == self.tabs.count()-1:
+            self.tab_right_button.hide()
+        else:
+            if not self.tab_right_button.isVisible():
+                self.tab_right_button.show()
+            if not self.tab_left_button.isVisible():
+                self.tab_left_button.show()
+
+    def tab_left(self):
+        i = self.tabs.currentIndex()-1
+        if i >= 0:
+            self.tabs.setCurrentIndex(i)
+
+    def tab_right(self):
+        i = self.tabs.currentIndex()+1
+        if i <= self.tabs.count():
+            self.tabs.setCurrentIndex(i)
+
     def show_tab_menu(self):
-        """
-        Show a list of tabs and go to
-        the tab clicked.
-        """
-        menu = QtWidgets.QMenu()
+        """Show a QComboBox with a list
+        of all the tabs, allowing you to
+        scroll through all tabs easily and
+        search by name."""
         current_index = self.tabs.currentIndex()
-        from functools import partial
-        for i in range(self.tabs.count()):
-            tab_name = self.tabs.tabText(i)
-            if not tab_name.strip():
-                continue
-            func = partial(
-                self.tabs.setCurrentIndex,
-                i
-            )
-            action = menu.addAction(
-                tab_name,
-                func
-            )
-            if i == current_index:
-                font = action.font()
-                font.setBold(True)
-                font.setUnderline(True)
-                action.setFont(font)
-                menu.setActiveAction(action)
-        menu.exec_(QtGui.QCursor().pos())
+        tab_list = [self.tabs.tabText(i)
+        for i in range(self.tabs.count())]
+
+        class TabCombo(QComboBox):
+            def __init__(self, parent=None):
+                super(TabCombo, self).__init__(parent)
+                self.setWindowFlags(Qt.FramelessWindowHint)
+                self.setSizeAdjustPolicy(QComboBox.AdjustToContents)
+                self.setEditable(True)
+            def focusOutEvent(self, event):
+                super(TabCombo, self).focusOutEvent(event)
+                if event.reason() == Qt.FocusReason.ActiveWindowFocusReason:
+                    self.close()
+            def keyPressEvent(self, event):
+                super(TabCombo, self).keyPressEvent(event)
+                if event.key() == Qt.Key_Escape:
+                    self.close()
+
+        self._tab_combo = TabCombo()
+        self._tab_combo.addItems(tab_list)
+        self._tab_combo.adjustSize()
+        self._tab_combo.setCurrentIndex(current_index)
+
+        self._tab_combo.show()
+        self._tab_combo.resize(200, 30)
+        self._tab_combo.move(QCursor().pos())
+        self._tab_combo.setFocus(Qt.MouseFocusReason)
+        self._tab_combo.lineEdit().selectAll()
+        self._tab_combo.currentIndexChanged.connect(
+            self.tabs.setCurrentIndex)
+        # self._tab_combo.lineEdit().setText('')
+        # self._tab_combo.completer().complete()
 
     def new_tab(self, tab_name=None, tab_data={}):
         return self.tabs.new_tab(
@@ -893,12 +1040,12 @@ class TabEditor(QtWidgets.QWidget):
     def close_current_tab(self):
         raise NotImplementedError
 
-    @QtCore.Slot(str)
+    @Slot(str)
     def empty_if_last_tab_closed(self, uid):
         if self.tabs.count() == 0:
             self.editor.setPlainText('')
 
-    @QtCore.Slot(int)
+    @Slot(int)
     def set_editor_contents(self, index):
         """
         Set editor contents to the data
@@ -953,14 +1100,14 @@ class TabEditor(QtWidgets.QWidget):
             if has:
                 cursor.setPosition(
                     start,
-                    QtGui.QTextCursor.MoveAnchor
+                    QTextCursor.MoveAnchor
                 )
                 cursor.setPosition(
                     end,
-                    QtGui.QTextCursor.KeepAnchor
+                    QTextCursor.KeepAnchor
                 )
             self.editor.setTextCursor(cursor)
-        self.editor.setFocus(QtCore.Qt.MouseFocusReason)
+        self.editor.setFocus(Qt.MouseFocusReason)
 
         # for the autosave check_document_modified
         self.tab_switched_signal.emit()
@@ -1008,4 +1155,3 @@ class TabEditor(QtWidgets.QWidget):
                 self.tabs.repaint()
 
         self.tabs['text'] = self.editor.toPlainText()
-
