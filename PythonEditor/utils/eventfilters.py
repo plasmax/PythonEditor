@@ -43,15 +43,15 @@ class GenericEventFilter(QtCore.QObject):
     Implements safe filtering with auto-installation
     and autoquit with full stack trace on error.
 
-    Example Usage (formatted for copy-paste):
+    Example Usage:
 
-from PythonEditor.utils.eventfilters import GenericEventFilter
-class Filt(GenericEventFilter):
-    def event_filter(self, obj, event):
-        1/0 # cause error
-        return False # if we have not handled the event
+    from PythonEditor.utils.eventfilters import GenericEventFilter
+    class Filt(GenericEventFilter):
+        def event_filter(self, obj, event):
+            1/0 # cause error
+            return False # if we have not handled the event
 
-filt = Filt(target=QtWidgets.QApplication.instance())
+    filt = Filt(target=QtWidgets.QApplication.instance())
     """
     def __init__(self, target=None):
         super(GenericEventFilter, self).__init__()
