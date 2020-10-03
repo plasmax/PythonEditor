@@ -2,8 +2,12 @@
 
 
 #### Bug reports
+- [ ] nukeinit.add_to_pane() can cause some widgets to go out of scope and be deleted after they're accessed.
+- [ ] Just after saving a file, PythonEditor _sometimes_ will tell me it's not saved when I try to close it.
+- [ ] Autocomplete doesn't complete variable names ending in _.
+- [ ] Autocomplete doesn't complete first arguments of methods e.g. won't complete "arg" after ( in "".join(arg
 - [ ] Sometimes (so far only tested on standalone and in windows...) Ctrl+H will cause the interface to freeze as it is awaiting user input to reveal more information in the program terminal.
-- [ ] autocomplete doesn't pick up all variables such as asset.properties.value_dict
+- [x] autocomplete doesn't pick up all variables such as asset.properties.value_dict (Fixed: adding properties from the completed object's class as well.)
 
 Within Nuke
 - [ ] Startup doesn't redirect streams correctly if panel doesn't open in workspace automatically on startup.
@@ -18,7 +22,7 @@ Within Nuke
 Nuke 11 specific
 - [ ] In Nuke 11.3v5, closing a tab by clicking the close Button can crash Nuke
 - [ ] Workspace doesn't properly recover on Nuke 11
-- [ ] Right-clicking in the output widget produces two context menus in Nuke 11+
+- [x] Right-clicking in the output widget produces two context menus in Nuke 11+
 
 Other
 - [ ] Tab may duplicate on save.
@@ -86,6 +90,10 @@ Resolved
 
 
 #### Features - desired
+- [ ] PythonEditor should be more connected to the filesystem, to encourage tidying up and 
+      reusing existing scripts.
+- [x] alt+b insert #&& 'break'
+- [ ] When closing a tab, we should return to the previous tab we were on.
 - [ ] Shortcuts Editor should be searchable
 - [ ] down arrow should show tabs in searchable QListView side panel not QMenu
 - [ ] Open Containing Folder action - default to autosave dir if nothing else
@@ -113,6 +121,7 @@ Resolved
 - [ ] Projects
 - [ ] Autocomplete 'toNode', node.knob() and node[knob]
 - [ ] Autocomplete os.environ and other dicts
+- [ ] Autocomplete paths if divided by /
 - [ ] Projects - the new PYTHONEDITOR_AUTOSAVE_FILE env variable should help.
 - [ ] Goto Links in errors/regular paths in the editor
 - [ ] Hover over variables to get definition goto, type info, short help()
@@ -160,4 +169,3 @@ Resolved
 - [ ] Test moving TODO.md to github issues (not so great for local)
 - [ ] Consider moving snippets to the back of the autocomplete list
 - [ ] Prep for release
-
