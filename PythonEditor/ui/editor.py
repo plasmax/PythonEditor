@@ -14,7 +14,7 @@ from PythonEditor.ui.Qt.QtGui import (
     QFocusEvent, QFocusEvent, QWheelEvent,
     QKeyEvent, QResizeEvent, QFont)
 from PythonEditor.ui.Qt.QtCore import (
-    Signal, QTimer, Qt)
+    Signal, Slot, QTimer, Qt)
 
 from PythonEditor.utils import constants
 from PythonEditor.ui.dialogs import shortcuteditor
@@ -27,8 +27,7 @@ from PythonEditor.ui.features import contextmenu
 
 
 class Editor(QPlainTextEdit):
-    """
-    Code Editor widget. Extends QPlainTextEdit to
+    """Code Editor widget. Extends QPlainTextEdit to
     provide (through separate modules):
     - Line Number Area
     - Syntax Highlighting
@@ -61,6 +60,7 @@ class Editor(QPlainTextEdit):
     relay_clear_output_signal = Signal()
     editingFinished           = Signal()
     text_changed_signal       = Signal()
+    selection_stopped         = Signal()
 
     def __init__(
             self,
@@ -102,8 +102,15 @@ class Editor(QPlainTextEdit):
 
         self.emit_text_changed = True
         self.textChanged.connect(
-            self._handle_textChanged
-        )
+            self._handle_textChanged)
+
+        self._selection_timer = QTimer()
+        self._selection_timer.setInterval(1000)
+        self._selection_timer.setSingleShot(True)
+        self._selection_timer.timeout.connect(
+            self.selection_stopped.emit)
+        self.selectionChanged.connect(
+            self._handle_selectionChanged)
 
         linenumberarea.LineNumberArea(self)
 
@@ -111,8 +118,7 @@ class Editor(QPlainTextEdit):
             self.init_features()
 
     def init_features(self):
-        """
-        Initialise custom Editor features.
+        """Initialise custom Editor features.
         """
         if self._features_initialised:
             return
@@ -137,7 +143,7 @@ class Editor(QPlainTextEdit):
         self.contextmenu = CM(self)
 
         # TODO: add a new autocompleter
-        # that uses DirectConnection.
+        # that uses an eventfilter.
         self.autocomplete_overriding = True
         AC = autocompletion.AutoCompleter
         self.autocomplete = AC(self)
@@ -150,6 +156,7 @@ class Editor(QPlainTextEdit):
                 editor=self
             )
 
+    @Slot()
     def _handle_textChanged(self):
         self._changed = True
 
@@ -157,12 +164,21 @@ class Editor(QPlainTextEdit):
         if self.emit_text_changed:
             self.text_changed_signal.emit()
 
+    @Slot()
+    def _handle_selectionChanged(self):
+        """Emit a selection_stopped signal once
+        the selection has stopped changing after a
+        certain time interval defined on the
+        _selection_timer.
+        """
+        if not self._selection_timer.isActive():
+            self._selection_timer.start()
+
     def setTextChanged(self, state=True):
         self._changed = state
 
     def replace_text(self, text):
-        """
-        Set the text programmatically
+        """Set the text programmatically
         but allow an undo. Works around
         setPlainText automatically
         resetting the undo stack.
@@ -175,8 +191,7 @@ class Editor(QPlainTextEdit):
         tc.endEditBlock()
 
     def setPlainText(self, text):
-        """
-        Override original method to prevent
+        """Override original method to prevent
         textChanged signal being emitted.
         WARNING: textCursor can still be used
         to setPlainText.
@@ -186,8 +201,7 @@ class Editor(QPlainTextEdit):
         self.emit_text_changed = True
 
     def insertPlainText(self, text):
-        """
-        Override original method to prevent
+        """Override original method to prevent
         textChanged signal being emitted.
         """
         self.emit_text_changed = False
@@ -195,8 +209,7 @@ class Editor(QPlainTextEdit):
         self.emit_text_changed = True
 
     def appendPlainText(self, text):
-        """
-        Override original method to prevent
+        """Override original method to prevent
         textChanged signal being emitted.
         """
         self.emit_text_changed = False
@@ -204,25 +217,35 @@ class Editor(QPlainTextEdit):
         self.emit_text_changed = True
 
     def focusInEvent(self, event):
-        """
-        Emit a signal when focusing in a window.
+        """Emit a signal when focusing in a window.
         When there used to be an editor per tab,
         this would work well to check that the tab's
         contents had not been changed. Now, we'll
         also want to signal from the tab switched
         signal.
         """
-        FR = Qt.FocusReason
+        # FR = Qt.FocusReason
         # ignore PopupFocusReason as the
         # autocomplete QListView triggers it.
         ignored_reasons = [
-            FR.PopupFocusReason,
+            Qt.PopupFocusReason,
         ]
         if event.reason() not in ignored_reasons:
+            # FIXME:
+            # AttributeError: 'PySide2.QtCore.QEvent' object has no attribute 'reason'
             self.focus_in_signal.emit()
         super(Editor, self).focusInEvent(event)
 
     def focusOutEvent(self, event):
+        if not isinstance(event, QFocusEvent):
+            if os.getenv('USER') == 'mlast':
+                # why would a focus out handler
+                # be receiving an event of the
+                # wrong type?
+                print(dir(event), event.type())
+                # AttributeError: 'PySide2.QtCore.QEvent' object has no attribute 'sender'
+            return
+
         if self._changed:
             self.editingFinished.emit()
 
@@ -230,9 +253,8 @@ class Editor(QPlainTextEdit):
         # latest text within the tab
         self.text_changed_signal.emit()
 
-        FR = Qt.FocusReason
         ignored_reasons = [
-            FR.PopupFocusReason,
+            Qt.PopupFocusReason,
         ]
         if event.reason() not in ignored_reasons:
             self.focus_out_signal.emit()
@@ -240,16 +262,14 @@ class Editor(QPlainTextEdit):
         super(Editor, self).focusOutEvent(event)
 
     def resizeEvent(self, event):
-        """
-        Emit signal on resize so that the
+        """Emit signal on resize so that the
         LineNumberArea has a chance to update.
         """
         super(Editor, self).resizeEvent(event)
         self.resize_signal.emit(event)
 
     def keyPressEvent(self, event):
-        """
-        Emit signals for key events
+        """Emit signals for key events
         that QShortcut cannot override.
         """
         self._key_pressed = True
@@ -285,8 +305,7 @@ class Editor(QPlainTextEdit):
         super(Editor, self).keyReleaseEvent(event)
 
     def contextMenuEvent(self, event):
-        """
-        Creates a standard context menu
+        """Creates a standard context menu
         and emits it for futher changes
         and execution elsewhere.
         """
@@ -294,8 +313,7 @@ class Editor(QPlainTextEdit):
         self.context_menu_signal.emit(menu)
 
     def event(self, event):
-        """
-        Drop to open files implemented as a filter
+        """Drop to open files implemented as a filter
         instead of dragEnterEvent and dropEvent
         because it is the only way to make it work
         on windows.
@@ -305,7 +323,7 @@ class Editor(QPlainTextEdit):
             if mimeData.hasUrls():
                 event.accept()
                 return True
-        if event.type() == event.Drop:
+        elif event.type() == event.Drop:
             mimeData = event.mimeData()
             if mimeData.hasUrls():
                 event.accept()
@@ -318,8 +336,7 @@ class Editor(QPlainTextEdit):
             return False
 
     def drop_files(self, urls):
-        """
-        When dragging and dropping files onto the
+        """When dragging and dropping files onto the
         editor from a source with urls (file paths),
         if there are tabs, open the files in new
         tabs. If the tabs are not present just insert
@@ -350,8 +367,7 @@ class Editor(QPlainTextEdit):
                 )
 
     def wheelEvent(self, event):
-        """
-        Restore focus and, if ctrl held, emit signal
+        """Restore focus and, if ctrl held, emit signal
         """
         self.setFocus(Qt.MouseFocusReason)
         vertical = Qt.Orientation.Vertical
@@ -365,8 +381,7 @@ class Editor(QPlainTextEdit):
         super(Editor, self).wheelEvent(event)
 
     def insertFromMimeData(self, mimeData):
-        """
-        Override to emit text_changed_signal
+        """Override to emit text_changed_signal
         (which triggers autosave) when text
         is pasted or dragged in.
         """
@@ -376,13 +391,12 @@ class Editor(QPlainTextEdit):
         ).insertFromMimeData(mimeData)
 
     def showEvent(self, event):
-        """
-        Override to automatically set the
-        focus on the editor using
-        PopupFocusReason which won't
-        trigger the autosave.
+        """Override to automatically set the
+        focus on the editor when shown.
         """
         super(Editor, self).showEvent(event)
-        self.setFocus(
-            Qt.PopupFocusReason
-        )
+
+        # Previously, this used PopupFocusReason,
+        # which doesn't trigger the autosave via
+        # the focus_in_signal.
+        self.setFocus(Qt.ShortcutFocusReason)
