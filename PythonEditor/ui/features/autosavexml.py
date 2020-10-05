@@ -296,7 +296,8 @@ class AutoSaveManager(QtCore.QObject):
 
         # safety: do not autosave if current
         # index is -1. this should not happen
-        # as there is no [+] tab anymore.
+        # as there is no tab with a [+] on it
+        # anymore. (it's now a separate button)
         tabs = self.tabs
         if tabs.currentIndex() == -1:
             return
@@ -647,7 +648,7 @@ class AutoSaveManager(QtCore.QObject):
         self.store_current_index()
         self.sync_tab_indices()
 
-    @QtCore.Slot(object)
+    @QtCore.Slot(str)
     def handle_document_save(self, uid):
         """ After saving the editor's contents,
         store the path to the saved file in the
@@ -660,6 +661,7 @@ class AutoSaveManager(QtCore.QObject):
         :param uid: Unique Identifier of
                     subscript to save
         """
+        uid = str(uid)
         # find the tab by uid
         index = -1
         if self.tabs['uuid'] != uid:
