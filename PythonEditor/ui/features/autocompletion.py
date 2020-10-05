@@ -7,9 +7,12 @@ import inspect
 import os
 import json
 
-from PythonEditor.ui.Qt import QtGui
-from PythonEditor.ui.Qt import QtCore
-from PythonEditor.ui.Qt import QtWidgets
+from PythonEditor.ui.Qt.QtGui import (
+    QTextCursor, QKeyEvent)
+from PythonEditor.ui.Qt.QtWidgets import (
+    QWidget, QCompleter)
+from PythonEditor.ui.Qt.QtCore import (
+    QObject, Qt, Slot, QStringListModel)
 from PythonEditor.utils.debug import debug
 from PythonEditor.utils.constants import NUKE_DIR
 
@@ -109,9 +112,9 @@ SNIPPETS = {
     'Qt* [snippet]':
         qt_star_import_snippet,
     'if [snippet]':
-		name_main_snippet,
+        name_main_snippet,
     'pprint [snippet]' :
-		pprint_snippet,
+        pprint_snippet,
 }
 
 
@@ -138,23 +141,20 @@ def locate_snippet_file():
         debug(e)
 
 
-class Completer(QtWidgets.QCompleter):
+class Completer(QCompleter):
     def __init__(self, stringlist):
         super(Completer, self).__init__(stringlist)
-
-        self.setCompletionMode(
-            QtWidgets.QCompleter.PopupCompletion
-        )
-        self.setCaseSensitivity(
-            QtCore.Qt.CaseSensitive
-        )
+        self.setCompletionMode(QCompleter.PopupCompletion)
+        self.setCaseSensitivity(Qt.CaseSensitive)
 
 
-class AutoCompleter(QtCore.QObject):
+class AutoCompleter(QObject):
     """
     Provides autocompletion to QPlainTextEdit.
     Requires signals to be emitted from such
     with -pre and -post keyPressEvent signals.
+
+    TODO: rewrite me as an eventfilter with a Completion Model.
     """
     def __init__(self, editor):
         super(AutoCompleter, self).__init__()
@@ -169,15 +169,13 @@ class AutoCompleter(QtCore.QObject):
 
     @property
     def completer(self):
-        """
-        Sets new completer if none present.
+        """Sets new completer if none present."""
         # WARNING: Previously, this
         # didn't need to be here.
         # Something about adding
         # another connection to the
         # focus_in_signal made this
         # necessary.
-        """
         if self._completer is None:
             wordlist = re.findall(
                 r'\w+',
@@ -200,7 +198,7 @@ class AutoCompleter(QtCore.QObject):
         self.editor.focus_in_signal.connect(
             self._focusInEvent
         )
-        # TODO: QtCore.Qt.DirectConnection
+        # TODO: Qt.DirectConnection
         self.editor.key_pressed_signal.connect(
             self._pre_keyPressEvent
         )
@@ -208,7 +206,7 @@ class AutoCompleter(QtCore.QObject):
             self._post_keyPressEvent
         )
 
-    @QtCore.Slot()
+    @Slot()
     def _focusInEvent(self):
         """
         Connected to editor focusInEvent via signal.
@@ -222,7 +220,7 @@ class AutoCompleter(QtCore.QObject):
         """
         textCursor = self.editor.textCursor()
         textCursor.select(
-            QtGui.QTextCursor.LineUnderCursor
+            QTextCursor.LineUnderCursor
         )
         line = textCursor.selection().toPlainText()
         return line
@@ -234,7 +232,7 @@ class AutoCompleter(QtCore.QObject):
         """
         textCursor = self.editor.textCursor()
         textCursor.select(
-            QtGui.QTextCursor.WordUnderCursor
+            QTextCursor.WordUnderCursor
         )
         word = textCursor.selection().toPlainText()
         return word
@@ -246,7 +244,7 @@ class AutoCompleter(QtCore.QObject):
         """
         textCursor = self.editor.textCursor()
         textCursor.select(
-            QtGui.QTextCursor.BlockUnderCursor
+            QTextCursor.BlockUnderCursor
         )
         line_text = textCursor.selection(
             ).toPlainText()
@@ -363,18 +361,24 @@ class AutoCompleter(QtCore.QObject):
         if _obj is None or False:
             return
 
+        attrs = []
         try:
-            attrs = dir(_obj)
+            attrs.extend(dir(_obj))
         except TypeError:
+            pass
             # found a case where __getattr__
             # on a n _obj instance
             # returned a string, rendering
             # it uncallable. as a last resort,
             # try getting the class attrs
-            try:
-                attrs = dir(_obj.__class__)
-            except Exception:
-                return
+        try:
+            attrs.extend(dir(_obj.__class__))
+        except Exception:
+            pass
+        if not attrs:
+            return
+
+        attrs = sorted(list(set(attrs)))
 
         methods = [
             a for a in attrs
@@ -480,7 +484,7 @@ class AutoCompleter(QtCore.QObject):
         """
         Sets the list of completions.
         """
-        qslm = QtCore.QStringListModel()
+        qslm = QStringListModel()
         qslm.setStringList(stringlist)
         self.completer.setModel(qslm)
 
@@ -514,7 +518,7 @@ class AutoCompleter(QtCore.QObject):
 
         textCursor.setPosition(
             pos-len(prefix),
-            QtGui.QTextCursor.KeepAnchor
+            QTextCursor.KeepAnchor
         )
 
         textCursor.insertText(completion)
@@ -652,14 +656,14 @@ class AutoCompleter(QtCore.QObject):
         pos = textCursor.position()
         textCursor.setPosition(
             pos-len(prefix),
-            QtGui.QTextCursor.KeepAnchor
+            QTextCursor.KeepAnchor
         )
         textCursor.insertText(completion)
 
         if '<!cursor>' in snippet:
             textCursor.setPosition(
                 pos+cursor_insert-len(prefix),
-                QtGui.QTextCursor.MoveAnchor
+                QTextCursor.MoveAnchor
             )
 
         self.editor.setTextCursor(textCursor)
@@ -667,7 +671,7 @@ class AutoCompleter(QtCore.QObject):
     def set_override(self, state):
         self.editor.autocomplete_overriding = state
 
-    @QtCore.Slot(QtGui.QKeyEvent)
+    @Slot(QKeyEvent)
     def _pre_keyPressEvent(self, event):
         """
         Called before QPlainTextEdit.keyPressEvent
@@ -685,18 +689,18 @@ class AutoCompleter(QtCore.QObject):
 
         if completing:
             if event.key() in (
-                QtCore.Qt.Key_Enter,
-                QtCore.Qt.Key_Return,
-                QtCore.Qt.Key_Escape,
-                QtCore.Qt.Key_Tab,
-                QtCore.Qt.Key_Backtab,
-                QtCore.Qt.Key_CapsLock,
+                Qt.Key_Enter,
+                Qt.Key_Return,
+                Qt.Key_Escape,
+                Qt.Key_Tab,
+                Qt.Key_Backtab,
+                Qt.Key_CapsLock,
             ):
                 event.ignore()
                 self.set_override(True)
                 return True
 
-        NOMOD = QtCore.Qt.NoModifier
+        NOMOD = Qt.NoModifier
         not_alnum_or_mod = (
             not event.text().isalnum()
             and event.modifiers() == NOMOD
@@ -709,9 +713,9 @@ class AutoCompleter(QtCore.QObject):
         # the eventfilter that dispatches
         # shortcuts makes a special provision
         # for the tab key after a dot
-        if event.key() == QtCore.Qt.Key_Tab:
+        if event.key() == Qt.Key_Tab:
             textCursor = self.editor.textCursor()
-            SHIFT = QtCore.Qt.ShiftModifier
+            SHIFT = Qt.ShiftModifier
             shift_held = (event.modifiers() == SHIFT)
             if (not textCursor.hasSelection()
                 and not shift_held):
@@ -726,7 +730,7 @@ class AutoCompleter(QtCore.QObject):
         self.set_override(False)
         self.editor.keyPressEvent(event)
 
-    @QtCore.Slot(QtGui.QKeyEvent)
+    @Slot(QKeyEvent)
     def _post_keyPressEvent(self, event):
         """
         Called after QPlainTextEdit.keyPressEvent
