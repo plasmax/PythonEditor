@@ -39,18 +39,6 @@ def main():
     import sys
     sys.dont_write_bytecode = True
 
-    # for convenience - FIXME: this
-    # should be developer-only or at least
-    # disableable
-    from PythonEditor.ui import Qt
-
-    # enable "from Qt import x" and
-    sys.modules['Qt'] = Qt
-
-    # enable "from Qt.QtCore import *"
-    for name in Qt.__all__:
-        sys.modules['Qt.{0}'.format(name)] = vars(Qt)[name]
-
 
 def _print_load_error(error):
     import traceback
