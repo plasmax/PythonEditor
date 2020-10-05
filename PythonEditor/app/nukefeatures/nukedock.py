@@ -29,10 +29,11 @@ def setup_dock(shortcut=None):
         """Add or move existing PythonEditor
         panel to a new pane. This is what
         makes the PythonEditor a singleton.
-        
+
         :param pane: Nuke <type 'Dock'>
 
         TODO: maybe not here, but this should trigger the "in focus" signal that overrides shortcuts
+        (me, later: the editor showEvent triggers a ShortcutFocusReason, is this what I meant?)
         """
         import PythonEditor
         try:
