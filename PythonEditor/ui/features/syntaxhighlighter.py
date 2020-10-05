@@ -3,7 +3,7 @@ try:
     from StringIO import StringIO ## for Python 2
 except ImportError:
     from io import StringIO ## for Python 3
-import re
+import re, os, time
 
 from PythonEditor.ui.Qt import QtGui
 from PythonEditor.ui.Qt import QtCore
@@ -61,7 +61,7 @@ class Highlight(QtGui.QSyntaxHighlighter):
         'and', 'as', 'assert', 'async', 'await', 'break', 'continue',
         'del', 'elif', 'else', 'except', 'exec', 'finally',
         'for', 'from', 'global', 'if', 'import', 'in',
-        'is', 'lambda', 'nonlocal', 'not', 'or', 'pass', 'print', 
+        'is', 'lambda', 'nonlocal', 'not', 'or', 'pass', 'print',
         'raise', 'return', 'try', 'while', 'with', 'yield'
     ]
     instantiators = [
@@ -169,7 +169,7 @@ class Highlight(QtGui.QSyntaxHighlighter):
         self.set_style(self.theme)
         self.make_rules()
         self.selected_word = ''
-        self.connect_timers()
+        self.connect_signals()
 
     def set_style(self, theme):
         self.styles = {
@@ -235,24 +235,6 @@ class Highlight(QtGui.QSyntaxHighlighter):
             for (pat, index, fmt) in rules
         ]
 
-    def connect_timers(self):
-        """
-        Create timers that provide
-        delayed reactions to
-        text_changed_signal and
-        selectionChanged signals.
-        """
-        self._word_highlight_block = False
-        self.editor.selectionChanged.connect(
-            self.delayed_word_highlight
-        )
-
-    def delayed_word_highlight(self):
-        if self._word_highlight_block:
-            return
-        QtCore.QTimer.singleShot(50, self.highlight_same_words)
-        self._word_highlight_block = True
-
     def format(self, rgb, style=''):
         """
         Return a QtGui.QTextCharFormat
@@ -273,6 +255,9 @@ class Highlight(QtGui.QSyntaxHighlighter):
         """
         Apply syntax highlighting to the given block of text.
         """
+        block = self.currentBlock()
+        if not block.isVisible():
+            return
         # Do other syntax formatting
         for expression, nth, format in self.rules:
             index = expression.indexIn(text, 0)
@@ -386,24 +371,45 @@ class Highlight(QtGui.QSyntaxHighlighter):
         # Return True if still inside a multi-line string
         return self.currentBlockState() == in_state
 
+    def connect_signals(self):
+        # the editor will emit a "selection stopped"
+        # signal after the selection has stopped
+        # changing for a certain time period.
+        self.editor.selection_stopped.connect(
+            self.highlight_same_words
+        )
+
     def highlight_same_words(self):
-        """
-        When selection has changed;
+        """When selection has changed;
         if the selection is valid
         and there are other similar
         words in the text, highlight
         those words.
         """
-        self._word_highlight_block = False
         editor = self.editor
         cursor = editor.textCursor()
+
+        previous_selected_word = self.selected_word
         self.selected_word = ''
+
         if cursor.hasSelection():
             text = cursor.selectedText()
-            words = re.findall(
-                r'\w\w+',
-                self.editor.toPlainText()
-            )
-            if text in words:
-                self.selected_word = text
+            if ' ' in text:
+                self.selected_word = ''
+            elif '\n' in text:
+                self.selected_word = ''
+            else:
+                words = re.findall(
+                    r'\w\w+',
+                    self.editor.toPlainText()
+                )
+                if text in words:
+                    self.selected_word = text
+
+        if not (self.selected_word or previous_selected_word):
+            return
+
+        # rehighlight the whole document, because if
+        # you try to highlight just the visible blocks as below,
+        # you'll then have to implement scrolling. this isn't that slow.
         self.rehighlight()
