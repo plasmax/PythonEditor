@@ -224,7 +224,6 @@ class Editor(QPlainTextEdit):
         also want to signal from the tab switched
         signal.
         """
-        # FR = Qt.FocusReason
         # ignore PopupFocusReason as the
         # autocomplete QListView triggers it.
         ignored_reasons = [

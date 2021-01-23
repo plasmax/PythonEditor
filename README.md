@@ -9,7 +9,7 @@ Create a menu.py file in the .nuke folder and add the following code to it:
 
 ```python
 import PythonEditor
-PythonEditor.nuke_menu_setup()
+PythonEditor.nuke_menu_setup(nuke_menu=True, node_menu=True, pane_menu=True)
 ```
 
 ![Screenshot](/media/Screenshot.png)

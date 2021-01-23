@@ -1,4 +1,4 @@
-""" This module augments Nuke's default stdout/stderr 
+""" This module augments Nuke's default stdout/stderr
 stream redirectors with ones that use Qt's Signal/Slot mechanism.
 These redirectors also output to Nuke's original outputRedirector
 and stderrRedirector which display text in the native Script Editor.
@@ -14,7 +14,7 @@ from PythonEditor.utils.debug import debug
 # -- override Nuke hiero.FnRedirect --
 # ====================================
 class Loader(object):
-    """ When the Finder object in sys.meta_path 
+    """ When the Finder object in sys.meta_path
     returns this object, attempt to load Nuke's default
     redirectors and store them in the sys module.
     """
@@ -34,7 +34,7 @@ class Finder(object):
     """ Override the import system to provide
     a loader that bypasses the FnRedirect module.
     """
-    _deletable = ''
+    _fnredirect_blocker = ''
 
     def find_module(self, name, path=''):
         if 'FnRedirect' in name:
@@ -44,7 +44,7 @@ class Finder(object):
 # clear any previous instances first
 sys.meta_path = [
     i for i in sys.meta_path
-    if not hasattr(i, '_deletable')
+    if not hasattr(i, '_fnredirect_blocker')
 ]
 sys.meta_path.append(Finder())
 # ====================================
@@ -93,8 +93,17 @@ class SERedirector(object):
             if not hasattr(self, i) and hasattr(stream, i):
                 setattr(self, i, getattr(stream, i))
 
+        if not hasattr(self, 'isatty'):
+            self.isatty = self._isatty
+
         self.saved_stream = stream
         self._signal = _signal
+
+    def _isatty(self):
+        return False
+
+    def reset(self):
+        raise NotImplementedError
 
     def close(self):
         self.flush()

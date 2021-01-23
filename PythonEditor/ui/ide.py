@@ -26,7 +26,7 @@ class Finder(object):
     """ Keep track of pythoneditor modules loaded
     so that they can be reloaded in the same order.
     """
-    _can_delete = True
+    _pythoneditor_module_tracker = True
     def find_module(self, name, path=''):
         if 'PythonEditor' not in name:
             return
@@ -48,7 +48,7 @@ class Finder(object):
 def add_to_meta_path():
 	sys.meta_path = [
 		i for i in sys.meta_path
-		if not hasattr(i, '_can_delete')
+		if not hasattr(i, '_pythoneditor_module_tracker')
 	]
 	sys.meta_path.append(Finder())
 add_to_meta_path()
