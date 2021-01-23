@@ -90,7 +90,9 @@ Resolved
 
 
 #### Features - desired
-- [ ] PythonEditor should be more connected to the filesystem, to encourage tidying up and 
+- [ ] Generate PySide2 import for selected text (e.g. "QPalette" would return "from PySide2.QtGui import QPalette")
+- [ ] Print Qt5 documentation url (or even better, open browser) for Qt names
+- [ ] PythonEditor should be more connected to the filesystem, to encourage tidying up and
       reusing existing scripts.
 - [x] alt+b insert #&& 'break'
 - [ ] When closing a tab, we should return to the previous tab we were on.
