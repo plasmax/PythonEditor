@@ -74,9 +74,9 @@ QToolButton {
 }
 
 QToolButton:hover {
-    color: rgb(0, 255, 64);
     border-radius: 1px;
     padding: 0px;
+    color: palette(highlight);
 }
 """
 
@@ -291,12 +291,16 @@ class Tabs(QTabBar):
 
     def __init__(self, parent=None):
         super(Tabs, self).__init__(parent)
+
         self.tab_pressed = False
-        self.setStyleSheet(TAB_STYLESHEET)
-        self.setMovable(True)
-        self.setExpanding(False)
         self.pressed_uid = ''
         self._hovered_index = -2
+
+        self.setMovable(True)
+        self.setMouseTracking(True)
+        self.setExpanding(False)
+        self.setSelectionBehaviorOnRemove(QTabBar.SelectPreviousTab)
+        self.setStyleSheet(TAB_STYLESHEET)
 
         # # a stack for navigating positions
         # # `list` of `tuples`
@@ -367,7 +371,7 @@ class Tabs(QTabBar):
         index = self.currentIndex()
         tab_data = self.tabData(index)
         tab_data[name] = value
-        return self.setTabData(index, tab_data)
+        self.setTabData(index, tab_data)
 
     def tab_only_rect(self):
         """
