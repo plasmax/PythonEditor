@@ -3,7 +3,7 @@ try:
     from StringIO import StringIO ## for Python 2
 except ImportError:
     from io import StringIO ## for Python 3
-import re, os, time
+import re
 
 from PythonEditor.ui.Qt import QtGui
 from PythonEditor.ui.Qt import QtCore
@@ -17,6 +17,7 @@ themes = {
         'args': ((249, 38, 114), ''),
         'kwargs': ((249, 38, 114), ''),
         'string': ((230, 219, 116), ''),
+        'multiline_str': ((130, 130, 130), ''),
         'comment': ((140, 140, 140), ''),
         'numbers': ((174, 129, 255), ''),
         'inherited': ((102, 217, 239), 'italic'),
@@ -34,6 +35,7 @@ themes = {
         'args': ((255, 97, 136), ''),
         'kwargs': ((255, 97, 136), ''),
         'string': ((255, 216, 102), ''),
+        'multiline_str': ((98, 96, 98), 'italic'),
         'comment': ((108, 106, 108), 'italic'),
         'numbers': ((171, 157, 242), ''),
         'inherited': ((114, 209, 221), 'italic'),
@@ -68,88 +70,32 @@ class Highlight(QtGui.QSyntaxHighlighter):
         'def', 'class'
     ]
     exceptions = [
-        'BaseException',
-        'SystemExit',
-        'KeyboardInterrupt',
-        'GeneratorExit',
-        'Exception',
-        'StopIteration',
-        'StandardError',
-        'BufferError',
-        'ArithmeticError',
-        'FloatingPointError',
-        'OverflowError',
-        'ZeroDivisionError',
-        'AssertionError',
-        'AttributeError',
-        'EnvironmentError',
-        'IOError',
-        'OSError',
-        'WindowsError',
-        'VMSError',
-        'EOFError',
-        'ImportError',
-        'LookupError',
-        'IndexError',
-        'KeyError',
-        'MemoryError',
-        'NameError',
-        'UnboundLocalError',
-        'ReferenceError',
-        'RuntimeError',
-        'NotImplementedError',
-        'SyntaxError',
-        'IndentationError',
-        'TabError',
-        'SystemError',
-        'TypeError',
-        'ValueError',
-        'UnicodeError',
-        'UnicodeDecodeError',
-        'UnicodeEncodeError',
-        'UnicodeTranslateError',
-        'Warning',
-        'DeprecationWarning',
-        'PendingDeprecationWarning',
-        'RuntimeWarning',
-        'SyntaxWarning',
-        'UserWarning',
-        'FutureWarning',
-        'ImportWarning',
-        'UnicodeWarning',
-        'BytesWarning',
+        'BaseException', 'SystemExit', 'KeyboardInterrupt',
+        'GeneratorExit', 'Exception', 'StopIteration',
+        'StandardError', 'BufferError', 'ArithmeticError',
+        'FloatingPointError', 'OverflowError', 'ZeroDivisionError',
+        'AssertionError', 'AttributeError', 'EnvironmentError',
+        'IOError', 'OSError', 'WindowsError', 'VMSError',
+        'EOFError', 'ImportError', 'LookupError', 'IndexError',
+        'KeyError', 'MemoryError', 'NameError', 'UnboundLocalError',
+        'ReferenceError', 'RuntimeError', 'NotImplementedError',
+        'SyntaxError', 'IndentationError', 'TabError',
+        'SystemError', 'TypeError', 'ValueError', 'UnicodeError',
+        'UnicodeDecodeError', 'UnicodeEncodeError',
+        'UnicodeTranslateError', 'Warning', 'DeprecationWarning',
+        'PendingDeprecationWarning', 'RuntimeWarning',
+        'SyntaxWarning', 'UserWarning', 'FutureWarning',
+        'ImportWarning', 'UnicodeWarning', 'BytesWarning',
+    ]
 
-        # lazy of me: types are
-        # here too because they
-        # are highlighted the same
-        'basestring',
-        'bool',
-        'buffer',
-        'bytearray',
-        'bytes',
-        'classmethod',
-        'complex',
-        'dict',
-        'enumerate',
-        'file',
-        'float',
-        'frozenset',
-        'int',
-        'list',
-        'long',
-        'memoryview',
-        'object',
-        'property',
-        'reversed',
-        'set',
-        'slice',
-        'staticmethod',
-        'str',
-        'super',
-        'tuple',
-        'type',
-        'unicode',
-        'xrange',
+    types = [
+        'basestring', 'bool', 'buffer', 'bytearray',
+        'bytes', 'classmethod', 'complex', 'dict',
+        'enumerate', 'file', 'float', 'frozenset',
+        'int', 'list', 'long', 'memoryview',
+        'object', 'property', 'reversed', 'set',
+        'slice', 'staticmethod', 'str', 'super',
+        'tuple', 'type', 'unicode', 'xrange',
     ]
 
     operatorKeywords = [
@@ -179,12 +125,12 @@ class Highlight(QtGui.QSyntaxHighlighter):
         self.tri_single = (
             QtCore.QRegExp("'''"),
             1,
-            self.styles['comment']
+            self.styles['multiline_str']
         )
         self.tri_double = (
             QtCore.QRegExp('"""'),
             2,
-            self.styles['comment']
+            self.styles['multiline_str']
         )
 
     def make_rules(self):
@@ -208,7 +154,7 @@ class Highlight(QtGui.QSyntaxHighlighter):
         rules += [(r'\b%s\b' % i, 0, self.styles['instantiators'])
                   for i in self.instantiators]
         rules += [(r'\b%s\b' % i, 0, self.styles['exceptions'])
-                  for i in self.exceptions]
+                  for i in self.exceptions+self.types]
 
         rules += [
             # function names
@@ -258,7 +204,8 @@ class Highlight(QtGui.QSyntaxHighlighter):
         block = self.currentBlock()
         if not block.isVisible():
             return
-        # Do other syntax formatting
+
+        # apply rules
         for expression, nth, format in self.rules:
             index = expression.indexIn(text, 0)
 
@@ -269,6 +216,7 @@ class Highlight(QtGui.QSyntaxHighlighter):
                 self.setFormat(index, length, format)
                 index = expression.indexIn(text, index + length)
 
+        # apply comment rule
         if '#' in text:
             s = StringIO(text)
             g = tokenize.generate_tokens(s.readline)
