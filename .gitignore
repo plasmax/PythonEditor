@@ -16,3 +16,5 @@ test_code_objects.py
 *.sublime-project
 *.h
 *.cpp
+*.dot
+test_app_python27.bat
