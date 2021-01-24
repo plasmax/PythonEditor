@@ -687,7 +687,9 @@ class AutoSaveManager(QtCore.QObject):
         for s in subscripts:
             if s.attrib.get('uuid') != uid:
                 continue
+            # and modify it
             s.attrib['path'] = path
+            s.attrib['name'] = data.get('name')
             break
         else:
             # if none is found we create
