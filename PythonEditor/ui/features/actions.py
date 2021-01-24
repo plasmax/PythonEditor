@@ -1959,7 +1959,7 @@ class GotoPalette(CommandPalette):
 
 def goto_position(editor, pos):
     """
-    Goto position in document.
+    Goto position in document. 
     """
     cursor = editor.textCursor()
     editor.moveCursor(cursor.End)
@@ -2029,28 +2029,10 @@ def toggle_backslashes(editor):
     textCursor.insertText(edited_text)
 
 
-def save_action(tabs, editor):
+def update_tabs_with_path(tabs, path):
+    """After saving, set the current
+    tab's path, saved status, and name.
     """
-    Save editor to file and update tabs with path and saved status.
-    """
-    path = tabs.get('path')
-    text = editor.toPlainText()
-    path = save.save(text, path)
-    if path is None:
-        return
-    tabs['path'] = path
-    tabs['saved'] = True
-    # notify the autosave to empty entry
-    tabs.contents_saved_signal.emit(tabs['uuid'])
-
-
-def save_as_action(tabs, editor):
-    """
-    """
-    text = editor.toPlainText()
-    path = save.save_as(text)
-    if path is None:
-        return
     tabs['path'] = path
     tabs['saved'] = True
 
@@ -2063,10 +2045,43 @@ def save_as_action(tabs, editor):
     tabs.contents_saved_signal.emit(tabs['uuid'])
 
 
+def save_action(tabs, editor):
+    """
+    Save the contents of the editor
+    to a file and update tabs with 
+    path and saved status.
+
+    :param tabs: The `TabBar` class.
+    :param editor: The `Editor` class.
+    """
+    path = tabs.get('path')
+    text = editor.toPlainText()
+    path = save.save(text, path)
+    if path is None:
+        return
+    update_tabs_with_path(tabs, path)
+
+
+def save_as_action(tabs, editor):
+    """
+    Show a dialog asking where to save
+    the contents of the editor, then do so. 
+
+    :param tabs: The `TabBar` class.
+    :param editor: The `Editor` class.
+    """
+    text = editor.toPlainText()
+    path = save.save_as(text)
+    if path is None:
+        return
+    update_tabs_with_path(tabs, path)
+
+
 def open_action(tabs, editor, path=''):
     """
     Simple open file into new tab.
     Show a dialog if path is not provided.
+
     :tabs: TabBar
     :editor: Editor
     :path: optional path to file.
