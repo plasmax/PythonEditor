@@ -34,6 +34,7 @@ class ShortcutEditor(QtWidgets.QTreeView):
         self.setWindowFlags(
             QtCore.Qt.WindowStaysOnTopHint
         )
+        self.setSortingEnabled(True)
         self.setUniformRowHeights(True)
         self.resize(800, 600)
 
@@ -45,6 +46,7 @@ class ShortcutEditor(QtWidgets.QTreeView):
         if tabeditor is not None:
             widgets.append(tabeditor)
 
+        rows = []
         for widget in widgets:
             for action in widget.actions():
                 name = action.text()
@@ -58,8 +60,8 @@ class ShortcutEditor(QtWidgets.QTreeView):
                     line.strip() for line in
                     action.toolTip().splitlines()
                     ]).strip()
-                row = [
-                QtGui.QStandardItem(val)
-                for val in [name, shortcut, about]
-                ]
-                root.appendRow(row)
+                rows.append([name, shortcut, about])
+
+        for row in sorted(rows):
+            row = map(QtGui.QStandardItem, row)
+            root.appendRow(row)
