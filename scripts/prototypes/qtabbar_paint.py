@@ -6,12 +6,11 @@ TODO:
 [x] Tab width/height controlled without stylesheets
 [x] Tab tooltips with setTabToolTip()
 [x] Line edit should quit on esc and focus out
-[ ] Get rid of the <> buttons
+[x] middle click to close tab
+[ ] Get rid of the RHS <> buttons, add custom ones
 [ ] Offset tab text a little to the left (probably need to paint it)
 [ ] Draw close button when tab is moving
 [ ] use QDataWidgetMapper to map tabs to XML data
-[ ] hide RHS buttons, add custom ones
-[ ] middle click to close tab
 """
 try:
     from PySide2.QtWidgets import *
@@ -85,6 +84,9 @@ class Tabs(QTabBar):
                 self.close_button_pressed = index
                 self.update()
                 return
+        elif event.button()==Qt.MidButton:
+            index = self.tabAt(event.pos())
+            self.removeTab(index)
         QTabBar.mousePressEvent(self, event)
             
     def mouseReleaseEvent(self, event):
