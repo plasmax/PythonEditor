@@ -16,8 +16,6 @@ from PythonEditor.ui import menubar
 from PythonEditor.ui.features import shortcuts
 from PythonEditor.ui.features import actions
 from PythonEditor.ui.features import autosavexml
-from PythonEditor.ui.dialogs import preferences
-from PythonEditor.ui.dialogs import shortcuteditor
 
 
 class PythonEditor(QtWidgets.QWidget):
@@ -69,18 +67,6 @@ class PythonEditor(QtWidgets.QWidget):
             tabeditor=self.tabeditor,
             terminal=self.terminal,
         )
-
-        self.menubar = menubar.MenuBar(self)
-
-        SE = shortcuteditor.ShortcutEditor
-        self.shortcuteditor = SE(
-            editor=self.editor,
-            tabeditor=self.tabeditor,
-            terminal=self.terminal
-            )
-
-        PE = preferences.PreferencesEditor
-        self.preferenceseditor = PE()
 
 		# Loading the AutosaveManager will also load
         # all the contents of the autosave into tabs.

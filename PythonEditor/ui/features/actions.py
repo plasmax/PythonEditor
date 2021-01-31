@@ -1715,14 +1715,23 @@ class Actions(QtCore.QObject):
         """
         Generates a popup dialog listing available shortcuts.
         """
-        self.pythoneditor.shortcuteditor.show()
+        from PythonEditor.ui.dialogs import shortcuteditor
+        self.shortcuteditor = shortcuteditor.ShortcutEditor(
+            handler=self.pythoneditor.shortcuthandler,
+            parent=self.pythoneditor
+        )
+        self.shortcuteditor.show()
+        self.shortcuteditor.raise_()
 
     def show_preferences(self):
         """
         Placeholder.
         Generates a popup dialog listing available preferences.
         """
+        from PythonEditor.ui.dialogs import preferences
+        self.preferenceseditor = preferences.PreferencesEditor()
         self.pythoneditor.preferenceseditor.show()
+        self.pythoneditor.preferenceseditor.raise_()
 
     # -------------------------------------- #
     # ---------------         -------------- #
