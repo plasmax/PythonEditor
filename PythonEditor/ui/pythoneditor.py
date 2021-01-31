@@ -63,7 +63,8 @@ class PythonEditor(QtWidgets.QWidget):
             terminal=self.terminal,
         )
 
-        sch = shortcuts.ShortcutHandler(
+        self.menubar = menubar.MenuBar(self)
+        self.shortcuthandler = shortcuts.ShortcutHandler(
             editor=self.editor,
             tabeditor=self.tabeditor,
             terminal=self.terminal,
