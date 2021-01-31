@@ -17,7 +17,6 @@ from PythonEditor.ui.Qt.QtCore import (
     Signal, Slot, QTimer, Qt)
 
 from PythonEditor.utils import constants
-from PythonEditor.ui.dialogs import shortcuteditor
 from PythonEditor.ui.features import actions
 from PythonEditor.ui.features import shortcuts
 from PythonEditor.ui.features import linenumberarea
