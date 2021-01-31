@@ -87,6 +87,7 @@ class ShortcutHandler(QObject):
         self.setParent(parent_widget)
 
         self.shortcut_dict = {}
+        self.unassigned = []
 
         self.register_all_shortcuts()
         self.editor.installEventFilter(self)
@@ -239,12 +240,15 @@ class ShortcutHandler(QObject):
         :param aname: `str` name of the `QAction`
         :param attrs: `dict` of `str`:`str` containing shortcuts.
         """
-        shortcuts = attrs['Shortcuts']
-        if len(shortcuts) == 0:
-            return
         action = self.get_action_by_name(widget, aname)
         if action is None:
             return
+
+        shortcuts = attrs['Shortcuts']
+        if len(shortcuts) == 0:
+            self.unassigned.append(action)
+            return
+            
         key_seqs = []
         for shortcut in shortcuts:
             key_seq = QKeySequence(
