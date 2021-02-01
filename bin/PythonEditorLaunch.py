@@ -32,7 +32,12 @@ if PACKAGE_PATH not in sys.path:
 
 # set startup env variables
 os.environ['QT_PREFERRED_BINDING'] = pyside
-os.environ['PYTHONEDITOR_CAPTURE_STARTUP_STREAMS'] = '1'
+try:
+	# allow this variable to be set before launching
+	os.environ['PYTHONEDITOR_CAPTURE_STARTUP_STREAMS']
+except KeyError:
+	print('Will try and encapsulate sys.stdout immediately.')
+	os.environ['PYTHONEDITOR_CAPTURE_STARTUP_STREAMS'] = '1'
 os.environ['PYTHONEDITOR_DEFAULT_FONT'] = 'Consolas'
 
 from PythonEditor.ui import ide
