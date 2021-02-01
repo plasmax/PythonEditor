@@ -5,21 +5,23 @@ TODO:
 [x] hide scroll bar
 [x] move only, don't drop tabs on top of eachother
 [x] dropped items should be the selected ones!
-[ ] constrain drag/drop moving thing to within layout (like sublime?) :D QListView.gridSize() maybe?
+[ ] constrain drag/drop moving thing to within layout (like sublime?) :D QListView.gridSize() maybe? WHAT IS THAT THING? IT HOVERS OVER EVERYTHING!! possibly from startDrag()? yes - it's a QDrag.setPixmap from 
+    https://stackoverflow.com/questions/2419445/qt-controlling-drag-behaviour
+    it might be better to do this with mouseMoveEvent and paintEvent on the SideListView. seems like indexAt(pos), etc would be useful
 [ ] paint object while moving?? :D properly?
-[ ] padding/margins (could be solved in parent layout tbqh)
+[x] padding/margins (could be solved in parent layout tbqh)
 [ ] delegate stuff - text, close buttons, etc etc
-    [ ] italics on referencd scripts (data state/role on the model)
-    [ ] file out of date warning on the listview?  a little circle o that denotes out of date (like gchat's "new message")
-    [ ] close buttons - rob what I did on the other one
+    [x] italics on referenced scripts (data state/role on the model)
+    [x] file out of date warning on the listview?  a little circle o that denotes out of date (like gchat's "new message")
+    [x] close buttons - rob what I did on the other one
 [ ] hover items! (seems to happen automatically on some styles.. I think the option.state is already there)
 [ ] Could we try a filesystem model that uses a bunch of temp files in a folder for autosave instead of one massive xml? would make for cleaner export, maybe faster as well?
 [ ] Maybe don't .sort() the entire model - there might be a faster way
-[ ] make the text on the List view less contrasty
-[ ] a little hover label arrow button thingy that lets you animate open/clsoed the side panel. [ > ]
+[x] make the text on the List view less contrasty
+[ ] a little hover label arrow button thingy that lets you animate the side panel open/closed . [ > ]
 [ ] QDockWidget!
 [ ] buttons next to the tab bar
-[ ] a treeview under the listview - in the same scrollarea? :D more realistically, it'd all be a treeview with some different item flags for sorting 
+[ ] a treeview under the listview - in the same scrollarea? join them together with 0 spacing to make it look like sublime :D filesystem access!! <3
 [ ] small x close button on the list view too 
 [ ] compact mode - a QComboBox instead of tabs/list
 """
@@ -36,6 +38,7 @@ except ImportError:
 from PythonEditor.ui.editor import Editor
 from PythonEditor.ui.terminal import Terminal
 
+
 class MoveListView(QListView):
     def __init__(self):
         super(MoveListView, self).__init__()
@@ -43,8 +46,15 @@ class MoveListView(QListView):
         self.setDefaultDropAction(Qt.DropAction.MoveAction)
         self.setAcceptDrops(True)
         self.setDropIndicatorShown(False)
+        self.setMouseTracking(True)
         self._block = False
 
+        self.setSpacing(0)
+        self.setContentsMargins(0,0,0,0)
+        self.setFrameShape(QFrame.Shape.NoFrame)
+        self.setLineWidth(0)
+        self.setMidLineWidth(0)
+        
     def unblock(self):
         # print ('unblock')
         self._block = False
@@ -94,10 +104,28 @@ class MoveListView(QListView):
         event.accept()
     
 
+
+class MoveTreeView(QTreeView):
+    def __init__(self):
+        super(MoveTreeView, self).__init__()
+
+        self.setDragDropMode(QAbstractItemView.InternalMove)
+        self.setDefaultDropAction(Qt.DropAction.MoveAction)
+        self.setAcceptDrops(True)
+        self.setDropIndicatorShown(False)
+        self.setMouseTracking(True)
+        self._block = False
+
+        self.setContentsMargins(0,0,0,0)
+        self.setFrameShape(QFrame.Shape.NoFrame)
+        self.setLineWidth(0)
+        self.setMidLineWidth(0)
+
+# class SideListView(MoveTreeView):
 class SideListView(MoveListView):
     def __init__(self):
         super(SideListView, self).__init__()
-        
+
         palette = self.palette()
         brush = palette.text()
         color = brush.color().darker(140)
@@ -135,13 +163,8 @@ class TabListView(MoveListView):
         # self.viewMode()
         # self.viewOptions()
         
-        self.setSpacing(0)
-        self.setContentsMargins(0,0,0,0)
         # self.setFrameShadow(QFrame.Shadow.Raised)
-        self.setFrameShape(QFrame.Shape.NoFrame)
         # self.setFrameShape(QFrame.Shape.Box)
-        self.setLineWidth(0)
-        self.setMidLineWidth(0)
         self.viewport().setAutoFillBackground(False)
         
         # self.dropIndicatorPosition()
@@ -164,38 +187,48 @@ class TabListView(MoveListView):
         # self.setResizeMode(QListView.Adjust)
         # self.setAutoScroll(True)
         
-
         self.setItemDelegate(TabDelegate(self))
-        
-    # def paintEvent(self, event):
-        # return
+
 
 class PythonEditor(QDialog):
     def __init__(self):
         super(PythonEditor, self).__init__()
         self.setWindowFlags(Qt.WindowStaysOnTopHint)
+        self.setContentsMargins(0,0,0,0)
         
         self.tab_list = TabListView()
         self.side_list = SideListView()
         self.input = Editor()
+        self.input.setFrameShape(QFrame.NoFrame)
+        # self.input.setLineWidth(0)
+        # self.input.setContentsMargins(0,0,0,0)
         self.output = Terminal()
-        self.input.setContentsMargins(0,0,0,0)
-        self.output.setContentsMargins(0,0,0,0)
+        self.output.setFrameShape(QFrame.NoFrame)
+        # self.output.setLineWidth(0)
+        # self.output.setContentsMargins(0,0,0,0)
         
         # dock = QDockWidget(self)
         # dock.setWidget
 
         self.right_widget = QWidget()
+        # dialog.left_widget.frameGeometry()
+        # rect = dialog.right_widget.frameGeometry()
+        # rect.adjusted(-10,0,0,0)
+        # dialog.right_widget.setGeometry(rect.adjusted(-5,0,0,0))
         self.right_widget.setContentsMargins(0,0,0,0)
         self.right_widget.setLayout(QVBoxLayout(self.right_widget))
         layout = self.right_widget.layout()
-        layout.setContentsMargins(0,0,0,0)
+        # layout.setMargin(0)
+        # layout.setSpacing(0)
+        layout.setContentsMargins(1,0,1,0)
         layout.addWidget(self.side_list)
         
         self.left_widget = QWidget()
         self.left_widget.setContentsMargins(0,0,0,0)
         self.left_widget.setLayout(QVBoxLayout(self.left_widget))
         layout = self.left_widget.layout()
+        # layout.setMargin(0)
+        layout.setSpacing(0)
         layout.setContentsMargins(0,0,0,0)
         layout.addWidget(self.output)
         layout.addWidget(self.tab_list)
@@ -206,10 +239,60 @@ class PythonEditor(QDialog):
         layout.setContentsMargins(0,0,0,0)
         layout.addWidget(self.left_widget)
         layout.addWidget(self.right_widget)
+        # layout = dialog.layout()
+        # layout.insertStretch( -1, 1 )
+        layout.setSpacing(0)
         
 
 
 class TabDelegate(QStyledItemDelegate):
+    close_clicked = Signal(QModelIndex)
+    def __init__(self, parent=None):
+        super(TabDelegate, self).__init__(parent=parent)
+        self._close_button_hovered_index = -1
+        self._close_button_pressed_index = -1
+        self._padding = 10
+        self._pressed = False
+        
+    def sizeHint(self, option, index):
+        size = super(TabDelegate, self).sizeHint(option, index)
+        # text = index.data()
+        try:
+            get_width = option.fontMetrics.horizontalAdvance
+        except AttributeError:
+            # python 2.7 & earlier versions of PySide2
+            get_width = option.fontMetrics.width
+            
+        width = get_width(index.data())
+        size.setWidth(width+40)
+        size.setHeight(size.height()+15)
+        return size
+
+    def editorEvent(self, event, model, option, index):
+        if event.type()==QEvent.MouseMove:
+            if self._pressed:
+                return False
+            if self.on_close_button(option, event):
+                self._close_button_hovered_index = index
+            else:
+                self._close_button_hovered_index = -1
+            return True
+        elif event.type() in [QEvent.MouseButtonPress, QEvent.MouseButtonDblClick]:
+            if event.button()==Qt.LeftButton:
+                self._pressed = True
+                if self.on_close_button(option, event):
+                    self.close_clicked.emit(index)
+                    model.sourceModel().takeRow(index.row()) # FIXME: you should let the model do this - send the above signal to the model.
+                    self._close_button_pressed_index = index
+                    return True
+                else:
+                    self._close_button_pressed_index = -1
+        elif event.type()==QEvent.MouseButtonRelease:
+            if event.button()==Qt.LeftButton:
+                self._pressed = False
+                self._close_button_pressed_index = -1
+        return False
+        
     def paint(self, painter, option, index):
         # super(TabDelegate, self).paint(painter, option, index)
 
@@ -218,29 +301,112 @@ class TabDelegate(QStyledItemDelegate):
         tabOption.state = option.state
         QApplication.style().drawControl(QStyle.CE_TabBarTab, tabOption, painter)
         
+        # if option.state & QStyle.State_MouseOver:
+            # print('mouse overrrr')
+            # painter.fillRect(option.rect, QColor(0,0,0,10))
+        
         textOption = QTextOption()
-        textOption.setAlignment(Qt.AlignCenter)
         # textOption.setAlignment(Qt.AlignLeading)
-        # textOption.setAlignment(Qt.AlignLeft)
         # Qt.AlignmentFlag.AlignLeading
         # textOption.setFlags(QTextOption.Flag.ShowDocumentTerminator)
-        text_rect = QRect(option.rect)
-        # text_rect.moveLeft(1)
-        text_rect.adjust(-20,0,0,0)
+        align_left = True
+        if align_left:
+            textOption.setAlignment(Qt.AlignLeft)
+            text_rect = QRect(option.rect)
+            text_height = option.fontMetrics.height()
+            text_rect.adjust(self._padding, (option.rect.height()/2)-(text_height/2), 0, 0)
+        else:
+            textOption.setAlignment(Qt.AlignCenter)
+            text_rect = QRect(option.rect)
+            text_rect.adjust(-20,0,0,0)
+        
+        if not index.data(MODIFIED_ROLE): # READ_ONLY_ROLE
+            font = option.font
+            font.setItalic(True)
+            painter.setFont(font)
+        
         text = index.data()
         painter.drawText(text_rect, text, textOption)
         # painter.drawText(option.rect, text, textOption)
         # painter.drawText(0x0, 2, 3)
+        # self.draw_close_button(painter, option, index)
+        self.draw_sublime_close_button(painter, option, index)
+        
+    def draw_close_button(self, painter, option, index):
 
-    def sizeHint(self, option, index):
-        size = super(TabDelegate, self).sizeHint(option, index)
-        # text = index.data()
-        width = option.fontMetrics.horizontalAdvance(index.data())
-        size.setWidth(width+40)
-        size.setHeight(size.height()+15)
-        return size
+        opt = QStyleOption()
+        opt.rect = self.get_close_button_rect(option)
+        
+        opt.state = option.state
 
+        if self._close_button_pressed_index == index:
+            opt.state |= QStyle.State_Sunken
+        elif self._close_button_hovered_index == index:
+            opt.state |= QStyle.State_MouseOver
+            opt.state |= QStyle.State_Raised
+        else:
+            opt.state = QStyle.State_Enabled
+        
+        QApplication.style().drawPrimitive(QStyle.PE_IndicatorTabClose, opt, painter)
+        
+    def draw_sublime_close_button(self, painter, option, index):
+        opt = QStyleOption()
+        opt.rect = self.get_close_button_rect(option)
+        
+        rect = QRect(opt.rect)
+        rect.setSize(rect.size()/1.2)
+        left_line = QLine(rect.topLeft(), rect.bottomRight())
+        right_line = QLine(rect.topRight(), rect.bottomLeft())
+        
+        painter.save()
+        painter.setRenderHint(QPainter.RenderHint.HighQualityAntialiasing)
 
+        paint_x = True
+        if self._close_button_pressed_index == index:
+            # paint me a sunken X
+            brush = QBrush(QColor.fromRgbF(0.2,0.2,0.2,1))
+            painter.setBrush(brush)
+        elif self._close_button_hovered_index == index:
+            # paint me a bright thick X (maybe with a light square or circle underneath?) :)
+            painter.fillRect(opt.rect.adjusted(-4,-4,2,2), QColor.fromRgbF(1,1,1,0.02))
+            
+            brush = option.palette.text()
+            pen = QPen(brush, 2)
+            painter.setPen(pen)
+            rect.moveCenter(rect.center()+QPoint(0.5,0.5))
+        elif index.data(MODIFIED_ROLE):
+            # paint me a filled circle o
+            # for the "not saved"/"document modified" state
+            paint_x = False
+            path = QPainterPath()
+            path.addEllipse(rect)
+            painter.fillPath(path, QBrush(QColor.fromRgbF(1,1,1,0.5)))
+        else:
+            brush = option.palette.light()
+            pen = QPen(brush, 1.2)
+            painter.setPen(pen)
+            
+        if paint_x:
+            # paint me a normal X
+            painter.drawLine(left_line)
+            painter.drawLine(right_line)
+        
+        painter.restore()
+        
+    def get_close_button_rect(self, option):
+        h = option.rect.height()-15#/2
+        rect = QRect(0, 0, h, h)
+        pos = QPoint(option.rect.right(), option.rect.center().y())
+        # pos -= QPoint((rect.width()/2)+self._padding, 0)
+        pos -= QPoint((rect.width()/2)+self._padding, 0)
+        rect.moveCenter(pos)
+        return rect
+        # return QRect(-25, h-8, 16, 16).translated(option.rect.topRight())
+    
+    def on_close_button(self, option, event):
+        rect = self.get_close_button_rect(option)
+        pos = event.pos()
+        return rect.contains(pos)
 
 dialog = PythonEditor()
 dialog.show()
@@ -259,22 +425,47 @@ class ItemModel(QStandardItemModel):
         return False
     
 class TextModel(ItemModel):
-    pass # here we add submodels for autosave-y file-saving-y stuff
+    # here we add submodels for autosave-y file-saving-y stuff
+    def __init__(self, parent=None):
+        super(TextModel, self).__init__(parent=None)
+        
+        ## signals
+        # self.dataChanged.connect(self.handle_data_changed)
+
+    # def handle_data_changed(self, topLeft, bottomRight, roles=[]):
+        # if topLeft != bottomRight:
+            ## one at a time
+            # return
+        # if topLeft.column() != 1:
+            ## only the text/content column
+            # return
+        # for role in roles:
+            ## only edit or display roles
+            # if role not in [Qt.DisplayRole, Qt.EditRole]:
+                # return
+        # self.set_modified(topLeft)
+        
+    # def set_modified(self, index):
+        # sibling = index.sibling(index.row(), 0)
+        # self.setData(sibling, True, role=MODIFIED_ROLE)
+        # self.dataChanged.emit(sibling, sibling)
+
 
 class OrderModel(QSortFilterProxyModel):
     def __init__(self, model):
         super(OrderModel, self).__init__()
         self.setSourceModel(model)
+        self.setSortRole(ORDER_ROLE)
         # self.setDynamicSortFilter(False)
         # self.setDynamicSortFilter(True)
         # m.dynamicSortFilter()
     
-    def lessThan(self, source_left, source_right):
-        return source_left.data(ORDER_ROLE) < source_right.data(ORDER_ROLE)
+    # def lessThan(self, source_left, source_right):
+        # return source_left.data(ORDER_ROLE) < source_right.data(ORDER_ROLE)
     
-    def sort(self, column, order=Qt.AscendingOrder):
-        # TODO: can sorting be made quicker if we know only two items are changing order?
-        return super(OrderModel, self).sort(column, order=Qt.AscendingOrder)
+    # def sort(self, column, order=Qt.AscendingOrder):
+        ## TODO: can sorting be made quicker if we know only two items are changing order?
+        # return super(OrderModel, self).sort(column, order=Qt.AscendingOrder)
         
     def swap(self, source_left, source_right):
         # somehow sort these
@@ -290,9 +481,20 @@ for c in (65, 97):
 zen ="".join([d.get(c, c) for c in this.s])
 zen = zen.replace('-', '').replace('.', '')
 words = [' '+w.capitalize()+' ' for w in zen.split()]
-
+try:
+    random.choices
+except AttributeError:
+    def choices(population, k=1):
+        # poor man's choices
+        count = len(population)
+        for z in range(k):
+            i = random.randint(0, count-1)
+            yield population[i]
+    random.choices = choices
 
 ORDER_ROLE = Qt.UserRole+5
+READ_ONLY_ROLE = Qt.UserRole+6
+MODIFIED_ROLE = Qt.UserRole+7
 m = TextModel()
 for i in range(60):
     # name = ''.join(random.choices(string.ascii_letters + string.digits + '_ '*25, k=random.randint(2, 25)))
@@ -311,23 +513,70 @@ l.setSelectionModel(v.selectionModel())
 # row = m.takeRow(1)
 # m.insertRow(3, m.takeRow(1))
         # self.data_mapper = QDataWidgetMapper(self)
-d = QDataWidgetMapper()
-d.setModel(m)
-# d.addMapping(dialog.tab_list, 0)
-# d.addMapping(dialog.input, 0)
+
+class DataMapper(QDataWidgetMapper):
+    def __init__(self, model):
+        super(DataMapper, self).__init__()
+        self.setModel(model)
+        self.setSubmitPolicy(QDataWidgetMapper.SubmitPolicy.ManualSubmit)
+        self._just_updated_row = -1
+        
+    # def setModel(self, model): # override
+        # if self.model() == model:
+            # return;
+        # if self.model():
+            # disconnect(d->model, SIGNAL(dataChanged(QModelIndex,QModelIndex,QVector<int>)), this,
+                       # SLOT(_q_dataChanged(QModelIndex,QModelIndex,QVector<int>)));
+            # disconnect(d->model, SIGNAL(destroyed()), this,
+                       # SLOT(_q_modelDestroyed()));
+        
+        # self.clearMapping()
+        # d->rootIndex = QModelIndex();
+        # d->currentTopLeft = QModelIndex();
+        # d->model = model;
+        # connect(model, SIGNAL(dataChanged(QModelIndex,QModelIndex,QVector<int>)),
+                # SLOT(_q_dataChanged(QModelIndex,QModelIndex,QVector<int>)));
+        # connect(model, SIGNAL(destroyed()), SLOT(_q_modelDestroyed()));
+    
+    # def _q_dataChanged(self, topLeft, const QModelIndex &bottomRight, const QVector<int> &):
+        # if (topLeft.parent() != rootIndex)
+            # return; // not in our hierarchy
+        # for (WidgetMapper &e : widgetMap) {
+            # if (qContainsIndex(e.currentIndex, topLeft, bottomRight))
+                ## TODO: here is where we override population, so that the Editor doesn't get updated again after it updates the model.
+                # populate(e);
+        
+    @Slot()
+    def submit_text_change(self):
+        # submit is too aggressive - we need to call the model's setData without invoking dataChanged()
+        row = self.currentIndex()
+        if row == self._just_updated_row:
+            self._just_updated_row = -1
+            return
+        editor = self.mappedWidgetAt(1)
+        model = self.model()
+        title_index = model.index(row, 0)
+        text_index = model.index(row, 1)
+        # model.sourceModel().set_modified(text_index)
+        model.setData(text_index, editor.toPlainText(), role=Qt.DisplayRole) # FIXME: updating the model updates the editor again (QDataWidgetMapper.populate)
+        model.setData(title_index, True, role=MODIFIED_ROLE)
+        # print('update!')
+    
+    def update_data(self, index, previous):
+        row = index.row()
+        self._just_updated_row = row
+        self.setCurrentIndex(row)
+
+
+# question: is datamapper overkill? it's kind of nice, but I could connect text_changed_signal to the model (or selectionModel?) QItemSelectionModel
+d = DataMapper(m)
 d.addMapping(dialog.input, 1)
+dialog.input.text_changed_signal.connect(d.submit_text_change) 
+self.selectionModel().currentChanged.connect(d.update_data)
+selection_model = self.selectionModel()
 
-# m.moveRow(QModelIndex(), 1, QModelIndex(), 0)
-# self.moveRow
-
-# d.toNext()
-def update_data(index, previous):
-    d.setCurrentIndex(index.row())
-self.selectionModel().currentChanged.connect(update_data)
 #&&
 
-# self.setItemDelegate(None)
-self.setItemDelegate(TabDelegate(self))
 
 QProxyStyle # might be a tab color fix on vista?
 
