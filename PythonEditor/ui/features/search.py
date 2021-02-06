@@ -194,7 +194,7 @@ class FindPalette(EditLine):
         if self.search_across_tabs:
             count = self.tabs.count()
             current_index = self.tabs.currentIndex()
-            indices = range(count)
+            indices = list(range(count))
             if not self.backwards:
                 indices = indices[current_index+1:]+indices[:current_index]
             else:
