@@ -7,7 +7,9 @@ TODO:
 [x] dropped items should be the selected ones!
 [ ] constrain drag/drop moving thing to within layout (like sublime?) :D QListView.gridSize() maybe? WHAT IS THAT THING? IT HOVERS OVER EVERYTHING!! possibly from startDrag()? yes - it's a QDrag.setPixmap from 
     https://stackoverflow.com/questions/2419445/qt-controlling-drag-behaviour
-    it might be better to do this with mouseMoveEvent and paintEvent on the SideListView. seems like indexAt(pos), etc would be useful
+    it might be better to do this with mouseMoveEvent and paintEvent on the SideListView. seems like indexAt(pos), etc would be useful.
+    maybe swap visually but don't sort it until you drop?
+    or - implement a QAbstractItemModel that can reorder two items easily (how fast can python swap two indices in a huge list?)
 [ ] paint object while moving?? :D properly?
 [x] padding/margins (could be solved in parent layout tbqh)
 [ ] delegate stuff - text, close buttons, etc etc
@@ -134,6 +136,7 @@ class SideListView(MoveListView):
         self.setPalette(palette)
         
         # self.setMaximumWidth(200)
+        self.setItemDelegate(SideListDelegate(self))
         
     # def sizeHint(self):
         # size = super(SideListView, self).sizeHint()
@@ -244,67 +247,58 @@ class PythonEditor(QDialog):
         layout.setSpacing(0)
         
 
-
-class TabDelegate(QStyledItemDelegate):
+class FileItemDelegate(QStyledItemDelegate):
+    """Implement methods that would be common to an item
+    that is going to represent a file, including painting 
+    close buttons, text and indicators."""
     close_clicked = Signal(QModelIndex)
     def __init__(self, parent=None):
-        super(TabDelegate, self).__init__(parent=parent)
-        self._close_button_hovered_index = -1
-        self._close_button_pressed_index = -1
+        super(FileItemDelegate, self).__init__(parent=parent)
+        self._close_button_hovered_index = QModelIndex()
+        self._close_button_pressed_index = QModelIndex()
         self._padding = 10
         self._pressed = False
-        
-    def sizeHint(self, option, index):
-        size = super(TabDelegate, self).sizeHint(option, index)
-        # text = index.data()
-        try:
-            get_width = option.fontMetrics.horizontalAdvance
-        except AttributeError:
-            # python 2.7 & earlier versions of PySide2
-            get_width = option.fontMetrics.width
-            
-        width = get_width(index.data())
-        size.setWidth(width+40)
-        size.setHeight(size.height()+15)
-        return size
 
     def editorEvent(self, event, model, option, index):
         if event.type()==QEvent.MouseMove:
             if self._pressed:
+                # if self.on_close_button(option, event):
+                    # return True
                 return False
             if self.on_close_button(option, event):
                 self._close_button_hovered_index = index
             else:
-                self._close_button_hovered_index = -1
+                self._close_button_hovered_index = QModelIndex()
             return True
         elif event.type() in [QEvent.MouseButtonPress, QEvent.MouseButtonDblClick]:
             if event.button()==Qt.LeftButton:
                 self._pressed = True
                 if self.on_close_button(option, event):
-                    self.close_clicked.emit(index)
-                    model.sourceModel().takeRow(index.row()) # FIXME: you should let the model do this - send the above signal to the model.
                     self._close_button_pressed_index = index
+                    # self._close_button_hovered_index = QModelIndex()
                     return True
                 else:
-                    self._close_button_pressed_index = -1
+                    self._close_button_pressed_index = QModelIndex()
         elif event.type()==QEvent.MouseButtonRelease:
             if event.button()==Qt.LeftButton:
+                if self.on_close_button(option, event):
+                    if index.row() == self._close_button_pressed_index.row():
+                        self.close_clicked.emit(index)
+                        model.sourceModel().takeRow(index.row()) # FIXME: you should let the model do this - send the above signal to the model.
                 self._pressed = False
-                self._close_button_pressed_index = -1
+                self._close_button_pressed_index = QModelIndex()
         return False
         
     def paint(self, painter, option, index):
-        # super(TabDelegate, self).paint(painter, option, index)
-
-        tabOption = QStyleOptionTab()
-        tabOption.rect = option.rect
-        tabOption.state = option.state
-        QApplication.style().drawControl(QStyle.CE_TabBarTab, tabOption, painter)
-        
         # if option.state & QStyle.State_MouseOver:
             # print('mouse overrrr')
             # painter.fillRect(option.rect, QColor(0,0,0,10))
-        
+        self.draw_text(painter, option, index)
+        # self.draw_close_button(painter, option, index)
+        self.draw_sublime_close_button(painter, option, index)
+        # super(FileItemDelegate, self).paint(painter, option, index)
+
+    def draw_text(self, painter, option, index):
         textOption = QTextOption()
         # textOption.setAlignment(Qt.AlignLeading)
         # Qt.AlignmentFlag.AlignLeading
@@ -329,11 +323,8 @@ class TabDelegate(QStyledItemDelegate):
         painter.drawText(text_rect, text, textOption)
         # painter.drawText(option.rect, text, textOption)
         # painter.drawText(0x0, 2, 3)
-        # self.draw_close_button(painter, option, index)
-        self.draw_sublime_close_button(painter, option, index)
-        
-    def draw_close_button(self, painter, option, index):
 
+    def draw_close_button(self, painter, option, index):
         opt = QStyleOption()
         opt.rect = self.get_close_button_rect(option)
         
@@ -362,11 +353,11 @@ class TabDelegate(QStyledItemDelegate):
         painter.setRenderHint(QPainter.RenderHint.HighQualityAntialiasing)
 
         paint_x = True
-        if self._close_button_pressed_index == index:
+        if self._close_button_pressed_index.row() == index.row():
             # paint me a sunken X
             brush = QBrush(QColor.fromRgbF(0.2,0.2,0.2,1))
             painter.setBrush(brush)
-        elif self._close_button_hovered_index == index:
+        elif self._close_button_hovered_index.row() == index.row():
             # paint me a bright thick X (maybe with a light square or circle underneath?) :)
             painter.fillRect(opt.rect.adjusted(-4,-4,2,2), QColor.fromRgbF(1,1,1,0.02))
             
@@ -408,6 +399,54 @@ class TabDelegate(QStyledItemDelegate):
         pos = event.pos()
         return rect.contains(pos)
 
+
+class SideListDelegate(FileItemDelegate):
+    def paint(self, painter, option, index):
+        opt = QStyleOptionViewItem(option)
+        # rect = QRect(opt.rect)
+        opt.rect.moveLeft(16)
+        QStyledItemDelegate.paint(self, painter, opt, index)
+        # super(SideListDelegate, self).paint(painter, option, index)
+        self.draw_sublime_close_button(painter, option, index)
+        
+    def get_close_button_rect(self, option):
+        # return QRect(-25, h-8, 16, 16).translated(option.rect.topRight())
+        h = option.rect.height()-7
+        rect = QRect(0, 0, h, h)
+        pos = QPoint(option.rect.left(), option.rect.center().y())
+        # pos -= QPoint((rect.width()/2)+self._padding, 0)
+        pos -= QPoint((rect.width()/2)-self._padding, 0)
+        rect.moveCenter(pos)
+        rect.moveLeft(8)
+        return rect
+    
+
+class TabDelegate(FileItemDelegate):
+    def sizeHint(self, option, index):
+        size = super(TabDelegate, self).sizeHint(option, index)
+        # text = index.data()
+        try:
+            get_width = option.fontMetrics.horizontalAdvance
+        except AttributeError:
+            # python 2.7 & earlier versions of PySide2
+            get_width = option.fontMetrics.width
+            
+        width = get_width(index.data())
+        size.setWidth(width+40)
+        size.setHeight(size.height()+15)
+        return size
+        
+    def paint(self, painter, option, index):
+        self.draw_tab(painter, option, index)
+        super(TabDelegate, self).paint(painter, option, index)
+
+    def draw_tab(self, painter, option, index):
+        tabOption = QStyleOptionTab()
+        tabOption.rect = option.rect
+        tabOption.state = option.state
+        QApplication.style().drawControl(QStyle.CE_TabBarTab, tabOption, painter)
+
+
 dialog = PythonEditor()
 dialog.show()
 self = dialog.tab_list
@@ -423,7 +462,8 @@ class ItemModel(QStandardItemModel):
         return Qt.MoveAction
     def dropMimeData(self, data, action, row, column, parent):
         return False
-    
+
+
 class TextModel(ItemModel):
     # here we add submodels for autosave-y file-saving-y stuff
     def __init__(self, parent=None):
@@ -575,12 +615,3 @@ dialog.input.text_changed_signal.connect(d.submit_text_change)
 self.selectionModel().currentChanged.connect(d.update_data)
 selection_model = self.selectionModel()
 
-#&&
-
-
-QProxyStyle # might be a tab color fix on vista?
-
-QApplication.setStyle('windowsvista')
-QApplication.setStyle('Fusion')
-# QtWidgets.QApplication.setStyle('Fusion')
-app.setPalette(nukepalette.getNukePalette())
