@@ -176,6 +176,9 @@ class Editor(QPlainTextEdit):
     def setTextChanged(self, state=True):
         self._changed = state
 
+    def selected_text(self):
+        return self.textCursor().selection().toPlainText()
+
     def replace_text(self, text):
         """Set the text programmatically
         but allow an undo. Works around

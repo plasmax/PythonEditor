@@ -275,7 +275,7 @@
         },
         "Reload Wrap": {
             "Shortcuts": [
-                "Ctrl+R"
+                "Ctrl+Alt+R"
             ],
             "Method": "add_reload_module_command",
             "Menu Location": "Edit/Text"
@@ -344,6 +344,13 @@
                 "Ctrl+G"
             ],
             "Method": "goto_line",
+            "Menu Location": "Tools"
+        },
+        "Goto Symbol": {
+            "Shortcuts": [
+                "Ctrl+R"
+            ],
+            "Method": "goto_symbol",
             "Menu Location": "Tools"
         },
         "Goto Definition": {

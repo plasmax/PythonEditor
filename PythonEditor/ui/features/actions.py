@@ -30,7 +30,11 @@ from PythonEditor.utils import constants
 from PythonEditor.core import execute
 from PythonEditor.ui.features import search
 from PythonEditor.ui.features import autocompletion
+from PythonEditor.ui.dialogs import popups
+from PythonEditor.ui.dialogs import popupline
 from PythonEditor.utils.constants import NUKE_DIR
+from PythonEditor.utils.goto import goto_position
+from PythonEditor.utils.goto import goto_line
 
 
 def load_actions_from_json():
@@ -1144,8 +1148,22 @@ class Actions(QtCore.QObject):
         user to type line to go to. Store current
         line in case user cancels.
         """
-        self.goto_palette = GotoPalette(self.editor)
-        self.goto_palette.show()
+        self.goto_line_palette = popups.GotoPalette(self.editor)
+        self.goto_line_palette.show()
+
+    def goto_symbol(self):
+        """Show a tree view with all class and function 
+        names in the current document
+        """
+        self.goto_symbol_palette = popupline.PopupLine(self.editor)
+        self.goto_symbol_palette.show()
+
+    def goto_project_symbol(self):
+        """
+        Placeholder.
+
+        Same as goto_symbol, but in all open documents."""
+        pass # TODO
 
     def command_palette(self):
         """
@@ -1756,241 +1774,6 @@ class Actions(QtCore.QObject):
         else:
             self.splitter_state = splitter.saveState()
             splitter.setSizes([0,1])
-
-
-class CommandPalette(QtWidgets.QLineEdit):
-    """
-    The base class for a LineEdit widget that
-    appears over a parent widget and can be
-    used for entering commands, searching, etc.
-    """
-    location = QtCore.Qt.BottomSection
-    location = QtCore.Qt.TopSection
-    def __init__(self, parent=None):
-        super(CommandPalette, self).__init__()
-        self._parent = parent
-        self.setWindowFlags(
-            QtCore.Qt.WindowStaysOnTopHint
-            | QtCore.Qt.FramelessWindowHint
-        )
-        self.editingFinished.connect(self.hide)
-        font = self.font()
-        font.setPointSize(12)
-        font.setBold(False)
-        self.setFont(font)
-        self.place_over_parent()
-
-    def parent(self):
-        return self._parent
-
-    def keyPressEvent(self, event):
-        esc = QtCore.Qt.Key.Key_Escape
-        if event.key() == esc:
-            self.hide()
-        super(
-            CommandPalette, self
-        ).keyPressEvent(event)
-
-    def showEvent(self, event):
-        self.parent().installEventFilter(self)
-        self.setFocus(QtCore.Qt.MouseFocusReason)
-        if event.type() != QtCore.QEvent.Show:
-            return
-        super(CommandPalette, self).showEvent(event)
-        self.place_over_parent()
-
-    def hideEvent(self, event):
-        self.parent().removeEventFilter(self)
-        if event.type() != QtCore.QEvent.Hide:
-            return
-        super(CommandPalette, self).hideEvent(event)
-        self.parent().setFocus(QtCore.Qt.MouseFocusReason)
-
-    def place_over_parent(self):
-        if self.location == QtCore.Qt.TopSection:
-            self.move_to_top()
-        elif self.location == QtCore.Qt.BottomSection:
-            self.move_to_bottom()
-
-    def move_to_top(self):
-        geo = self.parent().geometry()
-        centre = geo.center()
-        x = centre.x()-(self.width()/2)
-        y = geo.top()-12
-        pos = QtCore.QPoint(x, y)
-        pos = self.parent().mapToGlobal(pos)
-        self.move(pos)
-
-    def move_to_bottom(self):
-        geo = self.parent().geometry()
-        centre = geo.center()
-        x = centre.x()-(self.width()/2)
-        y = geo.bottom()-70
-        pos = QtCore.QPoint(x, y)
-        pos = self.parent().mapToGlobal(pos)
-        self.move(pos)
-
-    def eventFilter(self, obj, event):
-        if event.type() == QtCore.QEvent.Move:
-            self.place_over_parent()
-        elif event.type() == QtCore.QEvent.Resize:
-            self.place_over_parent()
-        elif event.type() == QtCore.QEvent.Hide:
-            self.hide()
-        return False
-
-# ------------ Previous popup window, probably more useful for Find Definitions (Ctrl+R)
-# class FindPalette(CommandPalette):
-#     def __init__(self, editor):
-#         super(FindPalette, self).__init__(editor)
-#         words = list(set(re.findall(r'\w+', editor.toPlainText())))
-#         completer = QtWidgets.QCompleter(words)
-#         completer.highlighted.connect(self.find)
-#         self.setCompleter(completer)
-
-#         textCursor = editor.textCursor()
-#         if textCursor.hasSelection():
-#             text = textCursor.selectedText()
-#             self.setText(text)
-
-#     def keyPressEvent(self, event):
-#         enter_keys = [
-#             QtCore.Qt.Key.Key_Return,
-#             QtCore.Qt.Key.Key_Enter
-#         ]
-#         if event.key() not in enter_keys:
-#             super(
-#                 FindPalette, self
-#             ).keyPressEvent(event)
-#         elif event.modifiers() == QtCore.Qt.ControlModifier:
-#             self.hide()
-#             return
-#         elif self.completer().popup().isVisible():
-#             event.ignore()
-#             return
-
-#         esc = QtCore.Qt.Key.Key_Escape
-#         if event.key() == esc:
-#             self.hide()
-#             return
-
-#         if event.key() in [
-#             QtCore.Qt.Key.Key_Shift,
-#             QtCore.Qt.Key.Key_Alt,
-#             QtCore.Qt.Key.Key_Control,
-#             QtCore.Qt.Key.Key_Meta,
-#             ]:
-#             return
-
-#         text = self.text()
-#         editor = self.parent()
-#         cursor = editor.textCursor()
-#         pos = cursor.position()
-#         self.find(text)
-
-#     def lookup(self, text, text_cursor):
-#         """
-#         Reusable search.
-#         """
-#         document = self.parent().document()
-
-#         # avoid jumps by placing cursor at:
-#         start_pos = text_cursor.StartOfWord
-
-#         if (text_cursor.hasSelection()
-#             and text_cursor.selection(
-#             ).toPlainText() == text):
-
-#             # move on if word already matched
-#             start_pos = text_cursor.EndOfWord
-
-#         text_cursor.movePosition(start_pos)
-#         cursor = document.find(
-#             text,
-#             text_cursor,
-#             document.FindCaseSensitively
-#         )
-#         pos = cursor.position()
-#         if pos != -1:
-#             self.parent().setTextCursor(cursor)
-#             return True
-
-#     def find(self, text):
-#         """
-#         Select text in the parent editor.
-#         """
-#         text_cursor = self.parent().textCursor()
-
-#         # start the search from the current position
-#         if self.lookup(text, text_cursor):
-#             return
-
-#         # search from the beginning of the document
-#         text_cursor = self.parent().textCursor()
-#         text_cursor.setPosition(
-#             0,
-#             QtGui.QTextCursor.MoveAnchor
-#         )
-#         self.lookup(text, text_cursor)
-
-
-class GotoPalette(CommandPalette):
-    def __init__(self, editor):
-        super(GotoPalette, self).__init__(editor)
-        self.editor = editor
-        self.current_line = editor.textCursor(
-            ).block(
-            ).blockNumber()+1
-
-    def keyPressEvent(self, event):
-        esc = QtCore.Qt.Key.Key_Escape
-        if event.key() == esc:
-            goto_line(
-                self.editor,
-                self.current_line
-            )
-            self.hide()
-
-        if event.text().isalpha():
-            return
-
-        super(
-            GotoPalette, self
-        ).keyPressEvent(event)
-        try:
-            lineno = int(self.text())
-        except ValueError:
-            return
-        goto_line(
-            self.editor,
-            lineno
-        )
-
-def goto_position(editor, pos):
-    """
-    Goto position in document. 
-    """
-    cursor = editor.textCursor()
-    editor.moveCursor(cursor.End)
-    cursor.setPosition(pos)
-    editor.setTextCursor(cursor)
-
-
-def goto_line(editor, lineno):
-    """
-    Sets the text cursor to the
-    end of the document, then to
-    the given lineno.
-    """
-    count = editor.blockCount()
-    if lineno > count:
-        lineno = count
-    lineno = lineno-1
-    pos = editor.document(
-        ).findBlockByNumber(
-        lineno).position()
-
-    goto_position(editor, pos)
 
 
 def make_action(name, widget, func):
