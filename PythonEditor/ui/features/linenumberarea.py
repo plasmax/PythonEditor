@@ -13,6 +13,7 @@ class LineNumberArea(QtWidgets.QWidget):
         super(LineNumberArea, self).__init__(editor)
         self.setObjectName('LineNumberArea')
         self.editor = editor
+        self.setFont(editor.font())
         self.setParent(editor)
         self.setupLineNumbers()
 
