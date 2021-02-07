@@ -325,6 +325,11 @@
             "Method": "return_handler",
             "Menu Location": "Edit/Text"
         },
+        "Trim Trailing Whitespace": {
+            "Shortcuts": [],
+            "Method": "trim_trailing_whitespace",
+            "Menu Location": "Edit/Text"
+        },
         "Duplicate Cursor Up": {
             "Shortcuts": [
                 "Ctrl+Alt+Shift+Up"

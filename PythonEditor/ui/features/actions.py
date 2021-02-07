@@ -362,6 +362,23 @@ class Actions(QtCore.QObject):
         """
         return self.indent_next_line()
 
+    def trim_trailing_whitespace(self):
+        """Rstrip all blocks."""
+        doc = self.editor.document()
+        block = doc.begin()
+        cursor = self.editor.textCursor()
+        cursor.beginEditBlock()
+        while block.isValid():
+            block = block.next()
+            text = block.text()
+            if len(text)==len(text.rstrip()):
+                continue
+            cursor.setPosition(block.position(), QtGui.QTextCursor.MoveAnchor)
+            cursor.select(QtGui.QTextCursor.BlockUnderCursor)
+            cursor.insertText('\n'+text.rstrip(' '))
+
+        cursor.endEditBlock()
+
     def indent_next_line(self):
         """ Match next line indentation to current line
         If ':' is character in cursor position and
