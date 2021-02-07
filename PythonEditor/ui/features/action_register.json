@@ -308,6 +308,20 @@
             "Method": "clear_output",
             "Menu Location": "View"
         },
+        "Scroll Up": {
+            "Shortcuts": [
+                "Ctrl+Up"
+            ],
+            "Method": "scroll_up",
+            "Menu Location": "View"
+        },
+        "Scroll Down": {
+            "Shortcuts": [
+                "Ctrl+Down"
+            ],
+            "Method": "scroll_down",
+            "Menu Location": "View"
+        },
         "Copy Block or Selection": {
             "Shortcuts": [
                 "Ctrl+C"

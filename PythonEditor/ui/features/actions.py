@@ -1159,6 +1159,14 @@ class Actions(QtCore.QObject):
 
         QtGui.QClipboard().setText(text)
 
+    def scroll_up(self):
+        bar = self.editor.verticalScrollBar()
+        bar.setValue(bar.value()-3)
+
+    def scroll_down(self):
+        bar = self.editor.verticalScrollBar()
+        bar.setValue(bar.value()+3)
+
     def goto_line(self):
         """
         Show small lineedit widget allowing
