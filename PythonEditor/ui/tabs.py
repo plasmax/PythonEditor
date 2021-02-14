@@ -200,9 +200,14 @@ class Tabs(QTabBar):
         self.setExpanding(False)
         self.setSelectionBehaviorOnRemove(QTabBar.SelectPreviousTab)
         
+    def showEvent(self, event):
+        QTabBar.showEvent(self, event)
+
+        # now that we're visible, we can show close buttons too.
+        self.add_close_button(self.currentIndex())
         # signals
-        self.currentChanged.connect(self.add_close_button, Qt.QueuedConnection) # TODO: would this be better on clicked? store tab index?
-                
+        self.currentChanged.connect(self.add_close_button, Qt.QueuedConnection)
+
     def add_close_button(self, index):
         if not self.isVisible():
             return
