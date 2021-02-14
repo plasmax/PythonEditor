@@ -185,9 +185,19 @@ class CloseTabButton(QAbstractButton):
         
     def mousePressEvent(self, event):
         super(CloseTabButton, self).mousePressEvent(event)
-        parent_pos = self.mapToParent(event.pos())
-        index = self.parent().tabAt(parent_pos)
-        self.close_clicked_signal.emit(index)
+        if event.button() == Qt.LeftButton:
+            parent_pos = self.mapToParent(event.pos())
+            index = self.parent().tabAt(parent_pos)
+            self._pressed_index = index
+        
+    def mouseReleaseEvent(self, event):
+        super(CloseTabButton, self).mouseReleaseEvent(event)
+        if event.button() == Qt.LeftButton:
+            parent_pos = self.mapToParent(event.pos())
+            index = self.parent().tabAt(parent_pos)
+            if index == self._pressed_index:
+                self.close_clicked_signal.emit(index)
+                self._pressed_index = -2
 
 
 
