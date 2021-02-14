@@ -153,14 +153,13 @@ class Tabs(QTabBar):
     Make tabs fast by overriding the
     paintEvent to draw close buttons.
 
-    Current tab data can be easily
-    indexed out of this class via Tabs[key].
-
     FIXME: This is a GUI class. The data management
     should happen within a data model. This class
     should only serve as a view into that model,
     to permit other views to similarly display the
-    model's content.
+    model's content. This class shouldn't store any data
+    at all, especially not tab content - all of that should be in
+    the XMLModel, and this class should manage references to it.
     """
     pen = QPen()
     brush = QBrush()
@@ -243,39 +242,45 @@ class Tabs(QTabBar):
         self.setTabData(index, data)
         self.setCurrentIndex(index)
 
-    def __getitem__(self, name):
-        """
-        Allow easy lookup for
-        the current tab's data.
-        """
+    def get_current_tab_property(self, name):
+        """Allow easy lookup for the current tab's data."""
         index = self.currentIndex()
         if index == -1:
             raise KeyError('No current tab.')
 
         data = self.tabData(index)
         if data is None:
-            raise KeyError(
-                'No tab data available for index %i.' % index
-            )
+            msg = 'No tab data available for index %i.' % index
+            raise KeyError(msg)
 
         return data[name]
 
+    def __getitem__(self, name):
+        print('Deprecated, use get_current_tab_property instead.')
+        import traceback
+        traceback.print_stack()
+        return self.get_current_tab_property(name)
+
     def get(self, name):
         try:
-            return self[name]
+            return self.get_current_tab_property(name)
         except KeyError:
             return None
 
-    def __setitem__(self, name, value):
-        """
-        Easily set current tab's value.
-        """
+    def set_current_tab_property(self, name, value):
+        """Easily set current tab's value."""
         if self.count() == 0:
             return
         index = self.currentIndex()
         tab_data = self.tabData(index)
         tab_data[name] = value
         self.setTabData(index, tab_data)
+
+    def __setitem__(self, name, value):
+        import traceback
+        traceback.print_stack()
+        print('Deprecated, use set_current_tab_property instead.')
+        return self.set_current_tab_property(name, value)
 
     def tab_only_rect(self):
         """
@@ -918,17 +923,15 @@ class TabEditor(QWidget):
         editor = self.editor
         cursor = editor.textCursor()
         block = editor.firstVisibleBlock()
-        self.tabs['cursor_pos'] = (
-            block.position(),
-            cursor.position()
-            )
+        pos = (block.position(), cursor.position())
+        self.tabs.set_current_tab_property('cursor_pos', pos)
 
     def store_selection(self):
         tc = self.editor.textCursor()
         status = (tc.hasSelection(),
                   tc.selectionStart(),
                   tc.selectionEnd())
-        self.tabs['selection'] = status
+        self.tabs.set_current_tab_property('selection', status)
 
     def save_text_in_tab(self):
         """
@@ -946,14 +949,14 @@ class TabEditor(QWidget):
         if saved and not original_text:
             # keep original text in case
             # revert is required
-            text = self.tabs['text']
-            self.tabs['original_text'] = text
-            self.tabs['saved'] = False
+            text = self.tabs.get_current_tab_property('text')
+            self.tabs.set_current_tab_property('original_text', text)
+            self.tabs.set_current_tab_property('saved', False)
             self.tabs.repaint()
         elif original_text is not None:
             text = self.editor.toPlainText()
             if original_text == text:
-                self.tabs['saved'] = True
+                self.tabs.set_current_tab_property('saved', True)
                 self.tabs.repaint()
 
-        self.tabs['text'] = self.editor.toPlainText()
+        self.tabs.set_current_tab_property('text', self.editor.toPlainText())

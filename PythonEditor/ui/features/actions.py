@@ -1850,11 +1850,11 @@ def update_tabs_with_path(tabs, path):
     """After saving, set the current
     tab's path, saved status, and name.
     """
-    tabs['path'] = path
-    tabs['saved'] = True
+    tabs.set_current_tab_property('path', path)
+    tabs.set_current_tab_property('saved', True)
 
     name = os.path.basename(path)
-    tabs['name'] = name
+    tabs.set_current_tab_property('name', name)
     index = tabs.currentIndex()
     tabs.setTabText(index, name)
 

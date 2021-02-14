@@ -271,8 +271,8 @@ class AutoSaveManager(QtCore.QObject):
         with open(path, 'r') as f:
             text = f.read()
         self.editor.setPlainText(text)
-        self.tabs['text'] = text
-        self.tabs['saved'] = True
+        self.tabs.set_current_tab_property('text', text)
+        self.tabs.set_current_tab_property('saved', True)
 
     def check_autosave_modified(self):
         """
@@ -306,17 +306,17 @@ class AutoSaveManager(QtCore.QObject):
         root, subscripts = parsexml('subscript')
 
         # sync tab names from the autosave
-        tab_uid = tabs['uuid']
+        tab_uid = tabs.get_current_tab_property('uuid')
         for s in subscripts:
             uid = s.attrib.get('uuid')
             if uid != tab_uid:
                 continue
             xml_tab_name = s.attrib.get('name')
-            if xml_tab_name == tabs['name']:
+            if xml_tab_name == tabs.get_current_tab_property('name'):
                 continue
             index = self.tabs.currentIndex()
             self.tabs.setTabText(index, xml_tab_name)
-            self.tabs['name'] = xml_tab_name
+            self.tabs.set_current_tab_property('name', xml_tab_name)
 
         # find all subscripts with a
         # matching uid for our current tab
@@ -367,7 +367,7 @@ class AutoSaveManager(QtCore.QObject):
         if index != self.tabs.currentIndex():
             return
         if not os.path.isfile(path):
-            self.tabs['saved'] = False
+            self.tabs.set_current_tab_property('saved', False)
             return
         with open(path, 'r') as f:
             text = f.read()
@@ -376,7 +376,7 @@ class AutoSaveManager(QtCore.QObject):
         if text == editor_text:
             return
 
-        self.tabs['saved'] = False
+        self.tabs.set_current_tab_property('saved', False)
 
     def show_diff_text_popup(self, subscript):
         popup_bar = QtWidgets.QWidget()
@@ -529,14 +529,14 @@ class AutoSaveManager(QtCore.QObject):
     def load_into_new_tab(self, s):
         text = self.editor.toPlainText()
         self.editor.replace_text(s.text)
-        self.tabs['text'] = s.text
+        self.tabs.set_current_tab_property('text', s.text)
         self.autosave()
 
         self.tabs.new_tab(
-            tab_name=self.tabs['name'],
+            tab_name=self.tabs.get_current_tab_property('name'),
             tab_data={
             'text'  : text,
-            'path'  : self.tabs['path'],
+            'path'  : self.tabs.get_current_tab_property('path'),
             }
         )
         self.autosave()
@@ -544,12 +544,12 @@ class AutoSaveManager(QtCore.QObject):
     def save_this_version(self, subscript):
         text = self.editor.toPlainText()
         subscript.text = text
-        self.tabs['text'] = text
+        self.tabs.set_current_tab_property('text', text)
         self.autosave()
 
     def update_from_autosave(self, subscript):
         self.editor.replace_text(subscript.text)
-        self.tabs['text'] = subscript.text
+        self.tabs.set_current_tab_property('text', subscript.text)
         self.autosave()
 
     def check_diff_modified(self):
@@ -582,9 +582,9 @@ class AutoSaveManager(QtCore.QObject):
         """
         tabs = self.tabs
         self.save_by_uuid(
-            tabs['uuid'],
-            tabs['name'],
-            tabs['text'],
+            tabs.get_current_tab_property('uuid'),
+            tabs.get_current_tab_property('name'),
+            tabs.get_current_tab_property('text'),
             str(tabs.currentIndex()),
             tabs.get('path')
             )
@@ -664,7 +664,7 @@ class AutoSaveManager(QtCore.QObject):
         uid = str(uid)
         # find the tab by uid
         index = -1
-        if self.tabs['uuid'] != uid:
+        if self.tabs.get_current_tab_property('uuid') != uid:
             for i in range(self.tabs.count()):
                 data = self.tabs.tabData(i)
                 if data.get('uuid') != uid:
@@ -695,7 +695,7 @@ class AutoSaveManager(QtCore.QObject):
             # if none is found we create
             # a new subscript
             index = self.tabs.currentIndex()
-            name = self.tabs['name']
+            name = self.tabs.get_current_tab_property('name')
             self.save_by_uuid(
                 uid,
                 name,
