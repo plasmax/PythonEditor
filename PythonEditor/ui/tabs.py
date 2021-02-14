@@ -134,121 +134,61 @@ QPushButton:focus,QToolButton:focus {
 }
 """
 
-class CloseButton(QAbstractButton):
-    close_clicked_signal = Signal(QPoint)
-    def __init__(self, parent=None):
-        super(CloseButton, self).__init__(
-            parent=parent
-        )
+class CloseTabButton(QAbstractButton):
+    close_clicked_signal = Signal(int)
+    def __init__(self, parent=None, side=QTabBar.RightSide):
+        super(CloseTabButton, self).__init__(parent=parent)
+        self.side = side
         self.setFocusPolicy(Qt.NoFocus)
+        self.setCursor(Qt.ArrowCursor)
         self.setToolTip('Close Tab')
         self.resize(self.sizeHint())
-        self.tab_saved = False
+
+    def paintEvent(self, event):
+        p = QPainter(self)
+        opt = QStyleOption()
+        try:
+            opt.init(self)
+        except AttributeError:
+            # pyside 1/python 2.7
+            opt.initFrom(self)
+        opt.state |= QStyle.State_AutoRaise
+        if (self.isEnabled() and self.underMouse() and not self.isChecked() and not self.isDown()):
+            opt.state |= QStyle.State_Raised
+        if (self.isChecked()):
+            opt.state |= QStyle.State_On
+        if (self.isDown()):
+            opt.state |= QStyle.State_Sunken
+        tb = self.parent()
+        if isinstance(tb, QTabBar):
+            index = tb.currentIndex()
+            if (tb.tabButton(index, self.side) == self):
+                opt.state |= QStyle.State_Selected
+
+        self.style().drawPrimitive(QStyle.PE_IndicatorTabClose, opt, p, self)
 
     def sizeHint(self):
         self.ensurePolished()
-        width = self.style().pixelMetric(
-            QStyle.PM_TabCloseIndicatorWidth,
-            None,
-            self
-        )
-        height = self.style().pixelMetric(
-            QStyle.PM_TabCloseIndicatorHeight,
-            None,
-            self
-        )
+        width = self.style().pixelMetric(QStyle.PM_TabCloseIndicatorWidth)
+        height = self.style().pixelMetric(QStyle.PM_TabCloseIndicatorHeight)
         return QSize(width, height)
 
     def enterEvent(self, event):
         if self.isEnabled():
             self.update()
-        super(CloseButton, self).enterEvent(event)
+        QAbstractButton.enterEvent(self, event)
 
     def leaveEvent(self, event):
         if self.isEnabled():
             self.update()
-        super(CloseButton, self).leaveEvent(event)
-
+        QAbstractButton.leaveEvent(self, event)
+        
     def mousePressEvent(self, event):
-        super(CloseButton, self).mousePressEvent(event)
+        super(CloseTabButton, self).mousePressEvent(event)
         parent_pos = self.mapToParent(event.pos())
-        self.close_clicked_signal.emit(parent_pos)
+        index = self.parent().tabAt(parent_pos)
+        self.close_clicked_signal.emit(index)
 
-    def paintEvent(self, event):
-        """Adapted from qttabbar.cpp"""
-        p = QPainter(self)
-        opt = QStyleOption()
-        opt.initFrom(self)
-        opt.state |= QStyle.State_AutoRaise
-        hovered = False
-        if (self.isEnabled()
-            and self.underMouse()
-            and (not self.isChecked())
-            and (not self.isDown())
-            ):
-            hovered = True
-            opt.state |= QStyle.State_Raised
-        if self.isChecked():
-            opt.state |= QStyle.State_On
-        if self.isDown():
-            opt.state |= QStyle.State_Sunken
-
-        if isinstance(
-                self.parent(),
-                QTabBar
-            ):
-            tb = self.parent()
-            index = tb.currentIndex()
-            BP = QTabBar.ButtonPosition
-            position = BP(
-                tb.style().styleHint(
-                QStyle.SH_TabBar_CloseButtonPosition,
-                opt,
-                tb)
-            )
-            tab_button = tb.tabButton(index, position)
-            if (self == tab_button):
-                opt.state |= QStyle.State_Selected
-
-        self.style().drawPrimitive(
-            QStyle.PE_IndicatorTabClose,
-            opt,
-            p,
-            self
-        )
-
-        # the below is all good, but wait
-        # until 'saved' status is properly
-        # locked down.
-        """
-        if self.tab_saved or hovered:
-            self.style().drawPrimitive(
-            QStyle.PE_IndicatorTabClose, opt, p, self)
-        else:
-            font = p.font()
-            font.setPointSize(9)
-            font.setBold(True)
-            p.setFont(font)
-            rect = self.rect()
-            rect.adjust(0,-1,0,0)
-
-            palette = self.palette()
-            # brush = QBrush(
-            #     QColor(0.1, 0.1, 0.1, 1),
-            #     Qt.SolidPattern
-            #     )
-            # palette.setBrush(
-            #     QPalette.ColorRole.Text,
-            #     brush
-            #     )
-            # palette.setBrush(
-            #     QPalette.ColorRole.BrightText,
-            #     brush
-            #     )
-
-            # set colour to darker (maybe adjust palette)
-            self.style().drawItemText(p, rect, 0, palette, True, unicode(' o'))
-        """
 
 
 class Tabs(QTabBar):
@@ -270,6 +210,7 @@ class Tabs(QTabBar):
     mouse_over_rect = False
     over_button = -1
     start_move_index = -1
+    SIDE = QTabBar.ButtonPosition.RightSide
 
     # for autosave purposes:
     contents_saved_signal   = Signal(str)
@@ -289,37 +230,43 @@ class Tabs(QTabBar):
                               )
     reset_tab_signal        = Signal()
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, model=None):
         super(Tabs, self).__init__(parent)
+
+        # TODO: the beginning of the tabectomy, where I use this class as a view only, 
+        # and connect it properly to a model. currently, it does nothing.
+        self._model = model
 
         self.tab_pressed = False
         self.pressed_uid = ''
-        self._hovered_index = -2
 
         self.setMovable(True)
-        self.setMouseTracking(True)
         self.setExpanding(False)
         self.setSelectionBehaviorOnRemove(QTabBar.SelectPreviousTab)
-        self.setStyleSheet(TAB_STYLESHEET)
-
-        # # a stack for navigating positions
-        # # `list` of `tuples`
-        # # [(`str` tab_uid, `int` cursor_pos),]
-        # self.cursor_previous = []
-        # self.cursor_next = []
-
-        cb = CloseButton(self)
-        self.tab_close_button = cb
-        cb.hide()
-        cb.close_clicked_signal.connect(
-            self.clicked_close
-        )
-
+        
+        # signals
+        self.currentChanged.connect(self.add_close_button, Qt.QueuedConnection) # TODO: would this be better on clicked? store tab index?
+                
+    def add_close_button(self, index):
+        if not self.isVisible():
+            return
+        self.remove_close_buttons()
+        if self.tabButton(index, self.SIDE) is None:
+            button = CloseTabButton(self)
+            self.setTabButton(index, self.SIDE, button)
+            button.close_clicked_signal.connect(self.removeTab)
+    
+    def remove_close_buttons(self):
+        current = self.currentIndex()
+        for i in range(self.count()):
+            if i == current:
+                continue
+            if self.tabButton(i, self.SIDE) is not None:
+                self.setTabButton(i, self.SIDE, None)
+    
     @Slot(str)
     def new_tab(self, tab_name=None, tab_data={}):
-        """
-        Creates a new tab.
-        """
+        """Creates a new tab."""
         index = self.currentIndex()+1
 
         if (tab_name is None
@@ -387,6 +334,9 @@ class Tabs(QTabBar):
         return rect
 
     def event(self, event):
+        # FIXME: I think this causes problems. surely this method can be refactored out.
+
+        # FIXME: I mean look at this:
         try:
             # Check class (after reload, opening a new window, etc)
             # this can raise TypeError:
@@ -396,20 +346,13 @@ class Tabs(QTabBar):
         except TypeError:
             return False
 
+        # FIXME: and this:
         try:
             QE = QEvent
         except AttributeError:
             return True
 
-        if event.type() in [
-            QE.HoverEnter,
-            QE.HoverMove,
-            QE.HoverLeave,
-            QE.Paint,
-            ]:
-            self.handle_close_button_display(event)
-
-        elif event.type() == QEvent.ToolTip:
+        if event.type() == QEvent.ToolTip:
             pos = self.mapFromGlobal(
                 self.cursor().pos()
             )
@@ -431,98 +374,7 @@ class Tabs(QTabBar):
 
         return super(Tabs, self).event(event)
 
-    def handle_close_button_display(self, e):
-
-        if self.tab_pressed:
-            if self.tab_close_button.isVisible():
-                self.tab_close_button.hide()
-            return
-
-        if e.type() in [
-            e.HoverEnter,
-            e.MouseButtonRelease
-            ]:
-            pos = e.pos()
-            self._hovered_index = i = self.tabAt(pos)
-            self.tab_close_button.show()
-            self.tab_close_button.raise_()
-            self.move_tab_close_button(pos)
-
-            data = self.tabData(i)
-            if data is not None:
-                ts = data.get('saved')
-                tcb = self.tab_close_button
-                tcb.tab_saved = ts
-
-        elif e.type() == QEvent.HoverMove:
-            pos = e.pos()
-            i = self.tabAt(pos)
-            if i != self._hovered_index:
-                self.tab_close_button.show()
-                self.move_tab_close_button(pos)
-                self._hovered_index = i
-
-                data = self.tabData(i)
-                if data is not None:
-                    ts = data.get('saved')
-                    tcb = self.tab_close_button
-                    tcb.tab_saved = ts
-
-        elif e.type() == QEvent.HoverLeave:
-            self.tab_close_button.hide()
-
-        elif e.type() == QEvent.Paint:
-            if hasattr(self, 'name_edit'):
-                if self.name_edit.isVisible():
-                    self.tab_close_button.hide()
-                    return
-            pos = self.mapFromGlobal(
-                self.cursor().pos()
-            )
-
-            if not self.rect().contains(pos):
-                return
-
-            if not self.tab_only_rect(
-                ).contains(pos):
-                return
-
-            i = self.tabAt(pos)
-            if (i != self._hovered_index):
-                self.move_tab_close_button(pos)
-                self._hovered_index = i
-
-            if self.tab_close_button.isVisible():
-                data = self.tabData(i)
-                if data is not None:
-                    ts = data.get('saved')
-                    tcb = self.tab_close_button
-                    tcb.tab_saved = ts
-
-    def move_tab_close_button(self, pos):
-        i = self.tabAt(pos)
-        rect = self.tabRect(i)
-        btn = self.tab_close_button
-        x = rect.right()-btn.width()-2
-        y = rect.center().y()-(btn.height()/2)
-        if i != self.currentIndex():
-            y += 2
-        btn_pos = QPoint(x, y)
-
-        btn.move(btn_pos)
-        btn.raise_()
-
-        if not self.tab_only_rect(
-            ).contains(btn_pos):
-            btn.hide()
-        elif not self.tab_pressed:
-            btn.show()
-
     def mousePressEvent(self, event):
-        """
-        """
-        # this doesn't cover wacom...
-        # might need tabletPressEvent
         if event.button() == Qt.LeftButton:
             self.tab_pressed = True
             pt = event.pos()
@@ -547,16 +399,14 @@ class Tabs(QTabBar):
                     del self.name_edit
 
         # if not returned, handle clicking on tab
-        return super(Tabs, self
-            ).mousePressEvent(event)
+        super(Tabs, self ).mousePressEvent(event) 
 
     def mouseMoveEvent(self, event):
-        """
-        TODO: make close buttons follow tabs
-        when they're moving!
-        """
         if self.count() == 0:
             return
+
+        # I think this was about keeping the tabdata in 
+        # sync with the tab indices.
         if event.buttons() == Qt.LeftButton:
             i = self.currentIndex()
             if (not hasattr(self, 'pressedIndex')
@@ -566,9 +416,7 @@ class Tabs(QTabBar):
             if data['uuid'] != self.pressed_uid:
                 debug('wrong tab!')
 
-        return super(
-            Tabs, self
-            ).mouseMoveEvent(event)
+        return super(Tabs, self).mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
         self.tab_pressed = False
@@ -581,7 +429,6 @@ class Tabs(QTabBar):
                     i,
                     self.start_move_index
                 )
-            self.handle_close_button_display(event)
 
         elif event.button() == Qt.RightButton:
             menu = QMenu()
@@ -754,14 +601,6 @@ class Tabs(QTabBar):
     @Slot()
     def remove_current_tab(self):
         self.removeTab(self.currentIndex())
-
-    @Slot(QPoint)
-    def clicked_close(self, pos):
-        for i in range(self.count()):
-            rect = self.tabRect(i)
-            if rect.contains(pos):
-                label = self.tabText(i)
-                self.removeTab(i)
 
     def removeTab(self, index):
         """
@@ -1005,6 +844,8 @@ class TabEditor(QWidget):
         tab_list = [self.tabs.tabText(i)
         for i in range(self.tabs.count())]
 
+        # FIXME: this doesn't show up in the right place on windows - it shows up offscreen.
+        # TODO: would look quite nice to embed it and have it animate in on hover, like the "advanced search" feature on assetimporter2
         class TabCombo(QComboBox):
             def __init__(self, parent=None):
                 super(TabCombo, self).__init__(parent)
