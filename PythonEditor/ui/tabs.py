@@ -81,59 +81,6 @@ QToolButton:hover {
 """
 
 
-# more stylesheet examples
-"""
-QPushButton,QToolButton {
-
-  background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #fdfbf7, stop: 1 #cfccc7);
-  border-width: 1px;
-  border-color: #8f8f91;
-  border-style: solid;
-  border-radius: 3px;
-  padding: 4px;
-  padding-left: 5px;
-  padding-right: 5px;
-}
-
-QToolButton[popupMode="1"] {
-
-  padding-right: 18px;
-}
-
-QToolButton::menu-button {
-
-  border-width: 1px;
-  border-color: #8f8f91;
-  border-style: solid;
-  border-top-right-radius: 3px;
-  border-bottom-right-radius: 3px;
-  /* 16px width + 2 * 1px for border = 18px allocated above */
-  width: 16px;
-}
-
-QPushButton:hover,QToolButton:hover {
-
-  border-top-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #b2afaa, stop: 0.5 #4847a1, stop: 1 #7e7cb6);
-  border-radius: 1px;
-  border-top-width: 3px;
-  border-bottom-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #7e7cb6, stop: 0.5 #4847a1, stop: 1 #b2afaa);
-  border-bottom-width: 3px;
-  background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #e4e0e1, stop: 1 #cfcbcd);
-}
-
-QPushButton:pressed,QToolButton:pressed {
-
-  background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #cfcbcd, stop: 1 #e4e0e1);
-  border-width: 1px;
-  border-color: #8f8f91;
-}
-
-QPushButton:focus,QToolButton:focus {
-
-  outline: none;
-}
-"""
-
 class CloseTabButton(QAbstractButton):
     close_clicked_signal = Signal(int)
     def __init__(self, parent=None, side=QTabBar.RightSide):
