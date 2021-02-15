@@ -1859,7 +1859,7 @@ def update_tabs_with_path(tabs, path):
     tabs.setTabText(index, name)
 
     # notify the autosave to empty entry
-    tabs.contents_saved_signal.emit(tabs['uuid'])
+    tabs.contents_saved_signal.emit(tabs.get_current_tab_property('uuid'))
 
 
 def save_action(tabs, editor):
