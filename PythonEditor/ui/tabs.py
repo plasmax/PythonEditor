@@ -261,9 +261,9 @@ class Tabs(QTabBar):
         return data[name]
 
     def __getitem__(self, name):
-        print('Deprecated, use get_current_tab_property instead.')
         import traceback
         traceback.print_stack()
+        print('Deprecated, use get_current_tab_property instead.')
         return self.get_current_tab_property(name)
 
     def get(self, name):
