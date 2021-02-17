@@ -129,14 +129,14 @@ class CloseTabButton(QAbstractButton):
         if self.isEnabled():
             self.update()
         QAbstractButton.leaveEvent(self, event)
-        
+
     def mousePressEvent(self, event):
         super(CloseTabButton, self).mousePressEvent(event)
         if event.button() == Qt.LeftButton:
             parent_pos = self.mapToParent(event.pos())
             index = self.parent().tabAt(parent_pos)
             self._pressed_index = index
-        
+
     def mouseReleaseEvent(self, event):
         super(CloseTabButton, self).mouseReleaseEvent(event)
         if event.button() == Qt.LeftButton:
@@ -189,7 +189,7 @@ class Tabs(QTabBar):
     def __init__(self, parent=None, model=None):
         super(Tabs, self).__init__(parent)
 
-        # TODO: the beginning of the tabectomy, where I use this class as a view only, 
+        # TODO: the beginning of the tabectomy, where I use this class as a view only,
         # and connect it properly to a model. currently, it does nothing.
         self._model = model
 
@@ -199,7 +199,7 @@ class Tabs(QTabBar):
         self.setMovable(True)
         self.setExpanding(False)
         self.setSelectionBehaviorOnRemove(QTabBar.SelectPreviousTab)
-        
+
     def showEvent(self, event):
         QTabBar.showEvent(self, event)
 
@@ -216,7 +216,7 @@ class Tabs(QTabBar):
             button = CloseTabButton(self)
             self.setTabButton(index, self.SIDE, button)
             button.close_clicked_signal.connect(self.removeTab)
-    
+
     def remove_close_buttons(self):
         current = self.currentIndex()
         for i in range(self.count()):
@@ -224,7 +224,7 @@ class Tabs(QTabBar):
                 continue
             if self.tabButton(i, self.SIDE) is not None:
                 self.setTabButton(i, self.SIDE, None)
-    
+
     @Slot(str)
     def new_tab(self, tab_name=None, tab_data={}):
         """Creates a new tab."""
@@ -366,13 +366,13 @@ class Tabs(QTabBar):
                     del self.name_edit
 
         # if not returned, handle clicking on tab
-        super(Tabs, self ).mousePressEvent(event) 
+        super(Tabs, self ).mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
         if self.count() == 0:
             return
 
-        # I think this was about keeping the tabdata in 
+        # I think this was about keeping the tabdata in
         # sync with the tab indices.
         if event.buttons() == Qt.LeftButton:
             i = self.currentIndex()
