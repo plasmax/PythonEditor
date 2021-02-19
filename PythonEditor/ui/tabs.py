@@ -236,7 +236,7 @@ class Tabs(QTabBar):
 
         self.insertTab(index, tab_name)
         data = {
-            'uuid'  : str(uuid.uuid4()),
+            'uuid'  : str(uuid.uuid1()),
             'name'  : tab_name,
             'text'  : '',
             'path'  : '',

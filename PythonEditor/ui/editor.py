@@ -90,7 +90,7 @@ class Editor(QPlainTextEdit):
 
         # instance variables
         if uid is None:
-            uid = str(uuid.uuid4())
+            uid = str(uuid.uuid1())
         self.shortcut_overrode_keyevent = False
         self._changed = False
         self.autocomplete_overriding = False

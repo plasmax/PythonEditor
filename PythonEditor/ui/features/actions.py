@@ -1933,7 +1933,7 @@ def open_action(tabs, editor, path=''):
     # Because the document will be open in read-only mode, the
     # autosave should not save the editor's contents until the
     # contents have been modified.
-    uid = str(uuid.uuid4())
+    uid = str(uuid.uuid1())
     data = {
         'uuid'  : uid,
         'name'  : tab_name,
