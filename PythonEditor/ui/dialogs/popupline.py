@@ -67,10 +67,6 @@ class SymbolModel(QStandardItemModel):
             if text.endswith(':'):
                 text = text[:-1]
 
-            parts = text.split('(')
-            name = parts[0]
-            if len(parts) > 1:
-                text = name+'(...)'
             yield (lineno+1, text, indent)
 
 
@@ -88,7 +84,6 @@ class ProxyModel(QSortFilterProxyModel):
     def filterAcceptsRow(self, row, parent):
         if not self._pattern:
             return True
-        # print(parent) # TODO: in a hierarchical model, we should check if any children match the pattern - if so, the parent should be visible, and we should only search top-level items if we're going to recurse their children.
         model = self.sourceModel()
         index = model.index(row, self.filterKeyColumn(), parent)
         found = self.index_match(index)
