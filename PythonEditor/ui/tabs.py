@@ -429,9 +429,7 @@ class Tabs(QTabBar):
             if i != -1:
                 self.removeTab(i)
 
-        return super(
-            Tabs, self
-            ).mouseReleaseEvent(event)
+        return super(Tabs, self).mouseReleaseEvent(event)
 
     def mouseDoubleClickEvent(self, event):
         if event.button() == Qt.LeftButton:
