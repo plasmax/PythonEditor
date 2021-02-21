@@ -436,9 +436,7 @@ class Tabs(QTabBar):
     def mouseDoubleClickEvent(self, event):
         if event.button() == Qt.LeftButton:
             self.show_name_edit(event)
-        return super(
-            Tabs, self
-            ).mouseDoubleClickEvent(event)
+        return super(Tabs, self).mouseDoubleClickEvent(event)
 
     def show_name_edit(self, event):
         """
