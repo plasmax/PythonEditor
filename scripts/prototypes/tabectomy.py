@@ -595,21 +595,31 @@ class StatusBar(QStatusBar):
         super(StatusBar, self).showMessage(str(message), timeout=0)
 
 
+PURPLE = QColor.fromRgbF(0.7, 0.5, 1, 1)
+BLUE = QColor.fromRgbF(0, 0.5, 1, 1)
+
+
 class JSONHighlighter(QSyntaxHighlighter):
     def highlightBlock(self, s):
         if not s.strip():
             return
+        i = 0
         for start, length in get_string_ranges(s):
-            self.setFormat(start, length,  QColor.fromRgbF(0.7,0.5,1,1))
+            if i % 2:
+                color = BLUE
+            else:
+                color = PURPLE
+            i += 1
+            self.setFormat(start, length, color)
 
 
 def get_string_ranges(t):
     """Get the in and out points of double-quote encased strings."""
-    
+
     # life's too short to parse escape characters.
     s = t.replace('\\"', '##')
     assert len(s) == len(t)
-    
+
     if not s.strip():
         return []
     i = 0
@@ -618,7 +628,7 @@ def get_string_ranges(t):
     length = 0
     for i in range(len(s)):
         c = s[i]
-        
+
         if in_str:
             length += 1
 

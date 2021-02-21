@@ -1,0 +1,378 @@
+{
+    "PythonEditor.ui.ide": {
+        "IDE": {
+            "__init__": {},
+            "buildUI": {},
+            "showEvent": {},
+            "reload_package": {},
+            "set_editor_focus": {}
+        },
+        "Finder": {
+            "find_module": {}
+        }
+    },
+    "PythonEditor.ui.pythoneditor": {
+        "PythonEditor": {
+            "__init__": {}
+        }
+    },
+    "PythonEditor.ui.tabs": {
+        "TabEditor": {
+            "__init__": {},
+            "set_editor_contents": {},
+            "connect_signals": {},
+            "store_cursor_position": {},
+            "store_selection": {},
+            "save_text_in_tab": {},
+            "check_hide_arrows": {},
+            "empty_if_last_tab_closed": {},
+            "tab_right": {},
+            "new_tab": {},
+            "show_tab_menu": {}
+        },
+        "Tabs": {
+            "__init__": {},
+            "event": {},
+            "new_tab": {},
+            "get": {},
+            "get_current_tab_property": {},
+            "showEvent": {},
+            "add_close_button": {},
+            "remove_close_buttons": {},
+            "set_current_tab_property": {},
+            "remove_current_tab": {},
+            "removeTab": {},
+            "mousePressEvent": {},
+            "mouseMoveEvent": {},
+            "mouseReleaseEvent": {},
+            "move_to_first": {},
+            "move_to_last": {},
+            "copy_tab_file_path": {}
+        },
+        "CloseTabButton": {
+            "__init__": {},
+            "sizeHint": {},
+            "paintEvent": {},
+            "enterEvent": {},
+            "leaveEvent": {},
+            "mousePressEvent": {},
+            "mouseReleaseEvent": {}
+        },
+        "<listcomp>": {},
+        "TabCombo": {
+            "__init__": {},
+            "keyPressEvent": {},
+            "focusOutEvent": {}
+        }
+    },
+    "PythonEditor.ui.editor": {
+        "Editor": {
+            "__init__": {},
+            "event": {},
+            "init_features": {},
+            "wrapper": {},
+            "setPlainText": {},
+            "_handle_textChanged": {},
+            "resizeEvent": {},
+            "showEvent": {},
+            "focusOutEvent": {},
+            "focusInEvent": {},
+            "keyReleaseEvent": {},
+            "_handle_selectionChanged": {},
+            "keyPressEvent": {},
+            "insertFromMimeData": {},
+            "contextMenuEvent": {},
+            "wheelEvent": {}
+        },
+        "set_text_changed_enabled": {}
+    },
+    "PythonEditor.ui.features.linenumberarea": {
+        "LineNumberArea": {
+            "__init__": {},
+            "setupLineNumbers": {},
+            "updateLineNumberAreaWidth": {},
+            "lineNumberAreaWidth": {},
+            "highlightCurrentLine": {},
+            "updateLineNumberArea": {},
+            "highlight_cell_block": {},
+            "resizeLineNo": {},
+            "paintEvent": {},
+            "lineNumberAreaPaintEvent": {}
+        }
+    },
+    "PythonEditor.ui.features.syntaxhighlighter": {
+        "Highlight": {
+            "__init__": {},
+            "set_style": {},
+            "format": {},
+            "make_rules": {},
+            "connect_signals": {},
+            "highlightBlock": {},
+            "match_multiline": {},
+            "highlight_selected_word": {},
+            "highlight_same_words": {}
+        },
+        "<dictcomp>": {},
+        "<listcomp>": {}
+    },
+    "PythonEditor.ui.features.contextmenu": {
+        "ContextMenu": {
+            "__init__": {},
+            "initSnippetDict": {},
+            "initInspectDict": {},
+            "show_menu": {},
+            "menu_setup": {}
+        },
+        "<dictcomp>": {}
+    },
+    "PythonEditor.ui.features.autocompletion": {
+        "AutoCompleter": {
+            "__init__": {},
+            "connect_signals": {},
+            "_focusInEvent": {},
+            "completer": {},
+            "_pre_keyPressEvent": {},
+            "set_override": {},
+            "_post_keyPressEvent": {},
+            "complete_variables": {},
+            "word_under_cursor": {},
+            "set_list": {},
+            "word_before_cursor": {},
+            "show_popup": {},
+            "complete_object": {},
+            "get_obj_before_char": {},
+            "get_word_after_dot": {},
+            "insert_completion": {},
+            "insert_snippet_completion": {},
+            "line_under_cursor": {}
+        },
+        "locate_snippet_file": {},
+        "Completer": {
+            "__init__": {}
+        },
+        "<listcomp>": {},
+        "<genexpr>": {}
+    },
+    "PythonEditor.ui.terminal": {
+        "Terminal": {
+            "__init__": {},
+            "setup": {},
+            "receive": {},
+            "stop": {},
+            "contextMenuEvent": {},
+            "line_from_event": {},
+            "path_in_line": {}
+        }
+    },
+    "PythonEditor.ui.features.actions": {
+        "Actions": {
+            "__init__": {},
+            "create_actions": {},
+            "exec_handler": {},
+            "just_comments": {},
+            "exec_current_cell": {},
+            "exec_text": {},
+            "return_handler": {},
+            "indent_next_line": {},
+            "move_blocks_up": {},
+            "move_blocks_down": {},
+            "new_line_above": {},
+            "toggle_comment": {},
+            "get_selected_blocks": {},
+            "new_tab": {},
+            "close_tab": {},
+            "wrap_text": {},
+            "escape_handler": {},
+            "exec_current_line": {},
+            "offset_for_traceback": {},
+            "highlight_errored_lines": {},
+            "select_word": {},
+            "prepend_import_statement": {},
+            "delete_lines": {},
+            "cut_line": {},
+            "copy_block_or_selection": {},
+            "select_lines": {},
+            "find_across_tabs": {},
+            "duplicate_lines": {},
+            "jump_to_start": {},
+            "find_and_replace": {},
+            "clear_output": {},
+            "save": {},
+            "save_as": {},
+            "delete_to_end_of_line": {},
+            "new_line_below": {},
+            "goto_symbol": {},
+            "open": {},
+            "show_shortcuts": {},
+            "show_about": {},
+            "delete_to_start_of_line": {},
+            "find": {},
+            "goto_definition": {},
+            "fullscreen_editor": {},
+            "next_tab": {},
+            "previous_tab": {},
+            "open_module_file": {},
+            "open_module_directory": {},
+            "print_source": {},
+            "_get_selected_text": {},
+            "print_type": {},
+            "reload_package": {},
+            "trim_trailing_whitespace": {},
+            "select_between_brackets": {},
+            "indent": {},
+            "unindent": {},
+            "pretty_print": {},
+            "print_help": {}
+        },
+        "class_actions": {},
+        "load_actions_from_json": {},
+        "make_action": {},
+        "<listcomp>": {},
+        "isEmpty": {},
+        "find_menu_item": {},
+        "save_action": {},
+        "update_tabs_with_path": {},
+        "save_as_action": {},
+        "open_action": {},
+        "get_subobject": {},
+        "get_obj_goto_path": {},
+        "get_selection_goto_path": {},
+        "get_obj_from_selection": {},
+        "get_external_editor_path": {},
+        "open_in_external_editor": {}
+    },
+    "PythonEditor.ui.menubar": {
+        "MenuBar": {
+            "__init__": {},
+            "menu_setup": {}
+        }
+    },
+    "PythonEditor.ui.features.shortcuts": {
+        "ShortcutHandler": {
+            "__init__": {},
+            "register_all_shortcuts": {},
+            "register_widget_shortcuts": {},
+            "add_shortcuts": {},
+            "get_action_by_name": {},
+            "eventFilter": {},
+            "handle_keypress": {}
+        },
+        "load_actions": {},
+        "key_to_sequence": {}
+    },
+    "PythonEditor.ui.features.autosavexml": {
+        "AutoSaveManager": {
+            "__init__": {},
+            "setup_save_timer": {},
+            "readautosave": {},
+            "connect_signals": {},
+            "check_autosave_modified": {},
+            "remove_existing_popups": {},
+            "check_document_modified": {},
+            "save_timer": {},
+            "autosave_handler": {},
+            "autosave": {},
+            "save_by_uuid": {},
+            "sync_tab_indices": {},
+            "store_current_index": {},
+            "remove_subscript": {},
+            "update_tab_index": {},
+            "handle_document_save": {}
+        },
+        "create_autosave_file": {},
+        "autosave_can_be_parsed": {},
+        "parsexml": {},
+        "get_element_tab_index": {},
+        "get_root": {},
+        "get_element_by_uid": {},
+        "writexml": {},
+        "is_file": {},
+        "get_external_editor_path": {},
+        "get_editor_xml": {}
+    },
+    "PythonEditor.core.execute": {
+        "mainexec": {},
+        "print_traceback": {}
+    },
+    "PythonEditor.core.streams": {
+        "SESysStdOut": {
+            "write": {},
+            "reset": {},
+            "__init__": {}
+        },
+        "<lambda>": {},
+        "Finder": {
+            "find_module": {}
+        },
+        "SESysStdErr": {
+            "reset": {},
+            "__init__": {},
+            "write": {}
+        },
+        "__new__": {}
+    },
+    "PythonEditor.ui.features.search": {
+        "SearchPanel": {
+            "__init__": {},
+            "insert_self_in_parent": {},
+            "remove_from_tabeditor": {},
+            "showEvent": {},
+            "change_find_across_tabs_icon": {},
+            "remember_replacement": {},
+            "find_and_replace": {}
+        },
+        "FindPalette": {
+            "__init__": {},
+            "focusInEvent": {},
+            "toggle_search_across_tabs": {},
+            "keyPressEvent": {},
+            "find": {},
+            "lookup": {}
+        },
+        "remove_from_layout": {},
+        "EditLine": {
+            "__init__": {},
+            "keyPressEvent": {}
+        },
+        "setFocus": {}
+    },
+    "PythonEditor.utils.save": {
+        "save": {},
+        "save_as": {},
+        "get_save_file_name": {},
+        "write_to_file": {}
+    },
+    "PythonEditor.ui.dialogs.popupline": {
+        "PopupLine": {
+            "__init__": {}
+        },
+        "Line": {
+            "__init__": {},
+            "add_close_action": {}
+        }
+    },
+    "PythonEditor.ui.dialogs.shortcuteditor": {
+        "ShortcutEditor": {
+            "__init__": {},
+            "update_viewport": {}
+        },
+        "ShortcutModel": {
+            "__init__": {},
+            "load_from_handler": {},
+            "add_rows": {},
+            "single_line_description": {}
+        },
+        "ShortcutDelegate": {
+            "__init__": {}
+        },
+        "ItemWordWrap": {
+            "__init__": {},
+            "sizeHint": {},
+            "handle_column_resized": {}
+        }
+    },
+    "PythonEditor.utils.goto": {
+        "goto_line": {},
+        "goto_position": {}
+    }
+}
