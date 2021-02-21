@@ -40,7 +40,7 @@ def get_called_code(func, *args, **kwargs):
                         for f, text, c in source:
                             if src == text:
                                 increment(c)
-                except IOError, e:
+                except IOError as e:
                     pass
                     # print e, frame.f_code, event, arguments, '\n'*5 # TODO: perfect place to log
         except Exception as e:

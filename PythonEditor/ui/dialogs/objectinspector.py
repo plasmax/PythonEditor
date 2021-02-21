@@ -51,7 +51,7 @@ class ObjectInspector(QtWidgets.QWidget):
                 items = [QtGui.QStandardItem(i.__repr__())
                          for i in [key, value]]
                 rootItem.appendRow(items)
-            except Exception, e:
+            except Exception as e:
                 print(key, value, e)
 
     def start_timer(self):
