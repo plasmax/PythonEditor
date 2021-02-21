@@ -22,7 +22,7 @@ TODO:
 [x] make the text on the List view less contrasty
 [ ] a little hover label arrow button thingy that lets you animate the side panel open/closed . [ > ]
 [ ] QDockWidget!
-[ ] buttons next to the tab bar
+[ ] <> buttons next to the tab bar
 [ ] a treeview under the listview - in the same scrollarea? join them together with 0 spacing to make it look like sublime :D filesystem access!! <3
 [ ] small x close button on the list view too 
 [ ] compact mode - a QComboBox instead of tabs/list
@@ -41,6 +41,11 @@ from PythonEditor.ui.editor import Editor
 from PythonEditor.ui.terminal import Terminal
 
 
+ORDER_ROLE = Qt.UserRole+5
+READ_ONLY_ROLE = Qt.UserRole+6
+MODIFIED_ROLE = Qt.UserRole+7
+
+
 class MoveListView(QListView):
     def __init__(self):
         super(MoveListView, self).__init__()
@@ -49,7 +54,7 @@ class MoveListView(QListView):
         self.setAcceptDrops(True)
         self.setDropIndicatorShown(False)
         self.setMouseTracking(True)
-        self._block = False
+        self.setSelectionBehavior(QListView.SelectionBehavior.SelectItems)
 
         self.setSpacing(0)
         self.setContentsMargins(0,0,0,0)
@@ -57,9 +62,8 @@ class MoveListView(QListView):
         self.setLineWidth(0)
         self.setMidLineWidth(0)
         
-    def unblock(self):
-        # print ('unblock')
-        self._block = False
+        # self.setFocusPolicy(Qt.NoFocus) # FIXME: this means you can't use up/down arrows on the sidelist!
+        
     # great idea but calls selectionchanged :(
     # def dragMoveEvent(self, event):
         # index = self.indexAt(event.pos())
@@ -88,6 +92,9 @@ class MoveListView(QListView):
         # model = sort_model.sourceModel()
         # QSortFilterProxyModel.sort
         # print(srow, irow, model)
+        # model.swap(index, selected)
+        # model.swap(irow, srow)
+        # return
         model.setData(selected, irow, role=ORDER_ROLE)
         model.setData(index, srow, role=ORDER_ROLE)
         model.sort(0)
@@ -150,6 +157,7 @@ class TabListView(MoveListView):
     def __init__(self):
         super(TabListView, self).__init__()
         self.setFlow(QListView.LeftToRight)
+        self.setFocusPolicy(Qt.NoFocus) # FIXME: this means you can't use up/down arrows on the sidelist!
         # self.setItemDelegate(TabDelegate(self))
         # return
         # self.setFlow(QListView.TopToBottom)
@@ -254,39 +262,40 @@ class FileItemDelegate(QStyledItemDelegate):
     close_clicked = Signal(QModelIndex)
     def __init__(self, parent=None):
         super(FileItemDelegate, self).__init__(parent=parent)
-        self._close_button_hovered_index = QModelIndex()
-        self._close_button_pressed_index = QModelIndex()
+        self._close_button_hovered_row = -1
+        self._close_button_pressed_row = -1
         self._padding = 10
         self._pressed = False
 
     def editorEvent(self, event, model, option, index):
+            
         if event.type()==QEvent.MouseMove:
             if self._pressed:
                 # if self.on_close_button(option, event):
                     # return True
                 return False
             if self.on_close_button(option, event):
-                self._close_button_hovered_index = index
+                self._close_button_hovered_row = index.row()
             else:
-                self._close_button_hovered_index = QModelIndex()
+                self._close_button_hovered_row = -1
             return True
         elif event.type() in [QEvent.MouseButtonPress, QEvent.MouseButtonDblClick]:
             if event.button()==Qt.LeftButton:
                 self._pressed = True
                 if self.on_close_button(option, event):
-                    self._close_button_pressed_index = index
-                    # self._close_button_hovered_index = QModelIndex()
+                    self._close_button_pressed_row = index.row()
+                    # self._close_button_hovered_row = index.row()
                     return True
                 else:
-                    self._close_button_pressed_index = QModelIndex()
+                    self._close_button_pressed_row = -1
         elif event.type()==QEvent.MouseButtonRelease:
             if event.button()==Qt.LeftButton:
                 if self.on_close_button(option, event):
-                    if index.row() == self._close_button_pressed_index.row():
+                    if index.row() == self._close_button_pressed_row:
                         self.close_clicked.emit(index)
                         model.sourceModel().takeRow(index.row()) # FIXME: you should let the model do this - send the above signal to the model.
                 self._pressed = False
-                self._close_button_pressed_index = QModelIndex()
+                self._close_button_pressed_row = -1
         return False
         
     def paint(self, painter, option, index):
@@ -330,9 +339,10 @@ class FileItemDelegate(QStyledItemDelegate):
         
         opt.state = option.state
 
-        if self._close_button_pressed_index == index:
+        row = index.row()
+        if self._close_button_pressed_row == row:
             opt.state |= QStyle.State_Sunken
-        elif self._close_button_hovered_index == index:
+        elif self._close_button_hovered_row == row:
             opt.state |= QStyle.State_MouseOver
             opt.state |= QStyle.State_Raised
         else:
@@ -341,7 +351,7 @@ class FileItemDelegate(QStyledItemDelegate):
         QApplication.style().drawPrimitive(QStyle.PE_IndicatorTabClose, opt, painter)
         
     def draw_sublime_close_button(self, painter, option, index):
-        opt = QStyleOption()
+        opt = QStyleOptionViewItem(option)
         opt.rect = self.get_close_button_rect(option)
         
         rect = QRect(opt.rect)
@@ -353,11 +363,14 @@ class FileItemDelegate(QStyledItemDelegate):
         painter.setRenderHint(QPainter.RenderHint.HighQualityAntialiasing)
 
         paint_x = True
-        if self._close_button_pressed_index.row() == index.row():
+        row = index.row()
+        # if option.state & QStyle.State_Selected:
+        if self._pressed and (self._close_button_pressed_row == row):
             # paint me a sunken X
             brush = QBrush(QColor.fromRgbF(0.2,0.2,0.2,1))
             painter.setBrush(brush)
-        elif self._close_button_hovered_index.row() == index.row():
+        # elif (option.state & QStyle.State_MouseOver) and (self._close_button_hovered_row == row):
+        elif self._close_button_hovered_row == row:
             # paint me a bright thick X (maybe with a light square or circle underneath?) :)
             painter.fillRect(opt.rect.adjusted(-4,-4,2,2), QColor.fromRgbF(1,1,1,0.02))
             
@@ -402,6 +415,7 @@ class FileItemDelegate(QStyledItemDelegate):
 
 class SideListDelegate(FileItemDelegate):
     def paint(self, painter, option, index):
+        # return QStyledItemDelegate.paint(self, painter, option, index) # for testing
         opt = QStyleOptionViewItem(option)
         # rect = QRect(opt.rect)
         opt.rect.moveLeft(16)
@@ -453,6 +467,7 @@ self = dialog.tab_list
 v = dialog.tab_list
 l = dialog.side_list
 
+# ---------------------------------------- separate here if only doing view stuff above
 
 ##&& # model bit
 class ItemModel(QStandardItemModel):
@@ -468,6 +483,7 @@ class TextModel(ItemModel):
     # here we add submodels for autosave-y file-saving-y stuff
     def __init__(self, parent=None):
         super(TextModel, self).__init__(parent=None)
+        # self.beginMoveRows(
         
         ## signals
         # self.dataChanged.connect(self.handle_data_changed)
@@ -507,9 +523,37 @@ class OrderModel(QSortFilterProxyModel):
         ## TODO: can sorting be made quicker if we know only two items are changing order?
         # return super(OrderModel, self).sort(column, order=Qt.AscendingOrder)
         
-    def swap(self, source_left, source_right):
-        # somehow sort these
-        pass
+    # def swap(self, source_left, source_right):
+        
+        # self.sourceModel().insertRow(source_left.row(), self.sourceModel().takeRow(source_right.row())) # nope :(
+        # return
+        ## swap le data
+        # data1 = self.itemData(source_left)
+        # data2 = self.itemData(source_right)
+
+        # self.setItemData(source_left, data2)
+        # self.setItemData(source_right, data1)
+        # return
+        
+        ## somehow sort these
+        # model = self.sourceModel()
+        # row = source_right.row()
+        # lrow = source_left.row()
+        # if row==lrow:
+            # return
+        # print(row, lrow)
+        # ok = model.beginMoveRows(QModelIndex(), row, row, QModelIndex(), lrow)
+        # if not ok:
+            # return
+        # model.endMoveRows()
+
+        ## m.sourceModel().beginMoveRows(QModelIndex(), 1, 2, QModelIndex())
+        # return
+        # self.sourceModel().changePersistentIndex(source_left, source_right)
+
+
+
+
 
 
 import string, random
@@ -532,15 +576,14 @@ except AttributeError:
             yield population[i]
     random.choices = choices
 
-ORDER_ROLE = Qt.UserRole+5
-READ_ONLY_ROLE = Qt.UserRole+6
-MODIFIED_ROLE = Qt.UserRole+7
+
 m = TextModel()
 for i in range(60):
     # name = ''.join(random.choices(string.ascii_letters + string.digits + '_ '*25, k=random.randint(2, 25)))
     name = ''.join(random.choices(words, k=random.randint(1, 5)))
     item = QStandardItem(name)
     item.setData(i, ORDER_ROLE)
+    # item.setData('x', Qt.DecorationRole)
     item.setFlags(item.flags()^Qt.ItemIsDropEnabled)
     text = ' '.join(random.choices(words, k=random.randint(10, 100)))
     text_item = QStandardItem(text)
