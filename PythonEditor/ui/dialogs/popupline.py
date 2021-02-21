@@ -58,10 +58,10 @@ class SymbolModel(QStandardItemModel):
         for lineno, text in enumerate(whole_text.splitlines()):
             text = text.rstrip()
             indent = len(text)-len(text.lstrip(' '))
-            if text.strip().startswith('def'):
-                text = text.replace('def', '')
-            elif text.strip().startswith('class'):
-                text = text.replace('class', '')
+            if text.strip().startswith('def '):
+                text = text.replace('def ', '')
+            elif text.strip().startswith('class '):
+                text = text.replace('class ', '')
             else:
                 continue
             if text.endswith(':'):
