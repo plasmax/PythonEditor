@@ -1177,7 +1177,7 @@ class Actions(QtCore.QObject):
         self.goto_line_palette.show()
 
     def goto_symbol(self):
-        """Show a tree view with all class and function 
+        """Show a tree view with all class and function
         names in the current document
         """
         self.goto_symbol_palette = popupline.PopupLine(self.editor)
@@ -1865,7 +1865,7 @@ def update_tabs_with_path(tabs, path):
 def save_action(tabs, editor):
     """
     Save the contents of the editor
-    to a file and update tabs with 
+    to a file and update tabs with
     path and saved status.
 
     :param tabs: The `TabBar` class.
@@ -1882,7 +1882,7 @@ def save_action(tabs, editor):
 def save_as_action(tabs, editor):
     """
     Show a dialog asking where to save
-    the contents of the editor, then do so. 
+    the contents of the editor, then do so.
 
     :param tabs: The `TabBar` class.
     :param editor: The `Editor` class.
