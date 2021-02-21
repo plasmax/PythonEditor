@@ -1939,8 +1939,8 @@ def open_action(tabs, editor, path=''):
         'name'  : tab_name,
         'text'  : '',
         'path'  : path,
-        'date'  : '', # need the file's date
-        'saved' : True, # read-only
+        'date'  : '', # TODO: need the file's date
+        'saved' : True, # read-only (until modified? I think we should fully take ownership of the file's contents in the autosave, always, in case the file is moved.)
         'original_text' : text,
     }
 
