@@ -80,7 +80,11 @@ class LineNumberArea(QtWidgets.QWidget):
         while count >= 10:
             count /= 10
             digits += 1
-        space = 3 + self.editor.fontMetrics().width('9') * digits
+        metrics = self.editor.fontMetrics()
+        try:
+            space = 3 + metrics.horizontalAdvance('9') * digits
+        except AttributeError:
+            space = 3 + metrics.width('9') * digits
         space = 30 if space < 30 else space
         return space
 
