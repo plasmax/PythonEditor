@@ -146,7 +146,7 @@ class EditorModel(QAbstractListModel):
             path = self.get_json_path()
             self.load_from_json_path(path)
             return
-        except FileNotFoundError:
+        except Exception:
             print('Not loading from json yet')
 
         print('Loading from xml:')
@@ -620,8 +620,6 @@ def get_string_ranges(t):
     s = t.replace('\\"', '##')
     assert len(s) == len(t)
 
-    if not s.strip():
-        return []
     i = 0
     prev_c = ''
     in_str = False
@@ -636,7 +634,7 @@ def get_string_ranges(t):
             if in_str:
                 # we've reached the end of the string
                 in_str = False
-                yield i-length+1, length-1
+                yield (i-length+1, length-1)
                 length = 0
             else:
                 in_str = True
