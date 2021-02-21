@@ -1,0 +1,5 @@
+#!/bin/bash
+# designed to be run with git bash
+
+/c/Users/Max/AppData/Local/Programs/Python/Python27/python.exe $PWD/tests/test_syntax.py
+python $PWD/tests/test_syntax.py
