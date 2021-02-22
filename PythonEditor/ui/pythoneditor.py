@@ -70,7 +70,4 @@ class PythonEditor(QtWidgets.QWidget):
 
 		# Loading the AutosaveManager will also load
         # all the contents of the autosave into tabs.
-        AM = autosavexml.AutoSaveManager
-        self.filehandler = AM(
-            self.tabeditor
-        )
+        self.filehandler = autosavexml.AutoSaveManager(self.tabeditor)

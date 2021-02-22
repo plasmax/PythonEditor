@@ -387,9 +387,7 @@ class Editor(QPlainTextEdit):
         is pasted or dragged in.
         """
         self.text_changed_signal.emit()
-        super(
-            Editor, self
-        ).insertFromMimeData(mimeData)
+        super(Editor, self).insertFromMimeData(mimeData)
 
     def showEvent(self, event):
         """Override to automatically set the
