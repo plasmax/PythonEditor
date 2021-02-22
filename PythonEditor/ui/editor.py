@@ -127,16 +127,10 @@ class Editor(QPlainTextEdit):
         # textChanged to be emitted,
         # which we don't want.
         self.emit_text_changed = False
-        syntaxhighlighter.Highlight(
-            self.document(),
-            self
-        )
+        syntaxhighlighter.Highlight(self.document(), self)
         def set_text_changed_enabled():
             self.emit_text_changed = True
-        QTimer.singleShot(
-            0,
-            set_text_changed_enabled
-        )
+        QTimer.singleShot(0, set_text_changed_enabled)
 
         CM = contextmenu.ContextMenu
         self.contextmenu = CM(self)
@@ -148,12 +142,8 @@ class Editor(QPlainTextEdit):
         self.autocomplete = AC(self)
 
         if self._handle_shortcuts:
-            actions.Actions(
-                editor=self
-            )
-            shortcuts.ShortcutHandler(
-                editor=self
-            )
+            actions.Actions(editor=self)
+            shortcuts.ShortcutHandler(editor=self)
 
     @Slot()
     def _handle_textChanged(self):
