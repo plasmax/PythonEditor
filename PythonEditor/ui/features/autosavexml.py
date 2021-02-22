@@ -645,8 +645,8 @@ class AutoSaveManager(QtCore.QObject):
         :param uid: Unique Identifier of
                     subscript to save
         """
-        uid = str(uid)
         # find the tab by uid
+        uid = str(uid)
         index = -1
         if self.tabs.get_current_tab_property('uuid') != uid:
             for i in range(self.tabs.count()):
