@@ -242,6 +242,7 @@ class Editor(QPlainTextEdit):
 
         # emit text changed to store the
         # latest text within the tab
+        # FIXME: I don't like that this is here. at the very least it should be a more generic request_autosave signal.
         self.text_changed_signal.emit()
 
         ignored_reasons = [
