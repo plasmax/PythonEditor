@@ -12,6 +12,7 @@ More guiding principles:
     - Build the model right and it should be connectable to any native view.
     - There should only be one method/function per feature. One way to do something. It's way easier to debug.
     - Interchangeable components that control their own behaviour.
+    - Uglier code that works is better than elegant code with bugs.
 
 TODO:
 - [ ] Reach parity with existing PythonEditor features
@@ -33,6 +34,7 @@ TODO:
 - [ ] Show modified lines with a circle in the lineedit, like sublime does
 - [ ] When loading an item that has a path but no text, load the text from the file and make sure modified is set to false - it's a read-only!
 - [ ] For the above, and all paths found, add to a QFileSystemWatcher on first load and notify of any changes.
+- [ ] Combo button - I might prefer to replace this with an add/remove widget option for the QListView. Also, that thing should have its selection signals connected.
 """
 try:
     from PySide2.QtGui import *
