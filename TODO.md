@@ -8,8 +8,7 @@
 - [ ] Autocomplete doesn't complete first arguments of methods e.g. won't complete "arg" after ( in "".join(arg
 - [ ] Sometimes (so far only tested on standalone and in windows...) Ctrl+H will cause the interface to freeze as it is awaiting user input to reveal more information in the program terminal.
 - [x] autocomplete doesn't pick up all variables such as asset.properties.value_dict (Fixed: adding properties from the completed object's class as well.)
-
-Within Nuke
+### Within Nuke
 - [ ] Startup doesn't redirect streams correctly if panel doesn't open in workspace automatically on startup.
       Steps to reproduce this bug:
       1) Save a workspace that doesn't include PythonEditor on startup (any default will do).
@@ -18,14 +17,11 @@ Within Nuke
 
 - [ ] Sometimes the shortcuthandler doesn't override - perhaps when editor doesn't gain focus correctly
 - [ ] Shift-enter does not correctly create a new line in the editor and line number display on the left.
-
-Nuke 11 specific
+### Nuke 11 specific
 - [ ] In Nuke 11.3v5, closing a tab by clicking the close Button can crash Nuke
 - [ ] Workspace doesn't properly recover on Nuke 11
 - [x] Right-clicking in the output widget produces two context menus in Nuke 11+
-
-Other
-- [x] Tab may duplicate on save.
+### Other
 - [ ] Close button should be persistent on the active tab.
 - [ ] Sometimes wrong tab may be clicked
 - [ ] Confirm overwrite file on save.
@@ -42,8 +38,8 @@ Other
 - [ ] Double printing to sys.stdout (/probably/ caused by writing to sys.__stdout__ as well as outputRedirector)
 - [ ] Override setPlainText to avoid string encoding errors (can this affect copy paste?)
 - [?] Save functions need to be amended to work with new single editor
-
-Resolved
+### Resolved
+- [x] Tab may duplicate on save.
 - [x] If script is saved as text somewhere and not edited, a warning message still shows up on close.
 - [x] When pressing enter when cursor is here `|    "` the line double-indents.
 - [x] Help -> About shows nothing
