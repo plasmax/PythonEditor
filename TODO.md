@@ -25,7 +25,7 @@ Nuke 11 specific
 - [x] Right-clicking in the output widget produces two context menus in Nuke 11+
 
 Other
-- [ ] Tab may duplicate on save.
+- [x] Tab may duplicate on save.
 - [ ] Close button should be persistent on the active tab.
 - [ ] Sometimes wrong tab may be clicked
 - [ ] Confirm overwrite file on save.
@@ -84,13 +84,14 @@ Resolved
       which should remember the settings
 - [x] Highlight line with error
 - [x] Read stdout/stderr on open
-- [ ] Echo commands to python editor.
+- [ ] Echo commands to python editor (eventFilter watch script editor)
 - [ ] Add Script Editor buttons to Menu bar at top - especially fullscreen editor/output,
       which should remember the settings
 
 
 #### Features - desired
 - [ ] Popup labels or warning indicators on the status bar instead of over the top of the editor.
+- [ ] Breakpoints/trace points in linenumberarea
 ###### Projects
       - [ ] Projects are just a list of autosave files - hope between them with Ctrl+Alt+P
       - [ ] Tearable tabs - tearing off a tab adds it to a new instance of PythonEditor (a new Project)
@@ -101,7 +102,7 @@ Resolved
       - [ ] File Browser with connected file path
       - [ ] Writing to external files instead of xml. Keeping those files in tab session until closed with a JSON file
       - [ ] Italicize tabs/list items when in read_only mode
-      - [ ] Warn if file has changed on disk (as with autosave when regaining tab focus)
+      - [ ] Warn if file has changed on disk (as with autosave when regaining tab focus). Use a QFileSystemWatcher!
 ###### Gotos
       - [ ] Goto previous cursor position shortcut
       - [ ] Goto Links in errors/regular paths in the editor
