@@ -91,6 +91,10 @@
 - [ ] Modified line indicator on the linenumberarea
 - [ ] Popup labels or warning indicators on the status bar instead of over the top of the editor.
 - [ ] Breakpoints/trace points in linenumberarea
+### Status Bar
+- [ ] Display tab count
+- [ ] State indicators (modified/saved)
+- [ ] Current Project (default)
 ### Projects
 - [ ] Projects are just a list of autosave files - hop between them with Ctrl+Alt+P
 - [ ] Tearable tabs - tearing off a tab adds it to a new instance of PythonEditor (a new Project)
