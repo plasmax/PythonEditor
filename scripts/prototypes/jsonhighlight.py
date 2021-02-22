@@ -26,8 +26,6 @@ def get_string_ranges(t):
     s = t.replace('\\"', '##')
     assert len(s) == len(t)
 
-    if not s.strip():
-        return []
     i = 0
     prev_c = ''
     in_str = False
