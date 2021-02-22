@@ -24,6 +24,7 @@ TODO:
 - [x] JSON preview/edit autosave file
 - [ ] Show modified lines with a circle in the lineedit, like sublime does
 - [ ] The model should ask you before it removes anything modified.
+- [ ] When loading an item that has a path but no text, load the text from the file and make sure modified is set to false - it's a read-only!
 """
 try:
     from PySide2.QtGui import *
@@ -436,7 +437,7 @@ class Bar(QTabBar):
     def tabSizeHint(self, index):
         size = QTabBar.tabSizeHint(self, index)
         size.setWidth(size.width()+50)
-        # size.setHeight(size.height()+6)
+        size.setHeight(min(28, size.height()+6))
         return size
         
     def mouseDoubleClickEvent(self, event):
