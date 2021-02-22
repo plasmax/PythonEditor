@@ -1,7 +1,7 @@
 # Python Editor TODO list
 
 
-#### Bug reports
+## Bug reports
 - [ ] nukeinit.add_to_pane() can cause some widgets to go out of scope and be deleted after they're accessed.
 - [ ] Just after saving a file, PythonEditor _sometimes_ will tell me it's not saved when I try to close it.
 - [ ] Autocomplete doesn't complete variable names ending in _.
@@ -65,7 +65,7 @@ Resolved
 - [x] Don't set QT_PREFERRED_BINDING if present.
 
 
-#### Testing
+## Testing
 - [ ] WRITE TESTS. [x] integration tests, [ ] unit tests, [ ] regression tests
 - [ ] Are editor properties correctly kept in sync? Any time a tab name or xml subscript changes, the editor
       should also change. What is the best way to monitor this?
@@ -78,7 +78,7 @@ Resolved
 - [x] Check that tab renaming is consistent with autosave file
 
 
-#### Features - parity
+## Features - parity
 - [ ] "from module import name 'as' othername", "with ContextManager() 'as' name" - syntax highlight the 'as'
 - [ ] Add Script Editor buttons to Menu bar at top - especially fullscreen editor/output,
       which should remember the settings
@@ -89,46 +89,47 @@ Resolved
       which should remember the settings
 
 
-#### Features - desired
+## Features - desired
 - [ ] Popup labels or warning indicators on the status bar instead of over the top of the editor.
 - [ ] Breakpoints/trace points in linenumberarea
-###### Projects
-      - [ ] Projects are just a list of autosave files - hope between them with Ctrl+Alt+P
-      - [ ] Tearable tabs - tearing off a tab adds it to a new instance of PythonEditor (a new Project)
-      - [ ] PythonEditor should be more connected to the filesystem, to encourage tidying up and
-            reusing existing scripts.
-      - [ ] Recent Files List
-      - [ ] Foldable sidebar with directory tree
-      - [ ] File Browser with connected file path
-      - [ ] Writing to external files instead of xml. Keeping those files in tab session until closed with a JSON file
-      - [ ] Italicize tabs/list items when in read_only mode
-      - [ ] Warn if file has changed on disk (as with autosave when regaining tab focus). Use a QFileSystemWatcher!
-###### Gotos
-      - [ ] Goto previous cursor position shortcut
-      - [ ] Goto Links in errors/regular paths in the editor
-      - [ ] GOTO tooltip over selected text
-      - [ ] Hover over paths in output window to get goto link
-      - [ ] Hover over variables to get definition goto, type info, short help()
-###### Preferences
-      - [ ] Preferences - colour
-      - [ ] Preferences - shortcuts - this has been at least partially accomplished on another branch
-      - [ ] Preferences - indentation (backspace deletes single space or tab)
-      - [ ] Preferences - disable autocompletion in comments
-###### Autocomplete
-      - [ ] Autocomplete 'toNode', node.knob() and node[knob]
-      - [ ] Autocomplete os.environ and other dicts
-      - [ ] Autocomplete paths if divided by /
-      - [ ] Autocompletion weighting (a la tabtabtab)
-###### Actions
-      - [ ] Add reverse ' = '.join(reversed('sys.stdout = backup'.split(' = ')))
-      - [ ] Open Containing Folder action - default to autosave dir if nothing else
-      - [ ] Paste into sublime subprocess.Popen('sublime -n --command paste', executable='/bin/tcsh', shell=True)
-###### Snippets
-      - [ ] QTreeView/QStandardItemModel snippet
-      - [ ] Edit Snippets Dialog (for snippets in /.nuke/)
-###### Documentation
-      - [ ] Generate PySide2 import for selected text (e.g. "QPalette" would return "from PySide2.QtGui import QPalette")
-      - [ ] Print Qt5 documentation url (or even better, open browser) for Qt names
+### Projects
+- [ ] Projects are just a list of autosave files - hop between them with Ctrl+Alt+P
+- [ ] Tearable tabs - tearing off a tab adds it to a new instance of PythonEditor (a new Project)
+- [ ] PythonEditor should be more connected to the filesystem, to encourage tidying up and
+      reusing existing scripts.
+- [ ] Recent Files List
+- [ ] Foldable sidebar with directory tree
+- [ ] File Browser with connected file path
+- [ ] Writing to external files instead of xml. Keeping those files in tab session until closed with a JSON file
+- [ ] Italicize tabs/list items when in read_only mode
+- [ ] Warn if file has changed on disk (as with autosave when regaining tab focus)
+### Gotos
+- [ ] Goto previous cursor position shortcut
+- [ ] Goto Links in errors/regular paths in the editor
+- [ ] GOTO tooltip over selected text
+- [ ] Hover over paths in output window to get goto link
+- [ ] Hover over variables to get definition goto, type info, short help()
+### Preferences
+- [ ] Preferences - colour
+- [ ] Preferences - shortcuts - this has been at least partially accomplished on another branch
+- [ ] Preferences - indentation (backspace deletes single space or tab)
+- [ ] Preferences - disable autocompletion in comments
+### Autocomplete
+- [ ] Autocomplete 'toNode', node.knob() and node[knob]
+- [ ] Autocomplete os.environ and other dicts
+- [ ] Autocomplete paths if divided by /
+- [ ] Autocompletion weighting (a la tabtabtab)
+### Actions
+- [ ] Add reverse ' = '.join(reversed('sys.stdout = backup'.split(' = ')))
+- [ ] Open Containing Folder action - default to autosave dir if nothing else
+- [ ] Paste into sublime subprocess.Popen('sublime -n --command paste', executable='/bin/tcsh', shell=True)
+### Snippets
+- [ ] QTreeView/QStandardItemModel snippet
+- [ ] Edit Snippets Dialog (for snippets in /.nuke/)
+### Documentation
+- [ ] Generate PySide2 import for selected text (e.g. "QPalette" would return "from PySide2.QtGui import QPalette")
+- [ ] Print Qt5 documentation url (or even better, open browser) for Qt names
+### Other
 - [ ] "Code Actions" - allow users to create and edit custom scripts that run on editor
       text and are added to the user actions config.
 - [ ] debugger - needs a traceback parser and an editor view with a list like Pythonista
@@ -168,7 +169,7 @@ Resolved
 - [x] Set tab order as a property on the editor and in the autosave
 - [x] Small button at right of tab bar with a list of tab names
 
-#### Rejected
+## Rejected
 - [/] /proc/<pid>/fd/1 & 2 - would these allow a cleaner way of reading stdout that
       overrides the output stream? Is there a windows/Mac equivalent? - No.
 - [/] Set up an execution model where stdout, stderr and stdin are temporarily encapsulated within
@@ -178,7 +179,7 @@ Resolved
       It's now sortable, which is as useful as it needs to be, really.
 
 
-#### General
+## General
 - [ ] Test moving TODO.md to github issues (not so great for local)
 - [ ] Consider moving snippets to the back of the autocomplete list
 - [ ] Prep for release
