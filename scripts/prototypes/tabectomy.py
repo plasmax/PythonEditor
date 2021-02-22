@@ -1,30 +1,38 @@
 # tabectomy.
 
 """
-Plan: implement a QAbstractListModel that stores the tab data in `list` and `dict` formats.
+Plan: 
+Implement a QAbstractListModel that stores the tab data in `list` and `dict` formats.
 The QTabBar (or whatever replacement) serves only as a View, a totally interchangeable component. It should mostly be connected via signals.
-
 The only data it stores is the name, tooltip and uid reference: all the meaningful data manipulation takes place on the model.
+
+More guiding principles:
+    - Use native features where possible, they require less maintenance and less code.
+    - Less code == more stable code.
+    - Build the model right and it should be connectable to any native view.
+    - There should only be one method/function per feature. One way to do something. It's way easier to debug.
+    - Interchangeable components that control their own behaviour.
 
 TODO:
 - [ ] Reach parity with existing PythonEditor features
     - [ ] Renamable tabs
     - [ ] Tab close button (that doesn't cause the tab bar to jump)
+    - [ ] The model should ask you before it removes anything that has stored text.
+    - [ ] New Tab button (should create a new tab!)
 - [x] Moving a tab should rearrange the model._list
 - [ ] Combo - entering a new tab name could create a new tab!
-- [ ] New Tab button (should create a new tab!)
 - [ ] Status bar 
-    - [ ] show saved status
     - [x] show modified status
-    - [ ] status out of date with autosave (and menu options on the bar to deal with it)
     - [x] show current file path
-- [ ] Combo currentIndexChanged change current tab index, and vice versa - but ___by uid___
+    - [ ] show saved status
+    - [ ] status out of date with autosave (and menu options on the bar to deal with it)
 - [x] Tab Close Button should be applied in the same way as nameedit (with eventfilter to track mouse movement)
 - [x] Clicking close button should close tab
 - [x] JSON preview/edit autosave file
+- [x] Combo currentIndexChanged change current tab index, and vice versa - but ___by uid___
 - [ ] Show modified lines with a circle in the lineedit, like sublime does
-- [ ] The model should ask you before it removes anything modified.
 - [ ] When loading an item that has a path but no text, load the text from the file and make sure modified is set to false - it's a read-only!
+- [ ] For the above, and all paths found, add to a QFileSystemWatcher on first load and notify of any changes.
 """
 try:
     from PySide2.QtGui import *
@@ -570,25 +578,13 @@ class Bar(QTabBar):
 
 class Combo(QComboBox):
     MIN_WIDTH = 21
-
     MAX_WIDTH = 200
     def __init__(self):
         super(Combo, self).__init__()
-        self.setMaximumWidth(self.MIN_WIDTH)
         self.setEditable(True)
         self.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
+        self.setMaximumWidth(self.MIN_WIDTH)
         self.view().setMinimumWidth(self.MAX_WIDTH)
-        
-        # TODO: this requires the model to be set up
-        # completer = QCompleter(self)
-        # self.setCompleter(completer)
-    
-    # def mousePressEvent(self, event):
-        # super(Combo, self).mousePressEvent(event)
-        # if event.buttons() == Qt.LeftButton:
-            # width = self.MAX_WIDTH if self.maximumWidth() == self.MIN_WIDTH else self.MIN_WIDTH
-            # self.setMaximumWidth(width)
-            # self.setMinimumWidth(width)
 
 
 class StatusBar(QStatusBar):
@@ -678,7 +674,6 @@ class Dialog(QWidget):
         self.bar = Bar()
         self.new_tab_button = QToolButton()
         self.new_tab_button.setText('+')
-        # QIcon(QPixmap(QStyle.StandardPixmap.SP_DialogOkButton))
         self.combo = Combo()
         
         self.tab_widget = QWidget()
@@ -691,13 +686,20 @@ class Dialog(QWidget):
         tab_layout.addWidget(self.combo)
         
         self.editor = Editor()
+        self.list_view = QListView()
+        self.editor_splitter = QSplitter(Qt.Horizontal)
+        self.editor_splitter.addWidget(self.editor)
+        self.editor_splitter.addWidget(self.list_view)
+        self.editor_splitter.setStretchFactor(0, 1)
+        self.editor_splitter.setStretchFactor(1, 0)
+        
         self.bottom_widget = QWidget()
         self.bottom_widget.setLayout(QVBoxLayout(self.bottom_widget))
         bottom_layout = self.bottom_widget.layout()
         bottom_layout.setSpacing(0)
         bottom_layout.setContentsMargins(0,0,0,0)
         bottom_layout.addWidget(self.tab_widget)
-        bottom_layout.addWidget(self.editor)
+        bottom_layout.addWidget(self.editor_splitter)
         
         self.statusbar = StatusBar()
         
@@ -718,6 +720,7 @@ class Dialog(QWidget):
         self.model.populate()
         self.combo.setModel(self.model)
         self.bar.setModel(self.model)
+        self.list_view.setModel(self.model)
         
     def connect_signals(self):
         self.combo.currentIndexChanged.connect(self.bar.setCurrentIndex)
