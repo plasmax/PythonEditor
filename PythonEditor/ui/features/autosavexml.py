@@ -128,35 +128,19 @@ class AutoSaveManager(QtCore.QObject):
         and tab signals to this class
         """
         editor = self.editor
-        editor.text_changed_signal.connect(
-            self.save_timer)
-        editor.focus_in_signal.connect(
-            self.check_autosave_modified)
+        editor.text_changed_signal.connect(self.save_timer)
+        editor.focus_in_signal.connect(self.check_autosave_modified)
 
         tabs = self.tabs
-        tabs.tab_close_signal.connect(
-            self.remove_subscript
-        )
-        tabs.tab_renamed_signal.connect(
-            self.save_by_uuid
-        )
-        tabs.tab_repositioned_signal.connect(
-            self.update_tab_index
-        )
-        tabs.currentChanged.connect(
-            self.store_current_index
-        )
-        tabs.contents_saved_signal.connect(
-            self.handle_document_save
-        )
-        tabs.reset_tab_signal.connect(
-            self.clear_subscripts
-        )
+        tabs.tab_close_signal.connect(self.remove_subscript)
+        tabs.tab_renamed_signal.connect(self.save_by_uuid)
+        tabs.tab_repositioned_signal.connect(self.update_tab_index)
+        tabs.currentChanged.connect(self.store_current_index)
+        tabs.contents_saved_signal.connect(self.handle_document_save)
+        tabs.reset_tab_signal.connect(self.clear_subscripts)
 
         tabeditor = self.tabeditor
-        tabeditor.tab_switched_signal.connect(
-            self.check_autosave_modified
-        )
+        tabeditor.tab_switched_signal.connect(self.check_autosave_modified)
 
     def save_timer(self):
         """ Start a timer that will trigger the
