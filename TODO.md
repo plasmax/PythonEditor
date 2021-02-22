@@ -2,6 +2,7 @@
 
 
 ## Bug reports
+- [ ] Linenumberarea has a black frame in some qstyles. setFrame/Shape to something invisible.
 - [ ] nukeinit.add_to_pane() can cause some widgets to go out of scope and be deleted after they're accessed.
 - [ ] Just after saving a file, PythonEditor _sometimes_ will tell me it's not saved when I try to close it.
 - [ ] Autocomplete doesn't complete variable names ending in _.
@@ -86,6 +87,8 @@
 
 
 ## Features - desired
+- [ ] TODO/FIXME finder.
+- [ ] Modified line indicator on the linenumberarea
 - [ ] Popup labels or warning indicators on the status bar instead of over the top of the editor.
 - [ ] Breakpoints/trace points in linenumberarea
 ### Projects
@@ -101,6 +104,7 @@
 - [ ] Warn if file has changed on disk (as with autosave when regaining tab focus)
 ### Gotos
 - [ ] Goto previous cursor position shortcut
+- [ ] Goto TODOs/FIXMEs
 - [ ] Goto Links in errors/regular paths in the editor
 - [ ] GOTO tooltip over selected text
 - [ ] Hover over paths in output window to get goto link

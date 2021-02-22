@@ -20,6 +20,7 @@ TODO:
     - [ ] Tab close button (that doesn't cause the tab bar to jump)
     - [ ] The model should ask you before it removes anything that has stored text.
     - [ ] New Tab button (should create a new tab!)
+    - [ ] Autosave timer
 - [x] Moving a tab should rearrange the model._list
 - [ ] Combo - entering a new tab name could create a new tab!
 - [ ] Status bar 
@@ -701,7 +702,7 @@ class Dialog(QWidget):
         bottom_layout.setSpacing(0)
         bottom_layout.setContentsMargins(0,0,0,0)
         bottom_layout.addWidget(self.tab_widget)
-        bottom_layout.addWidget(self.editor_splitter)
+        bottom_layout.addWidget(self.editor_splitter) # FIXME: this causes my tab_widget layout to stretch too :(
         
         self.statusbar = StatusBar()
         
