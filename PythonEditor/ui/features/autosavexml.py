@@ -577,25 +577,20 @@ class AutoSaveManager(QtCore.QObject):
 
     @QtCore.Slot(str, str, str, str, object)
     def save_by_uuid(self, uid, name, text, index, path=None):
-        """ Create/update a specific subscript given by uuid.
-        """
-        root, subscripts = parsexml('subscript')
-
-        for s in subscripts:
-            if s.attrib.get('uuid') == uid:
-                sub = s
-                break
-        else:
+        """ Create/update a specific subscript given by uuid."""
+        root = get_root()
+        sub = get_element_by_uid(uid, root=root)
+        if sub is None:
             sub = ETree.Element('subscript')
             root.append(sub)
 
         sub.attrib['uuid'] = uid
         sub.attrib['name'] = name
-        sub.text = text
         sub.attrib['tab_index'] = index
-
         if path is not None:
             sub.attrib['path'] = path
+
+        sub.text = text
 
         writexml(root)
 
@@ -632,6 +627,12 @@ class AutoSaveManager(QtCore.QObject):
         self.store_current_index()
         self.sync_tab_indices()
 
+    def get_tab_data_by_uid(self, uid):
+        for i in range(self.tabs.count()):
+            data = self.tabs.tabData(i)
+            if data.get('uuid') == uid:
+                return data
+
     @QtCore.Slot(str)
     def handle_document_save(self, uid):
         """ After saving the editor's contents,
@@ -644,6 +645,41 @@ class AutoSaveManager(QtCore.QObject):
 
         :param uid: Unique Identifier of
                     subscript to save
+
+
+        This method is called via two signals: from open_action
+        and from save_action.
+
+        It handles too many cases. A good function does ONE thing.
+
+        The question I need to answer here is: what has responsibility over
+        the file's contents? The filesystem? The autosave?
+        I think it should be thus: when the document has been modified, the autosave assumes responsibilty over the content. Otherwise, the filesystem takes full responsibilty.
+
+        I need two separate functions:
+
+        if data.get('modified'):
+            save_contents(uid)
+        else:
+            save_reference_to_file(uid, path)
+
+        # TODO: simplify this down to:
+
+        data = self.get_tab_data_by_uid(uid)
+        path = data.get('path', '')
+        if (data is None) or (not os.path.exists(path)):
+            return
+
+        root = get_root()
+        element = get_element_by_uid(uid, root=root)
+        if element is None:
+            element = create_new_element(data)
+            root.append(element)
+
+        # update the element with the new path
+        element.attrib['path'] = path
+        writexml(root)
+
         """
         # find the tab by uid
         uid = str(uid)
@@ -1072,3 +1108,25 @@ def get_element_tab_index(subscript):
         return int(tab_index)
     except (TypeError, ValueError):
         return 1
+
+
+def get_root(path=AUTOSAVE_FILE):
+    xmlp = ETree.XMLParser(encoding="utf-8")
+    parser = ETree.parse(path, xmlp)
+    return parser.getroot()
+
+def get_element_by_uid(uid, root=None):
+    if root is None:
+        root = get_root()
+    return root.find("subscript[@uuid='%s']"%uid)
+
+def create_element(data):
+    sub = ETree.Element('subscript')
+    for key, value in data.items():
+        if value is None:
+            continue
+        if key == 'text':
+            sub.text = value
+            continue
+        sub.attrib[key] = value
+    return sub
