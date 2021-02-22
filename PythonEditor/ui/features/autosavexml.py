@@ -593,7 +593,7 @@ class AutoSaveManager(QtCore.QObject):
 
     @QtCore.Slot(str, str, str, str, object)
     def save_by_uuid(self, uid, name, text, index, path=None):
-        """ Only update a specific subscript given by uuid.
+        """ Create/update a specific subscript given by uuid.
         """
         root, subscripts = parsexml('subscript')
 
