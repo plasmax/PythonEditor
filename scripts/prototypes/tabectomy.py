@@ -14,9 +14,11 @@ More guiding principles:
     - Interchangeable components that control their own behaviour.
     - Uglier code that works is better than elegant code with bugs.
 
+IDEA: What if there were just a limit on the number of tabs on the bar at once? Extra tabs could be stored in a listview, and scrolling left or right would add a tab in either direction on the list, so that it looks like nothing has happened. (Would this jump though? I don't think so, as addTab and insertTab don't seem to make you want to jump! maybe on linux though.)
+
 TODO:
 - [ ] Reach parity with existing PythonEditor features
-    - [ ] Renamable tabs
+    - [ ] Renameable tabs
     - [ ] Tab close button (that doesn't cause the tab bar to jump)
     - [ ] The model should ask you before it removes anything that has stored text.
     - [ ] New Tab button (should create a new tab!)
@@ -702,7 +704,8 @@ class Dialog(QWidget):
         bottom_layout.setSpacing(0)
         bottom_layout.setContentsMargins(0,0,0,0)
         bottom_layout.addWidget(self.tab_widget)
-        bottom_layout.addWidget(self.editor_splitter) # FIXME: this causes my tab_widget layout to stretch too :(
+        bottom_layout.addWidget(self.editor_splitter)
+        bottom_layout.setStretchFactor(self.editor_splitter, 100)
         
         self.statusbar = StatusBar()
         
