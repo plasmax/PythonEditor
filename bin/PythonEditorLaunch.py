@@ -31,7 +31,7 @@ if PACKAGE_PATH not in sys.path:
     sys.path.append(PACKAGE_PATH)
 
 # set startup env variables
-os.environ['QT_PREFERRED_BINDING'] = pyside
+os.environ['QT_PREFERRED_BINDING'] = 'PySide2:PyQt4'
 try:
 	# allow this variable to be set before launching
 	os.environ['PYTHONEDITOR_CAPTURE_STARTUP_STREAMS']

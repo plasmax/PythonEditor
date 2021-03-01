@@ -166,7 +166,7 @@ class Tabs(QTabBar):
     mouse_over_rect = False
     over_button = -1
     start_move_index = -1
-    SIDE = QTabBar.ButtonPosition.RightSide
+    SIDE = QTabBar.RightSide
 
     # for autosave purposes:
     contents_saved_signal   = Signal(str)

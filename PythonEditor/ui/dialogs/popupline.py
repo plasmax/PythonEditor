@@ -1,12 +1,8 @@
 import re
-try:
-    from PySide2.QtGui import *
-    from PySide2.QtWidgets import *
-    from PySide2.QtCore import *
-except ImportError:
-    from PySide.QtGui import *
-    from PySide.QtCore import *
 
+from PythonEditor.ui.Qt.QtGui import *
+from PythonEditor.ui.Qt.QtWidgets import *
+from PythonEditor.ui.Qt.QtCore import *
 
 from PythonEditor.utils.search import nonconsec_find
 from PythonEditor.utils.goto import goto_position
@@ -316,9 +312,10 @@ class CloseIconPainter(QIconEngine):
         self.paint(painter, rect, mode, state)
         return pix
 
-    def paint(self, painter, rect, mode=QIcon.Mode.Normal, state=QIcon.State.Off):
+    def paint(self, painter, rect, mode=None, state=None):
         h = rect.height()/2
         close_rect = QRect(0,0,h,h)
+
         close_rect.moveCenter(rect.center())
 
         left_line = QLine(close_rect.topLeft(), close_rect.bottomRight())
