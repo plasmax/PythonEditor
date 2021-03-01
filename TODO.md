@@ -127,9 +127,12 @@
 - [ ] Add reverse ' = '.join(reversed('sys.stdout = backup'.split(' = ')))
 - [ ] Open Containing Folder action - default to autosave dir if nothing else
 - [ ] Paste into sublime subprocess.Popen('sublime -n --command paste', executable='/bin/tcsh', shell=True)
+- [ ] Convert selected variable to its value. e.g. "value_dict" would be replaced by the dictionary it represents
 ### Snippets
 - [ ] QTreeView/QStandardItemModel snippet
 - [ ] Edit Snippets Dialog (for snippets in /.nuke/)
+### Introspection
+- [ ] Use dis.dis and ast.parse for greater levels of introspection of code objects.
 ### Documentation
 - [ ] Generate PySide2 import for selected text (e.g. "QPalette" would return "from PySide2.QtGui import QPalette")
 - [ ] Print Qt5 documentation url (or even better, open browser) for Qt names
