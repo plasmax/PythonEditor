@@ -14,8 +14,9 @@ from PythonEditor.ui.Qt.QtGui import (
     QFocusEvent, QFocusEvent, QWheelEvent,
     QKeyEvent, QResizeEvent, QFont)
 from PythonEditor.ui.Qt.QtCore import (
-    Signal, Slot, QTimer, Qt)
+    Signal, Slot, QTimer, Qt, QMimeData, QByteArray)
 
+from PythonEditor import six
 from PythonEditor.utils import constants
 from PythonEditor.ui.features import actions
 from PythonEditor.ui.features import shortcuts
@@ -23,6 +24,29 @@ from PythonEditor.ui.features import linenumberarea
 from PythonEditor.ui.features import syntaxhighlighter
 from PythonEditor.ui.features import autocompletion
 from PythonEditor.ui.features import contextmenu
+
+
+def sanitize_text(text):
+    if isinstance(text, QByteArray):
+        text = text.data()
+    if isinstance(text, bytes):
+        # tabs cause Nuke to crash
+        if b'\t' in text:
+            text = text.replace(b'\t', b'    ')
+    elif isinstance(text, six.string_types):
+        if '\t' in text:
+            text = text.replace('\t', '    ')
+    return text
+
+
+def sanitize_mimedata(mimedata):
+    new_mimedata = QMimeData()
+    for fmt in mimedata.formats():
+        data = mimedata.data(fmt)
+
+        data = sanitize_text(data)
+        new_mimedata.setData(fmt, data)
+    return new_mimedata
 
 
 class Editor(QPlainTextEdit):
@@ -372,13 +396,14 @@ class Editor(QPlainTextEdit):
             return self.wheel_signal.emit(event)
         super(Editor, self).wheelEvent(event)
 
-    def insertFromMimeData(self, mimeData):
+    def insertFromMimeData(self, mimedata):
         """Override to emit text_changed_signal
         (which triggers autosave) when text
         is pasted or dragged in.
         """
         self.text_changed_signal.emit()
-        super(Editor, self).insertFromMimeData(mimeData)
+        mimedata = sanitize_mimedata(mimedata)
+        super(Editor, self).insertFromMimeData(mimedata)
 
     def showEvent(self, event):
         """Override to automatically set the
