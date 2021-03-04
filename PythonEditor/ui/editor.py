@@ -203,6 +203,7 @@ class Editor(QPlainTextEdit):
         tc.beginEditBlock()
         tc.select(tc.Document)
         tc.removeSelectedText()
+        text = sanitize_text(text)
         self.appendPlainText(text)
         tc.endEditBlock()
 
@@ -213,6 +214,7 @@ class Editor(QPlainTextEdit):
         to setPlainText.
         """
         self.emit_text_changed = False
+        text = sanitize_text(text)
         super(Editor, self).setPlainText(text)
         self.emit_text_changed = True
 
@@ -221,6 +223,7 @@ class Editor(QPlainTextEdit):
         textChanged signal being emitted.
         """
         self.emit_text_changed = False
+        text = sanitize_text(text)
         super(Editor, self).insertPlainText(text)
         self.emit_text_changed = True
 
@@ -229,6 +232,7 @@ class Editor(QPlainTextEdit):
         textChanged signal being emitted.
         """
         self.emit_text_changed = False
+        text = sanitize_text(text)
         super(Editor, self).appendPlainText(text)
         self.emit_text_changed = True
 
