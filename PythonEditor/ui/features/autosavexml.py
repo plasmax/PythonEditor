@@ -779,38 +779,6 @@ def autosave_can_be_parsed():
         return False
 
 
-# FIXME: redefined below. this is the deprecated version.
-# test functionality is the same and delete this version.
-def create_autosave_file():
-    """ Create the autosave file into which
-    PythonEditor stores all tab contents.
-    """
-    # look for the autosave
-    if os.path.isfile(AUTOSAVE_FILE):
-
-        # if the autosave file is empty, write header
-        # FIXME: can this be an os.stat/get file size?
-        # Furthermore, what if it's not empty but has a
-        # corrupted header? What are the methods for
-        # data preservation?
-        with open(AUTOSAVE_FILE, 'r') as f:
-            is_empty = not bool(f.read().strip())
-        if is_empty:
-            create_empty_autosave()
-    else:
-
-        # if file not found, check if directory exists
-        if not os.path.isdir(NUKE_DIR):
-            # filehandle, filepath = tempfile.mkstemp()
-            # FIXME: set os.environ['PYTHONEDITOR_AUTOSAVE_FILE'] and define_autosave_path()
-            # msg = 'Directory %s does not exist, saving to %s' % (NUKE_DIR, filepath)
-            msg = 'Directory {0} does not exist'.format(NUKE_DIR)
-            raise CouldNotCreateAutosave(msg)
-        else:
-            create_empty_autosave()
-    return True
-
-
 def create_autosave_file():
     """ Create the autosave file into which
     PythonEditor stores all tab contents.
@@ -933,6 +901,10 @@ def remove_control_characters(s):
     """
     Identify and remove any control characters from given string s.
     """
+    try:
+        s = unicode(s)
+    except NameError:
+        pass # no more unicode in python 3
     cc = ''.join(ch for ch in s if not_ctrl(ch))
     print('Removing undesirable control characters:', cc)
 
@@ -946,9 +918,16 @@ def remove_control_characters(s):
     return ''.join(ch for ch in s if no_cc(ch))
 
 
+def sanitize(text):
+    text = remove_control_characters(text)
+    # TODO: add \t removal from editor module
+    return text
+
 def parsexml(element_name, path=AUTOSAVE_FILE):
     """ Retrieve the root and a list of <element_name>
     elements from a given xml file.
+
+    :param element_name: `str` name of <element>, e.g. "subscript"
     """
     if not create_autosave_file():
         return
