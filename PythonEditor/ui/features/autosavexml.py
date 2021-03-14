@@ -176,7 +176,7 @@ class AutoSaveManager(QtCore.QObject):
         autosave file for <subscript> elements and
         creates a tab per element.
         """
-        root, subscripts = parsexml('subscript')
+        _, subscripts = parsexml('subscript')
         if len(subscripts) == 0:
             return
         subscripts = sorted(
@@ -288,7 +288,7 @@ class AutoSaveManager(QtCore.QObject):
             return
 
         # read the autosave file
-        root, subscripts = parsexml('subscript')
+        _, subscripts = parsexml('subscript')
 
         # sync tab names from the autosave
         tab_uid = tabs.get_current_tab_property('uuid')
