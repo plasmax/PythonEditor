@@ -29,6 +29,9 @@ FOLDER = os.path.dirname(__file__)
 PACKAGE_PATH = os.path.dirname(FOLDER)
 if PACKAGE_PATH not in sys.path:
     sys.path.append(PACKAGE_PATH)
+RESOURCES_PATH = os.path.join(PACKAGE_PATH, 'resources')
+if RESOURCES_PATH not in sys.path:
+    sys.path.append(RESOURCES_PATH)
 
 # set startup env variables
 os.environ['QT_PREFERRED_BINDING'] = pyside
