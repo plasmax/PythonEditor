@@ -4,6 +4,8 @@ placed on the editor. The function test_shortcut is the primary test
 mechanism, with an input and expected output.
 Testing per action is also done in case the user changes the action shortcut.
 """
+from __future__ import absolute_import
+from __future__ import print_function
 import json
 import time
 from pprint import pprint
@@ -139,13 +141,13 @@ def run_shortcut(
         assert text == expected_result
     except AssertionError:
         shortcut = QtGui.QKeySequence(key | modifiers).toString()
-        print('test for %r failed to produce result %r with input %r. produced %r instead' % (
+        print(('test for %r failed to produce result %r with input %r. produced %r instead' % (
             shortcut,
             expected_result,
             input_text,
             text
             )
-        )
+        ))
     finally:
         window.activateWindow()
 
@@ -197,8 +199,8 @@ def test_modifier_keys():
     assert QtCore.Qt.Modifier.META == QtCore.Qt.MetaModifier
 
     for s in get_shortcuts():
-        print('\n',s)
-        print(shortcut_to_key_and_modifiers(s))
+        print(('\n',s))
+        print((shortcut_to_key_and_modifiers(s)))
 
 
 def test_key_from_shortcut():
@@ -210,7 +212,7 @@ def test_key_from_shortcut():
 
         for mod in QtCore.Qt.Modifier.values.values():
             if mod & ky == k:
-                print(mod, ky, k)
+                print((mod, ky, k))
 
 def test_all_shortcuts():
     """
@@ -542,12 +544,12 @@ def test_shortcuts(editor):
         ky = QtCore.Qt.Key.values.get(lookup)
         if ky is None:
             ky = QtTest.QTest.asciiToKey(letter)
-            print('failed to find %s, using %s' % (lookup, ky))
+            print(('failed to find %s, using %s' % (lookup, ky)))
 
         combo = ky | modifiers
-        print '#----------------------'
-        print('translated:', QtGui.QKeySequence(combo).toString())
-        print('\nTesting:', shortcut, ky)
+        print('#----------------------')
+        print(('translated:', QtGui.QKeySequence(combo).toString()))
+        print(('\nTesting:', shortcut, ky))
 
         editor.setFocus(
             QtCore.Qt.MouseFocusReason
@@ -562,10 +564,4 @@ def test_shortcuts(editor):
         )
 
         # TODO: here is where we test for input vs expected result.
-        print '#------------',
-        if not COMBO_FOUND:
-            print('KEY NOT WORKING!')
-            raise Exception('KEY NOT WORKING!')
-        else:
-            print('passed.')
 

@@ -1,4 +1,7 @@
-from Qt import QtWidgets, QtGui, QtCore
+from __future__ import absolute_import
+from PythonEditor.ui.Qt import QtWidgets, QtGui, QtCore
+from PythonEditor.ui import tabs
+from six.moves import range
 
 class PopupBarTest(QtCore.QObject):
     """
