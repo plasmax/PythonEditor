@@ -245,6 +245,7 @@ class AutoSaveManager(QtCore.QObject):
         if path is None:
             return
         if not os.path.isfile(path):
+            index = self.tabs.currentIndex()
             # set tab saved status to false
             data = self.tabs.tabData(index)
             if data is None:
