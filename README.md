@@ -1,9 +1,12 @@
 # PythonEditor
 A Script Editor for Foundry's NUKE with more features.
 
+[![CircleCI](https://img.shields.io/circleci/build/github/plasmax/PythonEditor/master)](https://app.circleci.com/pipelines/github/plasmax/PythonEditor)
+
+
 ## Installation:
-[Download](https://github.com/plasmax/PythonEditor/archive/master.zip).
-Copy the "PythonEditor" folder (not PythonEditor-master, the folder inside it) into your user .nuke folder.
+[Download](https://downgit.github.io/#/home?url=https://github.com/plasmax/PythonEditor/tree/master/PythonEditor).
+Copy the "PythonEditor" folder from the .zip file into your user .nuke folder.
 
 Create a menu.py file in the .nuke folder and add the following code to it:
 
