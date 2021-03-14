@@ -901,10 +901,6 @@ def remove_control_characters(s):
     """
     Identify and remove any control characters from given string s.
     """
-    try:
-        s = unicode(s)
-    except NameError:
-        pass # no more unicode in python 3
     cc = ''.join(ch for ch in s if not_ctrl(ch))
     print('Removing undesirable control characters:', cc)
 
