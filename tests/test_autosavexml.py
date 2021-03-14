@@ -11,7 +11,8 @@ from PythonEditor.ui.features import autosavexml
 def setup_and_teardown_autosave_file():
     """If the autosave file already exists, create a temporary
     backup, then tear down by reinstating the original file."""
-    if os.path.isfile(autosavexml.AUTOSAVE_FILE):
+    autosave_exists = os.path.isfile(autosavexml.AUTOSAVE_FILE)
+    if autosave_exists:
         print("File exists: %s" % autosavexml.AUTOSAVE_FILE)
 
         shutil.copy2(autosavexml.AUTOSAVE_FILE,
@@ -24,6 +25,8 @@ def setup_and_teardown_autosave_file():
             os.remove(autosavexml.AUTOSAVE_FILE)
         os.rename(autosavexml.AUTOSAVE_FILE+'.bak', autosavexml.AUTOSAVE_FILE)
         print('Restored original %s' % autosavexml.AUTOSAVE_FILE)
+    if (not autosave_exists) and os.path.isfile(autosavexml.AUTOSAVE_FILE):
+        os.remove(autosavexml.AUTOSAVE_FILE)
 
 
 # --- critical autosave functions that are the "write/out" points of the application:
@@ -63,11 +66,20 @@ def test_writexml(setup_and_teardown_autosave_file):
     new_root, new_elements = autosavexml.parsexml("subscript")
     assert len(new_elements) == len(elements)
 
+    try:
+        unicode
+    except NameError:
+        # no unicode function in python 3
+        def unicode(text): return text
+
+    from PythonEditor.ui.features.autosavexml import sanitize
+
     # none of the element attributes should have changed
     for old_element, new_element in zip(elements, new_elements):
         assert old_element.attrib == new_element.attrib
-        assert autosavexml.sanitize(
-            old_element.text) == autosavexml.sanitize(new_element.text)
+        old_text = unicode(old_element.text)
+        new_text = unicode(new_element.text)
+        assert sanitize(old_text) == sanitize(new_text)
 
 
 def test_fix_broken_xml(setup_and_teardown_autosave_file):
@@ -78,7 +90,7 @@ def test_fix_broken_xml(setup_and_teardown_autosave_file):
     root, elements = autosavexml.parsexml("subscript", path=autosavexml.AUTOSAVE_FILE)
 
 
-def test_parsexml():
+def test_parsexml(setup_and_teardown_autosave_file):
     root, elements = autosavexml.parsexml("subscript", path=autosavexml.AUTOSAVE_FILE)
     assert isinstance(elements, list)
     assert root is not None
