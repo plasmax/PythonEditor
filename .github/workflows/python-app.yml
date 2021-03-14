@@ -35,5 +35,4 @@ jobs:
       working-directory: ./PythonEditor
     - name: Test with pytest
       run: |
-        python -m pytest .  --rootdir ./PythonEditor
-      working-directory: ./PythonEditor
+        python -m pytest --rootdir /home/runner/work/PythonEditor/PythonEditor/
