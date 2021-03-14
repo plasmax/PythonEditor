@@ -13,6 +13,7 @@ import sys
 import uuid
 import time
 import json
+import tempfile
 import inspect
 import __main__
 import subprocess
@@ -30,6 +31,7 @@ from PythonEditor.utils import constants
 from PythonEditor.core import execute
 from PythonEditor.ui.features import search
 from PythonEditor.ui.features import autocompletion
+from PythonEditor.ui.features import autosavexml
 from PythonEditor.ui.dialogs import popups
 from PythonEditor.ui.dialogs import popupline
 from PythonEditor.utils.constants import NUKE_DIR
@@ -2068,12 +2070,19 @@ def open_in_external_editor(*args, **kwargs):
     )
 
 
-def backup_pythoneditor_history():
-    src = os.getenv('PYTHONEDITOR_AUTOSAVE_FILE')
-    path, ext = os.path.splitext(src)
+def backup_pythoneditor_history(in_tmp=False):
+    src = os.getenv("PYTHONEDITOR_AUTOSAVE_FILE", autosavexml.AUTOSAVE_FILE)
+    if not os.path.isfile(src):
+        return
+    folder = os.path.dirname(src)
+    filename = os.path.basename(src)
+    name, ext = os.path.splitext(filename)
 
     now = datetime.now().strftime("%b-%d-%y-%H.%M.%S")
-    dst = path+'_'+now+ext
+    new_name = "%s_%s%s"%(name, now, ext)
+    if in_tmp:
+        folder = tempfile.gettempdir()
+    dst = os.path.join(folder, new_name)
 
     copyfile(src, dst)
     print('Backup of Python Editor History created:')
@@ -2145,33 +2154,3 @@ def find_menu_item(menu, item_name=''):
             continue
         if str(name) == str(item_name):
             return item
-
-
-# tests
-
-TEST_TEXT = """
-c:\\path/to\\some\\file.jpg
-"""
-
-EXPECTED_RESULT = """
-c:/path/to/some/file.jpg
-"""
-
-if __name__ == '__main__':
-    assert toggle_backslashes_in_string(TEST_TEXT) == EXPECTED_RESULT
-
-    def test_toggle_backslashes():
-        editor = QtWidgets.QPlainTextEdit()
-        test_toggle_backslashes.editor = editor
-        editor.setPlainText(TEST_TEXT)
-        editor.show()
-        textCursor = editor.textCursor()
-        textCursor.setPosition(0, QtGui.QTextCursor.MoveAnchor)
-        editor.setTextCursor(textCursor)
-        toggle_backslashes(editor)
-
-"""
-TEST_TEXT = toggle_backslashes_in_string(TEST_TEXT)
-print TEST_TEXT
-test_toggle_backslashes()
-"""
