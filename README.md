@@ -1,7 +1,7 @@
 # PythonEditor
 A Script Editor for Foundry's NUKE with more features.
 
-[![CircleCI](https://img.shields.io/circleci/build/github/plasmax/PythonEditor/master)](https://app.circleci.com/pipelines/github/plasmax/PythonEditor) [![build](https://github.com/plasmax/PythonEditor/actions/workflows/python-app.yml/badge.svg)](https://github.com/plasmax/PythonEditor/actions/workflows/python-app.yml)
+[![build](https://github.com/plasmax/PythonEditor/actions/workflows/python-app.yml/badge.svg)](https://github.com/plasmax/PythonEditor/actions/workflows/python-app.yml)
 
 ## Installation:
 [Download](https://downgit.github.io/#/home?url=https://github.com/plasmax/PythonEditor/tree/master/PythonEditor).
