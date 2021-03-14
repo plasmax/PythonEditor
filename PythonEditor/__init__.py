@@ -20,7 +20,9 @@ IDE
 """
 
 def main():
-    import os
+    """The main entrypoint into PythonEditor.
+    Makes sure the environment is configured correctly for Qt.py.
+    """
     bindings = ['PySide2', 'PyQt5', 'PySide', 'PyQt4']
 
     # Nuke 10 segfaults when you even _look_ at PySide2.
@@ -28,6 +30,7 @@ def main():
         import nuke
         if nuke.NUKE_VERSION_MAJOR < 11:
             bindings.remove('PySide2')
+        import os
         if not os.environ.get('QT_PREFERRED_BINDING'):
             os.environ['QT_PREFERRED_BINDING'] = os.pathsep.join(bindings)
     except ImportError:
@@ -36,6 +39,12 @@ def main():
     # do not create .pyc files
     import sys
     sys.dont_write_bytecode = True
+
+    try:
+        from PythonEditor.ui.features.actions import backup_pythoneditor_history
+        backup_pythoneditor_history(in_tmp=True)
+    except Exception:
+        pass
 
 
 def _print_load_error(error):
