@@ -56,4 +56,4 @@ class PreferencesEditor(QtWidgets.QDialog):
         super(PreferencesEditor, self).showEvent(event)
 
     def show_current_preferences(self):
-        self.edit_path.setText(unicode(os.environ.get('EXTERNAL_EDITOR_PATH')))
+        self.edit_path.setText(os.environ.get('EXTERNAL_EDITOR_PATH'))
