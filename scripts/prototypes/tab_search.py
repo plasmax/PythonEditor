@@ -1,5 +1,8 @@
 # replace the Tab Choice menu on the far right with a search box
+from __future__ import absolute_import
+from __future__ import print_function
 from Qt import QtWidgets, QtGui, QtCore
+from six.moves import range
 
 
 class TabComboList(QtWidgets.QComboBox):
