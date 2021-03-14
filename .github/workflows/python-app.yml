@@ -35,5 +35,5 @@ jobs:
       working-directory: ./PythonEditor
     - name: Test with pytest
       run: |
-        python -m pytest .
+        python -m pytest .  --rootdir ./PythonEditor
       working-directory: ./PythonEditor
