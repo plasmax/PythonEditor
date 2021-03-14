@@ -1,3 +1,4 @@
+import nuke
 from PythonEditor.ui import editor
 
 
