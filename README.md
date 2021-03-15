@@ -14,4 +14,4 @@ import PythonEditor
 PythonEditor.nuke_menu_setup(nuke_menu=True, node_menu=True, pane_menu=True)
 ```
 
-![Screenshot](/media/Screenshot.png)
+![Screenshot](/media/Screenshot1.png)
