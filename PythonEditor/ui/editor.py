@@ -16,7 +16,7 @@ from PythonEditor.ui.Qt.QtGui import (
 from PythonEditor.ui.Qt.QtCore import (
     Signal, Slot, QTimer, Qt, QMimeData, QByteArray)
 
-import six
+from PythonEditor import six
 from PythonEditor.utils import constants
 from PythonEditor.ui.features import actions
 from PythonEditor.ui.features import shortcuts
