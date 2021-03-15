@@ -52,7 +52,7 @@ except Exception as e:
 
 # Remove all Python Editor modules
 # ------------------------------------------
-for m in sys.modules.keys():
+for m in list(sys.modules.keys()):
     if 'PythonEditor' in m:
         del sys.modules[m]
 
