@@ -31,7 +31,6 @@ from PythonEditor.utils import constants
 from PythonEditor.core import execute
 from PythonEditor.ui.features import search
 from PythonEditor.ui.features import autocompletion
-from PythonEditor.ui.features import autosavexml
 from PythonEditor.ui.dialogs import popups
 from PythonEditor.ui.dialogs import popupline
 from PythonEditor.utils.constants import NUKE_DIR
@@ -2042,10 +2041,15 @@ def get_obj_goto_path(obj, get_lineno=True):
     return path
 
 
+def get_autosavexml_module():
+    """I hate circular dependencies."""
+    return sys.modules.get("PythonEditor.ui.features.autosavexml")
+
+
 def get_external_editor_path():
-    # safety check that the module is imported
-    p = 'PythonEditor.ui.features.autosavexml'
-    autosavexml = sys.modules.get(p)
+    """Get the path to the external editor, which is stored in
+    the autosave file."""
+    autosavexml = get_autosavexml_module()
     if autosavexml is None:
         return
     return autosavexml.get_external_editor_path()
@@ -2071,7 +2075,13 @@ def open_in_external_editor(*args, **kwargs):
 
 
 def backup_pythoneditor_history(in_tmp=False):
-    src = os.getenv("PYTHONEDITOR_AUTOSAVE_FILE", autosavexml.AUTOSAVE_FILE)
+    """Backup the autosave file, either to a temp location
+    or the same folder it's currently in.
+
+    :param in_temp: `bool` if True, save in /tmp/ or your OS's equivalent.
+    """    
+    default_path = os.path.expanduser("~/.nuke/PythonEditorHistory.xml") # FIXME: this path shouldn't be hard coded here.
+    src = os.getenv("PYTHONEDITOR_AUTOSAVE_FILE", default_path)
     if not os.path.isfile(src):
         return
     folder = os.path.dirname(src)
@@ -2087,6 +2097,7 @@ def backup_pythoneditor_history(in_tmp=False):
     copyfile(src, dst)
     print('Backup of Python Editor History created:')
     print(dst)
+    return dst
 
 
 def get_snippet_name():
