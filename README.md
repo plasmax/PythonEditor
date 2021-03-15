@@ -16,5 +16,5 @@ PythonEditor.nuke_menu_setup(nuke_menu=True, node_menu=True, pane_menu=True)
 
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/plasmax/PythonEditor/master/media/Screenshot.png"/>
+  <img src="https://raw.githubusercontent.com/plasmax/PythonEditor/master/media/Screenshot1.png"/>
 </p>
