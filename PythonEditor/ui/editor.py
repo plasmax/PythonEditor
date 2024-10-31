@@ -293,6 +293,15 @@ class Editor(QPlainTextEdit):
         that QShortcut cannot override.
         """
         self._key_pressed = True
+        
+        # Nuke 14 bugfix - override Spacebar to 
+        # prevent the window from expanding
+        if event.key() == Qt.Key_Space:
+            event.accept()
+            # print("editor: space")
+            self.textCursor().insertText(" ")
+            self.post_key_pressed_signal.emit(event)
+            return
 
         if not self.hasFocus():
             event.ignore()
