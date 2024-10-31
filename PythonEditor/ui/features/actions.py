@@ -380,6 +380,14 @@ class Actions(QtCore.QObject):
 
         cursor.endEditBlock()
 
+    def convert_to_python3(self):
+        """Convert script to python3 - usually 
+        just print statements."""
+        from PythonEditor.utils.convert2to3 import convert_to_python3
+        text = self.editor.toPlainText()
+        new_text = convert_to_python3(text)
+        self.editor.setPlainText(new_text)
+
     def indent_next_line(self):
         """ Match next line indentation to current line
         If ':' is character in cursor position and

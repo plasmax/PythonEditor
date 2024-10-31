@@ -344,6 +344,11 @@
             "Method": "trim_trailing_whitespace",
             "Menu Location": "Edit/Text"
         },
+        "Convert to Python3": {
+            "Shortcuts": [],
+            "Method": "convert_to_python3",
+            "Menu Location": "Edit/Text"
+        },
         "Duplicate Cursor Up": {
             "Shortcuts": [
                 "Ctrl+Alt+Shift+Up"
