@@ -30,6 +30,7 @@ Also, this should close the Python Editor before reloading/restoring
 RELOAD_CMD = """
 # Remove PythonEditor Panel
 # ------------------------------------------
+from imp import reload
 from PythonEditor.ui.Qt import QtWidgets, QtGui, QtCore
 
 def remove_panel(PANEL_NAME):
