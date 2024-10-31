@@ -12,7 +12,7 @@ from PythonEditor.ui.Qt.QtGui import (
 from PythonEditor.ui.Qt.QtWidgets import (
     QWidget, QCompleter)
 from PythonEditor.ui.Qt.QtCore import (
-    QObject, Qt, Slot, QStringListModel)
+    QObject, Qt, Slot, QStringListModel, QTimer)
 from PythonEditor.utils.debug import debug
 from PythonEditor.utils.constants import NUKE_DIR
 
@@ -680,6 +680,15 @@ class AutoCompleter(QObject):
         - Complete class properties/methods
           (parse for "self.")
         """
+
+        # Nuke 14 bugfix - override Spacebar to 
+        # prevent the window from expanding
+        if event.key() == Qt.Key_Space:
+            self.set_override(False)
+            # print('  Autocomplete: pre keypress')
+            self.editor.keyPressEvent(event)
+            return True
+
         # print('  Autocomplete: pre keypress')
         cp = self.completer
         completing = (
@@ -738,6 +747,19 @@ class AutoCompleter(QObject):
         """
         # print('    Autocomplete: post keypress.')
         cp = self.completer
+        
+        # Nuke 14 bugfix - override Spacebar to 
+        # prevent the window from expanding
+        if event.key() == Qt.Key_Space:
+            event.accept()
+            self.set_override(True)
+            popup = cp.popup()
+            if popup:
+                # cp.popup().hide()
+                QTimer.singleShot(0, popup.hide)
+            # print('  Autocomplete: post keypress')
+            return True
+
         #if event.text() in [':', '!', '.']:
         if event.text() == '.':
             # things to autocomplete on
