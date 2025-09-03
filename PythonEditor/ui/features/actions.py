@@ -86,6 +86,84 @@ def class_actions(cls):
         for action_name, attributes in widget_actions.items():
             yield widget, action_name, attributes
 
+PREFERRED_FREEVAR_NAMES = (
+    "func",
+    "f",
+    "wrapped",
+    "fn",
+    "callable",
+    "method",
+    "target",
+)
+
+
+def _underlying_function(obj):
+    """Normalize bound method -> function for Py2/3."""
+    if inspect.ismethod(obj):
+        return getattr(obj, '__func__', getattr(obj, 'im_func', obj))
+    return obj
+
+
+def _closure_funcs(f):
+    """Map freevar name -> function for any closure cell holding a function."""
+    f = _underlying_function(f)
+    code = getattr(f, '__code__', getattr(f, 'func_code', None))
+    closure = getattr(f, '__closure__', getattr(f, 'func_closure', None))
+    if not code or not closure:
+        return {}
+    names = getattr(code, 'co_freevars', ())
+    out = {}
+    for name, cell in zip(names, closure):
+        try:
+            val = cell.cell_contents
+        except ValueError:
+            continue
+        if inspect.isfunction(val):
+            out[name] = val
+    return out
+
+
+def unwrap_function_chain(obj, max_depth=64):
+    """Follow closure-held functions, returning [outer, ..., inner]."""
+    f = _underlying_function(obj)
+    if not inspect.isfunction(f):
+        raise TypeError("Expected a function or method, got: %r" % (obj,))
+    chain = [f]
+    seen = {id(f)}
+    for _ in range(max_depth):
+        fnmap = _closure_funcs(f)
+        if not fnmap:
+            break
+        cand = next(
+            (fnmap[k] for k in PREFERRED_FREEVAR_NAMES if k in fnmap),
+            None,
+        )
+        if cand is None:
+            funcs = list(fnmap.values())
+            funcs.sort(
+                key=lambda g: len(
+                    getattr(
+                        getattr(g, '__code__', getattr(g, 'func_code', None)),
+                        'co_freevars',
+                        (),
+                    )
+                )
+            )
+            cand = funcs[0]
+        if id(cand) in seen or not inspect.isfunction(cand):
+            break
+        chain.append(cand)
+        seen.add(id(cand))
+        f = cand
+    return chain
+
+
+def get_deepest_original_source(obj):
+    """Return source for innermost function after peeling wrappers."""
+    chain = unwrap_function_chain(obj)
+    deepest = chain[-1]
+    return inspect.getsource(deepest)
+
 
 class Actions(QtCore.QObject):
     """ Collection of QActions that are
@@ -1540,14 +1618,22 @@ class Actions(QtCore.QObject):
         text = self._get_selected_text()
         if not text.strip():
             return
+        namespace = dict(__main__.__dict__)
         try:
-            # try json first as it's nicer
-            cmd = 'print( __import__("inspect").getsource({}))'
-            exec(cmd.format(text), __main__.__dict__)
-        except Exception as error:
+            exec('obj = {0}'.format(text), namespace)
+            obj = namespace['obj']
             try:
-                cmd = 'print( __import__("inspect").getsource({}.__class__))'
-                exec(cmd.format(text), __main__.__dict__)
+                print(get_deepest_original_source(obj))
+            except Exception:
+                print(inspect.getsource(obj))
+        except Exception:
+            try:
+                exec('obj_cls = {0}.__class__'.format(text), namespace)
+                obj_cls = namespace['obj_cls']
+                try:
+                    print(get_deepest_original_source(obj_cls))
+                except Exception:
+                    print(inspect.getsource(obj_cls))
             except Exception as error:
                 print(error)
                 import traceback
