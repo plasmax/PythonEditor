@@ -34,7 +34,8 @@ def test_editor_drag_enter_event():
     mime = QtCore.QMimeData()
     mime.setUrls([QtCore.QUrl.fromLocalFile("C:/tmp/test.txt")])
 
-    pos = QtCore.QPointF(0, 0) if QtCore.qVersion().startswith("6") else QtCore.QPoint(0, 0)
+    # PySide6 QDragEnterEvent expects QPoint (not QPointF) for the position.
+    pos = QtCore.QPoint(0, 0)
     drag_event = QtGui.QDragEnterEvent(
         pos,
         QtCore.Qt.CopyAction,
