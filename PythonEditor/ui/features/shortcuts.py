@@ -112,11 +112,11 @@ class ShortcutHandler(QObject):
             # event.Destroy
             return False
 
-        if event.type() in [event.Shortcut, event.ShortcutOverride]: # accept all shortcuts
+        if event.type() in [QEvent.Shortcut, QEvent.ShortcutOverride]:
             event.accept()
             return True
 
-        if event.type() == event.KeyPress:
+        if event.type() == QEvent.KeyPress:
             # only let the editor receive keypress overrides
             if obj == self.editor:
                 return self.handle_keypress(event)

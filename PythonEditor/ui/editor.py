@@ -399,10 +399,12 @@ class Editor(QPlainTextEdit):
         """Restore focus and, if ctrl held, emit signal
         """
         self.setFocus(Qt.MouseFocusReason)
-        vertical = Qt.Orientation.Vertical
-        is_vertical = (
-            event.orientation() == vertical
-        )
+        # Qt6 removed orientation() - use angleDelta() instead
+        if hasattr(event, 'angleDelta'):
+            is_vertical = event.angleDelta().y() != 0
+        else:
+            # Qt5 fallback
+            is_vertical = event.orientation() == Qt.Orientation.Vertical
         CTRL = Qt.ControlModifier
         ctrl_held = (event.modifiers() == CTRL)
         if ctrl_held and is_vertical:

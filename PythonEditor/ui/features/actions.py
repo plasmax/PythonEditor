@@ -1731,7 +1731,12 @@ class Actions(QtCore.QObject):
         """
         font = self.editor.font()
         size = font.pointSize()
-        d = event.delta()
+        # Qt6 removed delta() - use angleDelta() instead
+        if hasattr(event, 'angleDelta'):
+            d = event.angleDelta().y()
+        else:
+            # Qt5 fallback
+            d = event.delta()
         amount = int(d/10) if d > 1 or d < -1 else d
         new_size = size + amount
         new_size = new_size if new_size > 0 else 1

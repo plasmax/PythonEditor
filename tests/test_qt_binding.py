@@ -73,6 +73,50 @@ def test_ide_smoke_event_loop():
 
 
 @pytest.mark.gui
+def test_launch_steps_subprocess_syntax_highlighter_regexp():
+    created_app = False
+    app = QtWidgets.QApplication.instance()
+    if app is None:
+        app = QtWidgets.QApplication(sys.argv)
+        created_app = True
+
+    from PythonEditor.ui import editor as editor_module
+    from PythonEditor.ui.features import syntaxhighlighter
+
+    editor = editor_module.Editor(init_features=False)
+    highlighter = syntaxhighlighter.Highlight(editor.document(), editor)
+    editor.setPlainText("class Foo:\n    def bar(self):\n        return 1\n")
+    highlighter.rehighlight()
+
+    editor.close()
+    QtWidgets.QApplication.processEvents()
+    if created_app:
+        app.quit()
+
+
+@pytest.mark.gui
+def test_launch_steps_subprocess_shortcut_event_filter():
+    created_app = False
+    app = QtWidgets.QApplication.instance()
+    if app is None:
+        app = QtWidgets.QApplication(sys.argv)
+        created_app = True
+
+    from PythonEditor.ui import editor as editor_module
+    from PythonEditor.ui.features import shortcuts
+
+    editor = editor_module.Editor(init_features=False)
+    handler = shortcuts.ShortcutHandler(editor=editor)
+    paint_event = QtGui.QPaintEvent(QtCore.QRect(0, 0, 1, 1))
+    assert handler.eventFilter(editor, paint_event) is False
+
+    editor.close()
+    QtWidgets.QApplication.processEvents()
+    if created_app:
+        app.quit()
+
+
+@pytest.mark.gui
 def test_launch_steps_subprocess():
     import subprocess
 

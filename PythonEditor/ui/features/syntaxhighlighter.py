@@ -197,6 +197,35 @@ class Highlight(QtGui.QSyntaxHighlighter):
 
         return textFormat
 
+    def _iter_rule_matches(self, expression, text, nth):
+        if hasattr(expression, "indexIn"):
+            index = expression.indexIn(text, 0)
+            while index >= 0:
+                start = expression.pos(nth)
+                length = len(expression.cap(nth))
+                if start >= 0 and length > 0:
+                    yield start, length
+                index = expression.indexIn(text, start + max(length, 1))
+        else:
+            matches = expression.globalMatch(text)
+            while matches.hasNext():
+                match = matches.next()
+                start = match.capturedStart(nth)
+                length = match.capturedLength(nth)
+                if start >= 0 and length > 0:
+                    yield start, length
+
+    def _regex_find(self, expression, text, start=0):
+        if hasattr(expression, "indexIn"):
+            index = expression.indexIn(text, start)
+            if index >= 0:
+                return index, expression.matchedLength()
+            return -1, 0
+        match = expression.match(text, start)
+        if not match.hasMatch():
+            return -1, 0
+        return match.capturedStart(0), match.capturedLength(0)
+
     def highlightBlock(self, text):
         """
         Apply syntax highlighting to the given block of text.
@@ -207,14 +236,12 @@ class Highlight(QtGui.QSyntaxHighlighter):
 
         # apply rules
         for expression, nth, format in self.rules:
-            index = expression.indexIn(text, 0)
-
-            while index >= 0:
-                # We actually want the index of the nth match
-                index = expression.pos(nth)
-                length = len(expression.cap(nth))
+            for index, length in self._iter_rule_matches(
+                expression,
+                text,
+                nth
+            ):
                 self.setFormat(index, length, format)
-                index = expression.indexIn(text, index + length)
 
         # apply comment rule
         if '#' in text:
@@ -295,17 +322,19 @@ class Highlight(QtGui.QSyntaxHighlighter):
             add = 0
         # Otherwise, look for the delimiter on this line
         else:
-            start = delimiter.indexIn(text)
-            # Move past this match
-            add = delimiter.matchedLength()
+            start, add = self._regex_find(delimiter, text, 0)
 
         # As long as there's a delimiter match on this line...
         while start >= 0:
             # Look for the ending delimiter
-            end = delimiter.indexIn(text, start + add)
+            end, end_length = self._regex_find(
+                delimiter,
+                text,
+                start + add
+            )
             # Ending delimiter on this line?
             if end >= add:
-                length = end - start + add + delimiter.matchedLength()
+                length = end - start + add + end_length
                 self.setCurrentBlockState(0)
             # No; multi-line string
             else:
@@ -314,7 +343,11 @@ class Highlight(QtGui.QSyntaxHighlighter):
             # Apply formatting
             self.setFormat(start, length, style)
             # Look for the next match
-            start = delimiter.indexIn(text, start + length)
+            start, add = self._regex_find(
+                delimiter,
+                text,
+                start + length
+            )
 
         # Return True if still inside a multi-line string
         return self.currentBlockState() == in_state
