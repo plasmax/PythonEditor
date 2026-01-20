@@ -3,6 +3,7 @@
 
 import os
 import sys
+import warnings
 
 import pytest
 
@@ -112,6 +113,60 @@ def test_launch_steps_subprocess_shortcut_event_filter():
 
     editor.close()
     QtWidgets.QApplication.processEvents()
+    if created_app:
+        app.quit()
+
+
+@pytest.mark.gui
+def test_terminal_line_from_event_block_under_cursor():
+    created_app = False
+    app = QtWidgets.QApplication.instance()
+    if app is None:
+        app = QtWidgets.QApplication(sys.argv)
+        created_app = True
+
+    from PythonEditor.ui import terminal as terminal_module
+
+    terminal = terminal_module.Terminal()
+    terminal.setPlainText("first line\nsecond line")
+
+    class DummyEvent(object):
+        def __init__(self, pos):
+            self._pos = pos
+
+        def pos(self):
+            return self._pos
+
+    line = terminal.line_from_event(DummyEvent(QtCore.QPoint(1, 1)))
+    assert line == "first line"
+
+    terminal.stop()
+    terminal.close()
+    QtWidgets.QApplication.processEvents()
+    if created_app:
+        app.quit()
+
+
+@pytest.mark.gui
+def test_qt_exec_compat_no_deprecation_warning():
+    created_app = False
+    app = QtWidgets.QApplication.instance()
+    if app is None:
+        app = QtWidgets.QApplication(sys.argv)
+        created_app = True
+
+    from PythonEditor.utils import qt_compat
+
+    QtCore.QTimer.singleShot(0, app.quit)
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always", DeprecationWarning)
+        qt_compat.exec_app(app)
+
+    assert not any(
+        isinstance(warning.message, DeprecationWarning)
+        for warning in caught
+    )
+
     if created_app:
         app.quit()
 

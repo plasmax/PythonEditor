@@ -95,7 +95,11 @@ class Terminal(QPlainTextEdit):
     def line_from_event(self, event):
         pos = event.pos()
         cursor = self.cursorForPosition(pos)
-        cursor.select(cursor.BlockUnderCursor)
+        block_under_cursor = getattr(QTextCursor, "BlockUnderCursor", None)
+        if block_under_cursor is None and hasattr(QTextCursor, "SelectionType"):
+            block_under_cursor = QTextCursor.SelectionType.BlockUnderCursor
+        if block_under_cursor is not None:
+            cursor.select(block_under_cursor)
         selection = cursor.selection()
         text = selection.toPlainText().strip()
         return text

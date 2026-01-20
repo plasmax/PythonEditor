@@ -37,6 +37,7 @@ os.environ['PYTHONEDITOR_DEFAULT_FONT'] = 'Consolas'
 from PythonEditor.ui import ide
 from PythonEditor.ui.features import nukepalette
 from PythonEditor.ui.Qt import QtWidgets, QtGui
+from PythonEditor.utils import qt_compat
 
 try:
     app = QtWidgets.QApplication(sys.argv)
@@ -68,4 +69,4 @@ _ide.showMaximized()
 print('PythonEditor startup time: %.04f seconds'%(time.time()-start))
 
 # run
-sys.exit(app.exec_())
+sys.exit(qt_compat.exec_app(app))
