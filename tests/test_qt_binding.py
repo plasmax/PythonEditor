@@ -119,6 +119,81 @@ def test_launch_steps_subprocess_shortcut_event_filter():
 
 
 @pytest.mark.gui
+def test_shortcut_handler_tab_after_dot():
+    created_app = False
+    app = QtWidgets.QApplication.instance()
+    if app is None:
+        app = QtWidgets.QApplication(sys.argv)
+        created_app = True
+
+    from PythonEditor.ui import editor as editor_module
+    from PythonEditor.ui.features import actions, shortcuts
+
+    editor = editor_module.Editor(init_features=False)
+    actions.Actions(editor=editor)
+    handler = shortcuts.ShortcutHandler(editor=editor)
+    key_event = QtGui.QKeyEvent(
+        QtCore.QEvent.KeyPress,
+        QtCore.Qt.Key_Tab,
+        QtCore.Qt.NoModifier,
+        "\t",
+    )
+
+    editor.setPlainText("import os\nos. ")
+    cursor = editor.textCursor()
+    cursor.movePosition(QtGui.QTextCursor.End)
+    cursor.movePosition(QtGui.QTextCursor.Left)
+    editor.setTextCursor(cursor)
+    assert handler.handle_keypress(key_event) is False
+
+    editor.setPlainText("import os\nos. ")
+    cursor = editor.textCursor()
+    cursor.movePosition(QtGui.QTextCursor.End)
+    editor.setTextCursor(cursor)
+    assert handler.handle_keypress(key_event) is True
+
+    editor.close()
+    QtWidgets.QApplication.processEvents()
+    if created_app:
+        app.quit()
+
+
+@pytest.mark.gui
+def test_autocomplete_tab_after_dot_with_trailing_space():
+    created_app = False
+    app = QtWidgets.QApplication.instance()
+    if app is None:
+        app = QtWidgets.QApplication(sys.argv)
+        created_app = True
+
+    from PythonEditor.ui import editor as editor_module
+    from PythonEditor.ui.features import autocompletion
+
+    editor = editor_module.Editor(init_features=False)
+    completer = autocompletion.AutoCompleter(editor)
+    editor.autocomplete_overriding = True
+
+    editor.setPlainText("import os\nos. ")
+    cursor = editor.textCursor()
+    cursor.movePosition(QtGui.QTextCursor.End)
+    cursor.movePosition(QtGui.QTextCursor.Left)
+    editor.setTextCursor(cursor)
+
+    key_event = QtGui.QKeyEvent(
+        QtCore.QEvent.KeyPress,
+        QtCore.Qt.Key_Tab,
+        QtCore.Qt.NoModifier,
+        "\t",
+    )
+    assert completer._pre_keyPressEvent(key_event) is True
+
+    editor.close()
+    QtWidgets.QApplication.processEvents()
+    if created_app:
+        app.quit()
+
+
+@pytest.mark.gui
 def test_terminal_line_from_event_block_under_cursor():
     created_app = False
     app = QtWidgets.QApplication.instance()

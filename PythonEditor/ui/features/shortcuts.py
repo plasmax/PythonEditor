@@ -151,11 +151,12 @@ class ShortcutHandler(QObject):
         # is it a Tab after a dot?
         if key == Qt.Key_Tab:
             cursor = self.editor.textCursor()
-            cursor.select(cursor.LineUnderCursor)
-            text = cursor.selectedText()
-            if text.endswith('.'):
-                # allow autocompletion to handle this
-                return False
+            if not cursor.hasSelection():
+                pos = cursor.positionInBlock()
+                line = cursor.block().text()
+                if pos > 0 and line[pos - 1] == '.':
+                    # allow autocompletion to handle this
+                    return False
 
         # try with event.text() for things
         # like " and { which appear as

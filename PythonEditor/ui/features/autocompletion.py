@@ -729,13 +729,15 @@ class AutoCompleter(QObject):
             shift_held = (event.modifiers() == SHIFT)
             if (not textCursor.hasSelection()
                 and not shift_held):
-                text = self.line_under_cursor()
-                if text.endswith('.'):
-                    self.complete_object()
-                    # assuming this should be
-                    # here too but untested
-                    self.set_override(True)
-                    return True
+                pos = textCursor.positionInBlock()
+                if pos > 0:
+                    line = textCursor.block().text()
+                    if line[pos - 1] == '.':
+                        self.complete_object()
+                        # assuming this should be
+                        # here too but untested
+                        self.set_override(True)
+                        return True
 
         self.set_override(False)
         self.editor.keyPressEvent(event)
