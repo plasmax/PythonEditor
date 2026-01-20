@@ -10,11 +10,6 @@ start = time.time()
 import os
 import sys
 import signal
-try:
-    import PySide2
-    pyside = 'PySide2'
-except ImportError:
-    pyside = 'PySide'
 
 
 # Python's default signal handler doesn't work nicely with Qt, meaning
@@ -31,7 +26,6 @@ if PACKAGE_PATH not in sys.path:
     sys.path.append(PACKAGE_PATH)
 
 # set startup env variables
-os.environ['QT_PREFERRED_BINDING'] = pyside
 try:
 	# allow this variable to be set before launching
 	os.environ['PYTHONEDITOR_CAPTURE_STARTUP_STREAMS']
