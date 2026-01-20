@@ -1,4 +1,3 @@
-from pytestqt import qtbot
 from PythonEditor.ui.features import actions
 from PythonEditor.ui.Qt import QtWidgets, QtGui
 
@@ -8,7 +7,7 @@ def test_toggle_backslashes_in_string():
     assert result == "c:/path/to/some/file.jpg"
 
 
-def test_toggle_backslashes(qtbot):
+def test_toggle_backslashes():
     editor = QtWidgets.QPlainTextEdit()
     test_path = "c:\\path/to\\some\\file.jpg"
     editor.setPlainText(test_path)

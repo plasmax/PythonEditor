@@ -1,24 +1,29 @@
 import os
 import sys
 
-from pytestqt import qtbot
-from pytestqt.qt_compat import qt_api
-
 from PythonEditor.ui import ide
 from PythonEditor.ui.features import nukepalette
 from PythonEditor.ui.Qt import QtWidgets, QtGui
 
 
-def test_app(qtbot):
-    app = qt_api.QApplication.instance()
-
+def test_app_launch():
     # add the package path to sys.path
-    FOLDER = os.path.dirname(__file__)
-    PACKAGE_PATH = os.path.dirname(FOLDER)
+    folder = os.path.dirname(__file__)
+    package_path = os.path.dirname(folder)
+    if package_path not in sys.path:
+        sys.path.append(package_path)
+
+    created_app = False
+    try:
+        app = QtWidgets.QApplication(sys.argv)
+        created_app = True
+    except RuntimeError:
+        # for running inside and outside of other applications
+        app = QtWidgets.QApplication.instance()
 
     # set the application icon
-    ICON_PATH = os.path.join(PACKAGE_PATH, 'icons', 'PythonEditor.png')
-    icon = QtGui.QIcon(ICON_PATH)
+    icon_path = os.path.join(package_path, 'icons', 'PythonEditor.png')
+    icon = QtGui.QIcon(icon_path)
     app.setWindowIcon(icon)
 
     # set style (makes palette work on linux)
@@ -34,5 +39,12 @@ def test_app(qtbot):
 
     app.setPalette(nukepalette.getNukePalette())
 
-    _ide = ide.IDE()
+    editor = ide.IDE()
+    editor.show()
+    QtWidgets.QApplication.processEvents()
+    if created_app:
+        app.quit()
+    assert editor.isVisible()
+    editor.close()
+    QtWidgets.QApplication.processEvents()
 
