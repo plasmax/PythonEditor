@@ -172,6 +172,52 @@ def test_qt_exec_compat_no_deprecation_warning():
 
 
 @pytest.mark.gui
+def test_shortcuts_key_to_sequence_with_modifier(monkeypatch):
+    created_app = False
+    app = QtWidgets.QApplication.instance()
+    if app is None:
+        app = QtWidgets.QApplication(sys.argv)
+        created_app = True
+
+    from PythonEditor.ui.features import shortcuts
+
+    class DummyApp(object):
+        @staticmethod
+        def keyboardModifiers():
+            return QtCore.Qt.ControlModifier
+
+    monkeypatch.setattr(shortcuts, "QApplication", DummyApp)
+    seq = shortcuts.key_to_sequence(QtCore.Qt.Key_T)
+    assert seq.toString()
+
+    if created_app:
+        app.quit()
+
+
+@pytest.mark.gui
+def test_shortcuts_key_to_sequence_with_modifier_int_key(monkeypatch):
+    created_app = False
+    app = QtWidgets.QApplication.instance()
+    if app is None:
+        app = QtWidgets.QApplication(sys.argv)
+        created_app = True
+
+    from PythonEditor.ui.features import shortcuts
+
+    class DummyApp(object):
+        @staticmethod
+        def keyboardModifiers():
+            return QtCore.Qt.ControlModifier
+
+    monkeypatch.setattr(shortcuts, "QApplication", DummyApp)
+    seq = shortcuts.key_to_sequence(int(QtCore.Qt.Key_T))
+    assert seq.toString()
+
+    if created_app:
+        app.quit()
+
+
+@pytest.mark.gui
 def test_launch_steps_subprocess():
     import subprocess
 

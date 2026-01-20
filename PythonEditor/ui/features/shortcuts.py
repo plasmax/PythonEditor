@@ -39,11 +39,16 @@ def key_to_sequence(key):
     }
     app = QApplication
     held = app.keyboardModifiers()
-    combo = 0
+    combo = Qt.NoModifier
     for mod in modifier_map.values():
         if held & mod == mod:
             combo |= mod
-    combo |= key
+    key_enum = key
+    try:
+        key_enum = Qt.Key(key)
+    except Exception:
+        key_enum = key
+    combo |= key_enum
 
     combo = QKeySequence(combo)
     return combo
