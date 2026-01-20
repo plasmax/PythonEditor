@@ -14,7 +14,7 @@ from PythonEditor.ui.Qt.QtGui import (
     QFocusEvent, QFocusEvent, QWheelEvent,
     QKeyEvent, QResizeEvent, QFont)
 from PythonEditor.ui.Qt.QtCore import (
-    Signal, Slot, QTimer, Qt, QMimeData, QByteArray)
+    Signal, Slot, QTimer, Qt, QMimeData, QByteArray, QEvent)
 
 from PythonEditor import six
 from PythonEditor.utils import constants
@@ -347,12 +347,12 @@ class Editor(QPlainTextEdit):
         because it is the only way to make it work
         on windows.
         """
-        if event.type() == event.DragEnter:
+        if event.type() == QEvent.DragEnter:
             mimeData = event.mimeData()
             if mimeData.hasUrls():
                 event.accept()
                 return True
-        elif event.type() == event.Drop:
+        elif event.type() == QEvent.Drop:
             mimeData = event.mimeData()
             if mimeData.hasUrls():
                 event.accept()
