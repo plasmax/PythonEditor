@@ -23,16 +23,17 @@ def main():
     """The main entrypoint into PythonEditor.
     Makes sure the environment is configured correctly for Qt.py.
     """
-    bindings = ['PySide2', 'PyQt5', 'PySide', 'PyQt4']
 
-    # Nuke 10 segfaults when you even _look_ at PySide2.
+    # Because we are using Qt.py, we actually don't need to
+    # specify our preferred bindings; it's latest-first.
+    # However, Nuke 10 crashes if you try and import PySide2,
+    # so in that case we will hardcode a preference.
     try:
         import nuke
         if nuke.NUKE_VERSION_MAJOR < 11:
-            bindings.remove('PySide2')
-        import os
-        if not os.environ.get('QT_PREFERRED_BINDING'):
-            os.environ['QT_PREFERRED_BINDING'] = os.pathsep.join(bindings)
+            import os
+            if not os.environ.get('QT_PREFERRED_BINDING'):
+                os.environ['QT_PREFERRED_BINDING'] = 'PySide'
     except ImportError:
         pass
 

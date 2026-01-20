@@ -1,13 +1,8 @@
 import re
-try:
-    from PySide2.QtGui import *
-    from PySide2.QtWidgets import *
-    from PySide2.QtCore import *
-except ImportError:
-    from PySide.QtGui import *
-    from PySide.QtCore import *
 
-
+from PythonEditor.ui.Qt.QtGui import *
+from PythonEditor.ui.Qt.QtWidgets import *
+from PythonEditor.ui.Qt.QtCore import *
 from PythonEditor.utils.search import nonconsec_find
 from PythonEditor.utils.goto import goto_position
 from PythonEditor.utils.goto import goto_line
