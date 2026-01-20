@@ -6,6 +6,7 @@ _experiments/
 _deprecated/
 _old
 .venv/
+logs/
 *.nk
 icons/
 test_app.bat

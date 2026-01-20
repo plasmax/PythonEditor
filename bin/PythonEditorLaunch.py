@@ -38,6 +38,9 @@ from PythonEditor.ui import ide
 from PythonEditor.ui.features import nukepalette
 from PythonEditor.ui.Qt import QtWidgets, QtGui
 from PythonEditor.utils import qt_compat
+from PythonEditor.utils import runtime_diagnostics
+
+runtime_diagnostics.install()
 
 try:
     app = QtWidgets.QApplication(sys.argv)
