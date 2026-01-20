@@ -1,11 +1,14 @@
 import os
 import sys
 
+import pytest
+
 from PythonEditor.ui import ide
 from PythonEditor.ui.features import nukepalette
 from PythonEditor.ui.Qt import QtWidgets, QtGui
 
 
+@pytest.mark.gui
 def test_app_launch():
     # add the package path to sys.path
     folder = os.path.dirname(__file__)
