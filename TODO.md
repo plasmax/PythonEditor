@@ -76,14 +76,12 @@
 
 
 ## Features - parity
-- [ ] "from module import name 'as' othername", "with ContextManager() 'as' name" - syntax highlight the 'as'
+- [x] "from module import name 'as' othername", "with ContextManager() 'as' name" - syntax highlight the 'as'
 - [ ] Add Script Editor buttons to Menu bar at top - especially fullscreen editor/output,
       which should remember the settings
 - [x] ~Highlight line with error~
 - [x] ~Read stdout/stderr on open~
 - [ ] Echo commands to python editor (eventFilter watch script editor)
-- [ ] Add Script Editor buttons to Menu bar at top - especially fullscreen editor/output,
-      which should remember the settings
 
 
 ## Features - desired
