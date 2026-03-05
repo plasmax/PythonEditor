@@ -141,14 +141,16 @@ class FindPalette(EditLine):
         document = self.editor.document()
 
         # avoid jumps by placing cursor at:
-        start_pos = text_cursor.StartOfWord
+        # PySide6 moved enums into QTextCursor.MoveOperation; PySide2 has them directly on QTextCursor
+        _move_op = getattr(QtGui.QTextCursor, 'MoveOperation', QtGui.QTextCursor)
+        start_pos = _move_op.StartOfWord
 
         if (text_cursor.hasSelection()
             and text_cursor.selection(
             ).toPlainText() == text):
 
             # move on if word already matched
-            start_pos = text_cursor.EndOfWord
+            start_pos = _move_op.EndOfWord
 
         text_cursor.movePosition(start_pos)
         cursor = document.find(

@@ -890,7 +890,8 @@ class TabEditor(QWidget):
 
             # set first block visible
             cursor = self.editor.textCursor()
-            self.editor.moveCursor(cursor.End)
+            _move_op = getattr(QTextCursor, 'MoveOperation', QTextCursor)
+            self.editor.moveCursor(_move_op.End)
             cursor.setPosition(block_pos)
             self.editor.setTextCursor(cursor)
 
