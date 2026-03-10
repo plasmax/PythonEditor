@@ -630,18 +630,19 @@ class Tabs(QTabBar):
         msg_box.setInformativeText(
             'Do you want to save your changes?'
         )
+        _sb = getattr(QMessageBox, 'StandardButton', QMessageBox)
         buttons = (
-            msg_box.Save
-            | msg_box.Discard
-            | msg_box.Cancel
+            _sb.Save
+            | _sb.Discard
+            | _sb.Cancel
         )
         msg_box.setStandardButtons(buttons)
-        msg_box.setDefaultButton(msg_box.Save)
+        msg_box.setDefaultButton(_sb.Save)
         ret = msg_box.exec_()
 
-        user_cancelled = (ret == msg_box.Cancel)
+        user_cancelled = (ret == _sb.Cancel)
 
-        if (ret == msg_box.Save):
+        if (ret == _sb.Save):
             data = self.tabData(index)
             path = save.save(
                 data['text'],
