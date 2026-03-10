@@ -16,5 +16,5 @@ This repo already has Qt binding coverage. Avoid opening heavy files unless need
 - `PythonEditor/ui/Qt.py` is huge; only open if you must change binding behavior.
 
 ## Test commands
-- PySide6: `\.venv\Scripts\activate; $env:QT_PREFERRED_BINDING="PySide6"; pytest -vv`
-- PySide2: `\.venv\Scripts\activate; $env:QT_PREFERRED_BINDING="PySide2"; pytest -vv`
+- PySide6: `.\.venv\Scripts\activate.ps1; $env:QT_PREFERRED_BINDING="PySide6"; pytest -vv`
+- PySide2: `.\.venv\Scripts\activate.ps1; $env:QT_PREFERRED_BINDING="PySide2"; pytest -vv`

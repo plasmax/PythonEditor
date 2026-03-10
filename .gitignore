@@ -6,6 +6,7 @@ _experiments/
 _deprecated/
 _old
 .venv/
+.venv_old310/
 logs/
 *.nk
 icons/
