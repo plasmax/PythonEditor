@@ -1,12 +1,14 @@
 
 
 
+from PythonEditor.ui.Qt import QtGui
+
 def goto_position(editor, pos):
     """
-    Goto position in document. 
+    Goto position in document.
     """
     cursor = editor.textCursor()
-    editor.moveCursor(cursor.End)
+    editor.moveCursor(QtGui.QTextCursor.MoveOperation.End)
     cursor.setPosition(pos)
     editor.setTextCursor(cursor)
 
