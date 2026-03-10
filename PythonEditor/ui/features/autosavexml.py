@@ -917,6 +917,8 @@ def remove_control_characters(s):
 
 
 def sanitize(text):
+    if text is None:
+        return text
     text = remove_control_characters(text)
     # TODO: add \t removal from editor module
     return text
