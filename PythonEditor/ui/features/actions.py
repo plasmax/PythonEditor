@@ -2097,6 +2097,9 @@ def backup_pythoneditor_history(in_tmp=False):
     src = os.getenv("PYTHONEDITOR_AUTOSAVE_FILE", default_path)
     if not os.path.isfile(src):
         return
+    if os.path.getsize(src) == 0:
+        print('Skipping backup of empty autosave file: %s' % src)
+        return
     folder = os.path.dirname(src)
     filename = os.path.basename(src)
     name, ext = os.path.splitext(filename)

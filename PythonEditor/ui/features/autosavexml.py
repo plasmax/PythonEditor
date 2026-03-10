@@ -921,12 +921,14 @@ def sanitize(text):
     # TODO: add \t removal from editor module
     return text
 
-def parsexml(element_name, path=AUTOSAVE_FILE):
+def parsexml(element_name, path=None):
     """ Retrieve the root and a list of <element_name>
     elements from a given xml file.
 
     :param element_name: `str` name of <element>, e.g. "subscript"
     """
+    if path is None:
+        path = AUTOSAVE_FILE
     if not create_autosave_file():
         return
 
@@ -961,6 +963,12 @@ def _rotate_backup(path):
     if not os.path.isfile(path):
         return
     if os.path.getsize(path) == 0:
+        return
+    # only back up files that are valid XML
+    try:
+        xmlp = ETree.XMLParser(encoding="utf-8")
+        ETree.parse(path, xmlp)
+    except Exception:
         return
     backup_dir = _get_backup_dir(path)
     try:
@@ -1016,7 +1024,57 @@ def _find_latest_backup(path):
     return None
 
 
-def writexml(root, path=AUTOSAVE_FILE):
+def _atomic_write_string(path, data):
+    """Write a string to a file atomically via temp + rename."""
+    dir_name = os.path.dirname(path)
+    fd, tmp_path = tempfile.mkstemp(
+        dir=dir_name, suffix='.tmp', prefix='.pythoneditor_'
+    )
+    try:
+        with io.open(fd, 'wt', encoding='utf8', errors='ignore') as f:
+            f.write(data)
+            f.flush()
+            os.fsync(f.fileno())
+        if hasattr(os, 'replace'):
+            os.replace(tmp_path, path)
+        else:
+            if os.path.exists(path):
+                os.remove(path)
+            os.rename(tmp_path, path)
+    except Exception:
+        if os.path.isfile(tmp_path):
+            try:
+                os.remove(tmp_path)
+            except OSError:
+                pass
+        raise
+
+
+def _atomic_copy(src, dst):
+    """Copy a file atomically via temp + rename in the dst directory."""
+    dir_name = os.path.dirname(dst)
+    fd, tmp_path = tempfile.mkstemp(
+        dir=dir_name, suffix='.tmp', prefix='.pythoneditor_'
+    )
+    os.close(fd)
+    try:
+        shutil.copy2(src, tmp_path)
+        if hasattr(os, 'replace'):
+            os.replace(tmp_path, dst)
+        else:
+            if os.path.exists(dst):
+                os.remove(dst)
+            os.rename(tmp_path, dst)
+    except Exception:
+        if os.path.isfile(tmp_path):
+            try:
+                os.remove(tmp_path)
+            except OSError:
+                pass
+        raise
+
+
+def writexml(root, path=None):
     """ Atomically write xml element to a file.
     Writes to a temporary file first, verifies
     it, then renames over the target. This
@@ -1028,6 +1086,8 @@ def writexml(root, path=AUTOSAVE_FILE):
     :param path: The path to save to.
     :type  path: <type 'str'>
     """
+    if path is None:
+        path = AUTOSAVE_FILE
     data = ETree.tostring(root)
     data = data.decode('utf-8')
 
@@ -1075,15 +1135,15 @@ def writexml(root, path=AUTOSAVE_FILE):
         msg += "due to the following error:\n{0}".format(e)
         print(msg)
 
-        # clean up failed temp file
-        if tmp_path and os.path.isfile(tmp_path):
-            try:
-                os.remove(tmp_path)
-            except OSError:
-                pass
+        # clean up: close fd first (required on Windows before removal)
         if fd is not None:
             try:
                 os.close(fd)
+            except OSError:
+                pass
+        if tmp_path and os.path.isfile(tmp_path):
+            try:
+                os.remove(tmp_path)
             except OSError:
                 pass
 
@@ -1105,11 +1165,14 @@ def writexml(root, path=AUTOSAVE_FILE):
             pass
 
 
-def fix_broken_xml(path=AUTOSAVE_FILE):
+def fix_broken_xml(path=None):
     """ Removes unwanted characters and attempts
     to recover from backup if the xml is
     unrecoverably broken.
     """
+    if path is None:
+        path = AUTOSAVE_FILE
+
     with io.open(path, 'r', encoding='utf-8') as f:
         content = f.read()
 
@@ -1124,8 +1187,7 @@ def fix_broken_xml(path=AUTOSAVE_FILE):
     try:
         root = ETree.fromstring(safe_string.encode('utf-8'), xmlp)
         # sanitized content is valid, write it back atomically
-        with open(path, 'wt') as f:
-            f.write(safe_string)
+        _atomic_write_string(path, safe_string)
         parser = ETree.parse(path, ETree.XMLParser(encoding="utf-8"))
         return parser
     except ETree.ParseError:
@@ -1137,7 +1199,7 @@ def fix_broken_xml(path=AUTOSAVE_FILE):
     if backup_path is not None:
         print('Restoring from backup: %s' % backup_path)
         try:
-            shutil.copy2(backup_path, path)
+            _atomic_copy(backup_path, path)
             xmlp = ETree.XMLParser(encoding="utf-8")
             parser = ETree.parse(path, xmlp)
             return parser

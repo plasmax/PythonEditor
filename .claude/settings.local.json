@@ -4,7 +4,12 @@
       "Bash(python -c \"import ast; ast.parse\\(open\\(''PythonEditor/ui/features/autosavexml.py''\\).read\\(\\)\\); print\\(''Syntax OK''\\)\")",
       "Bash(.venv/Scripts/python -m pytest tests/ -x -q)",
       "Bash(python -m pytest tests/ -x -q)",
-      "Bash(.venv/Scripts/python.exe -m pytest tests/ -x -q)"
+      "Bash(.venv/Scripts/python.exe -m pytest tests/ -x -q)",
+      "Bash(python3 -m pytest tests/test_autosave_safety.py -vv)",
+      "Bash(python3 -m pip install pytest)",
+      "Bash(source .venv/Scripts/activate)",
+      "Bash(QT_PREFERRED_BINDING=PySide6 pytest tests/test_autosave_safety.py -vv)",
+      "Bash(QT_PREFERRED_BINDING=PySide6 pytest -vv)"
     ]
   }
 }
