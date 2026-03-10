@@ -12,10 +12,12 @@ from __future__ import print_function
 
 import os
 import io
+import shutil
 import unicodedata
 import warnings
 import tempfile
 import difflib
+import time
 from functools import partial
 from xml.etree import cElementTree as ETree
 
@@ -941,11 +943,85 @@ def parsexml(element_name, path=AUTOSAVE_FILE):
 
 
 TEMP_FILE = None
+BACKUP_INTERVAL = 600  # seconds between rotating backups
+_last_backup_time = 0
+MAX_BACKUPS = 3
+
+
+def _get_backup_dir(path):
+    return os.path.join(os.path.dirname(path), '.PythonEditorBackups')
+
+
+def _rotate_backup(path):
+    """Keep up to MAX_BACKUPS timestamped copies of a known-good autosave."""
+    global _last_backup_time
+    now = time.time()
+    if now - _last_backup_time < BACKUP_INTERVAL:
+        return
+    if not os.path.isfile(path):
+        return
+    if os.path.getsize(path) == 0:
+        return
+    backup_dir = _get_backup_dir(path)
+    try:
+        if not os.path.isdir(backup_dir):
+            os.makedirs(backup_dir)
+    except OSError:
+        return
+    basename = os.path.basename(path)
+    backup_path = os.path.join(
+        backup_dir,
+        '{0}.{1}.bak'.format(basename, int(now))
+    )
+    try:
+        shutil.copy2(path, backup_path)
+        _last_backup_time = now
+    except OSError:
+        return
+    # prune old backups
+    try:
+        backups = sorted(
+            [f for f in os.listdir(backup_dir)
+             if f.startswith(basename) and f.endswith('.bak')]
+        )
+        for old in backups[:-MAX_BACKUPS]:
+            os.remove(os.path.join(backup_dir, old))
+    except OSError:
+        pass
+
+
+def _find_latest_backup(path):
+    """Find the most recent valid backup file."""
+    backup_dir = _get_backup_dir(path)
+    if not os.path.isdir(backup_dir):
+        return None
+    basename = os.path.basename(path)
+    try:
+        backups = sorted(
+            [f for f in os.listdir(backup_dir)
+             if f.startswith(basename) and f.endswith('.bak')]
+        )
+    except OSError:
+        return None
+    for backup_name in reversed(backups):
+        backup_path = os.path.join(backup_dir, backup_name)
+        if os.path.getsize(backup_path) == 0:
+            continue
+        try:
+            xmlp = ETree.XMLParser(encoding="utf-8")
+            ETree.parse(backup_path, xmlp)
+            return backup_path
+        except Exception:
+            continue
+    return None
+
+
 def writexml(root, path=AUTOSAVE_FILE):
-    """ Attempt to write xml element
-    to a file as a string. If the
-    save fails, write to a temporary
-    file instead.
+    """ Atomically write xml element to a file.
+    Writes to a temporary file first, verifies
+    it, then renames over the target. This
+    prevents data loss from crashes or disk-full
+    errors during writes.
 
     :param root: The xml element to write.
     :type  root: <type 'Element'>
@@ -959,61 +1035,130 @@ def writexml(root, path=AUTOSAVE_FILE):
     data = data.replace('><subscript', '>\n<subscript')
     data = data.replace('</subscript><', '</subscript>\n<')
 
+    full_data = XML_HEADER + data
+
+    # rotate a backup of the current good file before overwriting
+    _rotate_backup(path)
+
+    # write to a temp file in the same directory, then rename
+    dir_name = os.path.dirname(path)
+    fd = None
+    tmp_path = None
     try:
-        with io.open(
-            path, 'wt', encoding='utf8', errors='ignore'
-        ) as f:
-            f.write(XML_HEADER+data)
-    except IOError as e:
+        fd, tmp_path = tempfile.mkstemp(
+            dir=dir_name, suffix='.tmp', prefix='.pythoneditor_'
+        )
+        with io.open(fd, 'wt', encoding='utf8', errors='ignore') as f:
+            f.write(full_data)
+            f.flush()
+            os.fsync(f.fileno())
+        fd = None  # closed by io.open context manager
+
+        # verify the temp file is valid before replacing
+        if os.path.getsize(tmp_path) == 0:
+            raise IOError('Written file is empty')
+        xmlp = ETree.XMLParser(encoding="utf-8")
+        ETree.parse(tmp_path, xmlp)
+
+        # atomic rename (on POSIX; on Windows, replace)
+        if hasattr(os, 'replace'):
+            os.replace(tmp_path, path)
+        else:
+            # Python 2 on Windows fallback
+            if os.path.exists(path):
+                os.remove(path)
+            os.rename(tmp_path, path)
+        tmp_path = None  # successfully moved
+
+    except (IOError, OSError, ETree.ParseError) as e:
         msg = "Couldn't write to {0}\n".format(path)
         msg += "due to the following error:\n{0}".format(e)
         print(msg)
 
+        # clean up failed temp file
+        if tmp_path and os.path.isfile(tmp_path):
+            try:
+                os.remove(tmp_path)
+            except OSError:
+                pass
+        if fd is not None:
+            try:
+                os.close(fd)
+            except OSError:
+                pass
+
+        # fall back to writing to /tmp
         global TEMP_FILE
         if (
             TEMP_FILE is None
             or not os.path.isfile(TEMP_FILE)
             ):
-            fd, TEMP_FILE = tempfile.mkstemp()
-            TEMP_FILE += '.xml'
+            fallback_fd, TEMP_FILE = tempfile.mkstemp(suffix='.xml')
+            os.close(fallback_fd)
         print('Writing to {0}'.format(TEMP_FILE))
-        with io.open(
-            TEMP_FILE, 'wt', encoding='utf8', errors='ignore'
-        ) as f:
-            f.write(XML_HEADER+data)
+        try:
+            with io.open(
+                TEMP_FILE, 'wt', encoding='utf8', errors='ignore'
+            ) as f:
+                f.write(full_data)
+        except (IOError, OSError):
+            pass
 
 
 def fix_broken_xml(path=AUTOSAVE_FILE):
-    """ Removes unwanted characters and
-    (in case necessary in future
-    implementations..) fixes other
-    parsing errors with the xml file.
+    """ Removes unwanted characters and attempts
+    to recover from backup if the xml is
+    unrecoverably broken.
     """
     with io.open(path, 'r', encoding='utf-8') as f:
         content = f.read()
 
+    # back up the corrupt file before we touch it
+    if content.strip():
+        backup_autosave_file(path, content)
+
     safe_string = remove_control_characters(content)
 
-    with open(path, 'wt') as f:
-        f.write(safe_string)
-
+    # try parsing the sanitized content without writing it back yet
     xmlp = ETree.XMLParser(encoding="utf-8")
     try:
-        parser = ETree.parse(path, xmlp)
+        root = ETree.fromstring(safe_string.encode('utf-8'), xmlp)
+        # sanitized content is valid, write it back atomically
+        with open(path, 'wt') as f:
+            f.write(safe_string)
+        parser = ETree.parse(path, ETree.XMLParser(encoding="utf-8"))
+        return parser
     except ETree.ParseError:
-        print('Fatal Error with xml structure. A backup of your autosave has been made.')
-        backup_autosave_file(path, content)
-        create_empty_autosave()
-        xmlp = ETree.XMLParser(encoding="utf-8")
-        parser = ETree.parse(path, xmlp)
-        print(parser)
+        pass
+
+    # sanitized content is also broken, try restoring from backup
+    print('Fatal Error with xml structure.')
+    backup_path = _find_latest_backup(path)
+    if backup_path is not None:
+        print('Restoring from backup: %s' % backup_path)
+        try:
+            shutil.copy2(backup_path, path)
+            xmlp = ETree.XMLParser(encoding="utf-8")
+            parser = ETree.parse(path, xmlp)
+            return parser
+        except Exception as e:
+            print('Could not restore from backup: %s' % e)
+
+    print('No valid backup found. Creating empty autosave.')
+    create_empty_autosave()
+    xmlp = ETree.XMLParser(encoding="utf-8")
+    parser = ETree.parse(path, xmlp)
     return parser
 
 
 def backup_autosave_file(path, content):
+    if not content or not content.strip():
+        print('Skipping backup of empty/corrupt file: %s' % path)
+        return
     handle, temp_path = tempfile.mkstemp()
     with open(temp_path, 'w') as f:
         f.write(content)
+    os.close(handle)
     print('A backup of %s has been saved here: %s' % (path, temp_path))
 
 
