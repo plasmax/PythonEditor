@@ -319,7 +319,7 @@ class CloseIconPainter(QIconEngine):
         left_line = QLine(close_rect.topLeft(), close_rect.bottomRight())
         right_line = QLine(close_rect.topRight(), close_rect.bottomLeft())
 
-        painter.setRenderHint(QPainter.RenderHint.HighQualityAntialiasing)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
         if mode == QIcon.Disabled:
             # paint me a sunken X
