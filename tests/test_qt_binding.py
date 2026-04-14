@@ -21,6 +21,14 @@ def test_qt():
             import PySide6
 
 
+def test_qtcore_qregularexpression_import():
+    from PythonEditor.ui.Qt.QtCore import QRegularExpression
+
+    expr = QRegularExpression("foo")
+
+    assert expr is not None
+
+
 def test_editor_drag_enter_event():
     created_app = False
     app = QtWidgets.QApplication.instance()
