@@ -24,3 +24,4 @@ test_app_python27.bat
 .vscode/
 .pytest_cache/
 __pycache__
+wheels/
