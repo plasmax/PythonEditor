@@ -45,7 +45,6 @@ import sys
 import types
 import shutil
 import importlib
-import json
 
 
 __version__ = "1.4.8"
@@ -53,11 +52,9 @@ __version__ = "1.4.8"
 # Enable support for `from Qt import *`
 __all__ = ["QtCompat"]
 
-# Flags from environment variables
-QT_VERBOSE = bool(os.getenv("QT_VERBOSE"))
-QT_PREFERRED_BINDING_JSON = os.getenv("QT_PREFERRED_BINDING_JSON", "")
-QT_PREFERRED_BINDING = os.getenv("QT_PREFERRED_BINDING", "")
-QT_SIP_API_HINT = os.getenv("QT_SIP_API_HINT")
+# Runtime flags (environment-variable free)
+QT_VERBOSE = False
+QT_SIP_API_HINT = None
 
 # Reference to Qt.py
 Qt = sys.modules[__name__]
@@ -1995,8 +1992,7 @@ def _pyqt4():
 
     import sip
 
-    # Validation of envivornment variable. Prevents an error if
-    # the variable is invalid since it's just a hint.
+    # API hint (kept for compatibility; defaults to Qt.py's preferred API).
     try:
         hint = int(QT_SIP_API_HINT)
     except TypeError:
@@ -2250,38 +2246,7 @@ class MissingMember(object):
 
 
 def _install():
-    # Default order (customize order and content via QT_PREFERRED_BINDING)
-    default_order = ("PySide6", "PyQt6", "PySide2", "PyQt5", "PySide", "PyQt4")
-    preferred_order = None
-    if QT_PREFERRED_BINDING_JSON:
-        # A per-vendor preferred binding customization was defined
-        # This should be a dictionary of the full Qt.py module namespace to
-        # apply binding settings to. The "default" key can be used to apply
-        # custom bindings to all modules not explicitly defined. If the json
-        # data is invalid this will raise a exception.
-        # Example:
-        #   {"mylibrary.vendor.Qt": ["PySide2"], "default":["PyQt5","PyQt4"]}
-        try:
-            preferred_bindings = json.loads(QT_PREFERRED_BINDING_JSON)
-        except ValueError:
-            # Python 2 raises ValueError, Python 3 raises json.JSONDecodeError
-            # a subclass of ValueError
-            _warn("Failed to parse QT_PREFERRED_BINDING_JSON='%s'"
-                  % QT_PREFERRED_BINDING_JSON)
-            _warn("Falling back to default preferred order")
-        else:
-            preferred_order = preferred_bindings.get(__name__)
-            # If no matching binding was used, optionally apply a default.
-            if preferred_order is None:
-                preferred_order = preferred_bindings.get("default", None)
-    if preferred_order is None:
-        # If a json preferred binding was not used use, respect the
-        # QT_PREFERRED_BINDING environment variable if defined.
-        preferred_order = list(
-            b for b in QT_PREFERRED_BINDING.split(os.pathsep) if b
-        )
-
-    order = preferred_order or default_order
+    order = ("PySide6", "PyQt6", "PySide2", "PyQt5", "PySide", "PyQt4")
 
     available = {
         "PySide6": _pyside6,
