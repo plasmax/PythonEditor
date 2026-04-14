@@ -15,11 +15,11 @@ This repo already has Qt binding coverage. Avoid opening heavy files unless need
 ## Avoid
 - `PythonEditor/ui/Qt.py` is huge; only open if you must change binding behavior.
 
-## Test commands
+## Test commands (Windows ONLY)
 - PySide6: `.\.venv\Scripts\activate.ps1; $env:QT_PREFERRED_BINDING="PySide6"; pytest -vv`
 - PySide2: `.\.venv\Scripts\activate.ps1; $env:QT_PREFERRED_BINDING="PySide2"; pytest -vv`
 
-## Python/venv notes (Windows)
+## Python/venv notes (Windows ONLY)
 - If `.venv\Scripts\python.exe` prints `No Python at ...Python310\python.exe`, the venv is stale and was created against a removed interpreter.
 - Python 3.13 cannot install pinned `PySide6==6.5.2` from `requirements-pyside6.txt` (no wheel for 3.13).
 - Working fallback on Python 3.13:
