@@ -48,8 +48,6 @@ class LineNumberArea(QtWidgets.QWidget):
 
         height = self.editor.fontMetrics().height()
         while block.isValid() and (top <= event.rect().bottom()):
-            if not block.isVisible():
-                continue
             if block.isVisible() and (bottom >= event.rect().top()):
                 number = str(blockNumber + 1)
                 colour = QtCore.Qt.darkGray
@@ -94,15 +92,11 @@ class LineNumberArea(QtWidgets.QWidget):
         )
 
     def updateLineNumberArea(self, rect, dy):
+        # return  # DEBUG: disabled to test freeze
         if dy:
             self.scroll(0, dy)
         else:
-            self.update(
-                0,
-                rect.y(),
-                self.width(),
-                rect.height()
-            )
+            self.update()
 
         if rect.contains(self.editor.viewport().rect()):
             self.updateLineNumberAreaWidth(0)

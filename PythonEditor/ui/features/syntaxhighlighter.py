@@ -123,12 +123,12 @@ class Highlight(QtGui.QSyntaxHighlighter):
           for feature, style in theme.items()
         }
         self.tri_single = (
-            QtCore.QRegExp("'''"),
+            re.compile("'''"),
             1,
             self.styles['multiline_str']
         )
         self.tri_double = (
-            QtCore.QRegExp('"""'),
+            re.compile('"""'),
             2,
             self.styles['multiline_str']
         )
@@ -175,9 +175,10 @@ class Highlight(QtGui.QSyntaxHighlighter):
             (r"'[^'\\]*(\\.[^'\\]*)*'", 0, self.styles['string']),
         ]
 
-        # Build a QRegExp for each pattern
+        # Pre-compile Python re patterns (avoids Qt regex which
+        # freezes in PySide6 when QRegExp maps to QRegularExpression)
         self.rules = [
-            (QtCore.QRegExp(pat), index, fmt)
+            (re.compile(pat), index, fmt)
             for (pat, index, fmt) in rules
         ]
 
@@ -198,33 +199,17 @@ class Highlight(QtGui.QSyntaxHighlighter):
         return textFormat
 
     def _iter_rule_matches(self, expression, text, nth):
-        if hasattr(expression, "indexIn"):
-            index = expression.indexIn(text, 0)
-            while index >= 0:
-                start = expression.pos(nth)
-                length = len(expression.cap(nth))
-                if start >= 0 and length > 0:
-                    yield start, length
-                index = expression.indexIn(text, start + max(length, 1))
-        else:
-            matches = expression.globalMatch(text)
-            while matches.hasNext():
-                match = matches.next()
-                start = match.capturedStart(nth)
-                length = match.capturedLength(nth)
-                if start >= 0 and length > 0:
-                    yield start, length
+        for match in expression.finditer(text):
+            start = match.start(nth)
+            length = match.end(nth) - start
+            if start >= 0 and length > 0:
+                yield start, length
 
     def _regex_find(self, expression, text, start=0):
-        if hasattr(expression, "indexIn"):
-            index = expression.indexIn(text, start)
-            if index >= 0:
-                return index, expression.matchedLength()
+        match = expression.search(text, start)
+        if match is None:
             return -1, 0
-        match = expression.match(text, start)
-        if not match.hasMatch():
-            return -1, 0
-        return match.capturedStart(0), match.capturedLength(0)
+        return match.start(0), match.end(0) - match.start(0)
 
     def highlightBlock(self, text):
         """
